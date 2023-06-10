@@ -1,2 +1,4 @@
 Model_experimentation/model_testing/fine_tuned_t5_model
 Model_experimentation/model_testing/fine_tuned_t5_tokenizer
+Model_training/KeyPhrase\ Detection/fine_tuned_t5_model_kp
+Model_training/KeyPhrase\ Detection/fine_tuned_t5_tokenizer_kp
