@@ -9,3 +9,7 @@ Model_training/KeyPhrase\ Detection/fine_tuned_t5_tokenizer_kp_3
 Model_training/KeyPhrase\ Detection/fine_tuned_t5_model_kp_4
 Model_training/KeyPhrase\ Detection/fine_tuned_t5_tokenizer_kp_4
 Model_training/KeyPhrase Detection/fine_tuned_model_kp_4/
+Model_training/AnswerAwareQG/fine_tuned_t5_model_aaqg
+Model_training/AnswerAwareQG/fine_tuned_t5_model_aaqg_2
+Model_training/AnswerAwareQG/fine_tuned_t5_tokenizer_aaqg
+Model_training/AnswerAwareQG/fine_tuned_t5_tokenizer_aaqg_2

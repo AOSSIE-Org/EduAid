@@ -1,5 +1,5 @@
 # EduAid- Experiments
-This branch contains the experiments on the AI models involved in EduAid. The fine-tuned models may be accessed [here](https://drive.google.com/drive/folders/12Srtnl8zqjO3_MEP85t6X44alc7AGcol?usp=sharing). 
+This branch contains the updates on the AI experiments as well as the development involved in the EduAid project. The AI models may be accessed [here](https://drive.google.com/drive/folders/12Srtnl8zqjO3_MEP85t6X44alc7AGcol?usp=sharing) (on a request basis). 
 
 ## Update 1 (3/6/2023): 
 ### KeyPhrase Detection (Model A)
@@ -33,3 +33,13 @@ As a qualitative analysis of our model, we tested it on an NPTEL course transcri
 
 ### What's Next?
 With the release of Update 2.0, our remote server is already grinding on training a model for answer aware question generation (model B). Also, we have identified some good first issues (GFS), which we will open up very soon in the coming days. Interested contributors may keep an eye on the repo for this, as this could be an opportunity to contribute to the project! The next update is surely a much much shorter wait than the second one. Stay tuned! 
+
+
+
+## Update 3 (7/7/2023):
+
+As promised, within a few days only, we have already hit our next milestone. Model B, which aims to perform Answer Aware Question Generation (AAQG), is now ready. The model is a fine tuned variant of `t5-base`, trained on the [Stanford Question Answering Dataset (SQuAD) v1.1](https://rajpurkar.github.io/SQuAD-explorer/explore/1.1/dev/). The model was trained for 30 epochs with an AdamW optimizer with a StepLR scheduler and a learning rate of 1e-4. This time, we used [this](https://huggingface.co/datasets/squad) version of SQuAD from 🤗 hub and did not carry out any sampling of the data for training. Training was once again carried out using the very reliable and flexible PyTorch 🔥. Our models have been uploaded to the Google Drive linked in the beginning (access will be restricted and granted on a case to case basis until the completion of the project). 
+
+### What's Next?
+Due to a restructuring in our project due to a change in the availability period of GPU for the project, we defer further experimentation and enhancements related to AI as a secondary task, and focus on the development of an application using the two wonderful models we have right now. Our next update will give you a glimpse of how Model A and Model B work in combination for the task of QnA generation. Stay tuned ;)
+
