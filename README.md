@@ -1,8 +1,6 @@
-<<<<<<< HEAD
 # EduAid
 A tool that can auto-generate short quizzes on the basis of the content provided.
-=======
-# EduAid- Experiments
+# EduAid- Updates
 This branch contains the updates on the AI experiments as well as the development involved in the EduAid project. The AI models may be accessed [here](https://drive.google.com/drive/folders/12Srtnl8zqjO3_MEP85t6X44alc7AGcol?usp=sharing) (on a request basis). 
 
 ## Update 1 (3/6/2023): 
@@ -47,4 +45,3 @@ As promised, within a few days only, we have already hit our next milestone. Mod
 ### What's Next?
 Due to a restructuring in our project due to a change in the availability period of GPU for the project, we defer further experimentation and enhancements related to AI as a secondary task, and focus on the development of an application using the two wonderful models we have right now. Our next update will give you a glimpse of how Model A and Model B work in combination for the task of QnA generation. Stay tuned ;)
 
->>>>>>> exp
