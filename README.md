@@ -45,3 +45,34 @@ As promised, within a few days only, we have already hit our next milestone. Mod
 ### What's Next?
 Due to a restructuring in our project due to a change in the availability period of GPU for the project, we defer further experimentation and enhancements related to AI as a secondary task, and focus on the development of an application using the two wonderful models we have right now. Our next update will give you a glimpse of how Model A and Model B work in combination for the task of QnA generation. Stay tuned ;)
 
+
+## Update 4 (8/7/2023) [Demo of AI models]:
+
+We now have a script, `Testing/generate_qa.py` that one can use to generate questions and answers from a given PDF file! The steps are as follows:
+
+1. Request access to the models on our [Google Drive](https://drive.google.com/drive/folders/12Srtnl8zqjO3_MEP85t6X44alc7AGcol?usp=sharing) by either [email](mailto:prarabdhshukla@iitbhilai.ac.in) or by messaging on our [Discord](https://discord.com/channels/1022871757289422898/1073262393670504589) channel with your reason of use. 
+
+2. Add your pdf file in the `Testing/data` directory
+
+3. Run `generate_qa.py`. It has the following cli arguments which need to be passed:
+
+    a. `--file_name`: This is the file name of the PDF file
+
+    b. `--save_dir` : This is the directory where the generated QnA is saved. By default it is the `Testing/qna` directory
+
+    c. `--save_as`: Name of the .txt file which will contain the generated QnA
+
+    d. `--num_pages`: This is the number of pages to read from the PDF
+
+    e. `--start_page` (optional): This is the page where the reading should start. By default it is 1
+
+
+### What's Next?
+Due to a restructuring in our project plan, we'll be focussing on the application development of this project first and defer further experimentation and enhancements in AI for now. Also, we are working on making the current models publicly available and will soon make the access restriction free. 
+
+
+
+
+
+
+
