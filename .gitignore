@@ -13,3 +13,5 @@ Model_training/AnswerAwareQG/fine_tuned_t5_model_aaqg
 Model_training/AnswerAwareQG/fine_tuned_t5_model_aaqg_2
 Model_training/AnswerAwareQG/fine_tuned_t5_tokenizer_aaqg
 Model_training/AnswerAwareQG/fine_tuned_t5_tokenizer_aaqg_2
+backend/models
+backend/tokenizers
