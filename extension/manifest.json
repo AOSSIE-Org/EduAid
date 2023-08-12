@@ -1,25 +1,32 @@
 {
   "manifest_version": 3,
-  "name": "EduAid",
+  "name": "EduAid: AI Quiz Generator",
   "version": "1.0",
-  "description": "Generate questions and answers using a server.",
-  "permissions": [
-    "activeTab",
-    "scripting"
-  ],
-  "host_permissions": [
-    "http://127.0.0.1:8000/"
-  ],
+  "description": "Generate quizzes with AI-powered questions.",
+  "permissions": ["activeTab", "storage"],
+  "host_permissions":["http://127.0.0.1:8000/*"],
+  "icons": {
+    "16": "icon16.png"
+  },
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "index.html",
     "default_icon": {
       "16": "icon16.png"
     }
   },
-  "content_scripts": [
+  "web_accessible_resources": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "resources": [
+        "text_input.html",
+        "question_generation.html",
+        "about.html",
+        "index.html",
+        "index.js",
+        "text_input.js",
+        "question_generation.js",
+        "icon16.png"
+      ],
+      "matches": ["<all_urls>"]
     }
   ]
 }

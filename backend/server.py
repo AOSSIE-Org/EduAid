@@ -92,7 +92,10 @@ class QARequestHandler(http.server.BaseHTTPRequestHandler):
 
         qa=generate_qa(input_text)
 
+        print(qa)
+
         self.wfile.write(json.dumps(qa).encode("utf-8"))
+        self.wfile.flush()
 
 def main():
     with socketserver.TCPServer((IP, PORT), QARequestHandler) as server:
