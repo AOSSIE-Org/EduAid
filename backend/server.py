@@ -3,6 +3,7 @@ import socketserver
 import urllib.parse
 import torch
 from transformers import T5ForConditionalGeneration, T5Tokenizer, pipeline
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import json
 
 IP='127.0.0.1'
@@ -10,7 +11,8 @@ PORT=8000
 
 def summarize(text):
     summarizer=pipeline('summarization')
-    return summarizer(text)[0]['summary_text']
+    return summarizer(text,max_length=110)[0]['summary_text']
+
 
 def generate_question(context,answer,model_path, tokenizer_path):
     model = T5ForConditionalGeneration.from_pretrained(model_path)
@@ -57,6 +59,7 @@ def generate_qa(text):
 
     # text_summary=summarize(text)
     text_summary=text
+    
 
     modelA, modelB='./models/modelA','./models/modelB'
     tokenizerA, tokenizerB= './tokenizers/tokenizerA', './tokenizers/tokenizerB'
@@ -86,13 +89,15 @@ class QARequestHandler(http.server.BaseHTTPRequestHandler):
         content_length=int(self.headers["Content-Length"])
         post_data=self.rfile.read(content_length).decode('utf-8')
 
-        parsed_data=urllib.parse.parse_qs(post_data)
+        # parsed_data=urllib.parse.parse_qs(post_data)
+        parsed_data = json.loads(post_data)
 
-        input_text=parsed_data.get('input_text', [""])[0]
+
+        input_text=parsed_data.get('input_text')
 
         qa=generate_qa(input_text)
 
-        print(qa)
+
 
         self.wfile.write(json.dumps(qa).encode("utf-8"))
         self.wfile.flush()
