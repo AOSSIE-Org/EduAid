@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
     const qaPairs=JSON.parse(localStorage.getItem("qaPairs"));
 
+
     const questionList=document.getElementById("question-list");
 
     for (const [question, answer] of Object.entries(qaPairs)) {

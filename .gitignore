@@ -15,3 +15,5 @@ Model_training/AnswerAwareQG/fine_tuned_t5_tokenizer_aaqg
 Model_training/AnswerAwareQG/fine_tuned_t5_tokenizer_aaqg_2
 backend/models
 backend/tokenizers
+backend/sample_input.py
+extension/pdfjs-3.9.179-dist
