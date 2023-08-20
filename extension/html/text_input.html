@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>EduAid: Text Input</title>
+        <!-- <link href="https://fonts.googleapis.com/css?family=Roboto:400,500" rel="stylesheet">
+        <link rel="stylesheet" href="./popup.css"> -->
+        <script src="../pdfjs-3.9.179-dist/build/pdf.js"></script>
+        <link href='https://fonts.googleapis.com/css?family=Inter' rel='stylesheet'>
+        <link rel="stylesheet" href="../styles/text_input.css">
+    </head>
+    <body>
+        <header>
+            <img src="../assets/aossie_logo32.png" alt="AOSSIE logo">
+            <h1>EduAid</h1>
+        </header>
+        <main>
+            <h3>Generate QnA</h3>
+            <textarea id="text-input" placeholder="Paste your text here"></textarea>
+            <div>
+                <input type="file" id="file-upload" accept=".pdf" hidden>
+                <label for="file-upload" id="upload-label">Upload PDF &#128196</label>
+            </div>
+            <div class="button-container">
+                <button id="back-button">Back</button>
+                <button id="next-button">Next</button>
+            </div>
+            <!-- ******************* -->
+            <div id="loading-screen" class="loading-screen">
+                <div class="loading-spinner"></div>
+            </div>
+            <!-- ****************** -->
+        </main>
+        <script src="../js/text_input.js"></script>
+    </body>
+</html>

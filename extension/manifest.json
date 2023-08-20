@@ -6,25 +6,29 @@
   "permissions": ["activeTab", "storage"],
   "host_permissions":["http://127.0.0.1:8000/*"],
   "icons": {
-    "16": "icon16.png"
+    "16": "./assets/aossie_logo.png"
   },
   "action": {
-    "default_popup": "index.html",
+    "default_popup": "./html/index.html",
     "default_icon": {
-      "16": "icon16.png"
+      "16": "./assets/aossie_logo16.png",
+      "32": "./assets/aossie_logo32.png",
+      "64": "./assets/aossie_logo64.png"
     }
   },
   "web_accessible_resources": [
     {
       "resources": [
-        "text_input.html",
-        "question_generation.html",
-        "about.html",
-        "index.html",
-        "index.js",
-        "text_input.js",
-        "question_generation.js",
-        "icon16.png"
+        "./html/text_input.html",
+        "./html/question_generation.html",
+        "./html/about.html",
+        "./html/index.html",
+        "./html/view_questions.html",
+        "./js/index.js",
+        "./js/text_input.js",
+        ".js/view_questions.js",
+        "./js/question_generation.js",
+        "./assets/aossie_logo.png"
       ],
       "matches": ["<all_urls>"]
     }

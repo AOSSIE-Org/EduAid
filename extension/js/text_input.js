@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const backButton = document.getElementById("back-button");
     const textInput = document.getElementById("text-input");
     const fileInput = document.getElementById("file-upload");
+    const loadingScreen = document.getElementById("loading-screen");
   
   
     fileInput.addEventListener("change", async function () {
@@ -28,6 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     nextButton.addEventListener("click", async function () {
+      loadingScreen.style.display = "flex"
       const inputText = textInput.value;
   
       if (inputText.trim() === "" && fileInput.files.length > 0) {
@@ -42,11 +44,12 @@ document.addEventListener("DOMContentLoaded", function () {
         await sendToBackend(inputText,"text");
       } else {
         alert("Please enter text or upload a PDF file.");
+        loadingScreen.style.display = "none";
       }
     });
   
     backButton.addEventListener("click", function () {
-      window.location.href = "index.html";
+      window.location.href = "../html/index.html";
     });
   
     async function sendToBackend(data, dataType) {
@@ -67,9 +70,10 @@ document.addEventListener("DOMContentLoaded", function () {
         const responseData = await response.json();
         // console.log("Response data:\n"+responseData);
         localStorage.setItem("qaPairs", JSON.stringify(responseData));
-        window.location.href = "question_generation.html";
+        window.location.href = "../html/question_generation.html";
       } else {
         console.error("Backend request failed.");
       }
+      loadingScreen.style.display = "none";
     }
   });
