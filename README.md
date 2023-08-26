@@ -1,78 +1,71 @@
-# EduAid
-A tool that can auto-generate short quizzes on the basis of the content provided.
-# EduAid- Updates
-This branch contains the updates on the AI experiments as well as the development involved in the EduAid project. The AI models may be accessed [here](https://drive.google.com/drive/folders/12Srtnl8zqjO3_MEP85t6X44alc7AGcol?usp=sharing) (on a request basis). 
+# EduAid: AI Quiz Generation🚀
+Online learning has taken the front seat in the post pandemic age. With the advent of sophisticated AI architectures like the Transformers, it is but natural that AI would find its way into education. Learning online via YouTube or MOOC platforms is often done as a method of self learning. The biggest obstacle faced by a student in self learning is the lack of attention span. An online tool that can generate short quizzes on input educational content can be of great use to teachers and students alike as it can help retain important information, frame questions and quickly revise large chunks of content. 
 
-## Update 1 (3/6/2023): 
-### KeyPhrase Detection (Model A)
-For keyphrase detection, we currently use a combination of [KeyBERT](https://github.com/MaartenGr/KeyBERT) and [KeyPhraseVectorizers](https://github.com/TimSchopf/KeyphraseVectorizers).
-In the coming days, we plan to also compare the performance of this setup to that of fine-tuned T5 and/or fine tuned BERT. Right now, the key idea is that, the KeyPhraseVectorizer,
-performs POS-tagging on the input and extracts the noun phrases. The noun phrases are then fed to the KeyBERT package in the form of a vectorizer and then they are used 
-(instead of the standard n-grams) as the candidate key phrases. These key-phrases can be then ranked according to the similarity of their BERT embeddings to the BERT embedding
-of the input document. The top N are chosen as the keyphrases. 
+EduAid is one such project which is currently available in the form of a browser extension. 
 
-### Answer Aware Question Generation[AAQG] (Model B)
-For Answer Aware Question Generation, we fine tuned T5-base for this task on a sample of 100 data points of SQuAD v2.0 for 3 epochs using the AdamW optimizer. This is a baseline
-for testing the feasibility and ensuring T5 is a suitable fit for our task.
-### What's Next?
+## Installation
 
-After setting up AWS, we will fine tune T5 and BERT for both these tasks (Model A and Model B) and expect better performance. Stay tuned for more updates!
+Currently, the extension is not deployed, so it can only run locally. To run the extension locally, clone the github repo using:
 
 
-## Update 2 (1/7/2023):
-After a minor setback due AWS not being setup, we finally were able to procure GPU, thanks to Dr Soumajit Pramanik at the Indian Institute of Technology, Bhilai, who was thankful enough to let us use one of his high end workstations. 
+```
+git clone https://github.com/AOSSIE-Org/EduAid.git
+```
 
-### KeyPhrase Detection (Model A)
+Now move to the `backend` directory and make a new directory that will store the models.
 
-For KeyPhrase Detection, we fine tuned T5 to perform the task. Due to inconsistent availability of resources and due to having trained on multiple platforms, our training was not a smooth path. The model was frequently checkpointed to ensure transferrability between two different machines. The scripts used for this training can be found at ```Model_training/Keyphrase Detection```. 
+```
+cd backend && mkdir models && cd models && mkdir modelA && mkdir modelB
+```
 
-Our stack mainly included PyTorch 🔥 and HuggingFace 🤗. 
-The model was trained on the [KP20K dataset](https://huggingface.co/datasets/taln-ls2n/kp20k) which we used from 🤗 hub. We used an AdamW optimizer with a learning rate of 2e-5, with a StepLR scheduler for the learning rate, with step size 1 and gamma=0.1. We trained on a 25% sample of the data as training on the entire dataset seemed quite GPU intensive for our limited resources. 
+Download the model files from 🤗 Hub: [model A](https://huggingface.co/prarabdhshukla/fine-tuned-t5-keyphrase-detection) [model B](https://huggingface.co/prarabdhshukla/fine-tuned-t5-answer-aware-question-generation/tree/main) and place them in the respective folders. 
 
-For the above described setting, we trained the model for around 40 epochs. We achieved a recall of 20%, which seems good enough, because our objective is anyways not to reproduce all the keyphrases given in the dataset.
+Finally, the `models` should look like this:
 
-As a qualitative analysis of our model, we tested it on an NPTEL course transcript, which is very noisy and does not even have some complete sentences to try and see how the model would perform with a transcript (which is our end goal), and to our delight, the model was able to recognize the correct keyphrases from the topic of the lecture. 
+```
++---models
+ª   +---modelA
+ª   ª       config.json
+ª   ª       generation_config.json
+ª   ª       pytorch_model.bin
+ª   ª
+ª   +---modelB
+ª           config.json
+ª           generation_config.json
+ª           pytorch_model.bin
+```
 
-### What's Next?
-With the release of Update 2.0, our remote server is already grinding on training a model for answer aware question generation (model B). Also, we have identified some good first issues (GFS), which we will open up very soon in the coming days. Interested contributors may keep an eye on the repo for this, as this could be an opportunity to contribute to the project! The next update is surely a much much shorter wait than the second one. Stay tuned! 
+Now run the script `server.py`
 
+```
+cd .. && python3 server.py
+```
 
+Now go the extensions page of your browser and load the directory `EduAid/extension` and you're ready to roll! 
 
-## Update 3 (7/7/2023):
+To load an unpacked directory as an extension in a browser, you might have to turn on *Developer mode* on your browser.
 
-As promised, within a few days only, we have already hit our next milestone. Model B, which aims to perform Answer Aware Question Generation (AAQG), is now ready. The model is a fine tuned variant of `t5-base`, trained on the [Stanford Question Answering Dataset (SQuAD) v1.1](https://rajpurkar.github.io/SQuAD-explorer/explore/1.1/dev/). The model was trained for 30 epochs with an AdamW optimizer with a StepLR scheduler and a learning rate of 1e-4. This time, we used [this](https://huggingface.co/datasets/squad) version of SQuAD from 🤗 hub and did not carry out any sampling of the data for training. Training was once again carried out using the very reliable and flexible PyTorch 🔥. Our models have been uploaded to the Google Drive linked in the beginning (access will be restricted and granted on a case to case basis until the completion of the project). 
+**Note:** This extension was tested on Google Chrome and Brave. The instructions on how to run it on Chrome can be found [here](https://developer.chrome.com/docs/extensions/mv3/getstarted/development-basics/). For Brave, the steps are the same with minor differences.
 
-### What's Next?
-Due to a restructuring in our project due to a change in the availability period of GPU for the project, we defer further experimentation and enhancements related to AI as a secondary task, and focus on the development of an application using the two wonderful models we have right now. Our next update will give you a glimpse of how Model A and Model B work in combination for the task of QnA generation. Stay tuned ;)
+## How to use
 
+After opening the extension and clicking on the 'Fire up!' button, we currently have support for two methods of accepting input:
 
-## Update 4 (8/7/2023) [Demo of AI models]:
+1. Typing out the text or by pasting from the clipboard
+2. By uploading a PDF
 
-We now have a script, `Testing/generate_qa.py` that one can use to generate questions and answers from a given PDF file! The steps are as follows:
+Then after clicking the next button, the questions are generated, which can either be viewed in the extension popup itself or can be downloaded as a `.txt` file.
 
-1. Request access to the models on our [Google Drive](https://drive.google.com/drive/folders/12Srtnl8zqjO3_MEP85t6X44alc7AGcol?usp=sharing) by either [email](mailto:prarabdhshukla@iitbhilai.ac.in) or by messaging on our [Discord](https://discord.com/channels/1022871757289422898/1073262393670504589) channel with your reason of use. 
+![eduaid-demo](./readme-assets/EduAid-demo.gif)
 
-2. Add your pdf file in the `Testing/data` directory
+**Note:** If your machine has GPU, the inference time should be faster. On CPU, it can take from a few seconds to a few minutes for inference. On an AMD RYZEN 5 8GB CPU with 6 cores, the inference time is usually 45-70 seconds. The inference time may differ depending on the specifications of your machine.
 
-3. Run `generate_qa.py`. It has the following cli arguments which need to be passed:
+## How to contribute
 
-    a. `--file_name`: This is the file name of the PDF file
+This is the first year of the project. While some may have their own ideas on how to contribute, for the newcomers to the repository, you may follow the following steps: 
 
-    b. `--save_dir` : This is the directory where the generated QnA is saved. By default it is the `Testing/qna` directory
+1. First get to know the organization and the project by visiting the [Official Website](http://aossie.gitlab.io/)
 
-    c. `--save_as`: Name of the .txt file which will contain the generated QnA
-
-    d. `--num_pages`: This is the number of pages to read from the PDF
-
-    e. `--start_page` (optional): This is the page where the reading should start. By default it is 1
-
-
-### What's Next?
-Due to a restructuring in our project plan, we'll be focussing on the application development of this project first and defer further experimentation and enhancements in AI for now. Also, we are working on making the current models publicly available and will soon make the access restriction free. 
-
-
-
-
-
+2. Visit the [Discord Channel](https://discord.com/channels/1022871757289422898/1073262393670504589) for interacting with the community!
 
 
