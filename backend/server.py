@@ -62,7 +62,8 @@ def generate_qa(text):
     
 
     modelA, modelB='./models/modelA','./models/modelB'
-    tokenizerA, tokenizerB= './tokenizers/tokenizerA', './tokenizers/tokenizerB'
+    # tokenizerA, tokenizerB= './tokenizers/tokenizerA', './tokenizers/tokenizerB'
+    tokenizerA, tokenizerB= 't5-base', 't5-base'
 
     answers=generate_keyphrases(text_summary, modelA, tokenizerA)
 
