@@ -40,10 +40,12 @@ p{
     padding-right: 1px;
     text-align: left;
 }
-#text-input{
-  height: 30px;
+#text-input {
+  height: 150px; 
   width: 150px;
   margin-bottom: 10px;
+  resize: vertical;
+  overflow: auto; 
 }
 :root {
   --yellow: #e8f222;
