@@ -1,3 +1,7 @@
+import sys
+
+sys.path.append('/home/faresh9/.local/lib/python3.10/site-packages')
+
 import http.server
 import socketserver
 import urllib.parse
