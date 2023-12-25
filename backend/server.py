@@ -1,4 +1,3 @@
-
 import http.server
 import socketserver
 import urllib.parse
