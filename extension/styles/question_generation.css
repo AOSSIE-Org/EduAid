@@ -1,76 +1,108 @@
-body {
-  background: linear-gradient(45deg, #00d2ff, #3a7bd5);
-  font-family: 'Inter', sans-serif;
-  font-weight: 400;
-  color: #fff;
-  margin: 0;
+body{
+  /* background-color: rgb(18, 89, 231); */
+  background-color: #FBAB7E;
+  background-image: linear-gradient(62deg, #FBAB7E 0%, #F7CE68 100%);
+  font-family: 'Inter';
+  font-weight: 400; /* Regular */
 }
 
-header {
+header{
   display: flex;
   align-items: center;
-  padding: 20px;
+  padding: 10px 20px;
+  
 }
-
-img {
-  width: 60px;
-  height: 60px;
-  margin-right: 20px;
+img{
+  width: 32px;
+  height: 32px;
+  margin-right: 10px;
+  
 }
-
 h1 {
-  font-size: 36px;
-  margin-bottom: 10px;
+  font-size: 24px;
 }
-
 main {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: calc(100vh - 100px);
-  text-align: center;
+  /* height: calc(101vh - 102px); Adjust this height value as needed */
 }
 
-h3 {
-  font-size: 32px;
-  margin-bottom: 20px;
+h2 {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+p{
+  margin-left: 2px;
+  margin-right: 2px;
+  padding-left: 1px;
+  padding-right: 1px;
+  text-align: left;
+}
+#text-input{
+height: 30px;
+width: 150px;
+margin-bottom: 10px;
+}
+:root {
+--yellow: #e8f222;
+--green: #82ea27;
+--black: #000;
 }
 
-#button-container {
-  display: flex;
-  gap: 20px;
-}
+
+/* Style the button */
 
 button {
-  background: linear-gradient(to right, #fddb92 0%, #d1fdff 100%);
-  border: none;
-  border-radius: 40px;
-  box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.2);
-  color: #333;
-  cursor: pointer;
-  font-size: 24px;
-  padding: 15px 40px;
-  outline: none;
-  transition: background-position 0.7s ease;
-}
+display: inline-block;
+background: linear-gradient(to right, var(--yellow) 0%, var(--green) 50%, var(--yellow) 100%);
+background-size: 500%;
+border: none;
+border-radius: 2rem;
+box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+color: var(--black);
+cursor: pointer;
+/* font: 1.5em Raleway, sans-serif;
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale; */
+height: 1.5rem;
+letter-spacing: 0.05em;
+outline: none;
+-webkit-tap-highlight-color: transparent;
+-webkit-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+user-select: none;
+width: 3rem;
+transition: background-position 0.7s ease; /* Add transition for background position */
+margin-bottom: 1px;
 
+}
 button:hover {
-  background-position: 100%;
+  background-position: 100%; /* Move the background gradient on hover */
 }
 
-#view-questions-button {
-  background: linear-gradient(to right, #fc575e 0%, #f7b42c 100%);
-  color: #fff;
+/* Add animation for button hover effect */
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100%;
+  }
 }
 
-#save-button {
-  background: linear-gradient(to right, #41b883 0%, #14aaf5 100%);
-  color: #fff;
+#save-button{
+  width:auto
 }
-
-#back-button {
-  background: linear-gradient(to right, #fc575e 0%, #f7b42c 100%);
-  color: #fff;
+#view-questions-button{
+  width: auto;
 }
-
+#button-container{
+  display: inline-block;
+  margin-bottom: 3px;
+}
+h3{
+  font: 18px;
+}

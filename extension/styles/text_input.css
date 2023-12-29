@@ -1,137 +1,154 @@
-body {
-  background: linear-gradient(45deg, #3a1c71, #d76d77, #ffaf7b);
-  font-family: 'Inter', sans-serif;
-  font-weight: 400;
-  color: #fff;
-  margin: 0;
+body{
+  /* background-color: rgb(18, 89, 231); */
+  background-color: #FBAB7E;
+  background-image: linear-gradient(62deg, #FBAB7E 0%, #F7CE68 100%);
+  font-family: 'Inter';
+  font-weight: 400; /* Regular */
 }
 
-header {
+header{
   display: flex;
   align-items: center;
-  padding: 20px;
+  padding: 10px 20px;
+  
 }
-
-img {
-  width: 60px;
-  height: 60px;
-  margin-right: 20px;
+img{
+  width: 32px;
+  height: 32px;
+  margin-right: 10px;
+  
 }
-
 h1 {
-  font-size: 36px;
-  margin-bottom: 10px;
+  font-size: 24px;
 }
-
 main {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: calc(100vh - 100px);
-  text-align: center;
+  /* height: calc(101vh - 102px); Adjust this height value as needed */
 }
 
-h3 {
-  font-size: 32px;
-  margin-bottom: 20px;
+h2 {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+p{
+  margin-left: 2px;
+  margin-right: 2px;
+  padding-left: 1px;
+  padding-right: 1px;
+  text-align: left;
+}
+#text-input{
+height: 30px;
+width: 150px;
+margin-bottom: 10px;
+}
+:root {
+--yellow: #e8f222;
+--green: #82ea27;
+--black: #000;
 }
 
-#text-input {
-  height: 50px;
-  width: 80%;
-  font-size: 18px;
-  margin-bottom: 20px;
-  padding: 10px;
-  border: none;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.8);
-  resize: vertical; /* Allow vertical resizing */
-  overflow: hidden; /* Hide scrollbars */
-}
 
-#file-upload {
-  display: none;
-}
-
-label {
-  display: inline-block;
-  background: linear-gradient(to right, #fddb92 0%, #d1fdff 100%);
-  border: none;
-  border-radius: 20px;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
-  color: #333;
-  cursor: pointer;
-  font-size: 18px;
-  padding: 15px 40px;
-  outline: none;
-  transition: background-position 0.7s ease;
-  margin-bottom: 20px;
-}
-
-label:hover {
-  background-position: 100%;
-}
-
-.button-container {
-  display: flex;
-  gap: 20px;
-}
+/* Style the button */
 
 button {
-  background: linear-gradient(to right, #41b883 0%, #14aaf5 100%);
-  border: none;
-  border-radius: 40px;
-  box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.2);
-  color: #fff;
-  cursor: pointer;
-  font-size: 24px;
-  padding: 15px 40px;
-  outline: none;
-  transition: background-position 0.7s ease;
+display: inline-block;
+background: linear-gradient(to right, var(--yellow) 0%, var(--green) 50%, var(--yellow) 100%);
+background-size: 500%;
+border: none;
+border-radius: 2rem;
+box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+color: var(--black);
+cursor: pointer;
+/* font: 1.5em Raleway, sans-serif;
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale; */
+height: 1.5rem;
+letter-spacing: 0.05em;
+outline: none;
+-webkit-tap-highlight-color: transparent;
+-webkit-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+user-select: none;
+width: 3rem;
+transition: background-position 0.7s ease; /* Add transition for background position */
+margin-bottom: 1px;
+
+}
+label {
+display: inline-block;
+background: linear-gradient(to right, var(--yellow) 0%, var(--green) 50%, var(--yellow) 100%);
+background-size: 500%;
+border: none;
+border-radius: 1rem;
+box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+color: var(--black);
+cursor: pointer;
+ font: 1em Inter, sans-serif;
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale; 
+height: 1rem;
+letter-spacing: 0.05em;
+outline: none;
+-webkit-tap-highlight-color: transparent;
+-webkit-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+user-select: none;
+width: 7rem;
+transition: background-position 0.7s ease; 
+margin-bottom: 10px;
+
+}
+#upload-label{
+text-align: center;
+align-items: center;
+margin-top: 2px;
+}
+/* Style the button on hover */
+label:hover, button:hover {
+background-position: 100%; /* Move the background gradient on hover */
 }
 
-button:hover {
+/* Add animation for button hover effect */
+@keyframes gradient {
+0% {
+  background-position: 0% 50%;
+}
+100% {
   background-position: 100%;
 }
-
-#back-button {
-  background: linear-gradient(to right, #fc575e 0%, #f7b42c 100%);
 }
-
-#next-button {
-  background: linear-gradient(to right, #41b883 0%, #14aaf5 100%);
-}
-
 .loading-screen {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 9999;
-  justify-content: center;
-  align-items: center;
+display: none;
+position: absolute;
+top: 0;
+left: 10;
+width: 100%;
+height: 100%;
+background-color: rgba(0, 0, 0, 0.5);
+z-index: 9999;
+justify-content: center;
+align-items: center;
+
 }
 
 .loading-spinner {
-  border: 4px solid #fddb92;
-  border-top: 4px solid #d1fdff;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  align-self: center;
-  animation: spin 1s linear infinite;
-  margin-left: 10px;
+border: 4px solid var(--yellow);
+border-top: 4px solid var(--green);
+border-radius: 50%;
+width: 40px;
+height: 40px;
+align-self: center;
+animation: spin 1s linear infinite;
+margin-left: 10px;
 }
 
 @keyframes spin {
-  0% {
-      transform: rotate(0deg);
-  }
-  100% {
-      transform: rotate(360deg);
-  }
+0% { transform: rotate(0deg); }
+100% { transform: rotate(360deg); }
 }
