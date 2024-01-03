@@ -53,6 +53,7 @@ def generate_keyphrases(abstract, model_path,tokenizer_path):
     input_ids=tokenizer.encode(input_text, truncation=True,padding='max_length',max_length=512,return_tensors='pt').to(device)
     output=model.generate(input_ids)
     keyphrases= tokenizer.decode(output[0],skip_special_tokens=True).split(',')
+    # print("keyphrases generated")
     return [x.strip() for x in keyphrases if x != '']
 
 def generate_qa(text):
@@ -65,40 +66,44 @@ def generate_qa(text):
     # tokenizerA, tokenizerB= './tokenizers/tokenizerA', './tokenizers/tokenizerB'
     tokenizerA, tokenizerB= 't5-base', 't5-base'
 
-    answers=generate_keyphrases(text_summary, modelA, tokenizerA)
+    key_phrases = generate_keyphrases(text_summary, modelA, tokenizerA)
 
-    qa={}
-    for answer in answers:
-        question= generate_question(text_summary, answer, modelB, tokenizerB)
-        qa[question]=answer
+    data = {
+        "one_word": []
+    }
+    for key_phrase in key_phrases:
+        question= generate_question(text_summary, key_phrase, modelB, tokenizerB)
+        answer = key_phrase
+        entry = {
+            "question": question,
+            "answer": answer
+        }
+        data["one_word"].append(entry)
+    # print(data)
+    return data
     
-    return qa
-    
-
-
-
-
 
 class QARequestHandler(http.server.BaseHTTPRequestHandler):
-
+    def do_OPTIONS(self):
+        self.send_response(200)
+        print("options")
+        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-type")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
     def do_POST(self):
-
         self.send_response(200)
         self.send_header("Content-type", "text/plain")
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
 
         content_length=int(self.headers["Content-Length"])
         post_data=self.rfile.read(content_length).decode('utf-8')
-
-        # parsed_data=urllib.parse.parse_qs(post_data)
         parsed_data = json.loads(post_data)
-
-
         input_text=parsed_data.get('input_text')
 
         qa=generate_qa(input_text)
-
-
+        # print("qa generated")
 
         self.wfile.write(json.dumps(qa).encode("utf-8"))
         self.wfile.flush()
@@ -110,5 +115,3 @@ def main():
 
 if __name__=="__main__":
     main()
-
-        
