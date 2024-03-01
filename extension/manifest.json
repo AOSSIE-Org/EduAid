@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "EduAid: AI Quiz Generator",
+  "version": "1.0",
+  "description": "Generate quizzes with AI-powered questions.",
+  "permissions": ["activeTab", "storage"],
+  "host_permissions":["http://localhost:8000/*","http://127.0.0.1:8000/*","http://localhost:8000/"],
+  "icons": {
+    "16": "./assets/aossie_logo.png"
+  },
+  "action": {
+    "default_popup": "./html/index.html",
+    "default_icon": {
+      "16": "./assets/aossie_logo16.png",
+      "32": "./assets/aossie_logo32.png",
+      "64": "./assets/aossie_logo64.png"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "./html/text_input.html",
+        "./html/question_generation.html",
+        "./html/about.html",
+        "./html/index.html",
+        "./html/view_questions.html",
+        "./js/index.js",
+        "./js/text_input.js",
+        ".js/view_questions.js",
+        "./js/question_generation.js",
+        "./assets/aossie_logo.png"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
