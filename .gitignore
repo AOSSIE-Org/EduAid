@@ -36,3 +36,4 @@ backend/tokenizers
 backend/sample_input.py
 extension/pdfjs-3.9.179-dist
 backend/credentials.json
+backend/token.json

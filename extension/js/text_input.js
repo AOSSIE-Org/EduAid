@@ -33,10 +33,6 @@ document.addEventListener("DOMContentLoaded", function () {
     await generateQuestion("text");
   });
 
-  mcqButton.addEventListener("click", async function () {
-    await generateQuestion("mcq");
-  });
-
   createForm.addEventListener("click", async function () {
     await generateQuestion("form");
   });
