@@ -1,10 +1,6 @@
 import http.server
 import json
-import random
 import socketserver
-import openai
-import pandas as pd
-import requests
 import torch
 from models.modelC.distractor_generator import DistractorGenerator
 from transformers import T5ForConditionalGeneration, T5Tokenizer, pipeline
@@ -22,40 +18,6 @@ PORT = 8000
 def summarize(text):
     summarizer = pipeline("summarization")
     return summarizer(text, max_length=110)[0]["summary_text"]
-
-def get_distractors_conceptnet(word, context):
-    word = word.lower()
-    original_word = word
-    if len(word.split()) > 0:
-        word = word.replace(" ", "_")
-    distractor_list = []
-    # context_sentences = context.split(".")
-    try:
-        relationships = ["/r/PartOf", "/r/IsA", "/r/HasA"]
-
-        for rel in relationships:
-            url = f"http://api.conceptnet.io/query?node=/c/en/{word}/n&rel={rel}&start=/c/en/{word}&limit=5"
-            if context:
-                url += f"&context={context}"
-
-            obj = requests.get(url).json()
-
-            for edge in obj["edges"]:
-                word2 = edge["end"]["label"]
-                if (
-                    word2 not in distractor_list
-                    and original_word.lower() not in word2.lower()
-                ):
-                    distractor_list.append(word2)
-        return distractor_list
-
-    except json.decoder.JSONDecodeError as e:
-        print(f"Error decoding JSON from ConceptNet API: {e}")
-        return distractor_list
-    except requests.RequestException as e:
-        print(f"Error making request to ConceptNet API: {e}")
-        return distractor_list
-
 
 def generate_question(context, answer, model_path, tokenizer_path):
     model = T5ForConditionalGeneration.from_pretrained(model_path)
@@ -179,37 +141,6 @@ def generate_qa(self, text, question_type):
         )
         return qa
 
-    elif question_type == "mcq":
-        text_summary = text
-
-        answers = generate_keyphrases(text_summary, modelA, tokenizerA)
-
-        qa = {}
-        for answer in answers:
-            question = generate_question(text_summary, answer, modelB, tokenizerB)
-            conceptnet_distractors = get_distractors_conceptnet(answer, text_summary)
-            t5_distractors = self.distractor_generator.generate(
-                5, answer, question, text_summary
-            )
-
-            dist_temp = list(set(conceptnet_distractors + t5_distractors))
-            dist = [x for x in dist_temp if x.lower() != answer.lower()]
-            print(conceptnet_distractors)
-
-            if len(dist) < 1:
-                distractors = []
-                qa[question] = answer
-            else:
-                distractors = random.sample(dist, min(3, len(dist)))
-                options = distractors + [answer]
-                random.shuffle(options)
-
-                formatted_question = f"{question} Options: {', '.join(options)}"
-
-                qa[formatted_question] = answer
-
-        return qa
-
 
 class QARequestHandler(http.server.BaseHTTPRequestHandler):
 
@@ -229,30 +160,6 @@ class QARequestHandler(http.server.BaseHTTPRequestHandler):
         content_length = int(self.headers["Content-Length"])
         post_data = self.rfile.read(content_length).decode("utf-8")
         parsed_data = json.loads(post_data)
-
-        if self.path == "/generate_mcqs":
-            context = parsed_data.get("context")
-            api_key = parsed_data.get("api_key")
-
-            ques_type = parsed_data.get("question_type")
-            try:
-                openai.api_key = api_key
-                prompt = f"Given the following text:\n\n{context}\n\nPlease generate at least 3 {ques_type} type questions related to the provided information. For each question, include options and the correct answer in the format Question:, Option:, Answer:. Ensure the questions are clear, concise, and test the understanding of key concepts in the text."
-                response = openai.Completion.create(
-                    model="text-davinci-002",
-                    prompt=prompt,
-                    temperature=0.7,
-                    max_tokens=1024,
-                )
-                choices = response["choices"]
-                if choices:
-                    choice = choices[0]
-                    mcqs = choice["text"]
-
-                    self.wfile.write(json.dumps(mcqs).encode("utf-8"))
-                    self.wfile.flush()
-            except Exception as e:
-                print(f"Error processing data: {e}")
         if self.path == "/":
             input_text = parsed_data.get("input_text")
             question_type = self.headers.get("Question-Type", "text")
