@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", function () {
   document
     .getElementById("generate-quiz-button")
     .addEventListener("click", function () {
-      window.location.href = "../html/openai.html";
+      window.location.href = "../html/openai_input_text.html";
     });
 
   async function generateQuestion(questionType) {
