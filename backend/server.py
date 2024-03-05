@@ -2,18 +2,10 @@ import http.server
 import json
 import random
 import socketserver
-import openai
-import pandas as pd
 import requests
 import torch
 from models.modelC.distractor_generator import DistractorGenerator
 from transformers import T5ForConditionalGeneration, T5Tokenizer, pipeline
-
-import webbrowser
-
-from apiclient import discovery
-from httplib2 import Http
-from oauth2client import client, file, tools
 
 IP = "127.0.0.1"
 PORT = 8000
@@ -116,68 +108,6 @@ def generate_qa(self, text, question_type):
             qa[question] = answer
 
         return qa
-    if question_type == "form":
-        text_summary = text
-        answers = generate_keyphrases(text_summary, modelA, tokenizerA)
-        qa = {}
-        for answer in answers:
-            question = generate_question(text_summary, answer, modelB, tokenizerB)
-            qa[question] = answer
-        SCOPES = "https://www.googleapis.com/auth/forms.body"
-        DISCOVERY_DOC = "https://forms.googleapis.com/$discovery/rest?version=v1"
-
-        store = file.Storage("token.json")
-        creds = None
-        if not creds or creds.invalid:
-            flow = client.flow_from_clientsecrets("credentials.json", SCOPES)
-            creds = tools.run_flow(flow, store)
-
-        form_service = discovery.build(
-            "forms",
-            "v1",
-            http=creds.authorize(Http()),
-            discoveryServiceUrl=DISCOVERY_DOC,
-            static_discovery=False,
-        )
-        NEW_FORM = {
-            "info": {
-                "title": "EduAid form",
-            }
-        }
-        requests_list = []
-
-        for index, (question, answer) in enumerate(qa.items()):
-            request = {
-                "createItem": {
-                    "item": {
-                        "title": question,
-                        "questionItem": {
-                            "question": {
-                                "required": True,
-                                "textQuestion": {},
-                            }
-                        },
-                    },
-                    "location": {"index": index},
-                }
-            }
-            requests_list.append(request)
-
-        NEW_QUESTION = {"requests": requests_list}
-
-        result = form_service.forms().create(body=NEW_FORM).execute()
-        question_setting = (
-            form_service.forms()
-            .batchUpdate(formId=result["formId"], body=NEW_QUESTION)
-            .execute()
-        )
-
-        edit_url = result["responderUri"]
-        qa["edit_url"] = edit_url
-        webbrowser.open_new_tab(
-            "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
-        )
-        return qa
 
     elif question_type == "mcq":
         text_summary = text
@@ -229,30 +159,6 @@ class QARequestHandler(http.server.BaseHTTPRequestHandler):
         content_length = int(self.headers["Content-Length"])
         post_data = self.rfile.read(content_length).decode("utf-8")
         parsed_data = json.loads(post_data)
-
-        if self.path == "/generate_mcqs":
-            context = parsed_data.get("context")
-            api_key = parsed_data.get("api_key")
-
-            ques_type = parsed_data.get("question_type")
-            try:
-                openai.api_key = api_key
-                prompt = f"Given the following text:\n\n{context}\n\nPlease generate at least 3 {ques_type} type questions related to the provided information. For each question, include options and the correct answer in the format Question:, Option:, Answer:. Ensure the questions are clear, concise, and test the understanding of key concepts in the text."
-                response = openai.Completion.create(
-                    model="text-davinci-002",
-                    prompt=prompt,
-                    temperature=0.7,
-                    max_tokens=1024,
-                )
-                choices = response["choices"]
-                if choices:
-                    choice = choices[0]
-                    mcqs = choice["text"]
-
-                    self.wfile.write(json.dumps(mcqs).encode("utf-8"))
-                    self.wfile.flush()
-            except Exception as e:
-                print(f"Error processing data: {e}")
         if self.path == "/":
             input_text = parsed_data.get("input_text")
             question_type = self.headers.get("Question-Type", "text")

@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const backButton = document.getElementById("back-button");
   const textInput = document.getElementById("text-input");
   const fileInput = document.getElementById("file-upload");
-  const createForm = document.getElementById("google-form-button");
   const loadingScreen = document.getElementById("loading-screen");
 
   fileInput.addEventListener("change", async function () {
@@ -35,10 +34,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   mcqButton.addEventListener("click", async function () {
     await generateQuestion("mcq");
-  });
-
-  createForm.addEventListener("click", async function () {
-    await generateQuestion("form");
   });
 
   backButton.addEventListener("click", function () {
