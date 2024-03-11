@@ -16,4 +16,23 @@ Model_training/AnswerAwareQG/fine_tuned_t5_tokenizer_aaqg_2
 backend/models
 backend/tokenizers
 backend/sample_input.py
+extension/pdfjs-3.9.179-distModel_experimentation/model_testing/fine_tuned_t5_model
+Model_experimentation/model_testing/fine_tuned_t5_tokenizer
+Model_training/KeyPhrase\ Detection/fine_tuned_t5_model_kp
+Model_training/KeyPhrase\ Detection/fine_tuned_t5_tokenizer_kp
+Model_training/KeyPhrase\ Detection/fine_tuned_t5_model_kp_2
+Model_training/KeyPhrase\ Detection/fine_tuned_t5_tokenizer_kp_2
+Model_training/KeyPhrase\ Detection/fine_tuned_t5_model_kp_3
+Model_training/KeyPhrase\ Detection/fine_tuned_t5_tokenizer_kp_3
+Model_training/KeyPhrase\ Detection/fine_tuned_t5_model_kp_4
+Model_training/KeyPhrase\ Detection/fine_tuned_t5_tokenizer_kp_4
+Model_training/KeyPhrase Detection/fine_tuned_model_kp_4/
+Model_training/AnswerAwareQG/fine_tuned_t5_model_aaqg
+Model_training/AnswerAwareQG/fine_tuned_t5_model_aaqg_2
+Model_training/AnswerAwareQG/fine_tuned_t5_tokenizer_aaqg
+Model_training/AnswerAwareQG/fine_tuned_t5_tokenizer_aaqg_2
+backend/models
+backend/tokenizers
+backend/sample_input.py
 extension/pdfjs-3.9.179-dist
+backend/credentials.json
