@@ -30,8 +30,6 @@
         "./js/question_generation.js",
         "./assets/aossie_logo.png",
         "./js/pdf-lib.js",
-        "/js/pdfjsLib.js",
-        "/js/pdfjsLib.worker.js",
         "./js/download.js"
       ],
       "matches": ["<all_urls>"]
