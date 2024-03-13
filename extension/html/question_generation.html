@@ -4,6 +4,8 @@
         <title>Question Generation- EduAid</title>
         <link href='https://fonts.googleapis.com/css?family=Inter' rel='stylesheet'>
         <link rel="stylesheet" href="../styles/question_generation.css">
+        <script src="../js/pdf-lib.js"></script>
+        <script src="../js/download.js"></script>
     </head>
 
     <body>
@@ -14,9 +16,11 @@
 
         <main>
             <h3>Questions have been generated!</h3>
+            <textarea id="title-input" placeholder="Paste your title here"></textarea>
             <div id="button-container">
                 <button id="view-questions-button">View</button>
                 <button id="save-button">Save</button>
+                <button id="answer-button">Answers</button>
             </div>
             <dialog data-modal>
                 <ul id="modal-question-list"></ul>
