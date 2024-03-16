@@ -1,34 +1,35 @@
-document.addEventListener("DOMContentLoaded", function(){
-    const saveButton= document.getElementById("save-button");
-    const backButton= document.getElementById("back-button");
-    const viewQuestionsButton = document.getElementById("view-questions-button");
-    const qaPairs=JSON.parse(localStorage.getItem("qaPairs"));
-    const modalClose= document.querySelector("[data-close-modal]");
-    const modal=document.querySelector("[data-modal]");
+document.addEventListener("DOMContentLoaded", function () {
+    const saveButton = document.getElementById("save-button");
+    const backButton = document.getElementById("back-button");
+    const qaPairs = JSON.parse(localStorage.getItem("qaPairs"));
+    const modal = document.querySelector("[data-modal]");
 
 
-    viewQuestionsButton.addEventListener("click", function(){
-      const modalQuestionList = document.getElementById("modal-question-list");
-      modalQuestionList.innerHTML = ""; // Clear previous content
+    const modalQuestionList = document.getElementById("qna");
+    //      modalQuestionList.innerHTML = ""; // Clear previous content
 
-      for (const [question, answer] of Object.entries(qaPairs)) {
-          const questionElement = document.createElement("li");
-          questionElement.textContent = `Question: ${question}, Answer: ${answer}`;
-          modalQuestionList.appendChild(questionElement)
-      }
-      modal.showModal();
-    });
+    for (const [question, answer] of Object.entries(qaPairs)) {
+        const questionElement = document.createElement("p");
+        const answerElement = document.createElement("p");
 
-    modalClose.addEventListener("click", function(){
-      modal.close();
-    });
-    saveButton.addEventListener("click", async function(){
-      let textContent= "EduAid Generated QnA:\n\n";
+        questionElement.textContent = `Question: ${question}`;
+        answerElement.textContent = `Answer: ${answer}`;
 
-      for (const [question,answer] of Object.entries(qaPairs)){
-        textContent+= `Question: ${question}\nAnswer: ${answer}\n\n`;
-      }
-      const blob = new Blob([textContent], { type: "text/plain" });
+        questionElement.classList.add("quesstyle");
+        answerElement.classList.add("ansstyle");
+
+        modalQuestionList.appendChild(questionElement)
+        modalQuestionList.appendChild(answerElement)
+    }
+    //      modal.showModal();
+
+    saveButton.addEventListener("click", async function () {
+        let textContent = "EduAid Generated QnA:\n\n";
+
+        for (const [question, answer] of Object.entries(qaPairs)) {
+            textContent += `Question: ${question}\nAnswer: ${answer}\n\n`;
+        }
+        const blob = new Blob([textContent], { type: "text/plain" });
 
         // Create a URL for the Blob
         const blobUrl = URL.createObjectURL(blob);
@@ -49,8 +50,8 @@ document.addEventListener("DOMContentLoaded", function(){
         document.body.removeChild(downloadLink);
         URL.revokeObjectURL(blobUrl);
     });
-      
-      backButton.addEventListener("click", function(){
-        window.location.href="../html/text_input.html"
-      });
+
+    backButton.addEventListener("click", function () {
+        window.location.href = "../html/choice.html"
+    });
 });
