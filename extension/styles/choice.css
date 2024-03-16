@@ -23,58 +23,24 @@ header {
   align-items: center;
   padding: 10px 20px;
 }
-
 img {
   width: 63px;
   margin-right: 10px;
 
 }
+  main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* height: calc(101vh - 102px); Adjust this height value as needed */
+  }
 
-main {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  /* height: calc(101vh - 102px); Adjust this height value as needed */
-}
-
-main p {
+main p{
   text-align: center;
   font-size: 28px;
 }
 
-
-#qna {
-
-  overflow-y: auto;
-  height: 200px;
-  display: flex;
-  align-items: center;
-  margin: 0px;
-  width: 94%;
-  flex-direction: column;
-  background-color: burlywood;
-  border-radius: 5px;
-}
-
-.quesstyle {
-  padding: 5px 2px;
-  font-size: 12px;
-  width: 95%;
-  background-color: #94c9d9;
-  border-radius: 11px;
-  margin: 7px 0px 0px;
-}
-
-.ansstyle {
-  padding: 5px 2px;
-  /* width: 95%; */
-  margin: 2px 0px 8px;
-  font-size: 13px;
-  width: 95%;
-  background-color: #8cb48c;
-  border-radius: 9px;
-}
 
 /* Style the button */
 button {
@@ -93,18 +59,21 @@ button {
   background: linear-gradient(180deg, #69F039, #0DB145);
   justify-content: center;
   padding: 10px 0 10px 0;
-  width: 100px;
+  width: 180px;
   font-weight: bold;
   font-size: 20px;
   letter-spacing: 3.8px;
   transition: color 200ms ease-in;
 }
-
 button:hover {
   background: #043949;
-  color: white;
-}
+  color: white; /* Move the background gradient on hover */
+  }
 
-footer {
-  display: flex;
+footer{
+    display: flex;
+    flex-direction: column;
+}
+h6{
+    margin: 5px 0px;
 }

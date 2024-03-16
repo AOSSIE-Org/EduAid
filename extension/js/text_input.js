@@ -70,7 +70,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const responseData = await response.json();
         // console.log("Response data:\n"+responseData);
         localStorage.setItem("qaPairs", JSON.stringify(responseData));
-        window.location.href = "../html/question_generation.html";
+        window.location.href = "../html/choice.html";
       } else {
         console.error("Backend request failed.");
       }
