@@ -1,7 +1,14 @@
+const textInput = document.getElementById("text-input");
+chrome.storage.local.get(["key"]).then((result) => {
+  if(result.key)
+  {
+    textInput.value = result.key;
+    chrome.storage.local.set({ key: "" }).then(() => { console.log("Value is set"); });
+  }
+});
 document.addEventListener("DOMContentLoaded", function () {
     const nextButton = document.getElementById("next-button");
     const backButton = document.getElementById("back-button");
-    const textInput = document.getElementById("text-input");
     const fileInput = document.getElementById("file-upload");
     const loadingScreen = document.getElementById("loading-screen");
   
