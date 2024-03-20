@@ -28,7 +28,9 @@
         "./js/text_input.js",
         ".js/view_questions.js",
         "./js/question_generation.js",
-        "./assets/aossie_logo.png"
+        "./assets/aossie_logo.png",
+        "./html/popup.html",
+        "/js/tailwindcss.js"
       ],
       "matches": ["<all_urls>"]
     }

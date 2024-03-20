@@ -1,35 +1,105 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>EduAid: Text Input</title>
-        <!-- <link href="https://fonts.googleapis.com/css?family=Roboto:400,500" rel="stylesheet">
-        <link rel="stylesheet" href="./popup.css"> -->
-        <script src="../pdfjs-3.9.179-dist/build/pdf.js"></script>
-        <link href='https://fonts.googleapis.com/css?family=Inter' rel='stylesheet'>
-        <link rel="stylesheet" href="../styles/text_input.css">
-    </head>
-    <body>
-        <header>
-            <img src="../assets/aossie_logo32.png" alt="AOSSIE logo">
-            <h1>EduAid</h1>
-        </header>
-        <main>
-            <h3>Generate QnA</h3>
-            <textarea id="text-input" placeholder="Paste your text here"></textarea>
-            <div>
-                <input type="file" id="file-upload" accept=".pdf" hidden>
-                <label for="file-upload" id="upload-label">Upload PDF &#128196</label>
-            </div>
-            <div class="button-container">
-                <button id="back-button">Back</button>
-                <button id="next-button">Next</button>
-            </div>
-            <!-- ******************* -->
-            <div id="loading-screen" class="loading-screen">
-                <div class="loading-spinner"></div>
-            </div>
-            <!-- ****************** -->
-        </main>
-        <script src="../js/text_input.js"></script>
-    </body>
+
+  <head>
+    <title>EduAid: Your AI Quiz Generator</title>
+    <script src="../js/tailwindcss.js"></script>
+    <script src="../js/text_input.js"></script>
+    
+    <style>
+      .loading-screen {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .dot {
+      position: relative;
+      width: 1rem;
+      height: 1rem;
+      margin: 0.8em;
+      border-radius: 50%;
+      animation: anime 2s ease-out infinite;
+    }
+
+    .dot:before {
+      position: absolute;
+      content: '';
+      width: 100%;
+      height: 100%;
+      background: inherit;
+      border-radius: inherit;
+    }
+
+    @keyframes anime {
+      50%, 75% {
+        transform: scale(2.5);
+      }
+      80%, 100% {
+        opacity: 0;
+      }
+    }
+    </style>
+  </head>
+
+  <body class="w-[320px] h-[370px]">
+    <div
+      class="w-full h-full opacity-100 bg-gradient-to-b from-[#63a2c3] to-[#0958a2] flex flex-col items-center  -z-10 transition-all duration-1000 shadow border-4 border-[#daf7f7]">
+      <span
+        class="absolute top-2 left-3 text-2xl font-bold font-sans text-sky-800">
+        <div class="flex">
+
+          <img width="64" height="64" src="../assets/logo1 1.png"
+            alt="upload-to-cloud" class="mr-12" />
+          EduAid
+          <img src="../assets/Vector.png" alt="upload-to-cloud"
+            class="ml-12 h-10 w-10" />
+        </div>
+      </span>
+      <div class="absolute top-0 left-0 h-2 w-full -z-10 bg-[#daf7f7]"></div>
+      
+      <img src="../assets/Wave.png" class="w-full h-20 " />
+      <span id="mid-text" class="text-xl font-sans text-[#daf7f7] mt-4">Enter text to generate your
+        Quiz</span>
+      <div id="loading-screen" style="display: none;">
+        <div class="mr-48">
+          <div class="flex mt-2 absolute mb-4">
+            <div class="dot"
+              style="background-color: #0080ff; animation-delay: 0s;"></div>
+            <div class="dot"
+              style="background-color: #3399ff; animation-delay: 0.2s;"></div>
+            <div class="dot"
+              style="background-color: #66b2ff; animation-delay: 0.4s;"></div>
+            <div class="dot"
+              style="background-color: #99ccff; animation-delay: 0.6s;"></div>
+            <div class="dot"
+              style="background-color: #cce5ff; animation-delay: 0.8s;"></div>
+          </div>
+        </div>
+      </div>
+      <textarea id="text-input" placeholder="Paste your text here" class=' w-5/6 bg-[#daf7f7] h-32 rounded-md  border-t border-zinc-300 mb-4 mt-44 absolute p-3'></textarea>
+      <div class="flex">
+        <input type="file" id="file-upload" accept=".pdf" hidden>
+        <button for="file-upload"
+          class='hover:bg-sky-300 cursor-pointer bg-[#daf7f7] border-t border-zinc-300 rounded-xl absolute bottom-1 left-2 gap-2 w-9 h-9 mb-2 ml-4'
+          type='submit'> <img src="../assets/Vector (1).png"
+            class="left-3"></button>
+        <button
+          class='hover:bg-sky-300 cursor-pointer bg-[#daf7f7] border-t border-zinc-300 rounded-xl absolute bottom-1 left-20 gap-2 w-20 h-9 mb-2 ml-4'
+          type='submit' id="back-button"><span class="text-blue-800 font-bold">Back</span></button>
+        <button
+          class='hover:bg-sky-300 cursor-pointer bg-[#daf7f7] border-t border-zinc-300 rounded-xl absolute bottom-1 left-44 gap-2 w-20 h-9 mb-2 ml-4'
+          type='submit' id="next-button"><span class="text-blue-800 font-bold">Next</span></button>
+      </div>
+      
+    </div>
+
+  </body>
+  <script src="../js/text_input.js"></script>
 </html>

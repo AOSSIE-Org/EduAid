@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const textInput = document.getElementById("text-input");
     const fileInput = document.getElementById("file-upload");
     const loadingScreen = document.getElementById("loading-screen");
+    const midText = document.getElementById("mid-text")
   
   
     fileInput.addEventListener("change", async function () {
@@ -29,7 +30,8 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     nextButton.addEventListener("click", async function () {
-      loadingScreen.style.display = "flex"
+      midText.textContent="Generating your Quiz"
+      loadingScreen.style.display = "block"
       const inputText = textInput.value;
   
       if (inputText.trim() === "" && fileInput.files.length > 0) {
