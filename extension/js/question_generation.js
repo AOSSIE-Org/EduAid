@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", function(){
           modalQuestionList.appendChild(questionElement)
       }
       modal.showModal();
+      document.getElementById("mid-text").textContent="";
     });
 
     modalClose.addEventListener("click", function(){
