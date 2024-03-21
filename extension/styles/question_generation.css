@@ -1,5 +1,4 @@
 body{
-    /* background-color: rgb(18, 89, 231); */
     background-color: #FBAB7E;
     background-image: linear-gradient(62deg, #FBAB7E 0%, #F7CE68 100%);
     font-family: 'Inter';
@@ -26,7 +25,6 @@ h1 {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    /* height: calc(101vh - 102px); Adjust this height value as needed */
   }
 
   h2 {
@@ -63,9 +61,6 @@ button {
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   color: var(--black);
   cursor: pointer;
-  /* font: 1.5em Raleway, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale; */
   height: 1.5rem;
   letter-spacing: 0.05em;
   outline: none;
@@ -75,15 +70,14 @@ button {
   -ms-user-select: none;
   user-select: none;
   width: 3rem;
-  transition: background-position 0.7s ease; /* Add transition for background position */
+  transition: background-position 0.7s ease;
   margin-bottom: 1px;
   
 }
 button:hover {
-    background-position: 100%; /* Move the background gradient on hover */
+    background-position: 100%;
   }
   
-  /* Add animation for button hover effect */
   @keyframes gradient {
     0% {
       background-position: 0% 50%;
