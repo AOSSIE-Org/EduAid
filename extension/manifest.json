@@ -3,7 +3,7 @@
   "name": "EduAid: AI Quiz Generator",
   "version": "1.0",
   "description": "Generate quizzes with AI-powered questions.",
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["sidePanel","activeTab", "storage"],
   "host_permissions":["http://127.0.0.1:8000/*"],
   "icons": {
     "16": "./assets/aossie_logo.png"
@@ -32,5 +32,11 @@
       ],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "background": {
+    "service_worker": "serviceWorker.js"
+  },
+  "side_panel": {
+    "default_path":"/html/sidePanel.html"
+  }
 }

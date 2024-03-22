@@ -1,59 +1,60 @@
-body{
-    /* background-color: rgb(18, 89, 231); */
-    background-color: #FBAB7E;
-    background-image: linear-gradient(62deg, #FBAB7E 0%, #F7CE68 100%);
-    font-family: 'Inter';
-    font-weight: 400; /* Regular */
+body {
+  background-color: #FBAB7E;
+  background-image: linear-gradient(62deg, #FBAB7E 0%, #F7CE68 100%);
+  font-family: 'Inter';
+  font-weight: 400; /* Regular */
 }
 
-header{
-    display: flex;
-    align-items: center;
-    padding: 10px 20px;
-    
+header {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
 }
-img{
-    width: 32px;
-    height: 32px;
-    margin-right: 10px;
-    
+
+img {
+  width: 32px;
+  height: 32px;
+  margin-right: 10px;
 }
+
 h1 {
-    font-size: 24px;
-  }
-  main {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    /* height: calc(101vh - 102px); Adjust this height value as needed */
-  }
-
-  h2 {
-    font-size: 28px;
-    margin-bottom: 10px;
-  }
-p{
-    margin-left: 2px;
-    margin-right: 2px;
-    padding-left: 1px;
-    padding-right: 1px;
-    text-align: left;
+  font-size: 24px;
 }
-#text-input{
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 102px); /* Adjust this height value as needed */
+}
+
+h2 {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
+p {
+  margin-left: 2px;
+  margin-right: 2px;
+  padding-left: 1px;
+  padding-right: 1px;
+  text-align: left;
+}
+
+#text-input {
   height: 30px;
   width: 150px;
   margin-bottom: 10px;
 }
+
 :root {
   --yellow: #e8f222;
   --green: #82ea27;
   --black: #000;
 }
 
-
 /* Style the button */
-
 button {
   display: inline-block;
   background: linear-gradient(to right, var(--yellow) 0%, var(--green) 50%, var(--yellow) 100%);
@@ -63,9 +64,6 @@ button {
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   color: var(--black);
   cursor: pointer;
-  /* font: 1.5em Raleway, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale; */
   height: 1.5rem;
   letter-spacing: 0.05em;
   outline: none;
@@ -75,34 +73,55 @@ button {
   -ms-user-select: none;
   user-select: none;
   width: 3rem;
-  transition: background-position 0.7s ease; /* Add transition for background position */
-  margin-bottom: 1px;
-  
+  transition: background-position 0.7s ease;
+  margin-bottom: 20px;
 }
-button:hover {
-    background-position: 100%; /* Move the background gradient on hover */
-  }
-  
-  /* Add animation for button hover effect */
-  @keyframes gradient {
-    0% {
-      background-position: 0% 50%;
-    }
-    100% {
-      background-position: 100%;
-    }
-  }
 
-#save-button{
-    width:auto
+button:hover {
+  background-position: 100%;
 }
-#view-questions-button{
-    width: auto;
+
+/* Add animation for button hover effect */
+@keyframes gradient {
+  0% {
+      background-position: 0% 50%;
+  }
+  100% {
+      background-position: 100%;
+  }
 }
-#button-container{
-    display: inline-block;
-    margin-bottom: 3px;
+
+#save-button {
+  width: auto;
 }
-h3{
-    font: 18px;
+
+#view-questions-button {
+  width: auto;
+}
+
+#button-container {
+  display: inline-block;
+  margin-bottom: 3px;
+}
+
+.question-answer {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  max-width: 600px; /* Set the maximum width */
+  overflow-y: auto;
+}
+
+.question-answer h3 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.question-answer:last-child {
+  margin-bottom: 0; /* Remove bottom margin for the last question-answer div */
+}
+.EduAid {
+  margin-left: 30;
 }

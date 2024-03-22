@@ -3,25 +3,37 @@ document.addEventListener("DOMContentLoaded", function(){
     const backButton= document.getElementById("back-button");
     const viewQuestionsButton = document.getElementById("view-questions-button");
     const qaPairs=JSON.parse(localStorage.getItem("qaPairs"));
-    const modalClose= document.querySelector("[data-close-modal]");
-    const modal=document.querySelector("[data-modal]");
+    const questionListDiv = document.getElementById("questionList");
 
 
-    viewQuestionsButton.addEventListener("click", function(){
-      const modalQuestionList = document.getElementById("modal-question-list");
-      modalQuestionList.innerHTML = ""; // Clear previous content
 
-      for (const [question, answer] of Object.entries(qaPairs)) {
-          const questionElement = document.createElement("li");
-          questionElement.textContent = `Question: ${question}, Answer: ${answer}`;
-          modalQuestionList.appendChild(questionElement)
-      }
-      modal.showModal();
-    });
+    let isOpen = false; // Initially closed
 
-    modalClose.addEventListener("click", function(){
-      modal.close();
-    });
+viewQuestionsButton.addEventListener("click", () => {
+    if (isOpen) {
+        // Close the section
+        questionListDiv.style.display = "none";
+        viewQuestionsButton.textContent = "View";
+        isOpen = false;
+    } else {
+        // Open the section
+        questionListDiv.innerHTML = ""; // Clear previous content
+
+        for (const [question, answer] of Object.entries(qaPairs)) {
+            const questionAnswerDiv = document.createElement("div");
+            questionAnswerDiv.classList.add("question-answer");
+            questionAnswerDiv.innerHTML = `
+                <h4>Q) ${question}</h4>
+                <p>Ans:     ${answer}</p>
+            `;
+            questionListDiv.appendChild(questionAnswerDiv);
+        }
+
+        questionListDiv.style.display = "block";
+        viewQuestionsButton.textContent = "Close";
+        isOpen = true;
+    }
+});
     saveButton.addEventListener("click", async function(){
       let textContent= "EduAid Generated QnA:\n\n";
 
