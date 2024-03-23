@@ -45,6 +45,11 @@ p{
   width: 150px;
   margin-bottom: 10px;
 }
+#title {
+  height: 20px;
+  width: 150px;
+  margin-bottom: 5px;
+}
 :root {
   --yellow: #e8f222;
   --green: #82ea27;
