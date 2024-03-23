@@ -12,7 +12,82 @@ Currently, the extension is not deployed, so it can only run locally. To run the
 git clone https://github.com/AOSSIE-Org/EduAid.git
 ```
 
+### Installation of `Generator Model`
+
+1. **Move Repository Folder:**
+   - Move the cloned repository folder inside the `backend` folder using the command `cd backend`.
+  
+2. **Install the Following Repository:**
+   - Install the repository from [https://github.com/Roaster05/Generator.git](https://github.com/Roaster05/Generator.git).
+   - Move the cloned repository folder inside the `backend` folder.
+
+3. **Download Sense2Vec Model:**
+   - Download the compressed folder from [here](https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz).
+
+4. **Extract Sense2Vec Model:**
+   - Extract the contents of the downloaded compressed folder inside the `backend` folder.
+
+5. **Install Python Dependencies:**
+   - Navigate to the root repository folder.
+   - Run the following command to install the required Python dependencies:
+     ```
+     pip install -r requirements.txt
+     ```
+
+6. **Run Flask App:**
+   - Navigate to the `backend` folder.
+   - Run the following command to start the Flask app:
+     ```
+     python app.py
+     ```
+
+7. **Verify Installation:**
+   - The Flask app will start running at endpoint [http://127.0.0.1:5000](http://127.0.0.1:5000).
+   - Verify the installation by making a GET request to the mentioned endpoint.
+  
+8. **Verify Folder Structure:**
+   - The folder structure inside the `backend` folder should look like this (you can ignore any of the `_pycache_` files.)
+   ```
+    ├── app.py
+    ├── Generator
+    │   ├── encoding
+    │   │   ├── encoding.py
+    │   │   ├── _init_.py
+    │   ├── _init_.py
+    │   ├── main.py
+    │   ├── mcq
+    │   │   ├── _init_.py
+    │   │   ├── mcq.py
+    │   │   
+    │   └── train
+    │       ├── _init_.py
+    │       └── train_gpu.py
+    ├── models
+    │   ├── modelA
+    │   │   ├── config.json
+    │   │   ├── generation_config.json
+    │   │   └── pytorch_model.bin
+    │   └── modelB
+    │       ├── config.json
+    │       ├── generation_config.json
+    │       └── pytorch_model.bin
+    ├── s2v_old
+    │   ├── cfg
+    │   ├── freqs.json
+    │   ├── key2row
+    │   ├── strings.json
+    │   └── vectors
+    ├── server.py
+    └── test_server.py
+   ```
+   
+
+
+### Installing Other Models
+
 Now move to the `backend` directory and make a new directory that will store the models.
+
+
 
 ```
 cd backend && mkdir models && cd models && mkdir modelA && mkdir modelB
