@@ -70,9 +70,10 @@ button {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  width: 7rem;
+  width: 5rem;
   transition: background-position 0.7s ease; /* Add transition for background position */
   margin-bottom: 1px;
+  margin-left: 6px;
 }
 
 /* Style the button on hover */

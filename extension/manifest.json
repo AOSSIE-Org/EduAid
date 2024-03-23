@@ -28,6 +28,7 @@
         "./js/text_input.js",
         ".js/view_questions.js",
         "./js/question_generation.js",
+        "/js/previous.js",
         "./assets/aossie_logo.png"
       ],
       "matches": ["<all_urls>"]
