@@ -1,4 +1,10 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
+  const [tab] = await chrome.tabs.query({
+    active: true,
+    lastFocusedWindow: true
+  });
+  
+  const tabId = tab.id;
     const nextButton = document.getElementById("next-button");
     const backButton = document.getElementById("back-button");
     const textInput = document.getElementById("text-input");
@@ -70,7 +76,14 @@ document.addEventListener("DOMContentLoaded", function () {
         const responseData = await response.json();
         // console.log("Response data:\n"+responseData);
         localStorage.setItem("qaPairs", JSON.stringify(responseData));
-        window.location.href = "../html/question_generation.html";
+        //window.location.href = "../html/question_generation.html";
+        alert("Your Questions have been generated, open the SidePanel to view the Questions")
+        chrome.sidePanel.open({ tabId }, () => {
+          chrome.sidePanel.setOptions({
+            path: 'html/sidePanel.html',
+            enabled: true
+          });
+        });
       } else {
         console.error("Backend request failed.");
       }
