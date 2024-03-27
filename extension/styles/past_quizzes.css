@@ -1,0 +1,118 @@
+body {
+    background-color: #FBAB7E;
+    background-image: linear-gradient(62deg, #FBAB7E 0%, #F7CE68 100%);
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    color: #333;
+    /* Text color */
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.quiz-item {
+    margin-bottom: 20px;
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+}
+
+.active {
+    background-color: #ccc;
+    /* Active header background color */
+}
+
+.accordion {
+    background-color: #f9f9f9;
+    /* Background color of accordion header */
+    color: #333;
+    /* Text color */
+    cursor: pointer;
+    padding: 18px;
+    /* Spacing around the accordion header */
+    width: 100%;
+    text-align: left;
+    /* Align text to the left within the accordion header */
+    border: none;
+    outline: none;
+    transition: background-color 0.3s ease;
+    /* Smooth transition for background color change */
+}
+
+/* Hover Effect */
+.accordion:hover {
+    background-color: #ddd;
+    /* Change background color on hover */
+}
+
+/* Active State */
+.accordion.active {
+    background-color: #ccc;
+    /* Change background color when accordion is active (open) */
+}
+
+/* Content Style */
+.content {
+    padding: 0 18px;
+    /* Spacing around the content */
+    max-height: 0;
+    /* Initially hide content */
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    /* Smooth transition for opening/closing content */
+}
+
+.content p {
+    margin: 0;
+    padding: 5px 0;
+    font-size: 16px;
+    /* Font size for questions and answers */
+    line-height: 1.5;
+}
+
+.content strong {
+    font-weight: bold;
+    color: #555;
+    /* Color for question labels */
+}
+
+.button-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+/* Button Style */
+.button-row button {
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    /* Rounded bottom corners */
+    width: 100%;
+}
+
+
+
+/* Save Button Style */
+.save-button {
+    background-color: #4ABDAC;
+    /* Light blue color */
+    color: #fff;
+    border-radius: 0 0 10px 10px;
+    /* Bottom right corner rounded */
+}
+
+
+
+
+.save-button:hover {
+    background-color: #338E91;
+    /* Darker shade of blue */
+}
