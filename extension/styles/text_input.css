@@ -44,35 +44,6 @@ p {
   overflow: auto;
 }
 
-#mcq-button {
-  display: inline-block;
-  background: linear-gradient(
-    to right,
-    var(--yellow) 0%,
-    var(--green) 50%,
-    var(--yellow) 100%
-  );
-  background-size: 500%;
-  border: none;
-  border-radius: 2rem;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-  color: var(--black);
-  cursor: pointer;
-  font: 1em Inter, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  height: 2rem;
-  letter-spacing: 0.05em;
-  outline: none;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  width: 8rem;
-  transition: background-position 0.7s ease;
-  margin-top: 10px;
-}
 :root {
   --yellow: #e8f222;
   --green: #82ea27;

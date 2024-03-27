@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
   const nextButton = document.getElementById("next-button");
-  const mcqButton = document.getElementById("mcq-button");
   const backButton = document.getElementById("back-button");
   const textInput = document.getElementById("text-input");
   const fileInput = document.getElementById("file-upload");
@@ -32,18 +31,9 @@ document.addEventListener("DOMContentLoaded", function () {
     await generateQuestion("text");
   });
 
-  mcqButton.addEventListener("click", async function () {
-    await generateQuestion("mcq");
-  });
-
   backButton.addEventListener("click", function () {
     window.location.href = "../html/index.html";
   });
-  document
-    .getElementById("generate-quiz-button")
-    .addEventListener("click", function () {
-      window.location.href = "../html/openai.html";
-    });
 
   async function generateQuestion(questionType) {
     loadingScreen.style.display = "flex";

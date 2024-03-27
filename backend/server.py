@@ -119,7 +119,7 @@ def generate_qa(self, text, question_type):
             question = generate_question(text_summary, answer, modelB, tokenizerB)
             conceptnet_distractors = get_distractors_conceptnet(answer, text_summary)
             t5_distractors = self.distractor_generator.generate(
-                5, answer, question, text_summary
+                3, answer, question, text_summary
             )
 
             dist_temp = list(set(conceptnet_distractors + t5_distractors))
