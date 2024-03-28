@@ -4,7 +4,7 @@
   "version": "1.0",
   "description": "Generate quizzes with AI-powered questions.",
   "permissions": ["activeTab", "storage"],
-  "host_permissions":["http://127.0.0.1:8000/*"],
+  "host_permissions":["http://127.0.0.1:8000/*","http://127.0.0.1:5000/*"],
   "icons": {
     "16": "./assets/aossie_logo.png"
   },

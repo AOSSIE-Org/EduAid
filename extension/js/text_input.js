@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const textInput = document.getElementById("text-input");
     const fileInput = document.getElementById("file-upload");
     const loadingScreen = document.getElementById("loading-screen");
-  
+    const docInput = document.getElementById("doc-input")
   
     fileInput.addEventListener("change", async function () {
       const file = fileInput.files[0];
@@ -29,6 +29,11 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     nextButton.addEventListener("click", async function () {
+      if(docInput.value!='')
+      {
+         content = await fetchDoc(docInput.value)
+         textInput.value = content
+      }
       loadingScreen.style.display = "flex"
       const inputText = textInput.value;
   
@@ -51,8 +56,28 @@ document.addEventListener("DOMContentLoaded", function () {
     backButton.addEventListener("click", function () {
       window.location.href = "../html/index.html";
     });
-  
+    async function fetchDoc(urli) {
+      const document_url = urli;
+      const url = 'http://localhost:5000/get_content';
+
+      const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ document_url })
+      });
+
+      if (!response.ok) {
+          throw new Error('Error fetching document content');
+      }
+
+      const data = await response.json();
+      return data;
+
+  }
     async function sendToBackend(data, dataType) {
+      
       let formData;
       let contentType;
       formData = JSON.stringify({ 'input_text': data });
