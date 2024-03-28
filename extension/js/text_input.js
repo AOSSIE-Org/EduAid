@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const textInput = document.getElementById("text-input");
   const fileInput = document.getElementById("file-upload");
   const loadingScreen = document.getElementById("loading-screen");
+  const audioInput = document.getElementById("audio-input");
 
   fileInput.addEventListener("change", async function () {
     const file = fileInput.files[0];
@@ -28,50 +29,50 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   nextButton.addEventListener("click", async function () {
-    await generateQuestion("text");
-  });
-
-  backButton.addEventListener("click", function () {
-    window.location.href = "../html/index.html";
-  });
-
-  async function generateQuestion(questionType) {
     loadingScreen.style.display = "flex";
     const inputText = textInput.value;
+    const inputAudio = audioInput.value;
 
     if (inputText.trim() === "" && fileInput.files.length > 0) {
       const file = fileInput.files[0];
       const fileReader = new FileReader();
       fileReader.onload = async function (event) {
         const uploadedPdfData = new Uint8Array(event.target.result);
-        await sendToBackend(uploadedPdfData, "pdf", questionType);
+        await sendToBackend(uploadedPdfData, "pdf");
       };
       fileReader.readAsArrayBuffer(file);
     } else if (inputText.trim() !== "") {
-      await sendToBackend(inputText, "text", questionType);
-    } else {
+      await sendToBackend(inputText, "text");
+    } else if (audioInput.value.trim() !== "") {
+      await sendToBackend(audioInput.value, "audio");
+    }
+    else {
       alert("Please enter text or upload a PDF file.");
       loadingScreen.style.display = "none";
     }
-  }
+  });
 
-  async function sendToBackend(data, dataType, questionType) {
+  backButton.addEventListener("click", function () {
+    window.location.href = "../html/index.html";
+  });
+
+  async function sendToBackend(data, dataType) {
     let formData;
     let contentType;
-    formData = JSON.stringify({ input_text: data });
-    contentType = "application/json";
+    formData = JSON.stringify({ input_data: data, input_type: dataType });
+    contentType = "application/json; charset=UTF-8";
 
-    const response = await fetch("http://127.0.0.1:8000/", {
+    const response = await fetch("http://127.0.0.1:8000", {
       method: "POST",
       body: formData,
       headers: {
         "Content-Type": contentType,
-        "Question-Type": questionType,
       },
     });
 
     if (response.ok) {
       const responseData = await response.json();
+      // console.log("Response data:\n"+responseData);
       localStorage.setItem("qaPairs", JSON.stringify(responseData));
       window.location.href = "../html/question_generation.html";
     } else {

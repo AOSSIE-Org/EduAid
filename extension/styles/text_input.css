@@ -43,7 +43,10 @@ p {
   resize: vertical;
   overflow: auto;
 }
-
+#audio-input {
+  margin: 6px;
+  width: 150px;
+}
 :root {
   --yellow: #e8f222;
   --green: #82ea27;
