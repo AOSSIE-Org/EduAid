@@ -1,114 +1,68 @@
-import http.server
-import socketserver
-import urllib.parse
-import torch
-from transformers import T5ForConditionalGeneration, T5Tokenizer, pipeline
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from pprint import pprint
+import nltk
+nltk.download('stopwords')
+from Generator import main
+import re
 import json
+import spacy
+from spacy.lang.en.stop_words import STOP_WORDS
+from string import punctuation
+from heapq import nlargest
 
-IP='127.0.0.1'
-PORT=8000
+app = Flask(__name__)
+CORS(app)
+print("Starting Flask App...")
 
-def summarize(text):
-    summarizer=pipeline('summarization')
-    return summarizer(text,max_length=110)[0]['summary_text']
+MCQGen = main.MCQGenerator()
+BoolQGen= main.BoolQGenerator()
+ShortQGen = main.ShortQGenerator()
 
+@app.route('/get_mcq', methods=['POST'])
+def get_mcq():
+    data = request.get_json()
+    input_text = data.get('input_text', '')
+    max_questions = data.get('max_questions', 4)
+    output = MCQGen.generate_mcq({'input_text': input_text, 'max_questions': max_questions})
+    questions = output['questions']
+    return jsonify({'output': questions})
 
-def generate_question(context,answer,model_path, tokenizer_path):
-    model = T5ForConditionalGeneration.from_pretrained(model_path)
-    tokenizer = T5Tokenizer.from_pretrained(tokenizer_path)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model.to(device)
+@app.route('/get_boolq', methods=['POST'])
+def get_boolq():
+    data = request.get_json()
+    input_text = data.get('input_text', '')
+    max_questions = data.get('max_questions', 4)
+    output = BoolQGen.generate_boolq({'input_text': input_text, 'max_questions': max_questions})
+    boolean_questions = output['Boolean_Questions']
+    return jsonify({'output': boolean_questions})
 
-    input_text=f'answer: {answer} context: {context}'
+@app.route('/get_shortq', methods=['POST'])
+def get_shortq():
+    data = request.get_json()
+    input_text = data.get('input_text', '')
+    max_questions = data.get('max_questions', 4)
+    output = ShortQGen.generate_shortq({'input_text': input_text, 'max_questions': max_questions})
+    questions = output['questions']
+    return jsonify({'output': questions})
 
-    inputs=tokenizer.encode_plus(
-        input_text,
-        padding='max_length',
-        truncation=True,
-        max_length=512,
-        return_tensors='pt'
-    )
+@app.route('/get_problems',methods =['POST'])
+def get_problems():
+    data = request.get_json()
+    input_text = data.get('input_text','')
+    max_questions_mcq = data.get('max_questions_mcq',4)
+    max_questions_boolq = data.get('max_questions_boolq',4)
+    max_questions_shortq = data.get('max_questions_shortq',4)
+    output1 = MCQGen.generate_mcq({'input_text': input_text, 'max_questions': max_questions_mcq})
+    output2 = BoolQGen.generate_boolq({'input_text': input_text, 'max_questions': max_questions_boolq})
+    output3 = ShortQGen.generate_shortq({'input_text': input_text, 'max_questions': max_questions_shortq})
+    return jsonify({'output_mcq' : output1,
+                    'output_boolq' : output2,
+                    'output_shortq' : output3})
 
-    input_ids=inputs['input_ids'].to(device)
-    attention_mask=inputs['attention_mask'].to(device)
+@app.route('/', methods=['GET'])
+def hello():
+    return 'The server is working fine'
 
-    with torch.no_grad():
-        output=model.generate(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            max_length=32
-        )
-
-    generated_question = tokenizer.decode(output[0], skip_special_tokens=True)
-    return generated_question
-
-def generate_keyphrases(abstract, model_path,tokenizer_path):
-    device= torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = T5ForConditionalGeneration.from_pretrained(model_path)
-    tokenizer = T5Tokenizer.from_pretrained(tokenizer_path)
-    model.to(device)
-    # tokenizer.to(device)
-    input_text=f'detect keyword: abstract: {abstract}'
-    input_ids=tokenizer.encode(input_text, truncation=True,padding='max_length',max_length=512,return_tensors='pt').to(device)
-    output=model.generate(input_ids)
-    keyphrases= tokenizer.decode(output[0],skip_special_tokens=True).split(',')
-    return [x.strip() for x in keyphrases if x != '']
-
-def generate_qa(text):
-
-    # text_summary=summarize(text)
-    text_summary=text
-    
-
-    modelA, modelB='./models/modelA','./models/modelB'
-    # tokenizerA, tokenizerB= './tokenizers/tokenizerA', './tokenizers/tokenizerB'
-    tokenizerA, tokenizerB= 't5-base', 't5-base'
-
-    answers=generate_keyphrases(text_summary, modelA, tokenizerA)
-
-    qa={}
-    for answer in answers:
-        question= generate_question(text_summary, answer, modelB, tokenizerB)
-        qa[question]=answer
-    
-    return qa
-    
-
-
-
-
-
-class QARequestHandler(http.server.BaseHTTPRequestHandler):
-
-    def do_POST(self):
-
-        self.send_response(200)
-        self.send_header("Content-type", "text/plain")
-        self.end_headers()
-
-        content_length=int(self.headers["Content-Length"])
-        post_data=self.rfile.read(content_length).decode('utf-8')
-
-        # parsed_data=urllib.parse.parse_qs(post_data)
-        parsed_data = json.loads(post_data)
-
-
-        input_text=parsed_data.get('input_text')
-
-        qa=generate_qa(input_text)
-
-
-
-        self.wfile.write(json.dumps(qa).encode("utf-8"))
-        self.wfile.flush()
-
-def main():
-    with socketserver.TCPServer((IP, PORT), QARequestHandler) as server:
-        print(f'Server started at http://{IP}:{PORT}')
-        server.serve_forever()
-
-if __name__=="__main__":
-    main()
-
-        
+if __name__ == '__main__':
+    app.run()
