@@ -73,6 +73,35 @@ def test_root():
     print(f'Root Endpoint Response: {response.text}')
     assert response.status_code == 200
 
+def test_get_answer():
+    endpoint = '/get_answer'
+    data = {
+        'input_text': input_text,
+        'input_question': [
+            "What is artificial intelligence?",
+            "What does AI include?",
+            "What is deep learning?",
+            "What are the ethical considerations in AI?"
+        ]
+    }
+    response = make_post_request(endpoint, data)
+    print(f'/get_answer Response: {response}')
+    assert 'output' in response
+
+def test_get_boolean_answer():
+    endpoint = '/get_boolean_answer'
+    data = {
+        'input_text': input_text,
+        'input_question': [
+            "Artificial intelligence is the simulation of human intelligence.",
+            "Deep learning does not involve neural networks.",
+            "AI applications do not include speech recognition."
+        ]
+    }
+    response = make_post_request(endpoint, data)
+    print(f'/get_boolean_answer Response: {response}')
+    assert 'output' in response
+
 def make_post_request(endpoint, data):
     url = f'{BASE_URL}{endpoint}'
     headers = {'Content-Type': 'application/json'}
@@ -85,3 +114,5 @@ if __name__ == '__main__':
     test_get_shortq()
     test_get_problems()
     test_root()
+    test_get_answer()
+    test_get_boolean_answer()

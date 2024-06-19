@@ -7,6 +7,7 @@ from Generator import main
 import re
 import json
 import spacy
+from transformers import pipeline
 from spacy.lang.en.stop_words import STOP_WORDS
 from string import punctuation
 from heapq import nlargest
@@ -16,8 +17,11 @@ CORS(app)
 print("Starting Flask App...")
 
 MCQGen = main.MCQGenerator()
+answer = main.AnswerPredictor()
 BoolQGen= main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
+qa_model = pipeline("question-answering")
+
 
 @app.route('/get_mcq', methods=['POST'])
 def get_mcq():
@@ -59,6 +63,27 @@ def get_problems():
     return jsonify({'output_mcq' : output1,
                     'output_boolq' : output2,
                     'output_shortq' : output3})
+
+@app.route('/get_answer', methods=['POST'])
+def get_answer():
+    data = request.get_json()
+    input_text = data.get('input_text', '')
+    input_questions = data.get('input_question', [])
+    answers = []
+    for question in input_questions:
+        qa_response = qa_model(question=question, context=input_text)
+        answers.append(qa_response['answer'])
+
+    return jsonify({'output': answers})
+
+@app.route('/get_boolean_answer', methods=['POST'])
+def get_boolean_answer():
+    data = request.get_json()
+    input_text = data.get('input_text', '')
+    input_questions = data.get('input_question', [])
+    output = answer.predict_boolean_answer({'input_text': input_text, 'input_question': input_questions})
+    return jsonify({'output': output})
+
 
 @app.route('/', methods=['GET'])
 def hello():
