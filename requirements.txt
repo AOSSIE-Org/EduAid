@@ -21,3 +21,7 @@ flask_cors
 nltk
 git+https://github.com/boudinfl/pke.git
 en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl#sha256=86cc141f63942d4b2c5fcee06630fd6f904788d2f0ab005cce45aadb8fb73889
+google-auth 
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client 
