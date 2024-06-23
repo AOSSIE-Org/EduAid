@@ -12,6 +12,9 @@ from nltk.corpus import brown
 from similarity.normalized_levenshtein import NormalizedLevenshtein
 from Generator.mcq import tokenize_into_sentences, identify_keywords, find_sentences_with_keywords, generate_multiple_choice_questions, generate_normal_questions
 from Generator.encoding import beam_search_decoding
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+import re
 
 class MCQGenerator:
     
@@ -295,3 +298,40 @@ class AnswerPredictor:
                 answers.append(False)
 
         return answers
+
+class GoogleDocsService:
+    def __init__(self, service_account_file, scopes):
+        self.credentials = service_account.Credentials.from_service_account_file(
+            service_account_file, scopes=scopes)
+        self.docs_service = build('docs', 'v1', credentials=self.credentials)
+
+    @staticmethod
+    def extract_document_id(url):
+        """
+        Extracts the Google Docs document ID from a given URL.
+        """
+        match = re.search(r'/document/d/([^/]+)', url)
+        if match:
+            return match.group(1)
+        return None
+
+    def get_document_content(self, document_url):
+        """
+        Retrieves the content of a Google Docs document given its URL.
+        """
+        document_id = self.extract_document_id(document_url)
+        if not document_id:
+            raise ValueError('Invalid document URL')
+
+        response = self.docs_service.documents().get(documentId=document_id).execute()
+        doc = response.get('body', {})
+
+        text = ''
+        for element in doc.get('content', []):
+            if 'paragraph' in element:
+                for p in element['paragraph']['elements']:
+                    if 'textRun' in p:
+                        text += p['textRun']['content']
+
+        return text.strip()
+

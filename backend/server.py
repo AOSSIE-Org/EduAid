@@ -16,10 +16,14 @@ app = Flask(__name__)
 CORS(app)
 print("Starting Flask App...")
 
+SERVICE_ACCOUNT_FILE = './service_account_key.json'
+SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
+
 MCQGen = main.MCQGenerator()
 answer = main.AnswerPredictor()
 BoolQGen= main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
+docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 qa_model = pipeline("question-answering")
 
 
@@ -83,6 +87,21 @@ def get_boolean_answer():
     input_questions = data.get('input_question', [])
     output = answer.predict_boolean_answer({'input_text': input_text, 'input_question': input_questions})
     return jsonify({'output': output})
+
+@app.route('/get_content', methods=['POST'])
+def get_content():
+    try:
+        data = request.get_json()
+        document_url = data.get('document_url')
+        if not document_url:
+            return jsonify({'error': 'Document URL is required'}), 400
+
+        text = docs_service.get_document_content(document_url)
+        return jsonify(text)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/', methods=['GET'])
