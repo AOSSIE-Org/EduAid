@@ -58,6 +58,24 @@ function Question() {
         });
       }
 
+      if (questionType === "get_mcq") {
+        qaPairsFromStorage["output"].forEach((qaPair) => {
+          const options = qaPair.answer
+            .filter((ans) => !ans.correct)
+            .map((ans) => ans.answer);
+          const correctAnswer = qaPair.answer.find(
+            (ans) => ans.correct
+          )?.answer;
+
+          combinedQaPairs.push({
+            question: qaPair.question,
+            question_type: "MCQ_Hard",
+            options: options,
+            answer: correctAnswer,
+          });
+        });
+      }
+
       if (questionType == "get_boolq") {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
@@ -65,7 +83,7 @@ function Question() {
             question_type: "Boolean",
           });
         });
-      } else if (qaPairsFromStorage["output"]) {
+      } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question:
@@ -83,19 +101,16 @@ function Question() {
   }, []);
 
   const generateGoogleForm = async () => {
-    const response = await fetch(
-      "http://localhost:5000/generate_gform",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          qa_pairs: qaPairs,
-          question_type: questionType,
-        }),
-      }
-    );
+    const response = await fetch("http://localhost:5000/generate_gform", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        qa_pairs: qaPairs,
+        question_type: questionType,
+      }),
+    });
 
     if (response.ok) {
       const result = await response.json();
@@ -131,7 +146,6 @@ function Question() {
                   ? [...qaPair.options, qaPair.answer]
                   : [qaPair.answer];
                 const shuffledOptions = shuffleArray(combinedOptions);
-
                 return (
                   <div
                     key={index}
