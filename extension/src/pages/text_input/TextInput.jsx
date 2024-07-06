@@ -40,22 +40,34 @@ function Second() {
     setNumQuestions((prev) => (prev > 0 ? prev - 1 : 0));
   };
 
+  const getEndpoint = (difficulty, questionType) => {
+    if (difficulty !== "Easy Difficulty") {
+      if (questionType === "get_shortq") {
+        return "get_shortq_hard";
+      } else if (questionType === "get_mcq") {
+        return "get_mcq_hard";
+      }
+    }
+    return questionType;
+  };
+
   const sendToBackend = async (data, difficulty, questionType) => {
+    const endpoint = getEndpoint(difficulty, questionType);
+    console.log(endpoint);
+    console.log(difficulty);
+    console.log(questionType);
     try {
       const formData = JSON.stringify({
         input_text: data,
         max_questions: numQuestions,
       });
-      const response = await fetch(
-        `http://localhost:5000/${questionType}`,
-        {
-          method: "POST",
-          body: formData,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`http://localhost:5000/${endpoint}`, {
+        method: "POST",
+        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
       if (response.ok) {
         const responseData = await response.json();

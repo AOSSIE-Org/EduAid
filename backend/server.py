@@ -17,7 +17,9 @@ import webbrowser
 from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
+from Generator.question_generator import QuestionGenerator
 
+qg = QuestionGenerator()
 app = Flask(__name__)
 CORS(app)
 print("Starting Flask App...")
@@ -272,11 +274,33 @@ def generate_gform():
         formId=result["formId"], body=NEW_QUESTION
     ).execute()
 
-    edit_url = result["responderUri"]
+    edit_url = jsonify(result["responderUri"])
     webbrowser.open_new_tab(
         "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
     )
     return edit_url
+
+
+@app.route("/get_shortq_hard", methods=["POST"])
+def get_shortq_hard():
+    data = request.get_json()
+    input_text = data.get("input_text", "")
+    input_questions = data.get("input_question", [])
+    output = qg.generate(
+        article=input_text, num_questions=input_questions, answer_style="sentences"
+    )
+    return jsonify({"output": output})
+
+
+@app.route("/get_mcq_hard", methods=["POST"])
+def get_mcq_hard():
+    data = request.get_json()
+    input_text = data.get("input_text", "")
+    input_questions = data.get("input_question", [])
+    output = qg.generate(
+        article=input_text, num_questions=input_questions, answer_style="multiple_choice"
+    )
+    return jsonify({"output": output})
 
 
 @app.route("/", methods=["GET"])
