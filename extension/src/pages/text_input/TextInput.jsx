@@ -53,9 +53,6 @@ function Second() {
 
   const sendToBackend = async (data, difficulty, questionType) => {
     const endpoint = getEndpoint(difficulty, questionType);
-    console.log(endpoint);
-    console.log(difficulty);
-    console.log(questionType);
     try {
       const formData = JSON.stringify({
         input_text: data,
