@@ -12,6 +12,11 @@
   opacity: 0.95;
   border-radius: 50%;
 }
+
+.my-custom-root {
+  height: 55rem;
+}
+
 .border-gradient {
   border-width: 2px; 
   border-style: solid;

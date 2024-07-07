@@ -4,7 +4,7 @@ import { PDFDocument } from 'pdf-lib';
 import "../../index.css";
 import logo from "../../assets/aossie_logo.png";
 
-function Question() {
+function SidePanel() {
   const [qaPairs, setQaPairs] = useState([]);
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType")
@@ -172,7 +172,7 @@ function Question() {
   };
 
   return (
-    <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
+    <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center my-custom-root">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <div className="flex flex-col h-full">
           <div className="flex items-end gap-[2px]">
@@ -261,4 +261,4 @@ function Question() {
   );
 }
 
-ReactDOM.render(<Question />, document.getElementById("root"));
+ReactDOM.render(<SidePanel />, document.getElementById("root"));
