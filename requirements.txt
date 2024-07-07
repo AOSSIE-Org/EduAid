@@ -28,4 +28,5 @@ en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_
 google-auth 
 datasets==1.16.1
 tokenizers
-
+fitz  # PyMuPDF for PDF handling
+mammoth

@@ -3,7 +3,10 @@
   "name": "EduAid: AI Quiz Generator",
   "version": "1.0",
   "description": "Generate quizzes with AI-powered questions.",
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["activeTab", "storage","sidePanel", "contextMenus"],
+  "side_panel": {
+    "default_path":"/src/pages/question/sidePanel.html"
+  },
   "host_permissions": [
     "http://127.0.0.1:8000/*"
   ],

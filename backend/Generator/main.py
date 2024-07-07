@@ -15,6 +15,9 @@ from Generator.encoding import beam_search_decoding
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import re
+import os
+import fitz  # PyMuPDF for PDF handling
+import mammoth
 
 class MCQGenerator:
     
@@ -334,4 +337,38 @@ class GoogleDocsService:
                         text += p['textRun']['content']
 
         return text.strip()
+    
 
+class FileProcessor:
+    def __init__(self, upload_folder='uploads/'):
+        self.upload_folder = upload_folder
+        if not os.path.exists(self.upload_folder):
+            os.makedirs(self.upload_folder)
+
+    def extract_text_from_pdf(self, file_path):
+        doc = fitz.open(file_path)
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        return text
+
+    def extract_text_from_docx(self, file_path):
+        with open(file_path, "rb") as docx_file:
+            result = mammoth.extract_raw_text(docx_file)
+            return result.value
+
+    def process_file(self, file):
+        file_path = os.path.join(self.upload_folder, file.filename)
+        file.save(file_path)
+        content = ""
+
+        if file.filename.endswith('.txt'):
+            with open(file_path, 'r') as f:
+                content = f.read()
+        elif file.filename.endswith('.pdf'):
+            content = self.extract_text_from_pdf(file_path)
+        elif file.filename.endswith('.docx'):
+            content = self.extract_text_from_docx(file_path)
+
+        os.remove(file_path)
+        return content

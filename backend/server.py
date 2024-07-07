@@ -32,6 +32,7 @@ answer = main.AnswerPredictor()
 BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+file_processor = main.FileProcessor()
 qa_model = pipeline("question-answering")
 
 
@@ -321,6 +322,22 @@ def get_mcq_hard():
     )
     return jsonify({"output": output})
 
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    content = file_processor.process_file(file)
+    
+    if content:
+        return jsonify({"content": content})
+    else:
+        return jsonify({"error": "Unsupported file type or error processing file"}), 400
 
 @app.route("/", methods=["GET"])
 def hello():
