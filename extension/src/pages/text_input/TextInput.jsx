@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import ReactDOM from "react-dom";
 import "../../index.css";
 import logo from "../../assets/aossie_logo.png";
@@ -12,6 +12,36 @@ function Second() {
   const [difficulty, setDifficulty] = useState("Easy Difficulty");
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
+  const [fileContent, setFileContent] = useState('');
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await fetch('http://localhost:5000/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await response.json();
+        setText(data.content || data.error);
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        setText('Error uploading file');
+      }
+    }
+  };
+
+  const handleClick = (event) => {
+    event.preventDefault();  // Prevent default behavior
+    event.stopPropagation(); // Stop event propagation
+
+    // Open file input dialog
+    fileInputRef.current.click();
+  };
 
   const handleSaveToLocalStorage = async () => {
     if (text) {
@@ -110,7 +140,7 @@ function Second() {
             <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
               Questionaries
             </span>{" "}
-            <img className="h-[20px] w-[20px]" src={stars} />
+            <img className="h-[20px] w-[20px]" src={stars} alt="stars" />
           </div>
         </div>
         <div className="text-left mx-2 mb-1 mt-1 text-sm text-white">
@@ -137,14 +167,25 @@ function Second() {
         </div>
         <div className="text-white text-center my-2 text-sm">or</div>
         <div className="border-[3px] rounded-xl text-center mx-3 px-6 py-2 border-dotted border-[#3E5063] mt-4">
-          <img className="mx-auto" height={24} width={24} src={cloud} alt="" />
+          <img className="mx-auto" height={24} width={24} src={cloud} alt="cloud" />
           <div className="text-center text-white text-sm">Choose a file</div>
           <div className="text-center text-white text-sm">
             PDF, MP3 supported
           </div>
-          <button className="bg-[#3e506380] my-2 text-sm rounded-xl text-white border border-[#cbd0dc80] px-6 py-1">
-            Browse File
-          </button>
+          <div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              style={{ display: 'none' }}
+            />
+            <button
+              className="bg-[#3e506380] my-2 text-sm rounded-xl text-white border border-[#cbd0dc80] px-6 py-1"
+              onClick={handleClick}
+            >
+              Browse File
+            </button>
+          </div>
         </div>
         <div className="flex justify-center gap-2 p-4">
           <div className="relative items-center">
@@ -198,7 +239,7 @@ function Second() {
               onClick={handleSaveToLocalStorage}
               className="rounded-2xl items-center flex justify-center gap-2 text-sm text-white w-fit px-6 font-bold py-2 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7]"
             >
-              Next <img src={arrow} width={16} height={12} alt="" />
+              Next <img src={arrow} width={16} height={12} alt="arrow" />
             </button>
           </div>
         </div>
@@ -208,3 +249,4 @@ function Second() {
 }
 
 ReactDOM.render(<Second />, document.getElementById("root"));
+
