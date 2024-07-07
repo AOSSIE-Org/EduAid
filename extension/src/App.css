@@ -5,3 +5,7 @@
   text-overflow: hidden;
   overflow-y: hidden;
 }
+
+.my-custom-root {
+  height: 55rem;
+}

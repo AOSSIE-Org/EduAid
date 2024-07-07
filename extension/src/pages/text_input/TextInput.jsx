@@ -14,6 +14,7 @@ function Second() {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
   const [fileContent, setFileContent] = useState('');
+  const [docUrl, setDocUrl] = useState('');
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -44,12 +45,38 @@ function Second() {
   };
 
   const handleSaveToLocalStorage = async () => {
-    if (text) {
+    setLoading(true);
+  
+    // Check if a Google Doc URL is provided
+    if (docUrl) {
+      try {
+        const response = await fetch('http://localhost:5000/get_content', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ document_url: docUrl })
+        });
+  
+        if (response.ok) {
+          const data = await response.json();
+          setText(data.content || data.error);
+        } else {
+          console.error('Error retrieving Google Doc content');
+          setText('Error retrieving Google Doc content');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        setText('Error retrieving Google Doc content');
+      } finally {
+        setLoading(false);
+      }
+    } else if (text) {
+      // Proceed with existing functionality for local storage
       localStorage.setItem("textContent", text);
       localStorage.setItem("difficulty", difficulty);
       localStorage.setItem("numQuestions", numQuestions);
-
-      setLoading(true);
+  
       await sendToBackend(
         text,
         difficulty,
@@ -186,6 +213,13 @@ function Second() {
               Browse File
             </button>
           </div>
+          <input
+            type="text"
+            placeholder="Enter Google Doc URL"
+            className="bg-[#202838] text-white rounded-xl px-5 py-2"
+            value={docUrl}
+            onChange={(e) => setDocUrl(e.target.value)}
+          />
         </div>
         <div className="flex justify-center gap-2 p-4">
           <div className="relative items-center">
