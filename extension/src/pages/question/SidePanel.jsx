@@ -264,5 +264,3 @@ function SidePanel() {
 }
 
 ReactDOM.render(<SidePanel />, document.getElementById("root"));
-
-           
