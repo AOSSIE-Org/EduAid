@@ -199,42 +199,44 @@ function SidePanel() {
                 return (
                   <div
                     key={index}
-                    className="px-2 bg-[#d9d9d90d] border-black border my-1 mx-2 rounded-xl py-2"
+                    className="px-2 bg-[#d9d9d90d] border-dotted border-2 border-[#7600F2] my-2 mx-2 rounded-xl py-2"
                   >
-                    <div className="text-[#E4E4E4] text-sm">
+                    <div className="text-white font-bold text-sm">
                       Question {index + 1}
                     </div>
-                    <div className="text-[#FFF4F4] text-[1rem] my-1">
+                    <div className="text-white text-[1rem] my-1">
                       {qaPair.question}
                     </div>
-                    {qaPair.question_type !== "Boolean" && (
-                      <>
-                        <div className="text-[#E4E4E4] text-sm">Answer</div>
-                        <div className="text-[#FFF4F4] text-[1rem]">
-                          {qaPair.answer}
-                        </div>
-                        {qaPair.options && qaPair.options.length > 0 && (
-                          <div className="text-[#FFF4F4] text-[1rem]">
-                            {shuffledOptions.map((option, idx) => (
-                              <div key={idx}>
-                                <span className="text-[#E4E4E4] text-sm">
-                                  Option {idx + 1}:
-                                </span>{" "}
-                                <span className="text-[#FFF4F4] text-[1rem]">
-                                  {option}
-                                </span>
-                              </div>
-                            ))}
+                    {qaPair.options && (
+                      <div className="text-[#FFF4F4] text-[1rem] my-1">
+                        {shuffledOptions.map((option, idx) => (
+                          <div key={idx} className="flex items-center">
+                            <input
+                              type="radio"
+                              name={`question${index}`}
+                              value={option}
+                              className="mr-2"
+                            />
+                            <span>{option}</span>
                           </div>
-                        )}
-                      </>
+                        ))}
+                      </div>
+                    )}
+                    {!qaPair.options && (
+                      <div className="my-2">
+                        <input
+                          type="text"
+                          placeholder="Enter your answer"
+                          className="bg-[#161E1E] text-white p-2 rounded-lg w-full"
+                        />
+                      </div>
                     )}
                   </div>
                 );
               })}
           </div>
           <div className="items-center flex justify-center gap-6 mx-auto">
-            <button
+          <button
               className="bg-[#161E1E] my-2 text-white px-2 py-2 rounded-xl"
               onClick={() => {
                 window.close();

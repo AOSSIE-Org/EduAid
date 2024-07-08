@@ -60,7 +60,8 @@ function Second() {
   
         if (response.ok) {
           const data = await response.json();
-          setText(data.content || data.error);
+          setDocUrl("")
+          setText(data || "Error in retrieving");
         } else {
           console.error('Error retrieving Google Doc content');
           setText('Error retrieving Google Doc content');
@@ -138,7 +139,7 @@ function Second() {
   };
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
+    <div className="popup w-42rem h-35rem bg-[#02000F] flex justify-center items-center">
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
           <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
@@ -174,7 +175,7 @@ function Second() {
           Enter Content Here
         </div>
 
-        <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-32">
+        <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-28">
           <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
             <FaClipboard className="h-[20px] w-[20px]" />
           </button>
@@ -246,7 +247,7 @@ function Second() {
               No. of questions{" "}
               <button
                 onClick={decrementQuestions}
-                className="px-1 rounded-full bg-[#3C5063] hover:bg-[#2d3c4b]"
+                className="mr-1 px-1 rounded-full bg-[#3C5063] hover:bg-[#2d3c4b]"
               >
                 -
               </button>{" "}
@@ -254,7 +255,7 @@ function Second() {
             </span>
             <button
               onClick={incrementQuestions}
-              className="px-1 rounded-full bg-[#3C5063] hover:bg-[#2d3c4b]"
+              className="ml-1 px-1 rounded-full bg-[#3C5063] hover:bg-[#2d3c4b]"
             >
               +
             </button>
