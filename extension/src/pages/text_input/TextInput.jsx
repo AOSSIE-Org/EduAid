@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import ReactDOM from "react-dom";
 import "../../index.css";
-import logo from "../../assets/aossie_logo.png";
+import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
 import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
@@ -123,10 +123,26 @@ function Second() {
           "Content-Type": "application/json",
         },
       });
-
+  
       if (response.ok) {
         const responseData = await response.json();
         localStorage.setItem("qaPairs", JSON.stringify(responseData));
+        
+        // Save quiz details to local storage
+        const quizDetails = {
+          difficulty,
+          numQuestions,
+          date: new Date().toLocaleDateString(),
+          qaPair:responseData
+        };
+        
+        let last5Quizzes = JSON.parse(localStorage.getItem('last5Quizzes')) || [];
+        last5Quizzes.push(quizDetails);
+        if (last5Quizzes.length > 5) {
+          last5Quizzes.shift();  // Keep only the last 5 quizzes
+        }
+        localStorage.setItem('last5Quizzes', JSON.stringify(last5Quizzes));
+  
         window.location.href = "/src/pages/question/question.html";
       } else {
         console.error("Backend request failed.");
@@ -137,6 +153,7 @@ function Second() {
       setLoading(false);
     }
   };
+  
 
   return (
     <div className="popup w-42rem h-35rem bg-[#02000F] flex justify-center items-center">
@@ -263,18 +280,18 @@ function Second() {
         </div>
         <div className="flex my-2 justify-center gap-6 items-start">
           <div className="">
-            <a href="/src/pages/home/home.html">
+            <a href="/src/popup/popup.html">
               <button className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient">
-                Summarize
+                Back
               </button>
             </a>
           </div>
           <div>
             <button
               onClick={handleSaveToLocalStorage}
-              className="rounded-2xl items-center flex justify-center gap-2 text-sm text-white w-fit px-6 font-bold py-2 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7]"
+              className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient flex"
             >
-              Next <img src={arrow} width={16} height={12} alt="arrow" />
+              Next <img src={arrow} width={16} height={12} alt="arrow" className="ml-2" />
             </button>
           </div>
         </div>

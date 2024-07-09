@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import "../index.css";
-import logo from "../assets/aossie_logo.png";
+import logo from "../assets/aossie_logo.webp";
 import starsImg from "../assets/stars.png";
 import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
+import { FaGithub } from 'react-icons/fa';
 
 function Popup() {
   const [stars, setStars] = useState(null);
@@ -88,26 +89,44 @@ function Popup() {
               </div>
             </div>
           </div>
-          <div className="mt-10 rounded-2xl">
-            <a href="/src/pages/home/home.html">
-              <button className="bg-black items-center text-2xl flex justify-center gap-2 text-white px-6 py-2 mx-auto mt-4 border-gradient">
-                Let’s get Started{" "}
-                <img src={arrow} width={20} height={18} alt="" />
-              </button>
-            </a>
-          </div>
-          <div className="bg-[#45454599] mt-5 w-fit mx-auto px-2 py-2 rounded-xl flex gap-2 items-center">
-            <img src={gitStar} className="" width={22} height={6} alt="" />
-            <div className="text-white font-semibold">
-              {stars !== null ? (
-                <span>
-                  {stars} <span className="bg-[#1A188D] ml-1 text-white rounded-xl px-2 py-3 mr-[-1]">Github</span>
-                </span>
-              ) : (
-                <span>{error}</span>
-              )}
+          <div className="flex ml-2">
+            <div className="mt-6 rounded-2xl mr-4">
+              <a href="/src/pages/home/home.html">
+                <button className="bg-black items-center text-base flex justify-center gap-2 text-white px-4 py-2 mx-auto mt-4 border-gradient hover:wave-effect rounded-md">
+                  Let’s get Started{" "}
+                  <img src={arrow} width={20} height={18} alt="" />
+                </button>
+              </a>
+            </div>
+            <div className="mt-6 rounded-2xl mr-2">
+              <a href="/src/pages/previous/previous.html">
+                <button className="bg-black items-center text-base flex justify-center gap-2 text-white px-4 py-2 mx-auto mt-4 border-gradient hover:wave-effect rounded-md">
+                  Your previous Work!
+                  <img src={arrow} width={20} height={18} alt="" />
+                </button>
+              </a>
             </div>
           </div>
+          <a
+            href="https://github.com/AOSSIE-Org/EduAid"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group"
+          >
+            <div className="bg-[#45454599] mt-5 w-fit mx-auto px-2 py-2 rounded-xl flex gap-2 items-center group-hover:bg-[#5a5a5a99] transition-colors duration-300">
+              <img src={gitStar} className="" width={22} height={6} alt="" />
+              <div className="text-white font-semibold">
+                {stars !== null ? (
+                  <span className="flex text-xl">
+                    {stars}
+                    <FaGithub size={30} className="ml-4" />
+                  </span>
+                ) : (
+                  <span>{error}</span>
+                )}
+              </div>
+            </div>
+          </a>
         </div>
       </div>
     </div>
