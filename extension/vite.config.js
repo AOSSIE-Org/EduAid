@@ -12,6 +12,7 @@ export default defineConfig({
         second: resolve(__dirname, "src/pages/text_input/text_input.html"),
         question: resolve(__dirname, "src/pages/question/question.html"),
         sidePanel: resolve(__dirname, "src/pages/question/sidePanel.html"),
+        previous: resolve(__dirname, "src/pages/previous/previous.html"),
       },
       output: {
         entryFileNames: "assets/[name].js",
