@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import "../../index.css";
-import logo from "../../assets/aossie_logo.png";
+import logo from "../../assets/aossie_logo.webp";
 
 function Home() {
   const [selectedOption, setSelectedOption] = useState(null);
