@@ -30,3 +30,5 @@ datasets==1.16.1
 tokenizers
 fitz  # PyMuPDF for PDF handling
 mammoth
+mediawikiapi
+PyMuPDF

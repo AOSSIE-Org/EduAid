@@ -6,6 +6,7 @@ import stars from "../../assets/stars.png";
 import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
 import { FaClipboard } from "react-icons/fa";
+import Switch from "react-switch";
 
 function Second() {
   const [text, setText] = useState("");
@@ -15,6 +16,11 @@ function Second() {
   const fileInputRef = useRef(null);
   const [fileContent, setFileContent] = useState('');
   const [docUrl, setDocUrl] = useState('');
+  const [isToggleOn, setIsToggleOn] = useState(0);
+
+  const toggleSwitch = () => {
+    setIsToggleOn((isToggleOn+1)%2);
+  };
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -115,6 +121,7 @@ function Second() {
       const formData = JSON.stringify({
         input_text: data,
         max_questions: numQuestions,
+        use_mediawiki : isToggleOn
       });
       const response = await fetch(`http://localhost:5000/${endpoint}`, {
         method: "POST",
@@ -239,12 +246,12 @@ function Second() {
             onChange={(e) => setDocUrl(e.target.value)}
           />
         </div>
-        <div className="flex justify-center gap-2 p-4">
+        <div className="flex justify-center gap-1 p-2">
           <div className="relative items-center">
             <select
               value={difficulty}
               onChange={handleDifficultyChange}
-              className="bg-[#202838] text-white rounded-xl px-5 py-2 appearance-none"
+              className="bg-[#202838] text-white rounded-xl px-5 py-3 appearance-none"
             >
               <option>Easy Difficulty</option>
               <option>Medium Difficulty</option>
@@ -252,14 +259,14 @@ function Second() {
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center py-2 px-2 pointer-events-none">
               <svg
-                className="w-4 h-4 fill-current text-white"
+                className="w-2 h-2 fill-current text-white"
                 viewBox="0 0 20 20"
               >
                 <path d="M5.5 8l4.5 4.5L14.5 8H5.5z" />
               </svg>
             </div>
           </div>
-          <div className="flex items-center bg-[#202838] text-white rounded-xl px-4 py-2">
+          <div className="flex items-center bg-[#202838] text-white rounded-xl px-1 py-2">
             <span className="">
               No. of questions{" "}
               <button
@@ -277,6 +284,16 @@ function Second() {
               +
             </button>
           </div>
+          <div className="items-center bg-[#202838] text-white rounded-xl px-2 py-2">
+          <Switch
+            checked={isToggleOn}
+            onChange={toggleSwitch}
+            offColor="#FF005C"
+            onColor="#00CBE7"
+            height={24}
+            width={44}
+          />
+        </div>
         </div>
         <div className="flex my-2 justify-center gap-6 items-start">
           <div className="">
