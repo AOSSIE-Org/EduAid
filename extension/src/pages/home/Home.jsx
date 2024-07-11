@@ -2,9 +2,17 @@ import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import "../../index.css";
 import logo from "../../assets/aossie_logo.webp";
+import Switch from "react-switch"
 
 function Home() {
   const [selectedOption, setSelectedOption] = useState(null);
+  const [isToggleOn, setIsToggleOn] = useState(0);
+
+  const toggleSwitch = () => {
+    window.location.href = "/src/pages/answer/answer.html";
+    setIsToggleOn(1)
+
+  };
 
   const handleOptionClick = (option) => {
     setSelectedOption(option);
@@ -20,6 +28,7 @@ function Home() {
     <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <div className="flex items-end gap-[2px]">
+
           <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
           <div className="text-2xl mb-3 font-extrabold">
             <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
@@ -29,6 +38,15 @@ function Home() {
               Aid
             </span>
           </div>
+          <Switch
+            checked={isToggleOn}
+            onChange={toggleSwitch}
+            offColor="#FF005C"
+            onColor="#00CBE7"
+            height={32}
+            width={64}
+            className="ml-32 mb-8"
+          />
         </div>
         <div className="text-3xl mt-3 text-white ml-4 font-extrabold">
           What’s on your Mind?
