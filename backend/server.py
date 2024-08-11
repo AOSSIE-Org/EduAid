@@ -6,6 +6,7 @@ import nltk
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
+nltk.download('punkt_tab')
 from Generator import main
 import re
 import json
