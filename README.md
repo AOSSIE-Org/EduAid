@@ -65,4 +65,35 @@ npm run build
 2. Enable "Developer mode" (top-right corner).
 3. Click on "Load Unpacked" and select the `dist` folder created in the previous step.
 
+## Features
+
+1. **Dynamic Question Generation**:
+   - **Boolean Questions**: Quickly generate engaging true/false questions.
+   - **Multiple-Choice Questions (MCQ)**: Create diverse MCQs with up to 4 options for comprehensive quizzes.
+   - **Single Correct Answer Questions**: Formulate questions with one clear correct answer.
+   - **Customizable Question Count**: Tailor the number of questions to your needs—just select the type, set the number, and hit "Generate" to see your quiz come to life!
+
+2. **Quiz History at Your Fingertips**:
+   - **Last 5 Quizzes**: Instantly access and review the last 5 quizzes you've generated. No more losing track—your quiz history is always just a click away!
+
+3. **Smart Answer Generator**:
+   - **Automatic Answers**: Seamlessly generate answers for various question types. Toggle the switch on the Get Started page to enable or disable this feature.
+   - **MCQ Answer Magic**: For MCQs, provide the options and let the tool generate the perfect answers for you.
+
+4. **Wiki-Based Quiz Generation**:
+   - **Topic-Based Quizzes**: Missing text content for a topic? Toggle the switch in the bottom right corner of the Question Generator page to create a quiz based on the topic using external knowledge sources.
+
+5. **Flexible Quiz Input**:
+   - **File Parsing**: Upload `.txt`, `.docx`, or `.pdf` files to easily extract content for quiz creation.
+   - **Google Docs Integration**: Use the open shareable link from Google Docs to generate quizzes directly from your documents.
+
+6. **Enhanced Quiz Visibility**:
+   - **SidePanel View**: Enjoy an organized and enhanced view of your generated quizzes right in the SidePanel.
+
+7. **Editable Forms**:
+   - **PDF Forms**: Generate editable PDF forms based on your quizzes.
+   - **Google Forms**: Create Google Forms for your quizzes, perfect for easy distribution and response collection.
+
+
+
 
