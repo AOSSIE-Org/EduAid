@@ -12,21 +12,43 @@ EduAid is one such project currently available in the form of a browser extensio
 git clone https://github.com/AOSSIE-Org/EduAid.git
 cd EduAid
 ```
-### 2. Backend Setup
-- Download the Sense2Vec model from [this link](https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz) and extract the contents into the `backend` folder.
-- Extract the contents of the downloaded compressed folder inside the backend folder.
+## 2. Backend Setup
 
-- Install Python Dependencies
-Navigate to the root repository folder and run the following command to install the required Python dependencies:
-```bash
-pip install -r requirements.txt
-```
-- Run Flask App
-Navigate to the backend folder and start the Flask app:
-```bash
-python server.py
-```
-This will activate the backend for the application.
+You can choose to set up the backend manually or use an automated shell script.
+
+### Option 1: Manual Setup
+
+1. **Download the Sense2Vec Model**:
+   - Download the Sense2Vec model from [this link](https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz) and extract the contents into the `backend` folder.
+
+2. **Install Python Dependencies**:
+   - Navigate to the root repository folder and run the following command to install the required Python dependencies:
+     ```bash
+     pip install -r requirements.txt
+     ```
+
+3. **Run Flask App**:
+   - Navigate to the `backend` folder and start the Flask app:
+     ```bash
+     python server.py
+     ```
+   - This will activate the backend for the application.
+
+### Option 2: Automated Setup with Shell Script
+
+1. **Run the Setup Script**:
+   - Navigate to the `backend` folder and run the following shell script:
+     ```bash
+     ./script.sh
+     ```
+   - This script will automatically download and extract the Sense2Vec model, install Python dependencies, and start the Flask app.
+
+### Troubleshooting
+
+- If the script fails to run, ensure that you have execution permissions:
+  ```bash
+  chmod +x script.sh
+
 
 ### 3. Configure Google APIs
 
@@ -94,6 +116,12 @@ npm run build
    - **PDF Forms**: Generate editable PDF forms based on your quizzes.
    - **Google Forms**: Create Google Forms for your quizzes, perfect for easy distribution and response collection.
 
+## How to contribute
 
+This is the second year of the project. While some may have their own ideas on how to contribute, for the newcomers to the repository, you may follow the following steps: 
+
+1. First get to know the organization and the project by visiting the [Official Website](https://github.com/AOSSIE-Org)
+
+2. Visit the [Discord Channel](https://discord.com/channels/1022871757289422898/1073262393670504589) for interacting with the community!
 
 
