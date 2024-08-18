@@ -1,70 +1,126 @@
-# EduAid: AI Quiz Generation🚀
-Online learning has taken the front seat in the post pandemic age. With the advent of sophisticated AI architectures like the Transformers, it is but natural that AI would find its way into education. Learning online via YouTube or MOOC platforms is often done as a method of self learning. The biggest obstacle faced by a student in self learning is the lack of attention span. An online tool that can generate short quizzes on input educational content can be of great use to teachers and students alike as it can help retain important information, frame questions and quickly revise large chunks of content. 
+# EduAid: AI Quiz Generation 🚀
 
-EduAid is one such project which is currently available in the form of a browser extension. 
+Online learning has taken the front seat in the post-pandemic age. With the advent of sophisticated AI architectures like Transformers, it is only natural that AI would find its way into education. Learning online via platforms like YouTube or MOOCs is often a method of self-learning. The biggest obstacle faced by students in self-learning is the lack of attention span. An online tool that can generate short quizzes from input educational content can be a great resource for both teachers and students. It helps retain important information, frame questions, and quickly revise large chunks of content.
 
-## Installation
+EduAid is one such project currently available in the form of a browser extension.
 
-Currently, the extension is not deployed, so it can only run locally. To run the extension locally, clone the github repo using:
+## Installation and Setup
 
+### 1. Clone the Repository
 
-```
+```bash
 git clone https://github.com/AOSSIE-Org/EduAid.git
+cd EduAid
 ```
+## 2. Backend Setup
 
-Now move to the `backend` directory and make a new directory that will store the models.
+You can choose to set up the backend manually or use an automated shell script.
 
+### Option 1: Manual Setup
+
+1. **Download the Sense2Vec Model**:
+   - Download the Sense2Vec model from [this link](https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz) and extract the contents into the `backend` folder.
+
+2. **Install Python Dependencies**:
+   - Navigate to the root repository folder and run the following command to install the required Python dependencies:
+     ```bash
+     pip install -r requirements.txt
+     ```
+
+3. **Run Flask App**:
+   - Navigate to the `backend` folder and start the Flask app:
+     ```bash
+     python server.py
+     ```
+   - This will activate the backend for the application.
+
+### Option 2: Automated Setup with Shell Script
+
+1. **Run the Setup Script**:
+   - Navigate to the `backend` folder and run the following shell script:
+     ```bash
+     ./script.sh
+     ```
+   - This script will automatically download and extract the Sense2Vec model, install Python dependencies, and start the Flask app.
+
+### Troubleshooting
+
+- If the script fails to run, ensure that you have execution permissions:
+  ```bash
+  chmod +x script.sh
+
+
+### 3. Configure Google APIs
+
+#### Google Docs API
+
+1. Navigate to the `backend` folder.
+2. Open the `service_account_key.json` file.
+3. Enter the service account details for the Google Docs API.
+4. Refer to the [Google Docs API documentation](https://developers.google.com/docs/api/reference/rest) for more details.
+
+#### Google Forms API
+
+1. Open the `credentials.json` file in the `backend` folder.
+2. Enter the necessary credentials for the Google Forms API.
+3. Refer to the [Google Forms API quickstart guide](https://developers.google.com/forms/api/quickstart/python#set_up_your_environment) for setup instructions.
+
+### 4. Extension Setup
+
+#### Install Dependencies
+
+Navigate to the `extension` folder and install the required dependencies:
+
+```bash
+npm install
 ```
-cd backend && mkdir models && cd models && mkdir modelA && mkdir modelB
+#### Build the Project
+
+Build the extension:
+
+```bash
+npm run build
 ```
+#### Load the Extension in Chrome
 
-Download the model files from 🤗 Hub: [model A](https://huggingface.co/prarabdhshukla/fine-tuned-t5-keyphrase-detection) [model B](https://huggingface.co/prarabdhshukla/fine-tuned-t5-answer-aware-question-generation/tree/main) and place them in the respective folders. 
+1. Open Chrome and navigate to `chrome://extensions/`.
+2. Enable "Developer mode" (top-right corner).
+3. Click on "Load Unpacked" and select the `dist` folder created in the previous step.
 
-Finally, the `models` should look like this:
+## Features
 
-```
-+---models
-ª   +---modelA
-ª   ª       config.json
-ª   ª       generation_config.json
-ª   ª       pytorch_model.bin
-ª   ª
-ª   +---modelB
-ª           config.json
-ª           generation_config.json
-ª           pytorch_model.bin
-```
+1. **Dynamic Question Generation**:
+   - **Boolean Questions**: Quickly generate engaging true/false questions.
+   - **Multiple-Choice Questions (MCQ)**: Create diverse MCQs with up to 4 options for comprehensive quizzes.
+   - **Single Correct Answer Questions**: Formulate questions with one clear correct answer.
+   - **Customizable Question Count**: Tailor the number of questions to your needs—just select the type, set the number, and hit "Generate" to see your quiz come to life!
 
-Now run the script `server.py`
+2. **Quiz History at Your Fingertips**:
+   - **Last 5 Quizzes**: Instantly access and review the last 5 quizzes you've generated. No more losing track—your quiz history is always just a click away!
 
-```
-cd .. && python3 server.py
-```
+3. **Smart Answer Generator**:
+   - **Automatic Answers**: Seamlessly generate answers for various question types. Toggle the switch on the Get Started page to enable or disable this feature.
+   - **MCQ Answer Magic**: For MCQs, provide the options and let the tool generate the perfect answers for you.
 
-Now go the extensions page of your browser and load the directory `EduAid/extension` and you're ready to roll! 
+4. **Wiki-Based Quiz Generation**:
+   - **Topic-Based Quizzes**: Missing text content for a topic? Toggle the switch in the bottom right corner of the Question Generator page to create a quiz based on the topic using external knowledge sources.
 
-To load an unpacked directory as an extension in a browser, you might have to turn on *Developer mode* on your browser.
+5. **Flexible Quiz Input**:
+   - **File Parsing**: Upload `.txt`, `.docx`, or `.pdf` files to easily extract content for quiz creation.
+   - **Google Docs Integration**: Use the open shareable link from Google Docs to generate quizzes directly from your documents.
 
-**Note:** This extension was tested on Google Chrome and Brave. The instructions on how to run it on Chrome can be found [here](https://developer.chrome.com/docs/extensions/mv3/getstarted/development-basics/). For Brave, the steps are the same with minor differences.
+6. **Enhanced Quiz Visibility**:
+   - **SidePanel View**: Enjoy an organized and enhanced view of your generated quizzes right in the SidePanel.
 
-## How to use
-
-After opening the extension and clicking on the 'Fire up!' button, we currently have support for two methods of accepting input:
-
-1. Typing out the text or by pasting from the clipboard
-2. By uploading a PDF
-
-Then after clicking the next button, the questions are generated, which can either be viewed in the extension popup itself or can be downloaded as a `.txt` file.
-
-![eduaid-demo](./readme-assets/EduAid-demo.gif)
-
-**Note:** If your machine has GPU, the inference time should be faster. On CPU, it can take from a few seconds to a few minutes for inference. On an AMD RYZEN 5 8GB CPU with 6 cores, the inference time is usually 45-70 seconds. The inference time may differ depending on the specifications of your machine.
+7. **Editable Forms**:
+   - **PDF Forms**: Generate editable PDF forms based on your quizzes.
+   - **Google Forms**: Create Google Forms for your quizzes, perfect for easy distribution and response collection.
 
 ## How to contribute
 
-This is the first year of the project. While some may have their own ideas on how to contribute, for the newcomers to the repository, you may follow the following steps: 
+This is the second year of the project. While some may have their own ideas on how to contribute, for the newcomers to the repository, you may follow the following steps: 
 
-1. First get to know the organization and the project by visiting the [Official Website](http://aossie.gitlab.io/)
+1. First get to know the organization and the project by visiting the [Official Website](https://github.com/AOSSIE-Org)
 
 2. Visit the [Discord Channel](https://discord.com/channels/1022871757289422898/1073262393670504589) for interacting with the community!
 
