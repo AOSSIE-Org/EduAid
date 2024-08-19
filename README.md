@@ -87,6 +87,16 @@ npm run build
 2. Enable "Developer mode" (top-right corner).
 3. Click on "Load Unpacked" and select the `dist` folder created in the previous step.
 
+#### EduAid Web App
+In addition to the browser extension, EduAid also offers a web app that provides the same powerful features for quiz generation. The web app allows you to access EduAid's capabilities directly from your browser without needing to install any extensions. Just start the backend server locally and:
+
+1. Navigate to the Web App Directory:
+`cd eduaid_web`
+2. Install Dependencies:
+`npm install`
+3. Start the Web App:
+`npm run start`
+
 ## Features
 
 1. **Dynamic Question Generation**:
