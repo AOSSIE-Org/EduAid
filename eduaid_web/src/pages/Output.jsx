@@ -221,8 +221,8 @@ const Output = () => {
   };
 
   return (
-    <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
+    <div className="popup scrollabe_bg w-full h-full bg-[#02000F] flex justify-center items-center">
+      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient scrollabe_bg">
         <div className="flex flex-col h-full">
           <a href="/">
             <div className="flex items-end gap-[2px]">

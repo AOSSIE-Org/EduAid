@@ -16,8 +16,8 @@ const Question_Type = () => {
   };
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient p-6">
+    <div className="popup scrollabe_bg w-screen h-screen bg-[#02000F] flex justify-center items-center">
+      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient scrollabe_bg p-6">
         <a href="/">
           <div className="flex items-end gap-4">
             <img src={logo} alt="logo" className="w-24 my-6 block" />
