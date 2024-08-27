@@ -49,8 +49,8 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
+    <div className="popup scrollabe_bg w-screen h-screen bg-[#02000F] flex justify-center items-center">
+      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient scrollabe_bg">
         <div>
           <img src={logo} alt="logo" className="w-24 my-6 mx-6 block" />
           <div className="text-7xl text-center font-extrabold">
