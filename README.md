@@ -133,5 +133,3 @@ This is the second year of the project. While some may have their own ideas on h
 1. First get to know the organization and the project by visiting the [Official Website](https://github.com/AOSSIE-Org)
 
 2. Visit the [Discord Channel](https://discord.com/channels/1022871757289422898/1073262393670504589) for interacting with the community!
-
-
