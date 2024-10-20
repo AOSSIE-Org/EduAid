@@ -5,6 +5,7 @@ import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch"
+import { FaQuestionCircle, FaClipboardList } from "react-icons/fa"; // Icons for the dropdown
 
 const Answer = () => {
   const [context, setContext] = useState("");
@@ -13,11 +14,23 @@ const Answer = () => {
   const [loading, setLoading] = useState(false);
 
   const [isToggleOn, setIsToggleOn] = useState(1);
+  const [mode, setMode] = useState("ask_question"); // Dropdown state
 
-  const toggleSwitch = () => {
-    window.location.href = "/src/pages/home/home.html";
-    setIsToggleOn(0);
 
+  // const toggleSwitch = () => {
+  //   window.location.href = "/src/pages/home/home.html";
+  //   setIsToggleOn(0);
+
+  // };
+
+  const handleModeChange = (event) => {
+    setMode(event.target.value);
+    // You can navigate to a different page or perform a specific action based on the mode here
+    if (event.target.value === "generate_qna") {
+      // window.location.href = "/src/pages/answer/answer.html"; // Redirect for 'Ask Questions' mode
+      window.location.href = "/src/pages/home/home.html";
+
+    }
   };
 
   const addQuestion = () => {
@@ -121,7 +134,7 @@ const Answer = () => {
               Aid
             </span>
           </div>
-          <Switch
+          {/* <Switch
             checked={isToggleOn}
             onChange={toggleSwitch}
             offColor="#FF005C"
@@ -129,7 +142,28 @@ const Answer = () => {
             height={32}
             width={64}
             className="ml-32 mb-8"
-          />
+          /> */}
+          {/* Dropdown for Mode Selection */}
+          <div className="relative ml-auto mb-3">
+            <select
+              value={mode}
+              onChange={handleModeChange}
+              className="bg-[#202838] text-white text-sm font-medium px-4 py-2 rounded-xl appearance-none"
+            >
+              <option value="generate_qna">
+                <FaClipboardList className="inline-block mr-2" />
+                Generate Q&A
+              </option>
+              <option value="ask_question">
+                <FaQuestionCircle className="inline-block mr-2" />
+                Ask Questions
+              </option>
+            </select>
+          </div>
+
+        </div>
+        <div className="text-3xl mt-3 mb-1 text-white ml-4 font-extrabold">
+          Ask Questions!
         </div>
         <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-20">
           <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
