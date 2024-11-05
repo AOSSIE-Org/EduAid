@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import "../../index.css";
 import logo from "../../assets/aossie_logo.webp";
@@ -15,7 +15,16 @@ const Answer = () => {
 
   const [isToggleOn, setIsToggleOn] = useState(1);
   const [mode, setMode] = useState("ask_question"); // Dropdown state
-
+  
+  useEffect(() => {
+  chrome.storage.local.get(["selectedText"], (result) => {
+    if (result.selectedText) {
+      console.log("Selected Text: ", result.selectedText);
+      setContext(result.selectedText);
+      localStorage.setItem("textContent", result.selectedText);
+    }
+  });
+  },[])
 
   // const toggleSwitch = () => {
   //   window.location.href = "/src/pages/home/home.html";
@@ -112,6 +121,9 @@ const Answer = () => {
       console.error("Error:", error);
     } finally {
       setLoading(false);
+      chrome.storage.local.remove(["selectedText"], () => {
+        console.log("Chrome storage cleared");
+      });
     }
   };
   
