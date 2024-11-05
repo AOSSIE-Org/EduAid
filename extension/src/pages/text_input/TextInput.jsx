@@ -21,7 +21,7 @@ function Second() {
   useEffect(() => {
     chrome.storage.local.get(["selectedText"], (result) => {
       if (result.selectedText) {
-        console.log("extension", result.selectedText);
+        console.log("Selected Text: ", result.selectedText);
         setText(result.selectedText);
         localStorage.setItem("textContent", result.selectedText);
       }

@@ -19,7 +19,7 @@ const Answer = () => {
   useEffect(() => {
   chrome.storage.local.get(["selectedText"], (result) => {
     if (result.selectedText) {
-      console.log("extension", result.selectedText);
+      console.log("Selected Text: ", result.selectedText);
       setContext(result.selectedText);
       localStorage.setItem("textContent", result.selectedText);
     }
