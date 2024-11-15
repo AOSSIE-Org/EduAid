@@ -3,7 +3,10 @@
   "name": "EduAid: AI Quiz Generator",
   "version": "1.0",
   "description": "Generate quizzes with AI-powered questions.",
-  "permissions": ["activeTab", "storage","sidePanel", "contextMenus"],
+  "permissions": ["activeTab", "storage", "sidePanel", "contextMenus", "scripting"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "side_panel": {
     "default_path":"/src/pages/question/sidePanel.html"
   },
@@ -25,6 +28,12 @@
     {
       "resources": ["static/js/*", "static/css/*", "src/assets/*"],
       "matches": ["<all_urls>"]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["contentScript.js"]
     }
   ]
 }

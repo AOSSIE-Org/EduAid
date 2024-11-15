@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom";
 import "../../index.css";
 import logo from "../../assets/aossie_logo.webp";
@@ -18,8 +18,19 @@ function Second() {
   const [docUrl, setDocUrl] = useState('');
   const [isToggleOn, setIsToggleOn] = useState(0);
 
+  useEffect(() => {
+    chrome.storage.local.get(["selectedText"], (result) => {
+      if (result.selectedText) {
+        console.log("Selected Text: ", result.selectedText);
+        setText(result.selectedText);
+        localStorage.setItem("textContent", result.selectedText);
+      }
+    });
+  }, [])
+
+
   const toggleSwitch = () => {
-    setIsToggleOn((isToggleOn+1)%2);
+    setIsToggleOn((isToggleOn + 1) % 2);
   };
 
   const handleFileUpload = async (event) => {
@@ -52,7 +63,7 @@ function Second() {
 
   const handleSaveToLocalStorage = async () => {
     setLoading(true);
-  
+
     // Check if a Google Doc URL is provided
     if (docUrl) {
       try {
@@ -63,7 +74,7 @@ function Second() {
           },
           body: JSON.stringify({ document_url: docUrl })
         });
-  
+
         if (response.ok) {
           const data = await response.json();
           setDocUrl("")
@@ -77,13 +88,16 @@ function Second() {
         setText('Error retrieving Google Doc content');
       } finally {
         setLoading(false);
+        chrome.storage.local.remove(["selectedText"], () => {
+          console.log("Chrome storage cleared");
+        });
       }
     } else if (text) {
       // Proceed with existing functionality for local storage
       localStorage.setItem("textContent", text);
       localStorage.setItem("difficulty", difficulty);
       localStorage.setItem("numQuestions", numQuestions);
-  
+
       await sendToBackend(
         text,
         difficulty,
@@ -121,7 +135,7 @@ function Second() {
       const formData = JSON.stringify({
         input_text: data,
         max_questions: numQuestions,
-        use_mediawiki : isToggleOn
+        use_mediawiki: isToggleOn
       });
       const response = await fetch(`http://localhost:5000/${endpoint}`, {
         method: "POST",
@@ -130,26 +144,26 @@ function Second() {
           "Content-Type": "application/json",
         },
       });
-  
+
       if (response.ok) {
         const responseData = await response.json();
         localStorage.setItem("qaPairs", JSON.stringify(responseData));
-        
+
         // Save quiz details to local storage
         const quizDetails = {
           difficulty,
           numQuestions,
           date: new Date().toLocaleDateString(),
-          qaPair:responseData
+          qaPair: responseData
         };
-        
+
         let last5Quizzes = JSON.parse(localStorage.getItem('last5Quizzes')) || [];
         last5Quizzes.push(quizDetails);
         if (last5Quizzes.length > 5) {
           last5Quizzes.shift();  // Keep only the last 5 quizzes
         }
         localStorage.setItem('last5Quizzes', JSON.stringify(last5Quizzes));
-  
+
         window.location.href = "/src/pages/question/question.html";
       } else {
         console.error("Backend request failed.");
@@ -160,7 +174,7 @@ function Second() {
       setLoading(false);
     }
   };
-  
+
 
   return (
     <div className="popup w-42rem h-35rem bg-[#02000F] flex justify-center items-center">
@@ -170,9 +184,8 @@ function Second() {
         </div>
       )}
       <div
-        className={`w-full h-full bg-cust bg-opacity-50 bg-custom-gradient ${
-          loading ? "pointer-events-none" : ""
-        }`}
+        className={`w-full h-full bg-cust bg-opacity-50 bg-custom-gradient ${loading ? "pointer-events-none" : ""
+          }`}
       >
         <div className="flex items-end gap-[2px]">
           <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
@@ -285,15 +298,15 @@ function Second() {
             </button>
           </div>
           <div className="items-center bg-[#202838] text-white rounded-xl px-2 py-2">
-          <Switch
-            checked={isToggleOn}
-            onChange={toggleSwitch}
-            offColor="#FF005C"
-            onColor="#00CBE7"
-            height={24}
-            width={44}
-          />
-        </div>
+            <Switch
+              checked={isToggleOn}
+              onChange={toggleSwitch}
+              offColor="#FF005C"
+              onColor="#00CBE7"
+              height={24}
+              width={44}
+            />
+          </div>
         </div>
         <div className="flex my-2 justify-center gap-6 items-start">
           <div className="">
