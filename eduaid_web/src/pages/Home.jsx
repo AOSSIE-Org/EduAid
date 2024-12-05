@@ -49,7 +49,7 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
+    <div className="popup w-screen min-h-screen bg-[#02000F] flex justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <div>
           <img src={logo} alt="logo" className="w-24 my-6 mx-6 block" />
