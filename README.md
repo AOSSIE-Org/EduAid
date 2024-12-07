@@ -12,7 +12,23 @@ EduAid is one such project currently available in the form of a browser extensio
 git clone https://github.com/AOSSIE-Org/EduAid.git
 cd EduAid
 ```
-## 2. Backend Setup
+
+### 2. Configure Google APIs
+
+#### Google Docs API
+
+1. Navigate to the `backend` folder.
+2. Open the `service_account_key.json` file.
+3. Enter the service account details for the Google Docs API.
+4. Refer to the [Google Docs API documentation](https://developers.google.com/docs/api/reference/rest) for more details.
+
+#### Google Forms API
+
+1. Open the `credentials.json` file in the `backend` folder.
+2. Enter the necessary credentials for the Google Forms API.
+3. Refer to the [Google Forms API quickstart guide](https://developers.google.com/forms/api/quickstart/python#set_up_your_environment) for setup instructions.
+
+## 3. Backend Setup
 
 You can choose to set up the backend manually or use an automated shell script.
 
@@ -48,22 +64,6 @@ You can choose to set up the backend manually or use an automated shell script.
 - If the script fails to run, ensure that you have execution permissions:
   ```bash
   chmod +x script.sh
-
-
-### 3. Configure Google APIs
-
-#### Google Docs API
-
-1. Navigate to the `backend` folder.
-2. Open the `service_account_key.json` file.
-3. Enter the service account details for the Google Docs API.
-4. Refer to the [Google Docs API documentation](https://developers.google.com/docs/api/reference/rest) for more details.
-
-#### Google Forms API
-
-1. Open the `credentials.json` file in the `backend` folder.
-2. Enter the necessary credentials for the Google Forms API.
-3. Refer to the [Google Forms API quickstart guide](https://developers.google.com/forms/api/quickstart/python#set_up_your_environment) for setup instructions.
 
 ### 4. Extension Setup
 
