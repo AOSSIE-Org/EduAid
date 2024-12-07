@@ -34,23 +34,8 @@ You can choose to set up the backend manually or use an automated shell script.
      ```
    - This will activate the backend for the application.
 
-### Option 2: Automated Setup with Shell Script
 
-1. **Run the Setup Script**:
-   - Navigate to the `backend` folder and run the following shell script:
-     ```bash
-     ./script.sh
-     ```
-   - This script will automatically download and extract the Sense2Vec model, install Python dependencies, and start the Flask app.
-
-### Troubleshooting
-
-- If the script fails to run, ensure that you have execution permissions:
-  ```bash
-  chmod +x script.sh
-
-
-### 3. Configure Google APIs
+Configure Google APIs
 
 #### Google Docs API
 
@@ -64,6 +49,22 @@ You can choose to set up the backend manually or use an automated shell script.
 1. Open the `credentials.json` file in the `backend` folder.
 2. Enter the necessary credentials for the Google Forms API.
 3. Refer to the [Google Forms API quickstart guide](https://developers.google.com/forms/api/quickstart/python#set_up_your_environment) for setup instructions.
+
+
+## 3: Automated Setup with Shell Script
+
+1. **Run the Setup Script**:
+   - Navigate to the `backend` folder and run the following shell script:
+     ```bash
+     ./script.sh
+     ```
+   - This script will automatically download and extract the Sense2Vec model, install Python dependencies, and start the Flask app.
+
+### Troubleshooting
+
+- If the script fails to run, ensure that you have execution permissions:
+  ```bash
+  chmod +x script.sh
 
 ### 4. Extension Setup
 
