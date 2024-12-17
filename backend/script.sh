@@ -4,6 +4,10 @@ S2V_URL="https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_red
 S2V_ARCHIVE="s2v_reddit_2015_md.tar.gz"
 S2V_DIR="s2v_old"
 
+if [ ! -d "venv" ]; then
+  python3 -m venv venv
+fi
+
 if [ -d "$S2V_DIR" ]; then
   echo "Directory exists, skipping"
   exit 0
