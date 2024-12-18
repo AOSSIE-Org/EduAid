@@ -29,11 +29,5 @@
       "resources": ["static/js/*", "static/css/*", "src/assets/*"],
       "matches": ["<all_urls>"]
     }
-  ],
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["contentScript.js"]
-    }
   ]
 }
