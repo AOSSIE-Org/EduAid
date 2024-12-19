@@ -1,4 +1,4 @@
-# #!/bin/bash
+#!/bin/bash
 
 S2V_URL="https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz"
 S2V_ARCHIVE="s2v_reddit_2015_md.tar.gz"
