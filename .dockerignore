@@ -1,0 +1,45 @@
+# Node.js modules
+**/node_modules/
+
+
+# Build outputs
+**/dist/
+**/build/
+
+#Model
+backend/s2v_old/
+
+# Git files
+.git/
+**/.gitignore
+
+**/__pycache__/
+**/.pyc
+**/.pyo
+**/.venv/
+
+# Environment files
+.env
+.env.local
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.swp
+*.bak
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+.DS_Store  # macOS system file
+Thumbs.db  # Windows system file
+
+# npm and Yarn logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "5000:5000"  # Maps Flask app to localhost
+    volumes:
+      - ./backend:/app/backend  # Bind mount to sync local changes
+      - /app/backend/s2v_old  # Keep the extracted Sense2Vec model
+    environment:
+      - FLASK_ENV=development  # Enables Flask's debug mode
+      - FLASK_APP=server.py  # Specifies the Flask entry point
+    
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile.webapp
+    ports:
+      - "3000:3000"  
+    volumes:
+      - ./eduaid_web:/app/eduaid_web
+      - /app/eduaid_web/node_modules  
+    command: ["npx", "nodemon", "--watch", "/app/eduaid_web", "--exec", "npm", "start", "--prefix", "/app/eduaid_web"]
+    depends_on:
+      - backend  # Ensures backend service starts first

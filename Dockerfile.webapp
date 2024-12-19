@@ -1,0 +1,22 @@
+# Use Node.js image
+FROM node:16-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies for the browser extension and web app
+COPY extension/package*.json /app/extension/
+RUN cd /app/extension && npm install
+
+COPY eduaid_web/package*.json /app/eduaid_web/
+RUN cd /app/eduaid_web && npm install
+
+# Copy the source code (optional for production builds)
+# COPY extension/ /app/extension
+# COPY eduaid_web/ /app/eduaid_web
+
+# Expose the port for the web app
+EXPOSE 3000
+
+# Set the entrypoint for the web app (use nodemon for live reloading)
+CMD ["npx", "nodemon", "--watch", "/app/eduaid_web", "--exec", "npm", "start", "--prefix", "/app/eduaid_web"]
