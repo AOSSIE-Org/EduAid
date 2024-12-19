@@ -19,7 +19,7 @@ The backend should be set up and run inside a Python virtual environment to ensu
 
 #### Step 1: Create a Virtual Environment
 
-Navigate to the repository's root folder and create a virtual environment:
+Navigate to the repository's Backend folder and create a virtual environment:
 
 ```bash
 python -m venv venv
