@@ -12,27 +12,45 @@ EduAid is one such project currently available in the form of a browser extensio
 git clone https://github.com/AOSSIE-Org/EduAid.git
 cd EduAid
 ```
-## 2. Backend Setup
 
-You can choose to set up the backend manually or use an automated shell script.
+### 2. Backend Setup
 
-### Option 1: Manual Setup
+The backend should be set up and run inside a Python virtual environment to ensure isolated dependency management.
 
-1. **Download the Sense2Vec Model**:
-   - Download the Sense2Vec model from [this link](https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz) and extract the contents into the `backend` folder.
+#### Step 1: Create a Virtual Environment
 
-2. **Install Python Dependencies**:
-   - Navigate to the root repository folder and run the following command to install the required Python dependencies:
-     ```bash
-     pip install -r requirements.txt
-     ```
+Navigate to the repository's root folder and create a virtual environment:
 
-3. **Run Flask App**:
-   - Navigate to the `backend` folder and start the Flask app:
-     ```bash
-     python server.py
-     ```
-   - This will activate the backend for the application.
+```bash
+python -m venv venv
+.\venv\Scripts\Activate
+```
+#### Step 2: Download the Sense2Vec Model
+
+1. Download the Sense2Vec model from [this link](https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz).
+2. Extract the contents into the `backend` folder.
+
+#### Step 3: Install Python Dependencies
+
+Run the following command to install the required Python dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+#### Step 4: Run the Flask App
+
+Navigate to the `backend` folder and start the Flask app:
+
+```bash
+cd backend
+python server.py
+```
+
+The backend server will now be active and ready for use.
+
+---
+
 
 ### Option 2: Automated Setup with Shell Script
 
