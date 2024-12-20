@@ -5,6 +5,8 @@ import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Text_Input = () => {
   const [text, setText] = useState("");
@@ -15,6 +17,18 @@ const Text_Input = () => {
   const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
+
+  const notify = (message) => {
+    toast(message, {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    });
+  };
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
@@ -35,23 +49,21 @@ const Text_Input = () => {
         setText(data.content || data.error);
       } catch (error) {
         console.error("Error uploading file:", error);
+        notify("Error uploading file");
         setText("Error uploading file");
       }
     }
   };
 
   const handleClick = (event) => {
-    event.preventDefault(); // Prevent default behavior
-    event.stopPropagation(); // Stop event propagation
-
-    // Open file input dialog
+    event.preventDefault();
+    event.stopPropagation();
     fileInputRef.current.click();
   };
 
   const handleSaveToLocalStorage = async () => {
     setLoading(true);
 
-    // Check if a Google Doc URL is provided
     if (docUrl) {
       try {
         const response = await fetch("http://localhost:5000/get_content", {
@@ -68,16 +80,17 @@ const Text_Input = () => {
           setText(data || "Error in retrieving");
         } else {
           console.error("Error retrieving Google Doc content");
+          notify("Error retrieving Google Doc content");
           setText("Error retrieving Google Doc content");
         }
       } catch (error) {
         console.error("Error:", error);
+        notify("Error retrieving Google Doc content");
         setText("Error retrieving Google Doc content");
       } finally {
         setLoading(false);
       }
     } else if (text) {
-      // Proceed with existing functionality for local storage
       localStorage.setItem("textContent", text);
       localStorage.setItem("difficulty", difficulty);
       localStorage.setItem("numQuestions", numQuestions);
@@ -87,6 +100,9 @@ const Text_Input = () => {
         difficulty,
         localStorage.getItem("selectedQuestionType")
       );
+    } else {
+      notify("Please enter text or provide a document URL");
+      setLoading(false);
     }
   };
 
@@ -134,7 +150,6 @@ const Text_Input = () => {
         const responseData = await response.json();
         localStorage.setItem("qaPairs", JSON.stringify(responseData));
 
-        // Save quiz details to local storage
         const quizDetails = {
           difficulty,
           numQuestions,
@@ -146,15 +161,17 @@ const Text_Input = () => {
           JSON.parse(localStorage.getItem("last5Quizzes")) || [];
         last5Quizzes.push(quizDetails);
         if (last5Quizzes.length > 5) {
-          last5Quizzes.shift(); // Keep only the last 5 quizzes
+          last5Quizzes.shift();
         }
         localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
 
         window.location.href = "output";
       } else {
+        notify("Backend request failed");
         console.error("Backend request failed.");
       }
     } catch (error) {
+      notify("Error processing request");
       console.error("Error:", error);
     } finally {
       setLoading(false);
@@ -169,9 +186,8 @@ const Text_Input = () => {
         </div>
       )}
       <div
-        className={`w-full h-full bg-cust bg-opacity-50 ${
-          loading ? "pointer-events-none" : ""
-        }`}
+        className={`w-full h-full bg-cust bg-opacity-50 ${loading ? "pointer-events-none" : ""
+          }`}
       >
         <a href="/">
           <div className="flex items-end gap-[2px]">
@@ -205,14 +221,15 @@ const Text_Input = () => {
             className="absolute inset-0 p-8 pt-4 bg-[#83b6cc40] text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
+            readOnly={text === "Error uploading file"}
             onChange={(e) => setText(e.target.value)}
           />
           <style>
             {`
-          textarea::-webkit-scrollbar {
-            display: none;
-          }
-        `}
+              textarea::-webkit-scrollbar {
+                display: none;
+              }
+            `}
           </style>
         </div>
         <div className="text-white text-center my-4 text-lg">or</div>
@@ -299,16 +316,26 @@ const Text_Input = () => {
               Back
             </button>
           </a>
-          {/* <a href="output"> */}
           <button
             onClick={handleSaveToLocalStorage}
             className="bg-black items-center text-xl text-white px-4 py-2 border-gradient flex"
           >
             Next
           </button>
-          {/* </a> */}
         </div>
       </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
     </div>
   );
 };
