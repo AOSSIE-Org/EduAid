@@ -56,13 +56,16 @@ const Text_Input = () => {
   };
 
   const handleClick = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
+    event.preventDefault(); // Prevent default behavior
+    event.stopPropagation(); // Stop event propagation
+
+    // Open file input dialog
     fileInputRef.current.click();
   };
 
   const handleSaveToLocalStorage = async () => {
     setLoading(true);
+// Check if a Google Doc URL is provided
 
     if (docUrl) {
       try {
@@ -91,6 +94,7 @@ const Text_Input = () => {
         setLoading(false);
       }
     } else if (text) {
+      // Proceed with existing functionality for local storage
       localStorage.setItem("textContent", text);
       localStorage.setItem("difficulty", difficulty);
       localStorage.setItem("numQuestions", numQuestions);
@@ -100,9 +104,6 @@ const Text_Input = () => {
         difficulty,
         localStorage.getItem("selectedQuestionType")
       );
-    } else {
-      notify("Please enter text or provide a document URL");
-      setLoading(false);
     }
   };
 
@@ -149,7 +150,7 @@ const Text_Input = () => {
       if (response.ok) {
         const responseData = await response.json();
         localStorage.setItem("qaPairs", JSON.stringify(responseData));
-
+// Save quiz details to local storage
         const quizDetails = {
           difficulty,
           numQuestions,
@@ -161,7 +162,7 @@ const Text_Input = () => {
           JSON.parse(localStorage.getItem("last5Quizzes")) || [];
         last5Quizzes.push(quizDetails);
         if (last5Quizzes.length > 5) {
-          last5Quizzes.shift();
+          last5Quizzes.shift();// Keep only the last 5 quizzes
         }
         localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
 
@@ -186,8 +187,9 @@ const Text_Input = () => {
         </div>
       )}
       <div
-        className={`w-full h-full bg-cust bg-opacity-50 ${loading ? "pointer-events-none" : ""
-          }`}
+        className={`w-full h-full bg-cust bg-opacity-50 ${
+          loading ? "pointer-events-none" : ""
+        }`}
       >
         <a href="/">
           <div className="flex items-end gap-[2px]">
@@ -226,10 +228,10 @@ const Text_Input = () => {
           />
           <style>
             {`
-              textarea::-webkit-scrollbar {
-                display: none;
-              }
-            `}
+                textarea::-webkit-scrollbar {
+            display: none;
+          }
+        `}
           </style>
         </div>
         <div className="text-white text-center my-4 text-lg">or</div>
@@ -316,12 +318,14 @@ const Text_Input = () => {
               Back
             </button>
           </a>
+          {/* <a href="output"> */}
           <button
             onClick={handleSaveToLocalStorage}
             className="bg-black items-center text-xl text-white px-4 py-2 border-gradient flex"
           >
             Next
           </button>
+          {/* </a> */}
         </div>
       </div>
       <ToastContainer
