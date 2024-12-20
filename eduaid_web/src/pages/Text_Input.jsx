@@ -65,7 +65,7 @@ const Text_Input = () => {
 
   const handleSaveToLocalStorage = async () => {
     setLoading(true);
-// Check if a Google Doc URL is provided
+    // Check if a Google Doc URL is provided
 
     if (docUrl) {
       try {
@@ -150,7 +150,7 @@ const Text_Input = () => {
       if (response.ok) {
         const responseData = await response.json();
         localStorage.setItem("qaPairs", JSON.stringify(responseData));
-// Save quiz details to local storage
+        // Save quiz details to local storage
         const quizDetails = {
           difficulty,
           numQuestions,
@@ -187,9 +187,8 @@ const Text_Input = () => {
         </div>
       )}
       <div
-        className={`w-full h-full bg-cust bg-opacity-50 ${
-          loading ? "pointer-events-none" : ""
-        }`}
+        className={`w-full h-full bg-cust bg-opacity-50 ${loading ? "pointer-events-none" : ""
+          }`}
       >
         <a href="/">
           <div className="flex items-end gap-[2px]">
@@ -220,7 +219,7 @@ const Text_Input = () => {
             <FaClipboard className="h-[24px] w-[24px]" />
           </button>
           <textarea
-            className="absolute inset-0 p-8 pt-4 bg-[#83b6cc40] text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
+            className="absolute inset-0 p-8 pt-2 mx-2 bg-[#83b6cc40] text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
             readOnly={text === "Error uploading file"}
