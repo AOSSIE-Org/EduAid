@@ -2,11 +2,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pprint import pprint
 import nltk
-
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
-nltk.download('punkt_tab')
+nltk.download('punkt')
 from Generator import main
 import re
 import json
@@ -42,7 +41,7 @@ qa_model = pipeline("question-answering")
 
 def process_input_text(input_text, use_mediawiki):
     if use_mediawiki == 1:
-        input_text = mediawikiapi.summary(input_text,8)
+        input_text = mediawikiapi.summary(input_text, 8)
     return input_text
 
 
@@ -109,6 +108,7 @@ def get_problems():
     return jsonify(
         {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
     )
+
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
@@ -245,14 +245,9 @@ def generate_gform():
             ]  # Filter out empty or None options
 
             # Ensure the answer is included in the choices
-            choices = [qapair["answer"]] + valid_options[
-                :3
-            ]  # Include up to the first 3 options
-
-            # Randomize the order of the choices
+            choices = [qapair["answer"]] + valid_options[ :3]
             random.shuffle(choices)
 
-            # Prepare the request structure
             choices_list = [{"value": choice} for choice in choices]
 
             requests = {
@@ -305,10 +300,8 @@ def generate_gform():
                 options = qapair["options"]
                 valid_options = [
                     opt for opt in options if opt
-                ]  # Filter out empty or None options
-                choices = [qapair["answer"]] + valid_options[
-                    :3
-                ]  # Include up to the first 3 options
+                ]
+                choices = [qapair["answer"]] + valid_options[ :3]
                 random.shuffle(choices)
                 choices_list = [{"value": choice} for choice in choices]
                 question_structure = {
@@ -365,10 +358,9 @@ def get_shortq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
-    output = qg.generate(
-        article=input_text, num_questions=input_questions, answer_style="sentences"
+    input_text = process_input_text(input_text, use_mediawiki)
+    output = ShortQGen.generate_shortq_hard(
+        {"input_text": input_text, "max_questions": 4}
     )
     return jsonify({"output": output})
 
@@ -378,34 +370,12 @@ def get_mcq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
-    output = qg.generate(
-        article=input_text, num_questions=input_questions, answer_style="multiple_choice"
+    input_text = process_input_text(input_text, use_mediawiki)
+    output = MCQGen.generate_mcq_hard(
+        {"input_text": input_text, "max_questions": 4}
     )
     return jsonify({"output": output})
 
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
-
-    file = request.files['file']
-
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-
-    content = file_processor.process_file(file)
-    
-    if content:
-        return jsonify({"content": content})
-    else:
-        return jsonify({"error": "Unsupported file type or error processing file"}), 400
-
-@app.route("/", methods=["GET"])
-def hello():
-    return "The server is working fine"
-
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
