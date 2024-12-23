@@ -13,14 +13,17 @@ nltk.download('stopwords')
 nltk.download('popular')
 
 def is_word_available(word, s2v_model):
+    """
+    Check if the word exists in the Sense2Vec model.
+    """
     word = word.replace(" ", "_")
     sense = s2v_model.get_best_sense(word)
-    if sense is not None:
-        return True
-    else:
-        return False
+    return sense is not None
 
 def generate_word_variations(word):
+    """
+    Generate variations of a given word by applying common spelling errors.
+    """
     letters = 'abcdefghijklmnopqrstuvwxyz ' + string.punctuation
     splits = [(word[:i], word[i:]) for i in range(len(word) + 1)]
     deletes = [L + R[1:] for L, R in splits if R]
@@ -30,176 +33,157 @@ def generate_word_variations(word):
     return set(deletes + transposes + replaces + inserts)
 
 def find_similar_words(word, s2v_model):
+    """
+    Find similar words to the input word using Sense2Vec model.
+    """
     output = []
-    word_preprocessed = word.translate(word.maketrans("", "", string.punctuation))
-    word_preprocessed = word_preprocessed.lower()
-
+    word_preprocessed = word.translate(word.maketrans("", "", string.punctuation)).lower()
     word_variations = generate_word_variations(word_preprocessed)
-
     word = word.replace(" ", "_")
-
     sense = s2v_model.get_best_sense(word)
     most_similar = s2v_model.most_similar(sense, n=15)
-
+    
     compare_list = [word_preprocessed]
     for each_word in most_similar:
-        append_word = each_word[0].split("|")[0].replace("_", " ")
-        append_word = append_word.strip()
-        append_word_processed = append_word.lower()
-        append_word_processed = append_word_processed.translate(word.maketrans("", "", string.punctuation))
-        if append_word_processed not in compare_list and word_preprocessed not in append_word_processed and append_word_processed not in word_variations:
+        append_word = each_word[0].split("|")[0].replace("_", " ").strip().lower()
+        append_word = append_word.translate(word.maketrans("", "", string.punctuation))
+        if append_word not in compare_list and word_preprocessed not in append_word and append_word not in word_variations:
             output.append(append_word.title())
-            compare_list.append(append_word_processed)
-
-    out = list(dict.fromkeys(output))
-    return out
+            compare_list.append(append_word)
+    
+    return list(dict.fromkeys(output))
 
 def get_answer_choices(answer, s2v_model):
-    choices = []
-
+    """
+    Generate answer choices based on the similarity to the given answer.
+    """
     try:
         choices = find_similar_words(answer, s2v_model)
-        if len(choices) > 0:
-            print("Generated choices successfully for word:", answer)
+        if choices:
             return choices, "sense2vec"
     except Exception as e:
         print(f"Failed to generate choices for word: {answer}. Error: {e}")
-
-    return choices, "None"
+    return [], "None"
 
 def tokenize_into_sentences(text):
-    sentences = [sent_tokenize(text)]
-    sentences = [y for x in sentences for y in x]
-    sentences = [sentence.strip() for sentence in sentences if len(sentence) > 20]
-    return sentences
+    """
+    Tokenize the input text into sentences and filter out short sentences.
+    """
+    sentences = sent_tokenize(text)
+    return [sentence.strip() for sentence in sentences if len(sentence) > 20]
 
 def find_sentences_with_keywords(keywords, sentences):
+    """
+    Find and return sentences containing the keywords.
+    """
     keyword_processor = KeywordProcessor()
-    keyword_sentences = {}
+    keyword_sentences = {word: [] for word in keywords}
     for word in keywords:
-        word = word.strip()
-        keyword_sentences[word] = []
         keyword_processor.add_keyword(word)
     for sentence in sentences:
         keywords_found = keyword_processor.extract_keywords(sentence)
         for key in keywords_found:
             keyword_sentences[key].append(sentence)
+    
+    for key in keyword_sentences:
+        keyword_sentences[key] = sorted(keyword_sentences[key], key=len, reverse=True)
 
-    for key in keyword_sentences.keys():
-        values = keyword_sentences[key]
-        values = sorted(values, key=len, reverse=True)
-        keyword_sentences[key] = values
-
-    delete_keys = [k for k, v in keyword_sentences.items() if len(v) == 0]
-    for del_key in delete_keys:
-        del keyword_sentences[del_key]
-
-    return keyword_sentences
+    return {k: v for k, v in keyword_sentences.items() if v}
 
 def are_words_distant(words_list, current_word, threshold, normalized_levenshtein):
+    """
+    Check if words in the list are sufficiently distant from the current word.
+    """
     score_list = [normalized_levenshtein.distance(word.lower(), current_word.lower()) for word in words_list]
     return min(score_list) >= threshold
 
 def filter_useful_phrases(phrase_keys, max_count, normalized_levenshtein):
-    filtered_phrases = []
-    if phrase_keys:
-        filtered_phrases.append(phrase_keys[0])
-        for ph in phrase_keys[1:]:
-            if are_words_distant(filtered_phrases, ph, 0.7, normalized_levenshtein):
-                filtered_phrases.append(ph)
-            if len(filtered_phrases) >= max_count:
-                break
+    """
+    Filter out useful phrases based on distance threshold and max count.
+    """
+    filtered_phrases = [phrase_keys[0]] if phrase_keys else []
+    for ph in phrase_keys[1:]:
+        if are_words_distant(filtered_phrases, ph, 0.7, normalized_levenshtein):
+            filtered_phrases.append(ph)
+        if len(filtered_phrases) >= max_count:
+            break
     return filtered_phrases
 
 def extract_noun_phrases(text):
-    out = []
+    """
+    Extract noun phrases from the input text using MultipartiteRank.
+    """
     extractor = pke.unsupervised.MultipartiteRank()
     extractor.load_document(input=text, language='en')
     pos = {'PROPN', 'NOUN'}
-    stoplist = list(string.punctuation)
-    stoplist += stopwords.words('english')
+    stoplist = list(string.punctuation) + stopwords.words('english')
     extractor.candidate_selection(pos=pos)
     try:
         extractor.candidate_weighting(alpha=1.1, threshold=0.75, method='average')
     except Exception as e:
         print(f"Error in candidate weighting: {e}")
-        return out
-
+        return []
     keyphrases = extractor.get_n_best(n=10)
-    out = [key[0] for key in keyphrases]
-    return out
+    return [key[0] for key in keyphrases]
 
 def extract_phrases_from_doc(doc):
+    """
+    Extract phrases from a document object using noun chunks.
+    """
     phrases = {}
     for np in doc.noun_chunks:
         phrase = np.text
-        len_phrase = len(phrase.split())
-        if len_phrase > 1:
-            if phrase not in phrases:
-                phrases[phrase] = 1
-            else:
-                phrases[phrase] += 1
-
-    phrase_keys = list(phrases.keys())
-    phrase_keys = sorted(phrase_keys, key=lambda x: len(x), reverse=True)
-    phrase_keys = phrase_keys[:50]
-    return phrase_keys
+        if len(phrase.split()) > 1:
+            phrases[phrase] = phrases.get(phrase, 0) + 1
+    phrase_keys = sorted(phrases.keys(), key=lambda x: len(x), reverse=True)
+    return phrase_keys[:50]
 
 def identify_keywords(nlp_model, text, max_keywords, s2v_model, fdist, normalized_levenshtein, num_sentences):
+    """
+    Identify keywords and phrases from the input text and filter them.
+    """
     doc = nlp_model(text)
-    max_keywords = int(max_keywords)
-
     keywords = extract_noun_phrases(text)
     keywords = sorted(keywords, key=lambda x: fdist[x])
     keywords = filter_useful_phrases(keywords, max_keywords, normalized_levenshtein)
-
+    
     phrase_keys = extract_phrases_from_doc(doc)
     filtered_phrases = filter_useful_phrases(phrase_keys, max_keywords, normalized_levenshtein)
 
-    total_phrases = keywords + filtered_phrases
-
-    total_phrases_filtered = filter_useful_phrases(total_phrases, min(max_keywords, 2 * num_sentences), normalized_levenshtein)
+    total_phrases = filter_useful_phrases(keywords + filtered_phrases, min(max_keywords, 2 * num_sentences), normalized_levenshtein)
 
     answers = []
-    for answer in total_phrases_filtered:
+    for answer in total_phrases:
         if answer not in answers and is_word_available(answer, s2v_model):
             answers.append(answer)
 
-    answers = answers[:max_keywords]
-    return answers
+    return answers[:max_keywords]
 
 def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, model, sense2vec_model, normalized_levenshtein):
+    """
+    Generate multiple-choice questions based on keyword-sentence mappings.
+    """
     batch_text = []
-    answers = keyword_sent_mapping.keys()
-    for answer in answers:
-        txt = keyword_sent_mapping[answer]
-        context = "context: " + txt
-        text = context + " " + "answer: " + answer + " </s>"
+    for answer, txt in keyword_sent_mapping.items():
+        text = f"context: {txt} answer: {answer} </s>"
         batch_text.append(text)
 
     encoding = tokenizer.batch_encode_plus(batch_text, pad_to_max_length=True, return_tensors="pt")
-
-    print("Generating questions using the model...")
     input_ids, attention_masks = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)
 
     with torch.no_grad():
-        outputs = model.generate(input_ids=input_ids,
-                                 attention_mask=attention_masks,
-                                 max_length=150)
+        outputs = model.generate(input_ids=input_ids, attention_mask=attention_masks, max_length=150)
 
     generated_questions = []
-    for index, answer in enumerate(answers):
-        out = outputs[index, :]
-        decoded_question = tokenizer.decode(out, skip_special_tokens=True, clean_up_tokenization_spaces=True)
-
-        question_statement = decoded_question.replace("question:", "").strip()
+    for index, answer in enumerate(keyword_sent_mapping.keys()):
+        decoded_question = tokenizer.decode(outputs[index, :], skip_special_tokens=True).replace("question:", "").strip()
         options, options_algorithm = get_answer_choices(answer, sense2vec_model)
         options = filter_useful_phrases(options, 10, normalized_levenshtein)
         extra_options = options[3:]
         options = options[:3]
 
         question_data = {
-            "question_statement": question_statement,
+            "question_statement": decoded_question,
             "question_type": "MCQ",
             "answer": answer,
             "id": index + 1,
@@ -214,40 +198,31 @@ def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, 
     return {"questions": generated_questions}
 
 def generate_normal_questions(keyword_sent_mapping, device, tokenizer, model):
+    """
+    Generate normal questions based on keyword-sentence mappings.
+    """
     batch_text = []
-    answers = keyword_sent_mapping.keys()
-    
-    for answer in answers:
-        txt = keyword_sent_mapping[answer]
-        context = "context: " + txt
-        text = context + " " + "answer: " + answer + " </s>"
+    for answer, txt in keyword_sent_mapping.items():
+        text = f"context: {txt} answer: {answer} </s>"
         batch_text.append(text)
 
     encoding = tokenizer.batch_encode_plus(batch_text, pad_to_max_length=True, return_tensors="pt")
-
-    print("Running model for generation...")
     input_ids, attention_masks = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)
 
     with torch.no_grad():
-        outs = model.generate(input_ids=input_ids,
-                              attention_mask=attention_masks,
-                              max_length=150)
+        outs = model.generate(input_ids=input_ids, attention_mask=attention_masks, max_length=150)
 
     output_array = {"questions": []}
-
-    for index, val in enumerate(answers):
-        individual_quest = {}
-        out = outs[index, :]
-        dec = tokenizer.decode(out, skip_special_tokens=True, clean_up_tokenization_spaces=True)
+    for index, answer in enumerate(keyword_sent_mapping.keys()):
+        decoded_question = tokenizer.decode(outs[index, :], skip_special_tokens=True).replace("question:", "").strip()
         
-        Question = dec.replace('question:', '')
-        Question = Question.strip()
-
-        individual_quest['Question'] = Question
-        individual_quest['Answer'] = val
-        individual_quest["id"] = index + 1
-        individual_quest["context"] = keyword_sent_mapping[val]
+        individual_quest = {
+            'Question': decoded_question,
+            'Answer': answer,
+            'id': index + 1,
+            'context': keyword_sent_mapping[answer]
+        }
         
         output_array["questions"].append(individual_quest)
-    
+
     return output_array
