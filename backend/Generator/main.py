@@ -379,7 +379,7 @@ class FileProcessor:
 
 class QuestionGenerator:
     """A transformer-based NLP system for generating reading comprehension-style questions from
-    texts. It can generate full sentence questions, multiple choice questions, or a mix of the
+    texts. It can generate full sentence questions, multiple choice questions                , or a mix of the
     two styles.
 
     To filter out low quality questions, questions are assigned a score and ranked once they have
