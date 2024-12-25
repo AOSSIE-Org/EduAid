@@ -5,9 +5,11 @@ import Question_Type from "./pages/Question_Type";
 import Text_Input from "./pages/Text_Input";
 import Output from "./pages/Output";
 import Previous from "./pages/Previous";
+import Footer from "./pages/Footer";
 
 function App() {
   return (
+    <>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -17,6 +19,8 @@ function App() {
         <Route path="/history" element={<Previous />} />
       </Routes>
     </BrowserRouter>
+    <Footer/>
+    </>
   );
 }
 
