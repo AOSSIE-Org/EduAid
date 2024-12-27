@@ -5,7 +5,7 @@ import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
 import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
-import { FaClipboard } from "react-icons/fa";
+import { FaClipboard, FaMicrophone, FaRegStopCircle, FaRedo } from "react-icons/fa";
 import Switch from "react-switch";
 
 function Second() {
@@ -17,6 +17,8 @@ function Second() {
   const [fileContent, setFileContent] = useState('');
   const [docUrl, setDocUrl] = useState('');
   const [isToggleOn, setIsToggleOn] = useState(0);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
 
   useEffect(() => {
     chrome.storage.local.get(["selectedText"], (result) => {
@@ -28,6 +30,37 @@ function Second() {
     });
   }, [])
 
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+
+      recognitionRef.current.onresult = (event) => {
+        const transcriptArray = Array.from(event.results)
+          .map(result => result[0].transcript)
+          .join('');
+        setText(transcriptArray);
+        console.log(transcriptArray);        
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        console.error("Speech recognition error", event.error);
+        if (event.error === 'not-allowed') {
+          alert('Microphone access is not allowed. Please enable it in your browser settings.');
+        }
+      };
+    } else {
+      console.error("Speech recognition not supported in this browser.");
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
@@ -174,7 +207,27 @@ function Second() {
       setLoading(false);
     }
   };
+  const handleCopyToClipboard = () => {
+    navigator.clipboard.writeText(text);
+  };
 
+  const handleStartListening = () => {
+    if (recognitionRef.current) {
+      setIsListening(true);
+      recognitionRef.current.start();
+    }
+  };
+
+  const handleStopListening = () => {
+    if (recognitionRef.current) {
+      setIsListening(false);
+      recognitionRef.current.stop();
+    }
+  };
+
+  const handleResetTranscript = () => {
+    setText('');
+  };
 
   return (
     <div className="popup w-42rem h-35rem bg-[#02000F] flex justify-center items-center">
@@ -213,8 +266,32 @@ function Second() {
         </div>
 
         <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-28">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
+          <button
+            className="absolute bottom-5 left-9 p-2 text-white focus:outline-none h-[24px] w-[24px] z-50"
+            onClick={handleCopyToClipboard}
+          >
             <FaClipboard className="h-[20px] w-[20px]" />
+          </button>
+          {isListening ? (
+            <button
+              className="absolute bottom-5 right-16 p-2 text-white focus:outline-none h-[24px] w-[24px] z-50"
+              onClick={handleStopListening}
+            >
+              <FaRegStopCircle className="h-[20px] w-[20px]" />
+            </button>
+          ) : (
+            <button
+              className="absolute bottom-5 right-16 p-2 text-white focus:outline-none h-[24px] w-[24px] z-50"
+              onClick={handleStartListening}
+            >
+              <FaMicrophone className="h-[20px] w-[20px]" />
+            </button>
+          )}
+          <button
+            className="absolute bottom-5 right-8 p-2 text-white focus:outline-none h-[24px] w-[24px] z-50"
+            onClick={handleResetTranscript}
+          >
+            <FaRedo className="h-[20px] w-[20px]" />
           </button>
           <textarea
             className="absolute inset-0 p-8 pt-2 bg-[#83b6cc40] text-lg rounded-xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
@@ -331,4 +408,3 @@ function Second() {
 }
 
 ReactDOM.render(<Second />, document.getElementById("root"));
-
