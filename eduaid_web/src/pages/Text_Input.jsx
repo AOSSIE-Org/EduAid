@@ -19,7 +19,7 @@ const Text_Input = () => {
   const [isToggleOn, setIsToggleOn] = useState(0);
 
   const notify = (message) => {
-    toast(message, {
+    toast.error(message, {
       position: "top-right",
       autoClose: 3000,
       hideProgressBar: false,
@@ -27,6 +27,7 @@ const Text_Input = () => {
       pauseOnHover: true,
       draggable: true,
       progress: undefined,
+      theme: "dark",
     });
   };
 
@@ -47,6 +48,7 @@ const Text_Input = () => {
         });
         const data = await response.json();
         setText(data.content || data.error);
+        notify(data.error);
       } catch (error) {
         console.error("Error uploading file:", error);
         notify("Error uploading file");
@@ -222,7 +224,7 @@ const Text_Input = () => {
             className="absolute inset-0 p-8 pt-2 mx-2 bg-[#83b6cc40] text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
-            readOnly={text === "Error uploading file"}
+            readOnly={text === "Error uploading file" || text === "Unsupported file type or error processing file" || text === "No file part" || text === "No selected file"}
             onChange={(e) => setText(e.target.value)}
           />
           <style>

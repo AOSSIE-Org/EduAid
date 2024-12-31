@@ -7,6 +7,18 @@ import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
+const notify = (message) => {
+  toast.error(message, {
+    position: "top-right",
+    autoClose: 3000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    theme: "dark",
+  });
+};
 
 function Second() {
   const [text, setText] = useState("");
@@ -46,8 +58,10 @@ function Second() {
         });
         const data = await response.json();
         setText(data.content || data.error);
+        notify(data.error);
       } catch (error) {
         console.error('Error uploading file:', error);
+        notify("Error uploading file");
         setText('Error uploading file');
       }
     }
@@ -81,10 +95,12 @@ function Second() {
           setText(data || "Error in retrieving");
         } else {
           console.error('Error retrieving Google Doc content');
+          notify("Error retrieving Google Doc content");
           setText('Error retrieving Google Doc content');
         }
       } catch (error) {
         console.error('Error:', error);
+        notify("Error retrieving Google Doc content");
         setText('Error retrieving Google Doc content');
       } finally {
         setLoading(false);
@@ -167,9 +183,11 @@ function Second() {
         window.location.href = "/src/pages/question/question.html";
       } else {
         console.error("Backend request failed.");
+        notify("Backend request failed");
       }
     } catch (error) {
       console.error("Error:", error);
+      notify("Backend request failed");
     } finally {
       setLoading(false);
     }
@@ -220,6 +238,7 @@ function Second() {
             className="absolute inset-0 p-8 pt-2 bg-[#83b6cc40] text-lg rounded-xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
+            readOnly={text === "Error uploading file" || text === "Unsupported file type or error processing file" || text === "No file part" || text === "No selected file"}
             onChange={(e) => setText(e.target.value)}
           />
           <style>
