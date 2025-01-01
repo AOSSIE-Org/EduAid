@@ -28,20 +28,16 @@ const Previous = () => {
 
   return (
     <div className="popup w-screen h-screen bg-[#02000F] flex flex-col justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-        <a href="/">
-          <div className="flex items-end gap-[2px]">
-            <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
-            <div className="text-2xl mb-3 font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                Edu
-              </span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                Aid
-              </span>
-            </div>
-          </div>
-        </a>
+      <div className="w-full h-full popup bg-[#75d8f6b7]">
+       <a href="/" className=" top-0 left-0 ml-4 mt-4">
+         <div className="flex px-3 py-0">
+           <img
+             src={logo}
+             alt="logo"
+             className="w-20 bg-white my-6 rounded-full"
+           />
+         </div>
+       </a>
         <div className="text-right mt-[-8px] mx-1">
           <div className="text-white text-xl font-bold">Quiz Dashboard</div>
           <div className="text-white text-right justify-end flex gap-2 text-xl font-bold">
@@ -53,7 +49,7 @@ const Previous = () => {
           </div>
         </div>
         <div className="text-center my-2 text-sm">
-          <span className="bg-gradient-to-r text-xl from-[#7600F2] text-center to-[#00CBE7] font-bold text-transparent bg-clip-text">
+          <span className="bg-gradient-to-r from-[#0077b6] to-[#00b4d8] text-5xl font-bold text-transparent bg-clip-text">
             Your Quizzes
           </span>{" "}
         </div>
@@ -86,7 +82,7 @@ const Previous = () => {
           <div>
             <button
               onClick={handleBack}
-              className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient"
+              className="bg-[#3e506380] my-4 text-lg rounded-2xl border border-[#cbd0dc80]  button-style  gap-4 px-8 py-4 bg-gradient-to-r from-[#0077b6] to-[#00b4d8] text-white"
             >
               Back
             </button>
@@ -94,7 +90,7 @@ const Previous = () => {
           <div>
             <button
               onClick={handleClearQuizzes}
-              className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient"
+            className="bg-[#3e506380] my-4 text-lg rounded-2xl border border-[#cbd0dc80]  button-style  gap-4 px-8 py-4 bg-gradient-to-r from-[#0077b6] to-[#00b4d8] text-white"
             >
               Clear
             </button>
