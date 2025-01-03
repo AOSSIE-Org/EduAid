@@ -1,7 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+:root{
+--primary-color:  radial-gradient(circle at -10% 40%, rgba(66, 19, 255, 0.8) 0%, transparent 40%),
+radial-gradient(circle at 90% -15%, rgba(255, 19, 132, 0.8) 0%, transparent 40%);
+--box_color:linear-gradient(to right, #FF005C, #7600F2, #00CBE7);
+--heading_c1: linear-gradient(to right, #FF005C, #7600F2);
+--heading_c2:linear-gradient(to right, #7600F2, #00CBE7);
+--button_color:linear-gradient(to right, #ff005c, #7600f2, #00cbe7);
+}
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -19,7 +26,41 @@ code {
 .border-gradient {
   border-width: 2px; 
   border-style: solid;
-  border-image: linear-gradient(to right, #ff005c, #7600f2, #00cbe7);
+  border-image: var(--button_color);
   border-image-slice: 1;
   border-radius: 2rem;
+}
+.screen-color{
+  background: var(--primary-color);
+
+}
+.heading_c1{
+  background: var(--heading_c1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+}
+.heading_c2{
+  background: var(--heading_c2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.box_color{
+  background:var(--box_color);
+}
+/* DARK_MODE COLOR */
+.dark-mode{
+  --primary-color:black;
+  --box_color: linear-gradient(to right,white
+  ,#B3005E
+  ,#E90064
+  ,#FF5F9E);
+  --heading_c1: linear-gradient(to right,white
+  ,#B3005E);
+  --heading_c2: linear-gradient(to right,#E90064
+  ,#FF5F9E);
+  --button_color: linear-gradient(to right,white
+  ,#B3005E
+  ,#E90064
+  ,#FF5F9E);
 }

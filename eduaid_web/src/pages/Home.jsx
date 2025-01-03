@@ -5,10 +5,12 @@ import starsImg from "../assets/stars.png";
 import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
 import { FaGithub } from "react-icons/fa";
-
+import moon from '../assets/moon.png';
+import sun from '../assets/sun.png';
 const Home = () => {
   const [stars, setStars] = useState(null);
   const [error, setError] = useState("");
+  const [darkMode, setDarkMode] = useState(false); 
 
   async function fetchGitHubStars() {
     const response = await fetch(
@@ -47,20 +49,47 @@ const Home = () => {
         });
     }
   }, []);
+// Dark_MODE CODE:
+useEffect(() => {
+  // Get stored dark mode preference
+  const storedDarkMode = localStorage.getItem("darkMode");
+  if (storedDarkMode) {
+    setDarkMode(JSON.parse(storedDarkMode));
+  } else {
+    setDarkMode(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+}, []); // This effect runs only once on mount
 
+useEffect(() => {
+  // Toggle dark mode on class
+  if (darkMode) {
+    document.body.classList.add('dark-mode');
+  } else {
+    document.body.classList.remove('dark-mode');
+  }
+  localStorage.setItem("darkMode", JSON.stringify(darkMode));
+}, [darkMode]);
+//dark_mode codes end here
   return (
     <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-        <div>
-          <img src={logo} alt="logo" className="w-24 my-6 mx-6 block" />
+      <div className="w-full h-full bg-cust bg-opacity-50 screen-color">
+      <div className="flex items-center justify-between">
+    <img src={logo} alt="logo" className="w-24 my-6 mx-6" />
+    <img             src={darkMode ? sun : moon} 
+            alt="moon-icon" 
+            className="w-8 h-8 my-0 mx-9 relative -top-10 cursor-pointer dark_mode" 
+            onClick={() => setDarkMode(!darkMode)} // Toggle dark mode
+ />
+  </div>
           <div className="text-7xl text-center font-extrabold">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
+            <span className="heading_c1  text-transparent bg-clip-text">
               Edu
             </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
+            <span className="heading_c2 ">
               Aid
             </span>
-          </div>
+          
+        
           <div className="text-white text-[1.5rem] text-center my-4">
             <div>A tool that can auto-generate short quizzes</div>
             <div className="flex text-center justify-center gap-4">
@@ -70,19 +99,19 @@ const Home = () => {
           </div>
           <div className="flex flex-col items-end">
             <div className="my-6">
-              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
+              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 box_color justify-center gap-4">
                 <img src={starsImg} width={32} height={16} alt="" />
                 <div className="text-white text-xl">Doc/Audio Input</div>
               </div>
             </div>
             <div className="my-4">
-              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
+              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 box_color justify-center gap-4">
                 <img src={starsImg} width={32} height={16} alt="" />
                 <div className="text-white text-xl">In-depth questions gen</div>
               </div>
             </div>
             <div className="my-4">
-              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
+              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 box_color justify-center gap-4">
                 <img src={starsImg} width={32} height={16} alt="" />
                 <div className="text-white text-xl">
                   Dynamic Google Form Integration
@@ -131,6 +160,7 @@ const Home = () => {
         </div>
       </div>
     </div>
+
   );
 };
 
