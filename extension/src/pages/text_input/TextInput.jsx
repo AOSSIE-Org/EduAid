@@ -7,6 +7,7 @@ import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
+import { getBoolqPrompt, getShortqPrompt, getProblemsPrompt } from "./prompts";
 
 function Second() {
   const [text, setText] = useState("");
@@ -27,6 +28,7 @@ function Second() {
       }
     });
   }, [])
+
 
 
   const toggleSwitch = () => {
@@ -147,7 +149,9 @@ function Second() {
 
       if (response.ok) {
         const responseData = await response.json();
+        console.log("ResponseData: ",responseData);
         localStorage.setItem("qaPairs", JSON.stringify(responseData));
+        console.log("OP",localStorage.getItem("qaPairs"));
 
         // Save quiz details to local storage
         const quizDetails = {
@@ -174,6 +178,122 @@ function Second() {
       setLoading(false);
     }
   };
+
+ 
+  
+  async function fetchApiKeyFromStorage() {
+    try {
+      // Wrap chrome.storage.local.get in a Promise for async/await compatibility
+      const result = await new Promise((resolve, reject) => {
+        chrome.storage.local.get('geminiApiKey', (data) => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve(data.geminiApiKey);
+          }
+        });
+      });
+      // Return the retrieved API key
+      return result || null; // Return null if the key does not exist
+    } catch (error) {
+      console.error('Error fetching API key:', error);
+      return null; // Return null if an error occurs
+    }
+  }  
+  
+  
+
+const generateQuestionsUsingGemini = async (paragraph, diff, numQuestions) => {
+    setLoading(true);
+    const apiKey = await fetchApiKeyFromStorage();
+    console.log("Retrieved API Key:", apiKey);
+    if(!apiKey) {
+      setLoading(false);
+      alert("Please add your api key");
+      return;
+    }
+    const questionType = localStorage.getItem("selectedQuestionType");
+    console.log("Question Type: ", questionType);
+    let prompt;
+    if(questionType === "get_boolq") {
+      prompt = getBoolqPrompt(paragraph, numQuestions, diff);  
+    } else if(questionType === "get_shortq") {
+      prompt = getShortqPrompt(paragraph, numQuestions, diff);  
+    } else if(questionType === "get_problems") {
+      prompt = getProblemsPrompt(paragraph, numQuestions, diff);  
+    }
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: prompt,
+                  }
+                ]
+              }
+            ]
+          })
+        }
+      );
+      
+      if(response.ok) {
+        const responseData = await response.json();
+        console.log("response data: ", responseData);
+
+        const extractCleanJson = (responseText) => {
+          const match = responseText.match(/{[\s\S]*}/); // Matches the JSON object
+          if (match) {
+            try {
+              return JSON.parse(match[0]); // Parse and return the JSON object
+            } catch (error) {
+              console.error("Failed to parse JSON:", error);
+              return null;
+            }
+          }
+          console.error("No JSON object found in response");
+          return null;
+        };
+
+        const rawText = responseData.candidates[0].content.parts[0].text;
+        const cleanJson = extractCleanJson(rawText);
+        console.log("Clean JSON: ", cleanJson);
+        localStorage.setItem("qaPairs", JSON.stringify(cleanJson));
+        console.log("OP",localStorage.getItem("qaPairs"));
+        
+        const quizDetails = {
+          difficulty,
+          numQuestions,
+          date: new Date().toLocaleDateString(),
+          qaPair: cleanJson
+        };
+
+        let last5Quizzes = JSON.parse(localStorage.getItem('last5Quizzes')) || [];
+        last5Quizzes.push(quizDetails);
+        if (last5Quizzes.length > 5) {
+          last5Quizzes.shift();  
+        }
+        localStorage.setItem('last5Quizzes', JSON.stringify(last5Quizzes));
+        localStorage.getItem('last5Quizzes');
+
+        window.location.href = "/src/pages/question/question.html";
+      }
+    } catch (error) {
+      console.error("Error generating questions:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
+  
 
 
   return (
@@ -315,6 +435,13 @@ function Second() {
                 Back
               </button>
             </a>
+          </div>
+          <div className="">
+              <button 
+                onClick={() => generateQuestionsUsingGemini(text, difficulty, numQuestions)}
+                className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient">
+                Use Gemini
+              </button>
           </div>
           <div>
             <button

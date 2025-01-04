@@ -10,6 +10,7 @@ import { FaGithub } from 'react-icons/fa';
 function Popup() {
   const [stars, setStars] = useState(null);
   const [error, setError] = useState("");
+  const [apikey, setApikey] = useState("");
 
   async function fetchGitHubStars() {
     const response = await fetch(
@@ -23,7 +24,19 @@ function Popup() {
   }
   function isMoreThanOneDayOld(timestamp) {
     const oneDay = 24 * 60 * 60 * 1000; // One day in milliseconds
-    return Date.now() - timestamp > oneDay;
+    return Date.now() - timestamp > oneDay;d
+  }
+  function handleInputChage(e) {
+    setApikey(e.target.value);
+  }
+  async function handleSaveApiKey() {
+    if(apikey) {
+      await chrome.storage.local.set({ geminiApiKey: apikey })
+      alert("Api key saved successfully");
+      setApikey("");
+    } else {
+      alert("Enter valid api key");
+    }
   }
 
   useEffect(() => {
@@ -52,6 +65,21 @@ function Popup() {
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <div>
           <img src={logo} alt="logo" className="w-16 my-4 mx-4 block" />
+          <div className="flex items-center">
+            <input
+              type="text"
+              placeholder="Enter Gemini api key"
+              value={apikey}
+              onChange={handleInputChage}
+              className="bg-[#202838] text-white  px-5 py-2 flex-1"
+            />
+            <button 
+              className="bg-black items-center text-base flex justify-center gap-2 text-white px-4 py-2 mx-auto border-gradient hover:wave-effect rounded-md"
+              onClick={handleSaveApiKey}
+            >
+              Save
+            </button>
+          </div>
           <div className="text-5xl text-center font-extrabold">
             <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
               Edu
