@@ -1,6 +1,7 @@
 import time
 import torch
 import random
+import transformers
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 from transformers import AutoModelForSequenceClassification, AutoTokenizer,AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5Tokenizer
 import numpy as np
@@ -22,14 +23,75 @@ import re
 import os
 import fitz 
 import mammoth
+import sys
 
+def quantization_and_gpu_compatibility(gpu_id)-> bool:
+    """This functions checks whether all the models can be loaded onto the specific gpu or not under AUTO Quantization. """
+    total_vram_req=8
+    if gpu_id=="auto":
+        device="cuda"
+    else:
+        device=f"cuda:{gpu_id}"
+    gpu_vram=(torch.cuda.get_device_properties(device).total_memory)/(1024**3)
+
+    if gpu_vram<total_vram_req:
+        return True # Quantization is required
+    else:
+        return False #Quantization is not required
+    
+def model_loading(model,device)->None:
+    """ This function loads a given model onto a specific device and raises an error if GPU is out of memory. """
+    try:
+        model.to(device)
+    except RuntimeError as e:
+        if "CUDA out of memory" in str(e):
+                    raise ValueError("CUDA Out of Memory Error. Quantization must be set to 'auto' or 'on' Or maybe switch to a lower bit quantization ")
+        else:
+            raise
+
+def bnb_config_generator(quantization_type):
+    if quantization_type=="4bit":
+       bnb_config = transformers.BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type='nf4',
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_compute_dtype=torch.bfloat16
+        )
+       
+    elif quantization_type=="8bit":
+        bnb_config = transformers.BitsAndBytesConfig(
+            load_in_8bit=True,                  
+            #bnb_8bit_compute_dtype=torch.float16  
+        )
+    
+
+
+    return bnb_config
 class MCQGenerator:
     
-    def __init__(self):
+    def __init__(self,quantization,gpu_id,quantization_type):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
-        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model.to(self.device)
+        
+        self.bnb_config=bnb_config_generator(quantization_type)
+        quantization_req=False
+
+        if quantization=="auto":
+            quantization_req=quantization_and_gpu_compatibility(gpu_id)
+        
+        if quantization_req or quantization=="on":
+            self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator',quantization_config=self.bnb_config)
+        else:
+           
+                self.model=T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
+             # Re-raise other RuntimeErrors that are not out-of-memory related
+        if gpu_id=="auto":
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device=torch.device(f"cuda:{gpu_id}")
+        #self.model.to(self.device)
+        if quantization_type!="8bit":
+            model_loading(self.model,self.device)
+        
         self.nlp = spacy.load('en_core_web_sm')
         self.s2v = Sense2Vec().from_disk('s2v_old')
         self.fdist = FreqDist(brown.words())
@@ -78,16 +140,32 @@ class MCQGenerator:
             
             if torch.device == 'cuda':
                 torch.cuda.empty_cache()
-                
+            
             return final_output
 
 class ShortQGenerator:
     
-    def __init__(self):
+    def __init__(self,quantization,gpu_id,quantization_type):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
-        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model.to(self.device)
+        self.bnb_config=bnb_config_generator(quantization_type)
+        quantization_req=False
+        if quantization=="auto":
+            quantization_req=quantization_and_gpu_compatibility(gpu_id)
+       
+        if quantization_req or quantization=="on":
+            self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator',quantization_config=self.bnb_config)
+        else:
+        
+            self.model=T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
+           
+        if gpu_id=="auto":
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device=torch.device(f"cuda:{gpu_id}")
+        # self.model.to(self.device)
+        if quantization_type!="8bit":
+            model_loading(self.model,self.device)
+        #model_loading(self.model,self.device)
         self.nlp = spacy.load('en_core_web_sm')
         self.s2v = Sense2Vec().from_disk('s2v_old')
         self.fdist = FreqDist(brown.words())
@@ -134,11 +212,27 @@ class ShortQGenerator:
             
 class ParaphraseGenerator:
     
-    def __init__(self):
+    def __init__(self,quantization,gpu_id,quantization_type):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
-        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model.to(self.device)
+        self.bnb_config=bnb_config_generator(quantization_type)
+        quantization_req=False
+        if quantization=="auto":
+            quantization_req=quantization_and_gpu_compatibility(gpu_id)
+        
+        if quantization_req or quantization=="on":
+            self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator',quantization_config=self.bnb_config)
+        else:
+            
+            self.model=T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
+           
+        if gpu_id=="auto":
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device=torch.device(f"cuda:{gpu_id}")
+        # self.model.to(self.device)
+        if quantization_type!="8bit":
+            model_loading(self.model,self.device)
+        #model_loading(self.model,self.device)
         self.set_seed(42)
         
     def set_seed(self, seed):
@@ -191,11 +285,29 @@ class ParaphraseGenerator:
 
 class BoolQGenerator:
        
-    def __init__(self):
+    def __init__(self,quantization,gpu_id,quantization_type):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
-        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Boolean-Questions')
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model.to(self.device)
+        self.bnb_config=bnb_config_generator(quantization_type)
+        quantization_req=False
+        if quantization=="auto":
+            quantization_req=quantization_and_gpu_compatibility(gpu_id)
+        
+        if quantization_req or quantization=="on":
+            self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Boolean-Questions',quantization_config=self.bnb_config)
+        else:
+            
+            self.model=T5ForConditionalGeneration.from_pretrained('Roasters/Boolean-Questions')
+            
+        if gpu_id=="auto":
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device=torch.device(f"cuda:{gpu_id}")
+        # self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Boolean-Questions',quantization_config=self.bnb_config)
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.model.to(self.device)
+        if quantization_type!="8bit":
+            model_loading(self.model,self.device)
+        #model_loading(self.model,self.device)
         self.set_seed(42)
         
     def set_seed(self, seed):
@@ -240,12 +352,29 @@ class BoolQGenerator:
 
 class AnswerPredictor:
           
-    def __init__(self):
+    def __init__(self,quantization,gpu_id,quantization_type):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-large', model_max_length=512)
-        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Answer-Predictor')
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model.to(self.device)
+        self.bnb_config=bnb_config_generator(quantization_type)
+        quantization_req=False
+        if quantization=="auto":
+            quantization_req=quantization_and_gpu_compatibility(gpu_id)
         
+        if quantization_req or quantization=="on":
+            self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Answer-Predictor',quantization_config=self.bnb_config)
+        else:
+           
+            self.model=T5ForConditionalGeneration.from_pretrained('Roasters/Answer-Predictor')
+            
+        if gpu_id=="auto":
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device=torch.device(f"cuda:{gpu_id}")
+        # self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Answer-Predictor',quantization_config=self.bnb_config)
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.model.to(self.device)
+        if quantization_type!="8bit":
+            model_loading(self.model,self.device)
+        #model_loading(self.model,self.device)
         # Load the lightweight NLI model for boolean question answering
         self.nli_model_name = "typeform/distilbert-base-uncased-mnli"
         self.nli_tokenizer = AutoTokenizer.from_pretrained(self.nli_model_name)
@@ -387,21 +516,38 @@ class QuestionGenerator:
     by setting use_evaluator=False.
     """
 
-    def __init__(self) -> None:
-
+    def __init__(self,quantization,gpu_id,quantization_type) -> None:
+        self.quantization=quantization
+        self.gpu_id=gpu_id
+        self.quantization_type=quantization_type
         QG_PRETRAINED = "iarfmoose/t5-base-question-generator"
         self.ANSWER_TOKEN = "<answer>"
         self.CONTEXT_TOKEN = "<context>"
         self.SEQ_LENGTH = 512
-
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+        self.bnb_config=bnb_config_generator(quantization_type)
+        #self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        quantization_req=False
         self.qg_tokenizer = AutoTokenizer.from_pretrained(QG_PRETRAINED, use_fast=False)
-        self.qg_model = AutoModelForSeq2SeqLM.from_pretrained(QG_PRETRAINED)
-        self.qg_model.to(self.device)
+        if quantization=="auto":
+            quantization_req=quantization_and_gpu_compatibility(gpu_id)
+        
+        if quantization_req or quantization=="on":
+            self.qg_model = AutoModelForSeq2SeqLM.from_pretrained(QG_PRETRAINED,quantization_config=self.bnb_config)
+        else:
+            
+            self.qg_model=AutoModelForSeq2SeqLM.from_pretrained(QG_PRETRAINED)
+            
+        if gpu_id=="auto":
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device=torch.device(f"cuda:{gpu_id}")
+        #self.qg_model = AutoModelForSeq2SeqLM.from_pretrained(QG_PRETRAINED)
+        if quantization_type!="8bit":
+            model_loading(self.qg_model,self.device)
+        #model_loading(self.qg_model,self.device)
         self.qg_model.eval()
 
-        self.qa_evaluator = QAEvaluator()
+        self.qa_evaluator = QAEvaluator(self.quantization,self.gpu_id,self.quantization_type)
 
     def generate(
         self,
@@ -692,18 +838,37 @@ class QAEvaluator:
     QA pairs.
     """
 
-    def __init__(self) -> None:
+    def __init__(self,quantization,gpu_id,quantization_type) -> None:
 
         QAE_PRETRAINED = "iarfmoose/bert-base-cased-qa-evaluator"
         self.SEQ_LENGTH = 512
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+        #self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        quantization_req=False
         self.qae_tokenizer = AutoTokenizer.from_pretrained(QAE_PRETRAINED)
-        self.qae_model = AutoModelForSequenceClassification.from_pretrained(
-            QAE_PRETRAINED
+        self.bnb_config=bnb_config_generator(quantization_type)
+        if quantization=="auto":
+            quantization_req=quantization_and_gpu_compatibility(gpu_id)
+        
+        if quantization_req or quantization=="on":
+            self.qae_model = AutoModelForSequenceClassification.from_pretrained(
+            QAE_PRETRAINED,quantization_config=self.bnb_config
         )
-        self.qae_model.to(self.device)
+        else:
+            
+            self.qae_model=AutoModelForSequenceClassification.from_pretrained(QAE_PRETRAINED,)
+            
+        if gpu_id=="auto":
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device=torch.device(f"cuda:{gpu_id}")
+        # self.qae_model = AutoModelForSequenceClassification.from_pretrained(
+        #     QAE_PRETRAINED,quantization_config=self.bnb_config
+        # )
+        # self.qae_model.to(self.device)
+        if quantization_type!="8bit":
+            model_loading(self.qae_model,self.device)
+        #model_loading(self.qae_model,self.device)
         self.qae_model.eval()
 
     def encode_qa_pairs(

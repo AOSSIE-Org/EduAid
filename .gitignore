@@ -27,3 +27,6 @@ backend/token.json
 backend/service_account_key.json
 venv
 backend/Eduaid
+._s2v_old
+s2v_reddit_2015_md.tar.gz
+
