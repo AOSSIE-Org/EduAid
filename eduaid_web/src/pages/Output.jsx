@@ -60,12 +60,8 @@ const Output = () => {
 
       if (questionType === "get_mcq") {
         qaPairsFromStorage["output"].forEach((qaPair) => {
-          const options = qaPair.answer
-            .filter((ans) => !ans.correct)
-            .map((ans) => ans.answer);
-          const correctAnswer = qaPair.answer.find(
-            (ans) => ans.correct
-          )?.answer;
+          const options = qaPair.options;
+          const correctAnswer = qaPair.answer;
 
           combinedQaPairs.push({
             question: qaPair.question,
