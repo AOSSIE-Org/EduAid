@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, rgb } from 'pdf-lib';
 import "../../index.css";
 import logo from "../../assets/aossie_logo.webp";
 
@@ -62,34 +62,35 @@ function Question() {
         });
       }
 
-      if (qaPairsFromStorage["output_shortq"]) {
-        qaPairsFromStorage["output_shortq"]["questions"].forEach((qaPair) => {
+      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
+        qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
-            question: qaPair.Question,
-            question_type: "Short",
-            answer: qaPair.Answer,
+            question: qaPair.question_statement,
+            question_type: "MCQ",
+            options: qaPair.options,
+            answer: qaPair.answer,
             context: qaPair.context,
           });
         });
       }
 
-      if (questionType === "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          const options = qaPair.answer
-            .filter((ans) => !ans.correct)
-            .map((ans) => ans.answer);
-          const correctAnswer = qaPair.answer.find(
-            (ans) => ans.correct
-          )?.answer;
+      // if (questionType === "get_mcq") {
+      //   qaPairsFromStorage["output"].forEach((qaPair) => {
+      //     const options = qaPair.answer
+      //       .filter((ans) => !ans.correct)
+      //       .map((ans) => ans.answer);
+      //     const correctAnswer = qaPair.answer.find(
+      //       (ans) => ans.correct
+      //     )?.answer;
 
-          combinedQaPairs.push({
-            question: qaPair.question,
-            question_type: "MCQ_Hard",
-            options: options,
-            answer: correctAnswer,
-          });
-        });
-      }
+      //     combinedQaPairs.push({
+      //       question: qaPair.question,
+      //       question_type: "MCQ_Hard",
+      //       options: options,
+      //       answer: correctAnswer,
+      //     });
+      //   });
+      // }
 
       if (questionType == "get_boolq") {
         qaPairsFromStorage["output"].forEach((qaPair) => {
@@ -152,7 +153,7 @@ function Question() {
             y = 700;
         }
 
-        // Only show questions if mode is 'questions' or 'questions_answers'
+        // Show questions for 'questions' and 'questions_answers' modes
         if (mode !== 'answers') {
             page.drawText(`Q${questionIndex}) ${qaPair.question}`, { x: 50, y, size: 15 });
             y -= 30;
@@ -160,25 +161,7 @@ function Question() {
             if (mode === 'questions') {
                 if (qaPair.question_type === "Boolean") {
                     const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
-                    const drawRadioButton = (text, selected) => {
-                        const options = {
-                            x: 70,
-                            y,
-                            width: 15,
-                            height: 15,
-                        };
-                        radioGroup.addOptionToPage(text, page, options);
-                        page.drawText(text, { x: 90, y: y + 2, size: 12 });
-                        y -= 20;
-                    };
-                    drawRadioButton('True', false);
-                    drawRadioButton('False', false);
-                } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
-                    const options = [...qaPair.options, qaPair.answer];
-                    options.sort(() => Math.random() - 0.5);
-
-                    const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
-                    options.forEach((option) => {
+                    ['True', 'False'].forEach((option) => {
                         const radioOptions = {
                             x: 70,
                             y,
@@ -187,6 +170,25 @@ function Question() {
                         };
                         radioGroup.addOptionToPage(option, page, radioOptions);
                         page.drawText(option, { x: 90, y: y + 2, size: 12 });
+                        y -= 20;
+                    });
+                } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
+                    const allOptions = [...(qaPair.options || [])];
+                    if (qaPair.answer && !allOptions.includes(qaPair.answer)) {
+                        allOptions.push(qaPair.answer);
+                    }
+                    const shuffledOptions = shuffleArray([...allOptions]);
+                    
+                    const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
+                    shuffledOptions.forEach((option, index) => {
+                        const radioOptions = {
+                            x: 70,
+                            y,
+                            width: 15,
+                            height: 15,
+                        };
+                        radioGroup.addOptionToPage(`option${index}`, page, radioOptions);
+                        page.drawText(`${option}`, { x: 90, y: y + 2, size: 12 });
                         y -= 20;
                     });
                 } else if (qaPair.question_type === "Short") {
@@ -198,12 +200,18 @@ function Question() {
             }
         }
 
-        // Show answers if mode is 'answers' or 'questions_answers'
+        // Show answers for 'answers' and 'questions_answers' modes
         if (mode === 'answers' || mode === 'questions_answers') {
-            page.drawText(`Answer ${questionIndex}:`, { x: 50, y, size: 12 });
-            y -= 20;
-            page.drawText(qaPair.answer || (qaPair.question_type === "Boolean" ? "True/False" : ""), 
-                         { x: 70, y, size: 12 });
+            if (qaPair.question_type === "Boolean") {
+                page.drawText(`Answer ${questionIndex}: ${qaPair.answer || "True/False"}`, 
+                    { x: 50, y, size: 12, color: rgb(0, 0.5, 0) });
+            } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
+                page.drawText(`Answer ${questionIndex}: ${qaPair.answer}`, 
+                    { x: 50, y, size: 12, color: rgb(0, 0.5, 0) });
+            } else {
+                page.drawText(`Answer ${questionIndex}: ${qaPair.answer}`, 
+                    { x: 50, y, size: 12, color: rgb(0, 0.5, 0) });
+            }
             y -= 30;
         }
 
@@ -219,7 +227,7 @@ function Question() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     // Hide dropdown after generating PDF
     document.getElementById('pdfDropdown').classList.add('hidden');
 };
