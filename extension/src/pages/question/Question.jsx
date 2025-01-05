@@ -9,6 +9,20 @@ function Question() {
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
+  const [pdfMode, setPdfMode] = useState("questions");
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+        const dropdown = document.getElementById('pdfDropdown');
+        if (dropdown && !dropdown.contains(event.target) && 
+            !event.target.closest('button')) {
+            dropdown.classList.add('hidden');
+        }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+}, []);
 
   function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -122,14 +136,14 @@ function Question() {
     }
   };
 
-  const generatePDF = async () => {
+  const generatePDF = async (mode) => {
     const pdfDoc = await PDFDocument.create();
     let page = pdfDoc.addPage();
     const d = new Date(Date.now());
     page.drawText('EduAid generated Quiz', { x: 50, y: 800, size: 20 });
     page.drawText('Created On: ' + d.toString(), { x: 50, y: 770, size: 10 });
     const form = pdfDoc.getForm();
-    let y = 700; // Starting y position for content
+    let y = 700;
     let questionIndex = 1;
 
     qaPairs.forEach((qaPair) => {
@@ -138,61 +152,65 @@ function Question() {
             y = 700;
         }
 
-        page.drawText(`Q${questionIndex}) ${qaPair.question}`, { x: 50, y, size: 15 });
-        y -= 30;
+        // Only show questions if mode is 'questions' or 'questions_answers'
+        if (mode !== 'answers') {
+            page.drawText(`Q${questionIndex}) ${qaPair.question}`, { x: 50, y, size: 15 });
+            y -= 30;
 
-        if (qaPair.question_type === "Boolean") {
-            // Create radio buttons for True/False
-            const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
-            const drawRadioButton = (text, selected) => {
-                const options = {
-                    x: 70,
-                    y,
-                    width: 15,
-                    height: 15,
-                };
-
-                radioGroup.addOptionToPage(text, page, options);
-                page.drawText(text, { x: 90, y: y + 2, size: 12 });
-                y -= 20;
-            };
-
-            drawRadioButton('True', false);
-            drawRadioButton('False', false);
-        } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
-            // Shuffle options including qaPair.answer
-            const options = [...qaPair.options, qaPair.answer]; // Include correct answer in options
-            options.sort(() => Math.random() - 0.5); // Shuffle options randomly
-
-            const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
-
-            options.forEach((option, index) => {
-                const drawRadioButton = (text, selected) => {
-                    const radioOptions = {
-                        x: 70,
-                        y,
-                        width: 15,
-                        height: 15,
+            if (mode === 'questions') {
+                if (qaPair.question_type === "Boolean") {
+                    const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
+                    const drawRadioButton = (text, selected) => {
+                        const options = {
+                            x: 70,
+                            y,
+                            width: 15,
+                            height: 15,
+                        };
+                        radioGroup.addOptionToPage(text, page, options);
+                        page.drawText(text, { x: 90, y: y + 2, size: 12 });
+                        y -= 20;
                     };
-                    radioGroup.addOptionToPage(text, page, radioOptions);
-                    page.drawText(text, { x: 90, y: y + 2, size: 12 });
-                    y -= 20;
-                };
-                drawRadioButton(option, false);
-            });
-        } else if (qaPair.question_type === "Short") {
-            // Text field for Short answer
-            const answerField = form.createTextField(`question${questionIndex}_answer`);
-            answerField.setText("");
-            answerField.addToPage(page, { x: 50, y: y - 20, width: 450, height: 20 });
-            y -= 40;
+                    drawRadioButton('True', false);
+                    drawRadioButton('False', false);
+                } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
+                    const options = [...qaPair.options, qaPair.answer];
+                    options.sort(() => Math.random() - 0.5);
+
+                    const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
+                    options.forEach((option) => {
+                        const radioOptions = {
+                            x: 70,
+                            y,
+                            width: 15,
+                            height: 15,
+                        };
+                        radioGroup.addOptionToPage(option, page, radioOptions);
+                        page.drawText(option, { x: 90, y: y + 2, size: 12 });
+                        y -= 20;
+                    });
+                } else if (qaPair.question_type === "Short") {
+                    const answerField = form.createTextField(`question${questionIndex}_answer`);
+                    answerField.setText("");
+                    answerField.addToPage(page, { x: 50, y: y - 20, width: 450, height: 20 });
+                    y -= 40;
+                }
+            }
         }
 
-        y -= 20; // Space between questions
+        // Show answers if mode is 'answers' or 'questions_answers'
+        if (mode === 'answers' || mode === 'questions_answers') {
+            page.drawText(`Answer ${questionIndex}:`, { x: 50, y, size: 12 });
+            y -= 20;
+            page.drawText(qaPair.answer || (qaPair.question_type === "Boolean" ? "True/False" : ""), 
+                         { x: 70, y, size: 12 });
+            y -= 30;
+        }
+
+        y -= 20;
         questionIndex += 1;
     });
 
-    // Save PDF and create download link
     const pdfBytes = await pdfDoc.save();
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const link = document.createElement('a');
@@ -201,6 +219,9 @@ function Question() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    // Hide dropdown after generating PDF
+    document.getElementById('pdfDropdown').classList.add('hidden');
 };
 
 
@@ -282,12 +303,38 @@ function Question() {
             >
               Generate Google form
             </button>
-            <button
-              className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"
-              onClick={generatePDF}
-            >
-              Generate PDF
-            </button>
+            
+            <div className="relative">
+              <button
+                className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"
+                onClick={() => document.getElementById('pdfDropdown').classList.toggle('hidden')}
+              >
+                Generate PDF
+              </button>
+              <div
+                id="pdfDropdown"
+                className="hidden absolute bottom-full mb-1 bg-white rounded-lg shadow-lg"
+              >
+                <button
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded-t-lg"
+                  onClick={() => generatePDF('questions')}
+                >
+                  Questions Only
+                </button>
+                <button
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  onClick={() => generatePDF('questions_answers')}
+                >
+                  Questions with Answers
+                </button>
+                <button
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded-b-lg"
+                  onClick={() => generatePDF('answers')}
+                >
+                  Answers Only
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
