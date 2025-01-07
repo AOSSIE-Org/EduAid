@@ -1,10 +1,10 @@
-import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import Question_Type from "./pages/Question_Type";
-import Text_Input from "./pages/Text_Input";
-import Output from "./pages/Output";
-import Previous from "./pages/Previous";
+import './App.css'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Home from './pages/Home'
+import Question_Type from './pages/Question_Type'
+import Text_Input from './pages/Text_Input'
+import Output from './pages/Output'
+import Previous from './pages/Previous'
 
 function App() {
   return (
@@ -17,7 +17,7 @@ function App() {
         <Route path="/history" element={<Previous />} />
       </Routes>
     </BrowserRouter>
-  );
+  )
 }
 
-export default App;
+export default App

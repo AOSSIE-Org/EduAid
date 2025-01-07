@@ -1,180 +1,197 @@
-import React, { useState, useEffect } from "react";
-import { PDFDocument } from "pdf-lib";
-import "../index.css";
-import logo from "../assets/aossie_logo.png";
+import React, { useState, useEffect } from 'react'
+import { PDFDocument } from 'pdf-lib'
+import '../index.css'
+import logo from '../assets/aossie_logo.png'
 
 const Output = () => {
-  const [qaPairs, setQaPairs] = useState([]);
+  const [qaPairs, setQaPairs] = useState([])
   const [questionType, setQuestionType] = useState(
-    localStorage.getItem("selectedQuestionType")
-  );
+    localStorage.getItem('selectedQuestionType')
+  )
 
   function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[array[i], array[j]] = [array[j], array[i]]
     }
-    return array;
+    return array
   }
 
   useEffect(() => {
-    const qaPairsFromStorage =
-      JSON.parse(localStorage.getItem("qaPairs")) || {};
+    const qaPairsFromStorage = JSON.parse(localStorage.getItem('qaPairs')) || {}
     if (qaPairsFromStorage) {
-      const combinedQaPairs = [];
+      const combinedQaPairs = []
 
-      if (qaPairsFromStorage["output_boolq"]) {
-        qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
+      if (qaPairsFromStorage['output_boolq']) {
+        qaPairsFromStorage['output_boolq']['Boolean_Questions'].forEach(
           (question, index) => {
             combinedQaPairs.push({
               question,
-              question_type: "Boolean",
-              context: qaPairsFromStorage["output_boolq"]["Text"],
-            });
+              question_type: 'Boolean',
+              context: qaPairsFromStorage['output_boolq']['Text'],
+            })
           }
-        );
+        )
       }
 
-      if (qaPairsFromStorage["output_mcq"]) {
-        qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
+      if (qaPairsFromStorage['output_mcq']) {
+        qaPairsFromStorage['output_mcq']['questions'].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
-            question_type: "MCQ",
+            question_type: 'MCQ',
             options: qaPair.options,
             answer: qaPair.answer,
             context: qaPair.context,
-          });
-        });
+          })
+        })
       }
 
-      if (qaPairsFromStorage["output_shortq"]) {
-        qaPairsFromStorage["output_shortq"]["questions"].forEach((qaPair) => {
+      if (qaPairsFromStorage['output_shortq']) {
+        qaPairsFromStorage['output_shortq']['questions'].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.Question,
-            question_type: "Short",
+            question_type: 'Short',
             answer: qaPair.Answer,
             context: qaPair.context,
-          });
-        });
+          })
+        })
       }
 
-      if (questionType === "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          const options = qaPair.answer
-            .filter((ans) => !ans.correct)
-            .map((ans) => ans.answer);
-          const correctAnswer = qaPair.answer.find(
-            (ans) => ans.correct
-          )?.answer;
+      if (questionType === 'get_mcq') {
+        qaPairsFromStorage['output'].forEach((qaPair) => {
+          const options = qaPair.options
+          const correctAnswer = qaPair.answer
 
           combinedQaPairs.push({
-            question: qaPair.question,
-            question_type: "MCQ_Hard",
+            question: qaPair.question_statement,
+            question_type: 'MCQ_Hard',
             options: options,
             answer: correctAnswer,
-          });
-        });
+          })
+        })
       }
 
-      if (questionType == "get_boolq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+      if (questionType == 'get_boolq') {
+        qaPairsFromStorage['output'].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair,
-            question_type: "Boolean",
-          });
-        });
-      } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+            question_type: 'Boolean',
+          })
+        })
+      } else if (qaPairsFromStorage['output'] && questionType !== 'get_mcq') {
+        qaPairsFromStorage['output'].forEach((qaPair) => {
           combinedQaPairs.push({
             question:
               qaPair.question || qaPair.question_statement || qaPair.Question,
             options: qaPair.options,
             answer: qaPair.answer || qaPair.Answer,
             context: qaPair.context,
-            question_type: "Short",
-          });
-        });
+            question_type: 'Short',
+          })
+        })
       }
 
-      setQaPairs(combinedQaPairs);
+      setQaPairs(combinedQaPairs)
     }
-  }, []);
+  }, [])
 
   const generateGoogleForm = async () => {
-    const response = await fetch("http://localhost:5000/generate_gform", {
-      method: "POST",
+    const response = await fetch('http://localhost:5000/generate_gform', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         qa_pairs: qaPairs,
         question_type: questionType,
       }),
-    });
+    })
 
     if (response.ok) {
-      const result = await response.json();
-      const formUrl = result.form_link;
-      window.open(formUrl, "_blank");
+      const result = await response.json()
+      const formUrl = result.form_link
+      window.open(formUrl, '_blank')
     } else {
-      console.error("Failed to generate Google Form");
+      console.error('Failed to generate Google Form.')
     }
-  };
+  }
 
   const generatePDF = async () => {
-    const pdfDoc = await PDFDocument.create();
-    let page = pdfDoc.addPage();
-    const d = new Date(Date.now());
-    page.drawText("EduAid generated Quiz", { x: 50, y: 800, size: 20 });
-    page.drawText("Created On: " + d.toString(), { x: 50, y: 770, size: 10 });
-    const form = pdfDoc.getForm();
-    let y = 700; // Starting y position for content
-    let questionIndex = 1;
+    const pdfDoc = await PDFDocument.create()
+    let page = pdfDoc.addPage()
+    const d = new Date(Date.now())
+    page.drawText('EduAid generated Quiz', { x: 50, y: 800, size: 20 })
+    page.drawText('Created On: ' + d.toString(), { x: 50, y: 770, size: 10 })
+    const form = pdfDoc.getForm()
+    let y = 700 // Starting y position for content
+    let questionIndex = 1
+
+    console.log('here inside downloading', qaPairs)
 
     qaPairs.forEach((qaPair) => {
       if (y < 50) {
-        page = pdfDoc.addPage();
-        y = 700;
+        page = pdfDoc.addPage()
+        y = 700
       }
 
-      page.drawText(`Q${questionIndex}) ${qaPair.question}`, {
-        x: 50,
-        y,
-        size: 15,
-      });
-      y -= 30;
+      // i'm implementing a question text wrapping logic so that it doesn't overflow the page
+      const questionText = `Q${questionIndex}) ${qaPair.question}`
+      const maxLineLength = 67
+      const lines = []
 
-      if (qaPair.question_type === "Boolean") {
+      let start = 0
+      while (start < questionText.length) {
+        let end = start + maxLineLength
+        if (end < questionText.length && questionText[end] !== ' ') {
+          while (end > start && questionText[end] !== ' ') {
+            end--
+          }
+        }
+        if (end === start) {
+          end = start + maxLineLength
+        }
+        lines.push(questionText.substring(start, end).trim())
+        start = end + 1
+      }
+
+      lines.forEach((line) => {
+        page.drawText(line, { x: 50, y, size: 15 })
+        y -= 20
+      })
+
+      y -= 10
+
+      if (qaPair.question_type === 'Boolean') {
         // Create radio buttons for True/False
         const radioGroup = form.createRadioGroup(
           `question${questionIndex}_answer`
-        );
+        )
         const drawRadioButton = (text, selected) => {
           const options = {
             x: 70,
             y,
             width: 15,
             height: 15,
-          };
+          }
 
-          radioGroup.addOptionToPage(text, page, options);
-          page.drawText(text, { x: 90, y: y + 2, size: 12 });
-          y -= 20;
-        };
+          radioGroup.addOptionToPage(text, page, options)
+          page.drawText(text, { x: 90, y: y + 2, size: 12 })
+          y -= 20
+        }
 
-        drawRadioButton("True", false);
-        drawRadioButton("False", false);
+        drawRadioButton('True', false)
+        drawRadioButton('False', false)
       } else if (
-        qaPair.question_type === "MCQ" ||
-        qaPair.question_type === "MCQ_Hard"
+        qaPair.question_type === 'MCQ' ||
+        qaPair.question_type === 'MCQ_Hard'
       ) {
         // Shuffle options including qaPair.answer
-        const options = [...qaPair.options, qaPair.answer]; // Include correct answer in options
-        options.sort(() => Math.random() - 0.5); // Shuffle options randomly
+        const options = [...qaPair.options, qaPair.answer] // Include correct answer in options
+        options.sort(() => Math.random() - 0.5) // Shuffle options randomly
 
         const radioGroup = form.createRadioGroup(
           `question${questionIndex}_answer`
-        );
+        )
 
         options.forEach((option, index) => {
           const drawRadioButton = (text, selected) => {
@@ -183,42 +200,47 @@ const Output = () => {
               y,
               width: 15,
               height: 15,
-            };
-            radioGroup.addOptionToPage(text, page, radioOptions);
-            page.drawText(text, { x: 90, y: y + 2, size: 12 });
-            y -= 20;
-          };
-          drawRadioButton(option, false);
-        });
-      } else if (qaPair.question_type === "Short") {
+            }
+            radioGroup.addOptionToPage(text, page, radioOptions)
+            page.drawText(text, { x: 90, y: y + 2, size: 12 })
+            y -= 20
+          }
+          drawRadioButton(option, false)
+        })
+
+        if (questionIndex % 5 === 0) {
+          page = pdfDoc.addPage()
+          y = 700
+        }
+      } else if (qaPair.question_type === 'Short') {
         // Text field for Short answer
         const answerField = form.createTextField(
           `question${questionIndex}_answer`
-        );
-        answerField.setText("");
+        )
+        answerField.setText('')
         answerField.addToPage(page, {
           x: 50,
           y: y - 20,
           width: 450,
           height: 20,
-        });
-        y -= 40;
+        })
+        y -= 40
       }
 
-      y -= 20; // Space between questions
-      questionIndex += 1;
-    });
+      y -= 20 // Space between questions
+      questionIndex += 1
+    })
 
     // Save PDF and create download link
-    const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: "application/pdf" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "generated_questions.pdf";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+    const pdfBytes = await pdfDoc.save()
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = 'generated_questions.pdf'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   return (
     <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
@@ -238,15 +260,15 @@ const Output = () => {
             </div>
           </a>
           <div className="font-bold text-xl text-white mt-3 mx-2">
-            Generated Questions
+            Generated Questions for Quiz
           </div>
           <div className="flex-1 overflow-y-auto scrollbar-hide">
             {qaPairs &&
               qaPairs.map((qaPair, index) => {
                 const combinedOptions = qaPair.options
                   ? [...qaPair.options, qaPair.answer]
-                  : [qaPair.answer];
-                const shuffledOptions = shuffleArray(combinedOptions);
+                  : [qaPair.answer]
+                const shuffledOptions = shuffleArray(combinedOptions)
                 return (
                   <div
                     key={index}
@@ -258,7 +280,7 @@ const Output = () => {
                     <div className="text-[#FFF4F4] text-[1rem] my-1">
                       {qaPair.question}
                     </div>
-                    {qaPair.question_type !== "Boolean" && (
+                    {qaPair.question_type !== 'Boolean' && (
                       <>
                         <div className="text-[#E4E4E4] text-sm">Answer</div>
                         <div className="text-[#FFF4F4] text-[1rem]">
@@ -270,7 +292,7 @@ const Output = () => {
                               <div key={idx}>
                                 <span className="text-[#E4E4E4] text-sm">
                                   Option {idx + 1}:
-                                </span>{" "}
+                                </span>{' '}
                                 <span className="text-[#FFF4F4] text-[1rem]">
                                   {option}
                                 </span>
@@ -281,7 +303,7 @@ const Output = () => {
                       </>
                     )}
                   </div>
-                );
+                )
               })}
           </div>
           <div className="items-center flex justify-center gap-6 mx-auto">
@@ -301,7 +323,7 @@ const Output = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Output;
+export default Output

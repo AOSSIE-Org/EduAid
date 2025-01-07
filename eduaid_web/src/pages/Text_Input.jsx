@@ -1,138 +1,138 @@
-import React, { useState, useRef } from "react";
-import "../index.css";
-import logo from "../assets/aossie_logo.png";
-import stars from "../assets/stars.png";
-import cloud from "../assets/cloud.png";
-import { FaClipboard } from "react-icons/fa";
-import Switch from "react-switch";
+import React, { useState, useRef } from 'react'
+import '../index.css'
+import logo from '../assets/aossie_logo.png'
+import stars from '../assets/stars.png'
+import cloud from '../assets/cloud.png'
+import { FaClipboard } from 'react-icons/fa'
+import Switch from 'react-switch'
 
 const Text_Input = () => {
-  const [text, setText] = useState("");
-  const [difficulty, setDifficulty] = useState("Easy Difficulty");
-  const [numQuestions, setNumQuestions] = useState(10);
-  const [loading, setLoading] = useState(false);
-  const fileInputRef = useRef(null);
-  const [fileContent, setFileContent] = useState("");
-  const [docUrl, setDocUrl] = useState("");
-  const [isToggleOn, setIsToggleOn] = useState(0);
+  const [text, setText] = useState('')
+  const [difficulty, setDifficulty] = useState('Easy Difficulty')
+  const [numQuestions, setNumQuestions] = useState(10)
+  const [loading, setLoading] = useState(false)
+  const fileInputRef = useRef(null)
+  const [fileContent, setFileContent] = useState('')
+  const [docUrl, setDocUrl] = useState('')
+  const [isToggleOn, setIsToggleOn] = useState(0)
 
   const toggleSwitch = () => {
-    setIsToggleOn((isToggleOn + 1) % 2);
-  };
+    setIsToggleOn((isToggleOn + 1) % 2)
+  }
 
   const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
+    const file = event.target.files[0]
     if (file) {
-      const formData = new FormData();
-      formData.append("file", file);
+      const formData = new FormData()
+      formData.append('file', file)
 
       try {
-        const response = await fetch("http://localhost:5000/upload", {
-          method: "POST",
+        const response = await fetch('http://localhost:5000/upload', {
+          method: 'POST',
           body: formData,
-        });
-        const data = await response.json();
-        setText(data.content || data.error);
+        })
+        const data = await response.json()
+        setText(data.content || data.error)
       } catch (error) {
-        console.error("Error uploading file:", error);
-        setText("Error uploading file");
+        console.error('Error uploading file:', error)
+        setText('Error uploading file')
       }
     }
-  };
+  }
 
   const handleClick = (event) => {
-    event.preventDefault(); // Prevent default behavior
-    event.stopPropagation(); // Stop event propagation
+    event.preventDefault() // Prevent default behavior
+    event.stopPropagation() // Stop event propagation
 
     // Open file input dialog
-    fileInputRef.current.click();
-  };
+    fileInputRef.current.click()
+  }
 
   const handleSaveToLocalStorage = async () => {
-    setLoading(true);
+    setLoading(true)
 
     // Check if a Google Doc URL is provided
     if (docUrl) {
       try {
-        const response = await fetch("http://localhost:5000/get_content", {
-          method: "POST",
+        const response = await fetch('http://localhost:5000/get_content', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({ document_url: docUrl }),
-        });
+        })
 
         if (response.ok) {
-          const data = await response.json();
-          setDocUrl("");
-          setText(data || "Error in retrieving");
+          const data = await response.json()
+          setDocUrl('')
+          setText(data || 'Error in retrieving')
         } else {
-          console.error("Error retrieving Google Doc content");
-          setText("Error retrieving Google Doc content");
+          console.error('Error retrieving Google Doc content')
+          setText('Error retrieving Google Doc content')
         }
       } catch (error) {
-        console.error("Error:", error);
-        setText("Error retrieving Google Doc content");
+        console.error('Error:', error)
+        setText('Error retrieving Google Doc content')
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     } else if (text) {
       // Proceed with existing functionality for local storage
-      localStorage.setItem("textContent", text);
-      localStorage.setItem("difficulty", difficulty);
-      localStorage.setItem("numQuestions", numQuestions);
+      localStorage.setItem('textContent', text)
+      localStorage.setItem('difficulty', difficulty)
+      localStorage.setItem('numQuestions', numQuestions)
 
       await sendToBackend(
         text,
         difficulty,
-        localStorage.getItem("selectedQuestionType")
-      );
+        localStorage.getItem('selectedQuestionType')
+      )
     }
-  };
+  }
 
   const handleDifficultyChange = (e) => {
-    setDifficulty(e.target.value);
-  };
+    setDifficulty(e.target.value)
+  }
 
   const incrementQuestions = () => {
-    setNumQuestions((prev) => prev + 1);
-  };
+    setNumQuestions((prev) => prev + 1)
+  }
 
   const decrementQuestions = () => {
-    setNumQuestions((prev) => (prev > 0 ? prev - 1 : 0));
-  };
+    setNumQuestions((prev) => (prev > 0 ? prev - 1 : 0))
+  }
 
   const getEndpoint = (difficulty, questionType) => {
-    if (difficulty !== "Easy Difficulty") {
-      if (questionType === "get_shortq") {
-        return "get_shortq_hard";
-      } else if (questionType === "get_mcq") {
-        return "get_mcq_hard";
+    if (difficulty !== 'Easy Difficulty') {
+      if (questionType === 'get_shortq') {
+        return 'get_shortq_hard'
+      } else if (questionType === 'get_mcq') {
+        return 'get_mcq_hard'
       }
     }
-    return questionType;
-  };
+    return questionType
+  }
 
   const sendToBackend = async (data, difficulty, questionType) => {
-    const endpoint = getEndpoint(difficulty, questionType);
+    const endpoint = getEndpoint(difficulty, questionType)
     try {
       const formData = JSON.stringify({
         input_text: data,
         max_questions: numQuestions,
         use_mediawiki: isToggleOn,
-      });
+      })
 
       const response = await fetch(`http://localhost:5000/${endpoint}`, {
-        method: "POST",
+        method: 'POST',
         body: formData,
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-      });
+      })
 
       if (response.ok) {
-        const responseData = await response.json();
-        localStorage.setItem("qaPairs", JSON.stringify(responseData));
+        const responseData = await response.json()
+        localStorage.setItem('qaPairs', JSON.stringify(responseData))
 
         // Save quiz details to local storage
         const quizDetails = {
@@ -140,26 +140,26 @@ const Text_Input = () => {
           numQuestions,
           date: new Date().toLocaleDateString(),
           qaPair: responseData,
-        };
+        }
 
         let last5Quizzes =
-          JSON.parse(localStorage.getItem("last5Quizzes")) || [];
-        last5Quizzes.push(quizDetails);
+          JSON.parse(localStorage.getItem('last5Quizzes')) || []
+        last5Quizzes.push(quizDetails)
         if (last5Quizzes.length > 5) {
-          last5Quizzes.shift(); // Keep only the last 5 quizzes
+          last5Quizzes.shift() // Keep only the last 5 quizzes
         }
-        localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
+        localStorage.setItem('last5Quizzes', JSON.stringify(last5Quizzes))
 
-        window.location.href = "output";
+        window.location.href = 'output'
       } else {
-        console.error("Backend request failed.");
+        console.error('Backend request failed.')
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error('Error:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen">
@@ -170,7 +170,7 @@ const Text_Input = () => {
       )}
       <div
         className={`w-full h-full bg-cust bg-opacity-50 ${
-          loading ? "pointer-events-none" : ""
+          loading ? 'pointer-events-none' : ''
         }`}
       >
         <a href="/">
@@ -189,10 +189,10 @@ const Text_Input = () => {
         <div className="text-right mt-[-8px] mx-1">
           <div className="text-white text-xl font-bold">Enter the Content</div>
           <div className="text-white text-right justify-end flex gap-2 text-xl font-bold">
-            to Generate{" "}
+            to Generate{' '}
             <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
               Questionaries
-            </span>{" "}
+            </span>{' '}
             <img className="h-[30px] w-[30px]" src={stars} alt="stars" />
           </div>
         </div>
@@ -203,7 +203,7 @@ const Text_Input = () => {
           </button>
           <textarea
             className="absolute inset-0 p-8 pt-4 bg-[#83b6cc40] text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
@@ -233,7 +233,7 @@ const Text_Input = () => {
               type="file"
               ref={fileInputRef}
               onChange={handleFileUpload}
-              style={{ display: "none" }}
+              style={{ display: 'none' }}
             />
             <button
               className="bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2"
@@ -255,7 +255,7 @@ const Text_Input = () => {
         <div className="flex justify-center gap-8 items-center">
           <div className="flex gap-2 items-center">
             <div className="text-white text-xl font-bold">
-              No. of Questions:{" "}
+              No. of Questions:{' '}
             </div>
             <button
               onClick={decrementQuestions}
@@ -310,7 +310,7 @@ const Text_Input = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Text_Input;
+export default Text_Input
