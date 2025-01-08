@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import { PDFDocument, rgb } from 'pdf-lib';
 import "../../index.css";
 import logo from "../../assets/aossie_logo.webp";
+import logoPNG from "../../assets/aossie_logo.png";
 
 function Question() {
   const [qaPairs, setQaPairs] = useState([]);
@@ -137,39 +138,159 @@ function Question() {
     }
   };
 
+  const loadLogoAsBytes = async () => {
+    try {
+      const response = await fetch(logoPNG);
+      const arrayBuffer = await response.arrayBuffer();
+      return new Uint8Array(arrayBuffer);
+    } catch (error) {
+      console.error('Error loading logo:', error);
+      return null;
+    }
+  };
+
   const generatePDF = async (mode) => {
+    const pageWidth = 595.28;
+    const pageHeight = 841.89;
+    const margin = 50;
+    const maxContentWidth = pageWidth - (2 * margin);
+    const maxContentHeight = pageHeight - (2 * margin);
+    
     const pdfDoc = await PDFDocument.create();
-    let page = pdfDoc.addPage();
+    let page = pdfDoc.addPage([pageWidth, pageHeight]);
     const d = new Date(Date.now());
-    page.drawText('EduAid generated Quiz', { x: 50, y: 800, size: 20 });
-    page.drawText('Created On: ' + d.toString(), { x: 50, y: 770, size: 10 });
+
+    // Load and embed logo
+    const logoBytes = await loadLogoAsBytes();
+    let logoImage;
+    if (logoBytes) {
+      try {
+        logoImage = await pdfDoc.embedPng(logoBytes);
+        const logoDims = logoImage.scale(0.2); // Scale down the logo
+        page.drawImage(logoImage, {
+          x: margin,
+          y: pageHeight - margin - 30,
+          width: logoDims.width,
+          height: logoDims.height,
+        });
+        // Adjust title position to be next to the logo
+        page.drawText('EduAid generated Quiz', {
+          x: margin + logoDims.width + 10,
+          y: pageHeight - margin,
+          size: 20
+        });
+        page.drawText('Created On: ' + d.toString(), {
+          x: margin + logoDims.width + 10,
+          y: pageHeight - margin - 30,
+          size: 10
+        });
+      } catch (error) {
+        console.error('Error embedding logo:', error);
+        // Fallback to text-only header if logo embedding fails
+        page.drawText('EduAid generated Quiz', {
+          x: margin,
+          y: pageHeight - margin,
+          size: 20
+        });
+        page.drawText('Created On: ' + d.toString(), {
+          x: margin,
+          y: pageHeight - margin - 30,
+          size: 10
+        });
+      }
+    }
+    
+    // page.drawText('EduAid generated Quiz', { x: margin, y: pageHeight - margin, size: 20 });
+    // page.drawText('Created On: ' + d.toString(), { x: margin, y: pageHeight - margin - 30, size: 10 });
+    
     const form = pdfDoc.getForm();
-    let y = 700;
+    let y = pageHeight - margin - 70;
     let questionIndex = 1;
 
+    const createNewPageIfNeeded = (requiredHeight) => {
+        if (y - requiredHeight < margin) {
+            page = pdfDoc.addPage([pageWidth, pageHeight]);
+            y = pageHeight - margin;
+            return true;
+        }
+        return false;
+    };
+
+    const wrapText = (text, maxWidth) => {
+      const words = text.split(' ');
+      const lines = [];
+      let currentLine = '';
+  
+      words.forEach(word => {
+          const testLine = currentLine ? `${currentLine} ${word}` : word;
+  
+          // Adjust the multiplier to reflect a more realistic line width based on font size
+          const testWidth = testLine.length * 6; // Update the multiplier for better wrapping.
+  
+          if (testWidth > maxWidth) {
+              lines.push(currentLine);
+              currentLine = word;
+          } else {
+              currentLine = testLine;
+          }
+      });
+  
+      if (currentLine) {
+          lines.push(currentLine);
+      }
+  
+      return lines;
+  };
+  
+
     qaPairs.forEach((qaPair) => {
-        if (y < 50) {
-            page = pdfDoc.addPage();
-            y = 700;
+        let requiredHeight = 60;
+        const questionLines = wrapText(qaPair.question, maxContentWidth);
+        requiredHeight += questionLines.length * 20;
+
+        if (mode !== 'answers') {
+            if (qaPair.question_type === "Boolean") {
+                requiredHeight += 60;
+            } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
+                const optionsCount = qaPair.options ? qaPair.options.length + 1 : 1;
+                requiredHeight += optionsCount * 25;
+            } else {
+                requiredHeight += 40;
+            }
         }
 
-        // Show questions for 'questions' and 'questions_answers' modes
+        if (mode === 'answers' || mode === 'questions_answers') {
+            requiredHeight += 40;
+        }
+
+        createNewPageIfNeeded(requiredHeight);
+
         if (mode !== 'answers') {
-            page.drawText(`Q${questionIndex}) ${qaPair.question}`, { x: 50, y, size: 15 });
-            y -= 30;
+          questionLines.forEach((line, lineIndex) => {
+              const textToDraw = lineIndex === 0 
+                  ? `Q${questionIndex}) ${line}`  // First line includes question number
+                  : `        ${line}`;           // Subsequent lines are indented
+              page.drawText(textToDraw, {
+                  x: margin,
+                  y: y - (lineIndex * 20),
+                  size: 12,
+                  maxWidth: maxContentWidth
+              });
+          });
+          y -= (questionLines.length * 20 + 20);
 
             if (mode === 'questions') {
                 if (qaPair.question_type === "Boolean") {
                     const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
                     ['True', 'False'].forEach((option) => {
                         const radioOptions = {
-                            x: 70,
+                            x: margin + 20,
                             y,
                             width: 15,
                             height: 15,
                         };
                         radioGroup.addOptionToPage(option, page, radioOptions);
-                        page.drawText(option, { x: 90, y: y + 2, size: 12 });
+                        page.drawText(option, { x: margin + 40, y: y + 2, size: 12 });
                         y -= 20;
                     });
                 } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
@@ -182,37 +303,48 @@ function Question() {
                     const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
                     shuffledOptions.forEach((option, index) => {
                         const radioOptions = {
-                            x: 70,
+                            x: margin + 20,
                             y,
                             width: 15,
                             height: 15,
                         };
                         radioGroup.addOptionToPage(`option${index}`, page, radioOptions);
-                        page.drawText(`${option}`, { x: 90, y: y + 2, size: 12 });
-                        y -= 20;
+                        const optionLines = wrapText(option, maxContentWidth - 60);
+                        optionLines.forEach((line, lineIndex) => {
+                            page.drawText(line, {
+                                x: margin + 40,
+                                y: y + 2 - (lineIndex * 15),
+                                size: 12
+                            });
+                        });
+                        y -= Math.max(25, optionLines.length * 20);
                     });
                 } else if (qaPair.question_type === "Short") {
                     const answerField = form.createTextField(`question${questionIndex}_answer`);
                     answerField.setText("");
-                    answerField.addToPage(page, { x: 50, y: y - 20, width: 450, height: 20 });
+                    answerField.addToPage(page, {
+                        x: margin,
+                        y: y - 20,
+                        width: maxContentWidth,
+                        height: 20
+                    });
                     y -= 40;
                 }
             }
         }
 
-        // Show answers for 'answers' and 'questions_answers' modes
         if (mode === 'answers' || mode === 'questions_answers') {
-            if (qaPair.question_type === "Boolean") {
-                page.drawText(`Answer ${questionIndex}: ${qaPair.answer || "True/False"}`, 
-                    { x: 50, y, size: 12, color: rgb(0, 0.5, 0) });
-            } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
-                page.drawText(`Answer ${questionIndex}: ${qaPair.answer}`, 
-                    { x: 50, y, size: 12, color: rgb(0, 0.5, 0) });
-            } else {
-                page.drawText(`Answer ${questionIndex}: ${qaPair.answer}`, 
-                    { x: 50, y, size: 12, color: rgb(0, 0.5, 0) });
-            }
-            y -= 30;
+            const answerText = `Answer ${questionIndex}: ${qaPair.answer}`;
+            const answerLines = wrapText(answerText, maxContentWidth);
+            answerLines.forEach((line, lineIndex) => {
+                page.drawText(line, {
+                    x: margin,
+                    y: y - (lineIndex * 15),
+                    size: 12,
+                    color: rgb(0, 0.5, 0)
+                });
+            });
+            y -= answerLines.length * 20;
         }
 
         y -= 20;
@@ -228,7 +360,6 @@ function Question() {
     link.click();
     document.body.removeChild(link);
 
-    // Hide dropdown after generating PDF
     document.getElementById('pdfDropdown').classList.add('hidden');
 };
 
@@ -321,22 +452,22 @@ function Question() {
               </button>
               <div
                 id="pdfDropdown"
-                className="hidden absolute bottom-full mb-1 bg-white rounded-lg shadow-lg"
+                className="hidden absolute bottom-full mb-1 bg-[#02000F] shadow-md text-white rounded-lg shadow-lg"
               >
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded-t-lg"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-t-lg"
                   onClick={() => generatePDF('questions')}
                 >
                   Questions Only
                 </button>
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-500"
                   onClick={() => generatePDF('questions_answers')}
                 >
                   Questions with Answers
                 </button>
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded-b-lg"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-b-lg"
                   onClick={() => generatePDF('answers')}
                 >
                   Answers Only
