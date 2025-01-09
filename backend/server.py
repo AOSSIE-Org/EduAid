@@ -376,14 +376,14 @@ def get_shortq_hard():
 @app.route("/get_mcq_hard", methods=["POST"])
 def get_mcq_hard():
     data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
+    input_text = data.get("input_text", "")#Retreiving the input text
+    use_mediawiki = data.get("use_mediawiki", 0)#if we want to use wikipedia or not 
+    input_text = process_input_text(input_text,use_mediawiki) #Parsing it into a function so that it can be modifies before use 
+    input_questions = data.get("input_question", [])# Here it specify the number of questions to be generated 
     output = qg.generate(
         article=input_text, num_questions=input_questions, answer_style="multiple_choice"
-    )
-    return jsonify({"output": output})
+    ) # Output of generated question in the form of dictionary 
+    return jsonify({"output": output}) #Here sending the output to the frontend 
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
