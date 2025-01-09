@@ -1,12 +1,12 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "../index.css";
 import logo from "../assets/aossie_logo.png";
 import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
-import { FaClipboard } from "react-icons/fa";
+import { FaClipboard, FaMicrophone, FaRegStopCircle, FaRedo } from "react-icons/fa";
 import Switch from "react-switch";
 
-const Text_Input = () => {
+const TextInput = () => {
   const [text, setText] = useState("");
   const [difficulty, setDifficulty] = useState("Easy Difficulty");
   const [numQuestions, setNumQuestions] = useState(10);
@@ -15,9 +15,53 @@ const Text_Input = () => {
   const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
 
-  const toggleSwitch = () => {
-    setIsToggleOn((isToggleOn + 1) % 2);
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+
+      recognitionRef.current.onresult = (event) => {
+        const transcriptArray = Array.from(event.results)
+          .map(result => result[0].transcript)
+          .join('');
+        setText(transcriptArray);
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        console.error("Speech recognition error", event.error);
+      };
+    } else {
+      console.error("Speech recognition not supported in this browser.");
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  const handleStartListening = () => {
+    if (recognitionRef.current) {
+      setIsListening(true);
+      recognitionRef.current.start();
+    }
+  };
+
+  const handleStopListening = () => {
+    if (recognitionRef.current) {
+      setIsListening(false);
+      recognitionRef.current.stop();
+    }
+  };
+
+  const handleResetTranscript = () => {
+    setText('');
   };
 
   const handleFileUpload = async (event) => {
@@ -161,6 +205,14 @@ const Text_Input = () => {
     }
   };
 
+  const handleCopyToClipboard = () => {
+    navigator.clipboard.writeText(text);
+  };
+
+  const toggleSwitch = () => {
+    setIsToggleOn(prevState => !prevState);
+  };
+
   return (
     <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen">
       {loading && (
@@ -198,8 +250,30 @@ const Text_Input = () => {
         </div>
 
         <div className="relative bg-[#83b6cc40] mx-6 rounded-2xl p-4 h-40">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
-            <FaClipboard className="h-[24px] w-[24px]" />
+          <button
+            className="absolute bottom-5 lecft-9 p-2 text-white focus:outline-none h-[24px] w-[24px] z-50"
+            onClick={handleCopyToClipboard}
+          >
+            <FaClipboard className="h-[24px] w-[24px]" z- />
+          </button>
+          {isListening ? (
+            <button
+              className="absolute bottom-5 right-16 p-2 text-white focus:outline-none h-[24px] w-[24px] z-50"
+              onClick={handleStopListening}
+            >
+              <FaRegStopCircle className="h-[24px] w-[24px]" />
+            </button>
+          ) : (
+            <button
+              className="absolute bottom-5 right-16 p-2 text-white focus:outline-none h-[24px] w-[24px] z-50"
+              onClick={handleStartListening}
+            >
+              <FaMicrophone className="h-[24px] w-[24px]" />
+            </button>
+          )}
+          <button className="absolute bottom-5 right-8 p-2 text-white focus:outline-none h-[24px] w-[24px] z-50"
+            onClick={handleResetTranscript}>
+            <FaRedo className="h-[24px] w-[24px]" />
           </button>
           <textarea
             className="absolute inset-0 p-8 pt-4 bg-[#83b6cc40] text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
@@ -313,4 +387,4 @@ const Text_Input = () => {
   );
 };
 
-export default Text_Input;
+export default TextInput;
