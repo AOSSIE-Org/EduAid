@@ -17,6 +17,16 @@ const TextInput = () => {
   const [isToggleOn, setIsToggleOn] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
+  const [loadingText, setLoadingText] = useState(false);
+  const [fileType, setFileType] = useState("pdf");
+
+  const handleFileTypeChange = (event) => {
+    setFileType(event.target.value);
+  };
+  useEffect(() => {
+    // Perform actions based on fileType change
+    console.log("File type changed:", fileType);
+  }, [fileType]); // Dependency array includes fileType
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -64,25 +74,68 @@ const TextInput = () => {
     setText('');
   };
 
+  // const handleFileUpload = async (event) => {
+  //   const file = event.target.files[0];
+  //   if (file) {
+  //     const formData = new FormData();
+  //     formData.append("file", file);
+
+  //     try {
+  //       const response = await fetch("http://localhost:5000/upload", {
+  //         method: "POST",
+  //         body: formData,
+  //       });
+  //       const data = await response.json();
+  //       setText(data.content || data.error);
+  //     } catch (error) {
+  //       console.error("Error uploading file:", error);
+  //       setText("Error uploading file");
+  //     }
+  //   }
+  // };
+
   const handleFileUpload = async (event) => {
+    setLoadingText(true);
     const file = event.target.files[0];
+
     if (file) {
       const formData = new FormData();
-      formData.append("file", file);
+
+      let apiEndpoint = "";
+      if (fileType === "pdf") {
+        apiEndpoint = "http://localhost:5000/upload";
+        console.log("API endpoint:", apiEndpoint);
+        formData.append("file", file);
+
+      } else if (fileType === "audio") {
+        apiEndpoint = "http://localhost:5000/upload_audio";
+        console.log("API endpoint:", apiEndpoint);
+        formData.append("audio", file);
+
+      } else if (fileType === "video") {
+        apiEndpoint = "http://localhost:5000/upload_video";
+        console.log("API endpoint:", apiEndpoint);
+        formData.append("video", file);
+
+      }
 
       try {
-        const response = await fetch("http://localhost:5000/upload", {
+        const response = await fetch(apiEndpoint, {
           method: "POST",
           body: formData,
         });
         const data = await response.json();
-        setText(data.content || data.error);
+        console.log(data.text);
+        setLoadingText(false);
+        setText(data.text || data.e);
       } catch (error) {
         console.error("Error uploading file:", error);
         setText("Error uploading file");
+        setLoadingText(false);
       }
     }
   };
+
 
   const handleClick = (event) => {
     event.preventDefault(); // Prevent default behavior
@@ -221,9 +274,8 @@ const TextInput = () => {
         </div>
       )}
       <div
-        className={`w-full h-full bg-cust bg-opacity-50 ${
-          loading ? "pointer-events-none" : ""
-        }`}
+        className={`w-full h-full bg-cust bg-opacity-50 ${loading ? "pointer-events-none" : ""
+          }`}
       >
         <a href="/">
           <div className="flex items-end gap-[2px]">
@@ -298,9 +350,21 @@ const TextInput = () => {
             src={cloud}
             alt="cloud"
           />
+          <div className="file-upload-container">
+            <select
+              id="file-type"
+              className="bg-[#3E5063] text-white text-lg rounded-lg p-2 mx-2"
+              value={fileType}
+              onChange={handleFileTypeChange}
+            >
+              <option value="video">Video</option>
+              <option value="pdf">PDF</option>
+              <option value="audio">Audio</option>
+            </select>
+          </div>
           <div className="text-center text-white text-lg">Choose a file</div>
           <div className="text-center text-white text-lg">
-            PDF, MP3 supported
+            PDF, MP3, MP4, WAV supported
           </div>
           <div>
             <input
@@ -309,12 +373,45 @@ const TextInput = () => {
               onChange={handleFileUpload}
               style={{ display: "none" }}
             />
-            <button
-              className="bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2"
-              onClick={handleClick}
-            >
-              Browse File
-            </button>
+            <div className="relative inline-block">
+              <button
+                className={`bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2 ${loadingText ? "opacity-50 pointer-events-none" : ""
+                  }`}
+                onClick={handleClick}
+                disabled={loadingText}
+              >
+                Browse File
+              </button>
+
+              {loadingText && (
+                <div
+                  className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/70"
+                  style={{ height: "48px", width: "140px" }}
+                >
+                  <svg
+                    className="animate-spin h-5 w-5 text-blue-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    ></path>
+                  </svg>
+                </div>
+              )}
+            </div>
+
           </div>
 
           <input

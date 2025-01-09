@@ -21,10 +21,25 @@ from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
+from flask import Flask, request, jsonify
+from googleapiclient.discovery import build
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+import os, random
+import moviepy as mp
+import speech_recognition as sr
+from werkzeug.utils import secure_filename
+import tempfile
+import shutil
+from pydub import AudioSegment
+from moviepy import AudioFileClip
 
 app = Flask(__name__)
 CORS(app)
 print("Starting Flask App...")
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
@@ -194,171 +209,68 @@ def get_content():
 @app.route("/generate_gform", methods=["POST"])
 def generate_gform():
     data = request.get_json()
-    qa_pairs = data.get("qa_pairs", "")
+    qa_pairs = data.get("qa_pairs", [])
     question_type = data.get("question_type", "")
-    SCOPES = "https://www.googleapis.com/auth/forms.body"
-    DISCOVERY_DOC = "https://forms.googleapis.com/$discovery/rest?version=v1"
-
-    store = file.Storage("token.json")
+    SCOPES = ["https://www.googleapis.com/auth/forms.body"]
+    
+    # Load credentials
     creds = None
-    if not creds or creds.invalid:
-        flow = client.flow_from_clientsecrets("credentials.json", SCOPES)
-        creds = tools.run_flow(flow, store)
+    if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    else:
+        flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+        creds = flow.run_local_server(port=0)
+        with open('token.json', 'w') as token_file:
+            token_file.write(creds.to_json())
+    
+    # Initialize Forms service
+    form_service = build('forms', 'v1', credentials=creds)
 
-    form_service = discovery.build(
-        "forms",
-        "v1",
-        http=creds.authorize(Http()),
-        discoveryServiceUrl=DISCOVERY_DOC,
-        static_discovery=False,
-    )
-    NEW_FORM = {
-        "info": {
-            "title": "EduAid form",
-        }
-    }
+    NEW_FORM = {"info": {"title": "EduAid Form"}}
     requests_list = []
 
-    if question_type == "get_shortq":
-        for index, qapair in enumerate(qa_pairs):
-            requests = {
-                "createItem": {
-                    "item": {
-                        "title": qapair["question"],
-                        "questionItem": {
-                            "question": {
-                                "required": True,
-                                "textQuestion": {},
-                            }
-                        },
-                    },
-                    "location": {"index": index},
+    # Add questions based on type
+    for index, qapair in enumerate(qa_pairs):
+        try:
+            question = qapair.get("question", "")
+            if question_type == "get_shortq":
+                requests = {
+                    "createItem": {
+                        "item": {"title": question, "questionItem": {"question": {"required": True, "textQuestion": {}}}},
+                        "location": {"index": index}
+                    }
                 }
-            }
-            requests_list.append(requests)
-    elif question_type == "get_mcq":
-        for index, qapair in enumerate(qa_pairs):
-            # Extract and filter the options
-            options = qapair.get("options", [])
-            valid_options = [
-                opt for opt in options if opt
-            ]  # Filter out empty or None options
-
-            # Ensure the answer is included in the choices
-            choices = [qapair["answer"]] + valid_options[
-                :3
-            ]  # Include up to the first 3 options
-
-            # Randomize the order of the choices
-            random.shuffle(choices)
-
-            # Prepare the request structure
-            choices_list = [{"value": choice} for choice in choices]
-
-            requests = {
-                "createItem": {
-                    "item": {
-                        "title": qapair["question"],
-                        "questionItem": {
-                            "question": {
-                                "required": True,
-                                "choiceQuestion": {
-                                    "type": "RADIO",
-                                    "options": choices_list,
-                                },
-                            }
-                        },
-                    },
-                    "location": {"index": index},
-                }
-            }
-
-            requests_list.append(requests)
-    elif question_type == "get_boolq":
-        for index, qapair in enumerate(qa_pairs):
-            choices_list = [
-                {"value": "True"},
-                {"value": "False"},
-            ]
-            requests = {
-                "createItem": {
-                    "item": {
-                        "title": qapair["question"],
-                        "questionItem": {
-                            "question": {
-                                "required": True,
-                                "choiceQuestion": {
-                                    "type": "RADIO",
-                                    "options": choices_list,
-                                },
-                            }
-                        },
-                    },
-                    "location": {"index": index},
-                }
-            }
-
-            requests_list.append(requests)
-    else:
-        for index, qapair in enumerate(qa_pairs):
-            if "options" in qapair and qapair["options"]:
-                options = qapair["options"]
-                valid_options = [
-                    opt for opt in options if opt
-                ]  # Filter out empty or None options
-                choices = [qapair["answer"]] + valid_options[
-                    :3
-                ]  # Include up to the first 3 options
+            elif question_type == "get_mcq":
+                choices = [{"value": option} for option in [qapair.get("answer")] + qapair.get("options", [])]
                 random.shuffle(choices)
-                choices_list = [{"value": choice} for choice in choices]
-                question_structure = {
-                    "choiceQuestion": {
-                        "type": "RADIO",
-                        "options": choices_list,
+                requests = {
+                    "createItem": {
+                        "item": {"title": question, "questionItem": {"question": {"required": True, "choiceQuestion": {"type": "RADIO", "options": choices}}}},
+                        "location": {"index": index}
                     }
                 }
-            elif "answer" in qapair:
-                question_structure = {"textQuestion": {}}
+            elif question_type == "get_boolq":
+                requests = {
+                    "createItem": {
+                        "item": {"title": question, "questionItem": {"question": {"required": True, "choiceQuestion": {"type": "RADIO", "options": [{"value": "True"}, {"value": "False"}]}}}},
+                        "location": {"index": index}
+                    }
+                }
             else:
-                question_structure = {
-                    "choiceQuestion": {
-                        "type": "RADIO",
-                        "options": [
-                            {"value": "True"},
-                            {"value": "False"},
-                        ],
-                    }
-                }
-
-            requests = {
-                "createItem": {
-                    "item": {
-                        "title": qapair["question"],
-                        "questionItem": {
-                            "question": {
-                                "required": True,
-                                **question_structure,
-                            }
-                        },
-                    },
-                    "location": {"index": index},
-                }
-            }
+                continue  # Skip invalid types
             requests_list.append(requests)
-
+        except KeyError as e:
+            print(f"Invalid question data: {qapair}. Error: {e}")
+    
     NEW_QUESTION = {"requests": requests_list}
 
-    result = form_service.forms().create(body=NEW_FORM).execute()
-    form_service.forms().batchUpdate(
-        formId=result["formId"], body=NEW_QUESTION
-    ).execute()
-
-    edit_url = jsonify(result["responderUri"])
-    webbrowser.open_new_tab(
-        "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
-    )
-    return edit_url
-
+    try:
+        result = form_service.forms().create(body=NEW_FORM).execute()
+        form_service.forms().batchUpdate(formId=result["formId"], body=NEW_QUESTION).execute()
+        return jsonify({"edit_url": f"https://docs.google.com/forms/d/{result['formId']}/edit"})
+    except Exception as e:
+        print(f"Error creating form: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/get_shortq_hard", methods=["POST"])
 def get_shortq_hard():
@@ -385,6 +297,103 @@ def get_mcq_hard():
     )
     return jsonify({"output": output})
 
+
+@app.route('/upload_video', methods=['POST'])
+def upload_video():
+    if 'video' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    video_file = request.files['video']
+    if video_file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(video_file.filename)[1]) as temp_video_file:
+            video_file.save(temp_video_file.name)
+            temp_video_path = temp_video_file.name
+
+        filename = secure_filename(video_file.filename)
+        video_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        shutil.move(temp_video_path, video_path)
+
+        video = mp.VideoFileClip(video_path)
+        audio_path = os.path.join(app.config['UPLOAD_FOLDER'], "audio.wav")
+        video.audio.write_audiofile(audio_path)
+        video.close() # Close the video clip to release the file handle
+
+        recognizer = sr.Recognizer()
+        with sr.AudioFile(audio_path) as source:
+            audio_data = recognizer.record(source)
+
+        try:
+            text = recognizer.recognize_google(audio_data)
+        except sr.UnknownValueError:
+            text = "Could not understand audio"
+        except sr.RequestError as e:
+            text = f"Could not request results from Google Speech Recognition service; {e}"
+
+        return jsonify({"text": text})
+
+    except Exception as e:
+        try:
+            os.remove(temp_video_path)  # Clean up temporary file on error
+        except FileNotFoundError:
+            pass
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        try:
+            os.remove(video_path)
+            os.remove(audio_path)
+        except FileNotFoundError:
+            pass
+
+
+
+@app.route('/upload_audio', methods=['POST'])
+def upload_audio():
+    if 'audio' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    audio_file = request.files['audio']
+    if audio_file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_mp3_file:
+            audio_file.save(temp_mp3_file.name)
+            temp_mp3_path = temp_mp3_file.name
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_wav_file:
+            temp_wav_path = temp_wav_file.name
+            audio_clip = AudioFileClip(temp_mp3_path)
+            audio_clip.write_audiofile(temp_wav_path)
+
+        recognizer = sr.Recognizer()
+        with sr.AudioFile(temp_wav_path) as source:
+            audio_data = recognizer.record(source)
+
+        try:
+            text = recognizer.recognize_google(audio_data)
+        except sr.UnknownValueError:
+            text = "Could not understand audio"
+        except sr.RequestError as e:
+            text = f"Could not request results from Google Speech Recognition service; {e}"
+
+        return jsonify({"text": text})
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        try:
+            os.remove(temp_mp3_path)
+            os.remove(temp_wav_path)
+        except FileNotFoundError:
+            pass
+
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
@@ -395,10 +404,10 @@ def upload_file():
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
-    content = file_processor.process_file(file)
+    text = file_processor.process_file(file)
     
-    if content:
-        return jsonify({"content": content})
+    if text:
+        return jsonify({"text": text})
     else:
         return jsonify({"error": "Unsupported file type or error processing file"}), 400
 

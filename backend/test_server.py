@@ -102,6 +102,24 @@ def test_get_boolean_answer():
     print(f'/get_boolean_answer Response: {response}')
     assert 'output' in response
 
+def upload_video():
+    endpoint = '/upload_video'
+    data = {
+        'file': ('video.mp4', open('video.mp4', 'rb'), 'video/mp4')
+    }
+    response = requests.post(f'{BASE_URL}{endpoint}', files=data)
+    print(f'/upload_video Response: {response.text}')
+    assert response.status_code == 200
+
+def upload_audio():
+    endpoint = '/upload_audio'
+    data = {
+        'file': ('audio.mp3', open('audio.mp3', 'rb'), 'audio/mpeg')
+    }
+    response = requests.post(f'{BASE_URL}{endpoint}', files=data)
+    print(f'/upload_audio Response: {response.text}')
+    assert response.status_code == 200
+
 def make_post_request(endpoint, data):
     url = f'{BASE_URL}{endpoint}'
     headers = {'Content-Type': 'application/json'}

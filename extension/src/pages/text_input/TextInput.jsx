@@ -19,6 +19,16 @@ function Second() {
   const [isToggleOn, setIsToggleOn] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
+  const [fileType, setFileType] = useState("pdf");
+  const [loadingText, setLoadingText] = useState(false);
+  const handleFileTypeChange = (event) => {
+    setFileType(event.target.value);
+  };
+  useEffect(() => {
+    // Perform actions based on fileType change
+    console.log("File type changed:", fileType);
+  }, [fileType]); // Dependency array includes fileType
+
 
   useEffect(() => {
     chrome.storage.local.get(["selectedText"], (result) => {
@@ -42,7 +52,7 @@ function Second() {
           .map(result => result[0].transcript)
           .join('');
         setText(transcriptArray);
-        console.log(transcriptArray);        
+        console.log(transcriptArray);
       };
 
       recognitionRef.current.onerror = (event) => {
@@ -67,21 +77,40 @@ function Second() {
   };
 
   const handleFileUpload = async (event) => {
+    setLoadingText(true);
     const file = event.target.files[0];
     if (file) {
       const formData = new FormData();
-      formData.append('file', file);
+      let apiEndpoint = "";
+      if (fileType === "pdf") {
+        apiEndpoint = "http://localhost:5000/upload";
+        console.log("API endpoint:", apiEndpoint);
+        formData.append("file", file);
+
+      } else if (fileType === "audio") {
+        apiEndpoint = "http://localhost:5000/upload_audio";
+        console.log("API endpoint:", apiEndpoint);
+        formData.append("audio", file);
+
+      } else if (fileType === "video") {
+        apiEndpoint = "http://localhost:5000/upload_video";
+        console.log("API endpoint:", apiEndpoint);
+        formData.append("video", file);
+
+      }
 
       try {
-        const response = await fetch('http://localhost:5000/upload', {
+        const response = await fetch(apiEndpoint, {
           method: 'POST',
           body: formData,
         });
         const data = await response.json();
-        setText(data.content || data.error);
+        setText(data.text || data.error);
+        setLoadingText(false);
       } catch (error) {
         console.error('Error uploading file:', error);
         setText('Error uploading file');
+        setLoadingText(false);
       }
     }
   };
@@ -310,9 +339,21 @@ function Second() {
         <div className="text-white text-center my-2 text-sm">or</div>
         <div className="border-[3px] rounded-xl text-center mx-3 px-6 py-2 border-dotted border-[#3E5063] mt-4">
           <img className="mx-auto" height={24} width={24} src={cloud} alt="cloud" />
+          <div className="file-upload-container">
+            <select
+              id="file-type"
+              className="bg-[#3E5063] text-white text-lg rounded-lg p-2 mx-2"
+              value={fileType}
+              onChange={handleFileTypeChange}
+            >
+              <option value="video">Video</option>
+              <option value="pdf">PDF</option>
+              <option value="audio">Audio</option>
+            </select>
+          </div>
           <div className="text-center text-white text-sm">Choose a file</div>
           <div className="text-center text-white text-sm">
-            PDF, MP3 supported
+            PDF, MP3, MP4, WAV supported
           </div>
           <div>
             <input
@@ -322,11 +363,41 @@ function Second() {
               style={{ display: 'none' }}
             />
             <button
-              className="bg-[#3e506380] my-2 text-sm rounded-xl text-white border border-[#cbd0dc80] px-6 py-1"
+              className={`bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2 ${loadingText ? "opacity-50 pointer-events-none" : ""
+                }`}
               onClick={handleClick}
+              disabled={loadingText}
             >
               Browse File
             </button>
+            {loadingText && (
+              <div
+                className="fixed inset-0 flex items-center justify-center rounded-2xl bg-white/70"
+                style={{ height: "47px", width: "142px", top:"73.5vh" , left:"21.5vh"}}
+              >
+                <svg
+                  className="animate-spin h-5 w-5 text-blue-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                  ></path>
+                </svg>
+              </div>
+            )}
+
           </div>
           <input
             type="text"
