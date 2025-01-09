@@ -7,6 +7,12 @@
   pointer-events: none;
 }
 
+body {
+  background: #02000f;
+   @apply bg-custom-gradient;
+  background-attachment: fixed;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
