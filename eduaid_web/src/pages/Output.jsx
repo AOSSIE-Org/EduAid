@@ -58,17 +58,13 @@ const Output = () => {
         });
       }
 
-      if (questionType === "get_mcq") {
+      if (questionType === "get_mcq") {    
         qaPairsFromStorage["output"].forEach((qaPair) => {
-          const options = qaPair.answer
-            .filter((ans) => !ans.correct)
-            .map((ans) => ans.answer);
-          const correctAnswer = qaPair.answer.find(
-            (ans) => ans.correct
-          )?.answer;
+          const options = qaPair.options;
+          const correctAnswer = qaPair.answer;
 
           combinedQaPairs.push({
-            question: qaPair.question,
+            question: qaPair.question_statement,
             question_type: "MCQ_Hard",
             options: options,
             answer: correctAnswer,
@@ -137,12 +133,32 @@ const Output = () => {
         y = 700;
       }
 
-      page.drawText(`Q${questionIndex}) ${qaPair.question}`, {
-        x: 50,
-        y,
-        size: 15,
+      // i'm implementing a question text wrapping logic so that it doesn't overflow the page
+      const questionText = `Q${questionIndex}) ${qaPair.question}`;
+      const maxLineLength = 67;
+      const lines = [];
+
+      let start = 0;
+      while (start < questionText.length) {
+        let end = start + maxLineLength;
+        if (end < questionText.length && questionText[end] !== ' ') {
+          while (end > start && questionText[end] !== ' ') {
+          end--;
+          }
+        }
+        if (end === start) {
+          end = start + maxLineLength;
+        }
+        lines.push(questionText.substring(start, end).trim());
+        start = end + 1;
+      }
+
+      lines.forEach((line) => {
+        page.drawText(line, { x: 50, y, size: 15 });
+        y -= 20;
       });
-      y -= 30;
+
+      y -= 10;
 
       if (qaPair.question_type === "Boolean") {
         // Create radio buttons for True/False
@@ -176,8 +192,8 @@ const Output = () => {
           `question${questionIndex}_answer`
         );
 
-        options.forEach((option, index) => {
-          const drawRadioButton = (text, selected) => {
+        options.forEach((option) => {
+          const drawRadioButton = (text) => {
             const radioOptions = {
               x: 70,
               y,
