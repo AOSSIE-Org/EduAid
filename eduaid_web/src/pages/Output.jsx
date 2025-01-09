@@ -127,8 +127,6 @@ const Output = () => {
     let y = 700; // Starting y position for content
     let questionIndex = 1;
 
-    console.log("here inside downloading", qaPairs)
-
     qaPairs.forEach((qaPair) => {
       if (y < 50) {
         page = pdfDoc.addPage();
@@ -194,8 +192,8 @@ const Output = () => {
           `question${questionIndex}_answer`
         );
 
-        options.forEach((option, index) => {
-          const drawRadioButton = (text, selected) => {
+        options.forEach((option) => {
+          const drawRadioButton = (text) => {
             const radioOptions = {
               x: 70,
               y,
@@ -208,11 +206,6 @@ const Output = () => {
           };
           drawRadioButton(option, false);
         });
-
-        if (questionIndex % 5 === 0) {
-          page = pdfDoc.addPage();
-          y = 700;
-        }
       } else if (qaPair.question_type === "Short") {
         // Text field for Short answer
         const answerField = form.createTextField(
