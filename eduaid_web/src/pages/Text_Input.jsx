@@ -169,14 +169,13 @@ const Text_Input = () => {
         </div>
       )}
       <div
-        className={`w-full h-full bg-cust bg-opacity-50 ${
-          loading ? "pointer-events-none" : ""
-        }`}
+        className={`w-full h-full bg-cust bg-opacity-50 ${loading ? "pointer-events-none" : ""
+          }`}
       >
         <a href="/">
-          <div className="flex items-end gap-[2px]">
-            <img src={logo} alt="logo" className="w-24 my-6 ml-6 block" />
-            <div className="text-4xl mb-5 font-extrabold">
+          <div className="flex items-end gap-2">
+            <img src={logo} alt="logo" className="w-24 pt-4 ml-6 block" />
+            <div className="text-4xl font-extrabold ">
               <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
                 Edu
               </span>
@@ -186,7 +185,7 @@ const Text_Input = () => {
             </div>
           </div>
         </a>
-        <div className="text-right mt-[-8px] mx-1">
+        <div className="text-right m-2 mt-4">
           <div className="text-white text-xl font-bold">Enter the Content</div>
           <div className="text-white text-right justify-end flex gap-2 text-xl font-bold">
             to Generate{" "}
@@ -197,7 +196,7 @@ const Text_Input = () => {
           </div>
         </div>
 
-        <div className="relative bg-[#83b6cc40] mx-6 rounded-2xl p-4 h-40">
+        <div className="relative bg-[#83b6cc40] mx-4 rounded-2xl p-4 h-40">
           <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
             <FaClipboard className="h-[24px] w-[24px]" />
           </button>
@@ -215,8 +214,8 @@ const Text_Input = () => {
         `}
           </style>
         </div>
-        <div className="text-white text-center my-4 text-lg">or</div>
-        <div className="border-[3px] rounded-2xl text-center mx-6 px-6 py-4 border-dotted border-[#3E5063] mt-6">
+        <div className="text-white text-center my-2 text-lg">or</div>
+        <div className="border-[3px] rounded-2xl text-center mx-6 px-4 py-2 border-dotted border-[#3E5063]">
           <img
             className="mx-auto"
             height={32}
@@ -246,43 +245,41 @@ const Text_Input = () => {
           <input
             type="text"
             placeholder="Enter Google Doc URL"
-            className="bg-transparent border border-[#cbd0dc80] text-white text-xl rounded-2xl p-3 w-fit outline-none"
+            className="bg-transparent border border-[#cbd0dc80] text-white text-xl rounded-2xl py-2 px-4 text-center w-full sm:w-auto outline-none"
             value={docUrl}
             onChange={(e) => setDocUrl(e.target.value)}
           />
         </div>
 
-        <div className="flex justify-center gap-8 items-center">
+        <div className="flex flex-wrap justify-center gap-6 items-center">
           <div className="flex gap-2 items-center">
-            <div className="text-white text-xl font-bold">
-              No. of Questions:{" "}
-            </div>
+            <div className="text-white text-xl font-bold">No. of Questions:{" "}</div>
             <button
               onClick={decrementQuestions}
-              className="rounded-lg border-[3px] border-[#6e8a9f] text-white text-xl px-3"
+              className="rounded-lg border-[3px] border-[#6e8a9f] text-white text-xl px-2"
             >
               -
             </button>
             <span className="text-white text-2xl">{numQuestions}</span>
             <button
               onClick={incrementQuestions}
-              className="rounded-lg border-[3px] border-[#6e8a9f] text-white text-xl px-2"
+              className="rounded-lg border-[3px] border-[#6e8a9f] text-white text-xl px-2 text-center"
             >
               +
             </button>
           </div>
-          <div className="text-center mt-2 mb-2">
+          <div className="text-center lg:m-2  m-0">
             <select
               value={difficulty}
               onChange={handleDifficultyChange}
-              className="bg-[#3e5063] text-white text-lg rounded-xl p-2 outline-none"
+              className="bg-[#3e5063] text-white text-lg rounded-xl py-2 px-4 outline-none"
             >
               <option value="Easy Difficulty">Easy Difficulty</option>
               <option value="Hard Difficulty">Hard Difficulty</option>
             </select>
           </div>
           <div className="flex gap-2">
-            <div className="text-white text-xl font-bold">Use Wikipedia: </div>
+            <div className="text-white text-xl font-bold ">Use Wikipedia: </div>
             <Switch
               onChange={toggleSwitch}
               checked={isToggleOn === 1}
@@ -293,20 +290,19 @@ const Text_Input = () => {
             />
           </div>
         </div>
-        <div className="flex justify-center gap-8 my-6">
+
+        <div className="flex justify-center gap-8 m-2 flex-wrap">
           <a href="question-type">
-            <button className="bg-black items-center text-xl text-white px-4 py-2 border-gradient">
+            <button className="bg-black items-center text-xl text-white px-4 py-1 border-gradient">
               Back
             </button>
           </a>
-          {/* <a href="output"> */}
           <button
             onClick={handleSaveToLocalStorage}
-            className="bg-black items-center text-xl text-white px-4 py-2 border-gradient flex"
+            className="bg-black items-center text-xl text-white px-4 py-1 border-gradient flex"
           >
             Next
           </button>
-          {/* </a> */}
         </div>
       </div>
     </div>
