@@ -28,6 +28,26 @@ function Second() {
     });
   }, [])
 
+  // This fires when text is changed and if url params are present it indicates 
+  // that this page was loaded by context menu
+  useEffect(() => {
+    if (text) {
+      console.log("Updated Text State: ", text);
+      checkUrlParams();
+    }
+  }, [text]);
+
+  const checkUrlParams = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const questionType = urlParams.get("questionType");
+
+    if(questionType) {
+      console.log("Question Type:", questionType);
+      localStorage.setItem('selectedQuestionType', questionType);
+      console.log(text)
+      handleSaveToLocalStorage();
+    }
+  }
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
