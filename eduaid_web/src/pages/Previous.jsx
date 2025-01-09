@@ -1,16 +1,18 @@
-import React from "react";
-import "../index.css";
+import React, { useState, useEffect } from "react";
+
+import { FaArrowRight, FaTrash } from "react-icons/fa";
 import logo from "../assets/aossie_logo.png";
 import stars from "../assets/stars.png";
-import { FaArrowRight } from "react-icons/fa";
 
-const Previous = () => {
-  const getQuizzesFromLocalStorage = () => {
-    const quizzes = localStorage.getItem("last5Quizzes");
-    return quizzes ? JSON.parse(quizzes) : [];
-  };
+const PreviousWork = () => {
+  const [quizzes, setQuizzes] = useState([]);
 
-  const [quizzes, setQuizzes] = React.useState(getQuizzesFromLocalStorage());
+  useEffect(() => {
+    const storedQuizzes = localStorage.getItem("last5Quizzes");
+    if (storedQuizzes) {
+      setQuizzes(JSON.parse(storedQuizzes));
+    }
+  }, []);
 
   const handleQuizClick = (quiz) => {
     localStorage.setItem("qaPairs", JSON.stringify(quiz.qaPair));
@@ -22,87 +24,85 @@ const Previous = () => {
     setQuizzes([]);
   };
 
-  const handleBack = () => {
-    window.location.href = "/";
-  };
-
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex flex-col justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
+    <div className="relative min-h-screen bg-neutral-950">
+      {/* Background patterns */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-neutral-950 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:24px_32px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 max-w-4xl mx-auto px-4 py-8">
         <a href="/">
-          <div className="flex items-end gap-[2px]">
-            <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
-            <div className="text-2xl mb-3 font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                Edu
+          <div className="flex items-center gap-2 mb-12">
+            <img
+              src={logo}
+              alt="AOSSIE Logo"
+              width={80}
+              height={80}
+              className="mix-blend-screen rounded-full"
+            />
+            <h1 className="text-4xl font-extrabold">
+              <span className="bg-gradient-to-r from-[#7877C6] to-purple-500 text-transparent bg-clip-text">
+                EduAid
               </span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                Aid
-              </span>
-            </div>
+            </h1>
           </div>
         </a>
-        <div className="text-right mt-[-8px] mx-1">
-          <div className="text-white text-xl font-bold">Quiz Dashboard</div>
-          <div className="text-white text-right justify-end flex gap-2 text-xl font-bold">
+
+        <div className="text-center mb-8">
+          <h2 className="text-4xl font-bold text-white mb-2">Quiz Dashboard</h2>
+          <p className="text-xl text-gray-400">
             Your{" "}
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
+            <span className="bg-gradient-to-r from-[#7877C6] to-purple-500 text-transparent bg-clip-text font-semibold">
               Generated Quizzes
-            </span>{" "}
-            <img className="h-[20px] w-[20px]" src={stars} alt="stars" />
-          </div>
+            </span>
+          </p>
         </div>
-        <div className="text-center my-2 text-sm">
-          <span className="bg-gradient-to-r text-xl from-[#7600F2] text-center to-[#00CBE7] font-bold text-transparent bg-clip-text">
-            Your Quizzes
-          </span>{" "}
-        </div>
-        <div className="mx-3 my-4 p-2 bg-[#83b6cc40] rounded-xl h-68 overflow-y-auto ">
+
+        <div className="bg-neutral-900/50 rounded-xl p-6 mb-8">
           {quizzes.length === 0 ? (
-            <div className="text-center text-white text-sm">
+            <div className="text-center text-gray-400 py-8">
               No quizzes available
             </div>
           ) : (
-            <ul className="space-y-2 max-h-96 overflow-y-auto">
+            <ul className="space-y-4">
               {quizzes.map((quiz, index) => (
                 <li
                   key={index}
-                  className="bg-[#202838] p-4 rounded-lg text-white cursor-pointer border-dotted border-2 border-[#7600F2] flex justify-between items-center"
                   onClick={() => handleQuizClick(quiz)}
+                  className="bg-neutral-800 rounded-lg p-4 flex justify-between items-center cursor-pointer hover:bg-neutral-700 transition-colors"
                 >
                   <div>
-                    <div className="font-bold">
+                    <h3 className="text-white font-semibold">
                       {quiz.difficulty} - {quiz.numQuestions} Questions
-                    </div>
-                    <div className="mt-2 text-sm">{quiz.date}</div>
+                    </h3>
+                    <p className="text-gray-400 text-sm">{quiz.date}</p>
                   </div>
-                  <FaArrowRight className="text-[#7600F2]" size={20} />
+                  <FaArrowRight className="text-[#7877C6]" />
                 </li>
               ))}
             </ul>
           )}
         </div>
-        <div className="flex my-2 justify-center gap-6 items-start">
-          <div>
-            <button
-              onClick={handleBack}
-              className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient"
-            >
+
+        <div className="flex justify-center gap-4">
+          <a href="/">
+            <button className="bg-neutral-800 text-white px-6 py-2 rounded-full hover:bg-neutral-700 transition-colors">
               Back
             </button>
-          </div>
-          <div>
-            <button
-              onClick={handleClearQuizzes}
-              className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient"
-            >
-              Clear
-            </button>
-          </div>
+          </a>
+          <button
+            onClick={handleClearQuizzes}
+            className="bg-red-600 text-white px-6 py-2 rounded-full hover:bg-red-700 transition-colors flex items-center gap-2"
+          >
+            <FaTrash /> Clear All
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-export default Previous;
+export default PreviousWork;

@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import "../index.css";
 import logo from "../assets/aossie_logo.png";
-import starsImg from "../assets/stars.png";
-import arrow from "../assets/arrow.png";
-import gitStar from "../assets/gitStar.png";
-import { FaGithub } from "react-icons/fa";
+
+import { FaArrowAltCircleRight, FaGithub, FaStar } from "react-icons/fa";
+import FeaturesSection from "../components/feature_section";
 
 const Home = () => {
   const [stars, setStars] = useState(null);
@@ -22,7 +21,7 @@ const Home = () => {
   }
 
   function isMoreThanOneDayOld(timestamp) {
-    const oneDay = 24 * 60 * 60 * 1000; // One day in milliseconds
+    const oneDay = 24 * 60 * 60 * 1000;
     return Date.now() - timestamp > oneDay;
   }
 
@@ -49,83 +48,63 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-        <div>
-          <img src={logo} alt="logo" className="w-24 my-6 mx-6 block" />
-          <div className="text-7xl text-center font-extrabold">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-              Edu
-            </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Aid
-            </span>
-          </div>
-          <div className="text-white text-[1.5rem] text-center my-4">
-            <div>A tool that can auto-generate short quizzes</div>
-            <div className="flex text-center justify-center gap-4">
-              based on user input{" "}
-              <img src={starsImg} width={32} height={12} alt="" />
-            </div>
-          </div>
-          <div className="flex flex-col items-end">
-            <div className="my-6">
-              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
-                <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-xl">Doc/Audio Input</div>
-              </div>
-            </div>
-            <div className="my-4">
-              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
-                <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-xl">In-depth questions gen</div>
-              </div>
-            </div>
-            <div className="my-4">
-              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
-                <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-xl">
-                  Dynamic Google Form Integration
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-center gap-6">
-            <div className="mt-8 rounded-2xl">
-              <a href="question-type">
-                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
-                  Let’s get Started{" "}
-                  <img src={arrow} width={28} height={24} alt="" />
-                </button>
-              </a>
-            </div>
-            <div className="mt-8 rounded-2xl">
-              <a href="history">
-                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
-                  Your previous Work!
-                  <img src={arrow} width={28} height={24} alt="" />
-                </button>
-              </a>
-            </div>
-          </div>
+    <div className="relative min-h-screen bg-neutral-950">
+      {/* Background patterns - moved to lowest z-index */}
+      <div className="inset-0">
+        <div className="absolute inset-0 bg-neutral-950 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:24px_32px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
+      </div>
+      <img
+        src={logo}
+        alt=""
+        className=" absolute mix-blend-screen rounded-full size-20 m-4"
+      />
+      {/* Content wrapper - above background */}
+      <div className="relative">
+        {/* Heading Section */}
+        <div className="w-full pt-28 flex items-center justify-center flex-col">
+          <h1 className="text-9xl font-extrabold bg-gradient-to-tr from-transparent via-white to-transparent text-transparent bg-clip-text">
+            EDUAID
+          </h1>
+          <p className="mt-10 text-gray-400 text-sm">
+            A tool that can auto-generate short quizzes
+          </p>
+        </div>
+
+        <div className="flex pt-11 items-center justify-center gap-4">
           <a
+            href={"/question-type"}
+            className="p-2 hover:scale-95 active:scale-105 transition-transform w-44 flex items-center justify-center gap-3 rounded-lg px-4 bg-white text-black"
+          >
+            Lets get started <FaArrowAltCircleRight />
+          </a>
+          <a
+            className="p-2 w-fit hover:scale-95 active:scale-105 transition-transform flex items-center justify-center gap-3 rounded-lg px-4 bg-transparent border text-white"
+            href="history"
+          >
+            Your previous Work!
+          </a>
+        </div>
+
+        {/* Features Section */}
+        <div className="mt-28 bg-transparent">
+          <FeaturesSection />
+        </div>
+        <div className="w-full relative flex justify-center items-center pb-4 ">
+          <div className="w-80 h-14 flex absolute bg-gradient-to-r from-pink-600 to-fuchsia-700 rounded-xl blur"></div>
+          <a
+            className="w-80 h-14 relative bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl shadow-lg flex items-center justify-between px-4 transition-all "
             href="https://github.com/AOSSIE-Org/EduAid"
             target="_blank"
             rel="noopener noreferrer"
-            className="group"
           >
-            <div className="bg-[#45454599] mt-10 w-fit mx-auto px-4 py-3 rounded-xl flex gap-4 items-center group-hover:bg-[#5a5a5a99] transition-colors duration-300">
-              <img src={gitStar} className="" width={28} height={12} alt="" />
-              <div className="text-white font-semibold">
-                {stars !== null ? (
-                  <span className="flex text-2xl">
-                    {stars}
-                    <FaGithub size={36} className="ml-6" />
-                  </span>
-                ) : (
-                  <span>{error}</span>
-                )}
-              </div>
+            <div className="flex items-center space-x-2">
+              <FaGithub className="text-white text-2xl" />
+              <span className="text-white font-semibold">GitHub Stars</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <FaStar className="text-yellow-400 text-xl" />
+              <span className="text-white font-bold text-xl">37</span>
             </div>
           </a>
         </div>

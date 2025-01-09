@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import "../index.css";
+
+import { FaArrowAltCircleRight } from "react-icons/fa";
 import logo from "../assets/aossie_logo.png";
 
-const Question_Type = () => {
+const QuestionType = () => {
   const [selectedOption, setSelectedOption] = useState(null);
 
   const handleOptionClick = (option) => {
@@ -15,105 +16,81 @@ const Question_Type = () => {
     }
   };
 
+  const questionTypes = [
+    { id: "get_shortq", label: "Short-Answer Type Questions" },
+    { id: "get_mcq", label: "Multiple Choice Questions" },
+    { id: "get_boolq", label: "True/False Questions" },
+    { id: "get_problems", label: "All Questions" },
+  ];
+
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient p-6">
+    <div className="relative min-h-screen bg-neutral-950">
+      {/* Background patterns */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-neutral-950 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:24px_32px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 max-w-4xl mx-auto px-4 py-8">
         <a href="/">
-          <div className="flex items-end gap-4">
-            <img src={logo} alt="logo" className="w-24 my-6 block" />
-            <div className="text-5xl mb-5 font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                Edu
+          <div className="flex items-center gap-2 mb-12">
+            <img
+              src={logo}
+              alt="AOSSIE Logo"
+              width={80}
+              height={80}
+              className="mix-blend-screen rounded-full"
+            />
+            <h1 className="text-4xl font-extrabold">
+              <span className="bg-gradient-to-r from-[#7877C6] to-purple-500 text-transparent bg-clip-text">
+                EduAid
               </span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                Aid
-              </span>
-            </div>
+            </h1>
           </div>
         </a>
-        <div className="text-4xl mt-6 text-white text-center font-extrabold">
-          What’s on your Mind?
-        </div>
-        <div className="mt-2 text-white text-xl text-center font-medium">
-          Choose one
-        </div>
-        <div className="flex flex-col items-center mt-8">
-          <div
-            onClick={() => handleOptionClick("get_shortq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
-          >
+
+        <h2 className="text-4xl font-bold text-white text-center mb-4">
+          What's on your Mind?
+        </h2>
+        <p className="text-xl text-gray-400 text-center mb-8">Choose one</p>
+
+        <div className="space-y-4 mb-8">
+          {questionTypes.map((type) => (
             <div
-              className={`w-10 h-10 rounded-full ${
-                selectedOption === "get_shortq"
-                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                  : "bg-[#999C9D]"
-              } `}
-            ></div>
-            <div className="text-white text-2xl font-medium">
-              Short-Answer Type Questions
+              key={type.id}
+              onClick={() => handleOptionClick(type.id)}
+              className={`flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all ${
+                selectedOption === type.id
+                  ? "bg-gradient-to-r from-[#7877C6] to-purple-500"
+                  : "bg-neutral-900 hover:bg-neutral-800"
+              }`}
+            >
+              <div
+                className={`w-6 h-6 rounded-full border-2 ${
+                  selectedOption === type.id
+                    ? "bg-white border-white"
+                    : "border-gray-400"
+                }`}
+              />
+              <span className="text-white text-lg">{type.label}</span>
             </div>
-          </div>
-          <div
-            onClick={() => handleOptionClick("get_mcq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
-          >
-            <div
-              className={`w-10 h-10 rounded-full ${
-                selectedOption === "get_mcq"
-                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                  : "bg-[#999C9D]"
-              } `}
-            ></div>
-            <div className="text-white text-2xl font-medium">
-              Multiple Choice Questions
-            </div>
-          </div>
-          <div
-            onClick={() => handleOptionClick("get_boolq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
-          >
-            <div
-              className={`w-10 h-10 rounded-full ${
-                selectedOption === "get_boolq"
-                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                  : "bg-[#999C9D]"
-              } `}
-            ></div>
-            <div className="text-white text-2xl font-medium">
-              True/False Questions
-            </div>
-          </div>
-          <div
-            onClick={() => handleOptionClick("get_problems")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
-          >
-            <div
-              className={`w-10 h-10 rounded-full ${
-                selectedOption === "get_problems"
-                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                  : "bg-[#999C9D]"
-              } `}
-            ></div>
-            <div className="text-white text-2xl font-medium">All Questions</div>
-          </div>
+          ))}
         </div>
-        <div className="mx-auto text-center mt-10">
+
+        <div className="text-center">
           {selectedOption ? (
-            <a href="input">
-              <button
-                onClick={handleSaveToLocalStorage}
-                className="rounded-2xl text-2xl text-white w-fit px-8 font-bold py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7]"
-              >
-                Fire Up{"  "}🚀
+            <a href="/input" onClick={handleSaveToLocalStorage}>
+              <button className="bg-gradient-to-r from-[#7877C6] to-purple-500 text-white font-bold py-3 px-8 rounded-full text-xl inline-flex items-center gap-2 hover:opacity-90 transition-opacity">
+                Fire Up <FaArrowAltCircleRight />
               </button>
             </a>
           ) : (
             <button
-              onClick={() => alert("Please select a question type.")}
-              className="rounded-2xl text-2xl text-white w-fit px-8 font-bold py-3 bg-gray-500 cursor-not-allowed"
+              className="bg-gray-600 text-white font-bold py-3 px-8 rounded-full text-xl inline-flex items-center gap-2 cursor-not-allowed opacity-50"
               disabled
             >
-              Fire Up{"  "}🚀
+              Fire Up <FaArrowAltCircleRight />
             </button>
           )}
         </div>
@@ -122,4 +99,4 @@ const Question_Type = () => {
   );
 };
 
-export default Question_Type;
+export default QuestionType;

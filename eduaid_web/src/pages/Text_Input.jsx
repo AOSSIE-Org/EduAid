@@ -1,10 +1,8 @@
 import React, { useState, useRef } from "react";
-import "../index.css";
+import { FaClipboard, FaCloudUploadAlt, FaMinus, FaPlus } from "react-icons/fa";
+import Switch from "react-switch";
 import logo from "../assets/aossie_logo.png";
 import stars from "../assets/stars.png";
-import cloud from "../assets/cloud.png";
-import { FaClipboard } from "react-icons/fa";
-import Switch from "react-switch";
 
 const Text_Input = () => {
   const [text, setText] = useState("");
@@ -12,7 +10,6 @@ const Text_Input = () => {
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
-  const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
 
@@ -27,10 +24,13 @@ const Text_Input = () => {
       formData.append("file", file);
 
       try {
-        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/upload`, {
-          method: "POST",
-          body: formData,
-        });
+        const response = await fetch(
+          `${process.env.REACT_APP_BASE_URL}/upload`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
         const data = await response.json();
         setText(data.content || data.error);
       } catch (error) {
@@ -54,13 +54,16 @@ const Text_Input = () => {
     // Check if a Google Doc URL is provided
     if (docUrl) {
       try {
-        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/get_content`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ document_url: docUrl }),
-        });
+        const response = await fetch(
+          `${process.env.REACT_APP_BASE_URL}/get_content`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ document_url: docUrl }),
+          }
+        );
 
         if (response.ok) {
           const data = await response.json();
@@ -122,13 +125,16 @@ const Text_Input = () => {
         use_mediawiki: isToggleOn,
       });
 
-      const response = await fetch(`${process.env.REACT_APP_BASE_URL}/${endpoint}`, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `${process.env.REACT_APP_BASE_URL}/${endpoint}`,
+        {
+          method: "POST",
+          body: formData,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (response.ok) {
         const responseData = await response.json();
@@ -162,151 +168,146 @@ const Text_Input = () => {
   };
 
   return (
-    <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen">
+    <div className="relative min-h-screen bg-neutral-950">
+      {/* Background patterns */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-neutral-950 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:24px_32px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
+      </div>
+
+      {/* Loading overlay */}
       {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
         </div>
       )}
-      <div
-        className={`w-full h-full bg-cust bg-opacity-50 ${
-          loading ? "pointer-events-none" : ""
-        }`}
-      >
+
+      {/* Content */}
+      <div className="relative z-10 max-w-4xl mx-auto px-4 py-8">
         <a href="/">
-          <div className="flex items-end gap-[2px]">
-            <img src={logo} alt="logo" className="w-24 my-6 ml-6 block" />
-            <div className="text-4xl mb-5 font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                Edu
+          <div className="flex items-center gap-2 mb-12">
+            <img
+              src={logo}
+              alt="AOSSIE Logo"
+              width={80}
+              height={80}
+              className="mix-blend-screen rounded-full"
+            />
+            <h1 className="text-4xl font-extrabold">
+              <span className="bg-gradient-to-r from-[#7877C6] to-purple-500 text-transparent bg-clip-text">
+                EduAid
               </span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                Aid
-              </span>
-            </div>
+            </h1>
           </div>
         </a>
-        <div className="text-right mt-[-8px] mx-1">
-          <div className="text-white text-xl font-bold">Enter the Content</div>
-          <div className="text-white text-right justify-end flex gap-2 text-xl font-bold">
+
+        <div className="text-center mb-8">
+          <h2 className="text-4xl font-bold text-white mb-2">
+            Enter the Content
+          </h2>
+          <p className="text-xl text-gray-400">
             to Generate{" "}
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Questionaries
-            </span>{" "}
-            <img className="h-[30px] w-[30px]" src={stars} alt="stars" />
-          </div>
+            <span className="bg-gradient-to-r from-[#7877C6] to-purple-500 text-transparent bg-clip-text font-semibold">
+              Questionnaires
+            </span>
+          </p>
         </div>
 
-        <div className="relative bg-[#83b6cc40] mx-6 rounded-2xl p-4 h-40">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
-            <FaClipboard className="h-[24px] w-[24px]" />
+        <div className="bg-neutral-800 rounded-xl p-4 mb-8 relative">
+          <button className="absolute top-2 left-2 text-gray-400 hover:text-white focus:outline-none">
+            <FaClipboard className="h-6 w-6" />
           </button>
           <textarea
-            className="absolute inset-0 p-8 pt-4 bg-[#83b6cc40] text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="w-full h-40 bg-transparent text-white text-lg p-8 rounded-xl outline-none resize-none"
             value={text}
             onChange={(e) => setText(e.target.value)}
+            placeholder="Enter your text here..."
           />
-          <style>
-            {`
-          textarea::-webkit-scrollbar {
-            display: none;
-          }
-        `}
-          </style>
         </div>
-        <div className="text-white text-center my-4 text-lg">or</div>
-        <div className="border-[3px] rounded-2xl text-center mx-6 px-6 py-4 border-dotted border-[#3E5063] mt-6">
-          <img
-            className="mx-auto"
-            height={32}
-            width={32}
-            src={cloud}
-            alt="cloud"
-          />
-          <div className="text-center text-white text-lg">Choose a file</div>
-          <div className="text-center text-white text-lg">
-            PDF, MP3 supported
-          </div>
-          <div>
+
+        <div className="text-center text-gray-400 my-4">or</div>
+
+        <div className="border-2 border-dashed border-gray-600 rounded-xl p-6 mb-8">
+          <div className="flex flex-col items-center">
+            <FaCloudUploadAlt className="text-4xl text-gray-400 mb-2" />
+            <p className="text-lg text-white mb-2">Choose a file</p>
+            <p className="text-sm text-gray-400 mb-4">PDF, MP3 supported</p>
             <input
               type="file"
               ref={fileInputRef}
               onChange={handleFileUpload}
-              style={{ display: "none" }}
+              className="hidden"
             />
             <button
-              className="bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2"
               onClick={handleClick}
+              className="bg-neutral-700 text-white px-6 py-2 rounded-full hover:bg-neutral-600 transition-colors mb-4"
             >
               Browse File
             </button>
+            <input
+              type="text"
+              placeholder="Enter Google Doc URL"
+              className="w-full bg-neutral-800 text-white rounded-full px-4 py-2 outline-none"
+              value={docUrl}
+              onChange={(e) => setDocUrl(e.target.value)}
+            />
           </div>
-
-          <input
-            type="text"
-            placeholder="Enter Google Doc URL"
-            className="bg-transparent border border-[#cbd0dc80] text-white text-xl rounded-2xl p-3 w-fit outline-none"
-            value={docUrl}
-            onChange={(e) => setDocUrl(e.target.value)}
-          />
         </div>
 
-        <div className="flex justify-center gap-8 items-center">
-          <div className="flex gap-2 items-center">
-            <div className="text-white text-xl font-bold">
-              No. of Questions:{" "}
-            </div>
+        <div className="flex flex-wrap justify-center gap-8 mb-8">
+          <div className="flex items-center gap-2">
+            <span className="text-white text-lg">No. of Questions:</span>
             <button
               onClick={decrementQuestions}
-              className="rounded-lg border-[3px] border-[#6e8a9f] text-white text-xl px-3"
+              className="bg-neutral-700 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-600 transition-colors"
             >
-              -
+              <FaMinus />
             </button>
-            <span className="text-white text-2xl">{numQuestions}</span>
+            <span className="text-white text-xl w-8 text-center">
+              {numQuestions}
+            </span>
             <button
               onClick={incrementQuestions}
-              className="rounded-lg border-[3px] border-[#6e8a9f] text-white text-xl px-2"
+              className="bg-neutral-700 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-600 transition-colors"
             >
-              +
+              <FaPlus />
             </button>
           </div>
-          <div className="text-center mt-2 mb-2">
+          <div>
             <select
               value={difficulty}
               onChange={handleDifficultyChange}
-              className="bg-[#3e5063] text-white text-lg rounded-xl p-2 outline-none"
+              className="bg-neutral-700 text-white rounded-full px-4 py-2 outline-none"
             >
               <option value="Easy Difficulty">Easy Difficulty</option>
               <option value="Hard Difficulty">Hard Difficulty</option>
             </select>
           </div>
-          <div className="flex gap-2">
-            <div className="text-white text-xl font-bold">Use Wikipedia: </div>
+          <div className="flex items-center gap-2">
+            <span className="text-white text-lg">Use Wikipedia:</span>
             <Switch
               onChange={toggleSwitch}
               checked={isToggleOn === 1}
-              onColor="#008080"
-              offColor="#3e5063"
+              onColor="#7877C6"
+              offColor="#4B5563"
               checkedIcon={false}
               uncheckedIcon={false}
             />
           </div>
         </div>
-        <div className="flex justify-center gap-8 my-6">
-          <a href="question-type">
-            <button className="bg-black items-center text-xl text-white px-4 py-2 border-gradient">
+
+        <div className="flex justify-center gap-4">
+          <a href="/question-type">
+            <button className="bg-neutral-700 text-white px-8 py-2 rounded-full hover:bg-neutral-600 transition-colors">
               Back
             </button>
           </a>
-          {/* <a href="output"> */}
           <button
             onClick={handleSaveToLocalStorage}
-            className="bg-black items-center text-xl text-white px-4 py-2 border-gradient flex"
+            className="bg-gradient-to-r from-[#7877C6] to-purple-500 text-white px-8 py-2 rounded-full hover:opacity-90 transition-opacity"
           >
             Next
           </button>
-          {/* </a> */}
         </div>
       </div>
     </div>
