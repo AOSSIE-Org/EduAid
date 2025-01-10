@@ -52,7 +52,7 @@ const Home = () => {
     <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <div>
-          <img src={logo} alt="logo" className="w-24 my-6 mx-6 block" />
+          <img src={logo} alt="logo" className="w-20 my-6 mx-6 block  md:w-24" />
           <div className="text-7xl text-center font-extrabold">
             <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
               Edu
@@ -61,7 +61,7 @@ const Home = () => {
               Aid
             </span>
           </div>
-          <div className="text-white text-[1.5rem] text-center my-4">
+          <div className="text-white  text-[1.2rem] md:text-[1.5rem] text-center my-4">
             <div>A tool that can auto-generate short quizzes</div>
             <div className="flex text-center justify-center gap-4">
               based on user input{" "}
@@ -72,28 +72,28 @@ const Home = () => {
             <div className="my-6">
               <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
                 <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-xl">Doc/Audio Input</div>
+                <div className="text-white  text-lg md:text-xl">Doc/Audio Input</div>
               </div>
             </div>
             <div className="my-4">
               <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
                 <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-xl">In-depth questions gen</div>
+                <div className="text-white text-lg md:text-xl">In-depth questions gen</div>
               </div>
             </div>
             <div className="my-4">
               <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
                 <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-xl">
+                <div className="text-white  text-lg md:text-xl">
                   Dynamic Google Form Integration
                 </div>
               </div>
             </div>
           </div>
-          <div className="flex justify-center gap-6">
+          <div className="flex justify-center gap-6 mx-2">
             <div className="mt-8 rounded-2xl">
               <a href="question-type">
-                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
+                <button className="items-center md:text-lg flex justify-center gap-4 text-white md:px-6 px-2 py-3 md:py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
                   Let’s get Started{" "}
                   <img src={arrow} width={28} height={24} alt="" />
                 </button>
@@ -101,7 +101,7 @@ const Home = () => {
             </div>
             <div className="mt-8 rounded-2xl">
               <a href="history">
-                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
+                <button className="items-center md:text-lg flex justify-center gap-4 text-white md:px-6 md:py-3 px-3 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
                   Your previous Work!
                   <img src={arrow} width={28} height={24} alt="" />
                 </button>
