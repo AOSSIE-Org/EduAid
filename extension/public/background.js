@@ -26,13 +26,14 @@ chrome.runtime.onInstalled.addListener(() => {
         await chrome.tabs.sendMessage(tab.id, { 
           selectedText: info.selectionText 
         });
-  
-        // Open the popup
-        // Note: Chrome extensions can't programmatically open the popup,
-        // but we can show the user where to click
+
+        // Set popup
         chrome.action.setPopup({ 
-          popup: "src/popup/popup.html"
+          popup: "src/pages/home/home.html"
         });
+
+        // Open popup
+        chrome.action.openPopup();
         
         // Show a badge to indicate text was captured
         chrome.action.setBadgeText({ 
