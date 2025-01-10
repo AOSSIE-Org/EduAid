@@ -5,6 +5,7 @@ import Question_Type from './pages/Question_Type'
 import Text_Input from './pages/Text_Input'
 import Output from './pages/Output'
 import Previous from './pages/Previous'
+import NotFound from './pages/PageNotFound';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/input" element={<Text_Input />} />
         <Route path="/output" element={<Output />} />
         <Route path="/history" element={<Previous />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   )
