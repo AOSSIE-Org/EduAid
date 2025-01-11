@@ -1,0 +1,25 @@
+{
+  "short_name": "EduAid",
+  "name": "Eduaid : AI Quiz Generator",
+  "icons": [
+    {
+      "src": "aossie_logo64.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "aossie_logo.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "aossie_logo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
