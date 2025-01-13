@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import "../index.css";
 import logo from "../assets/aossie_logo.png";
 
 const Question_Type = () => {
@@ -15,109 +14,77 @@ const Question_Type = () => {
     }
   };
 
+  const questionTypes = [
+    { id: "get_shortq", label: "Short-Answer Type Questions" },
+    { id: "get_mcq", label: "Multiple Choice Questions" },
+    { id: "get_boolq", label: "True/False Questions" },
+    { id: "get_problems", label: "All Questions" },
+  ];
+
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient p-6">
-        <a href="/">
-          <div className="flex items-end gap-4">
-            <img src={logo} alt="logo" className="w-24 my-6 block" />
-            <div className="text-5xl mb-5 font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                Edu
-              </span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                Aid
-              </span>
-            </div>
+    <div className="min-h-screen bg-white flex flex-col">
+      <header className="bg-green-50 p-4 flex items-center">
+        <a href="/" className="flex items-center gap-2">
+          <img src={logo} alt="logo" className="w-12 sm:w-16" />
+          <div className="text-xl sm:text-2xl font-extrabold">
+            <span className="text-green-600">Edu</span>
+            <span className="text-yellow-500">Aid</span>
           </div>
         </a>
-        <div className="text-4xl mt-6 text-white text-center font-extrabold">
-          What’s on your Mind?
-        </div>
-        <div className="mt-2 text-white text-xl text-center font-medium">
+      </header>
+
+      <main className="flex-grow flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
+        <h1 className="text-3xl sm:text-4xl text-gray-800 font-bold mb-4 text-center">
+          What's on your Mind?
+        </h1>
+        <p className="text-xl text-gray-600 mb-8 text-center">
           Choose one
+        </p>
+
+        <div className="w-full max-w-md space-y-4">
+          {questionTypes.map((type) => (
+            <button
+              key={type.id}
+              onClick={() => handleOptionClick(type.id)}
+              className={`w-full p-4 rounded-lg text-left transition-colors duration-200 ${
+                selectedOption === type.id
+                  ? "bg-green-500 text-white"
+                  : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+              }`}
+            >
+              <div className="flex items-center">
+                <div className={`w-6 h-6 rounded-full border-2 ${
+                  selectedOption === type.id
+                    ? "border-white bg-white"
+                    : "border-gray-400"
+                } mr-4`}></div>
+                <span className="text-lg font-medium">{type.label}</span>
+              </div>
+            </button>
+          ))}
         </div>
-        <div className="flex flex-col items-center mt-8">
-          <div
-            onClick={() => handleOptionClick("get_shortq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
-          >
-            <div
-              className={`w-10 h-10 rounded-full ${
-                selectedOption === "get_shortq"
-                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                  : "bg-[#999C9D]"
-              } `}
-            ></div>
-            <div className="text-white text-2xl font-medium">
-              Short-Answer Type Questions
-            </div>
-          </div>
-          <div
-            onClick={() => handleOptionClick("get_mcq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
-          >
-            <div
-              className={`w-10 h-10 rounded-full ${
-                selectedOption === "get_mcq"
-                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                  : "bg-[#999C9D]"
-              } `}
-            ></div>
-            <div className="text-white text-2xl font-medium">
-              Multiple Choice Questions
-            </div>
-          </div>
-          <div
-            onClick={() => handleOptionClick("get_boolq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
-          >
-            <div
-              className={`w-10 h-10 rounded-full ${
-                selectedOption === "get_boolq"
-                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                  : "bg-[#999C9D]"
-              } `}
-            ></div>
-            <div className="text-white text-2xl font-medium">
-              True/False Questions
-            </div>
-          </div>
-          <div
-            onClick={() => handleOptionClick("get_problems")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
-          >
-            <div
-              className={`w-10 h-10 rounded-full ${
-                selectedOption === "get_problems"
-                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                  : "bg-[#999C9D]"
-              } `}
-            ></div>
-            <div className="text-white text-2xl font-medium">All Questions</div>
-          </div>
-        </div>
-        <div className="mx-auto text-center mt-10">
+
+        <div className="mt-8">
           {selectedOption ? (
             <a href="input">
               <button
                 onClick={handleSaveToLocalStorage}
-                className="rounded-2xl text-2xl text-white w-fit px-8 font-bold py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7]"
+                className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg transition duration-300 text-lg"
               >
-                Fire Up{"  "}🚀
+                Fire Up 🚀
               </button>
             </a>
           ) : (
             <button
               onClick={() => alert("Please select a question type.")}
-              className="rounded-2xl text-2xl text-white w-fit px-8 font-bold py-3 bg-gray-500 cursor-not-allowed"
+              className="bg-gray-300 text-gray-500 font-bold py-3 px-8 rounded-lg cursor-not-allowed text-lg"
               disabled
             >
-              Fire Up{"  "}🚀
+              Fire Up 🚀
             </button>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { PDFDocument } from "pdf-lib";
-import "../index.css";
 import logo from "../assets/aossie_logo.png";
+import { FaFilePdf, FaGoogle } from "react-icons/fa";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
@@ -244,85 +244,70 @@ const Output = () => {
   };
 
   return (
-    <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-        <div className="flex flex-col h-full">
-          <a href="/">
-            <div className="flex items-end gap-[2px]">
-              <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
-              <div className="text-2xl mb-3 font-extrabold">
-                <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                  Edu
-                </span>
-                <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                  Aid
-                </span>
-              </div>
-            </div>
-          </a>
-          <div className="font-bold text-xl text-white mt-3 mx-2">
-            Generated Questions
+    <div className="min-h-screen bg-white flex flex-col">
+      <header className="bg-green-50 p-4 flex justify-between items-center">
+        <a href="/" className="flex items-center gap-2">
+          <img src={logo} alt="logo" className="w-12 sm:w-16" />
+          <div className="text-xl sm:text-2xl font-extrabold">
+            <span className="text-green-600">Edu</span>
+            <span className="text-yellow-500">Aid</span>
           </div>
-          <div className="flex-1 overflow-y-auto scrollbar-hide">
-            {qaPairs &&
-              qaPairs.map((qaPair, index) => {
-                const combinedOptions = qaPair.options
-                  ? [...qaPair.options, qaPair.answer]
-                  : [qaPair.answer];
-                const shuffledOptions = shuffleArray(combinedOptions);
-                return (
-                  <div
-                    key={index}
-                    className="px-2 bg-[#d9d9d90d] border-black border my-1 mx-2 rounded-xl py-2"
-                  >
-                    <div className="text-[#E4E4E4] text-sm">
-                      Question {index + 1}
-                    </div>
-                    <div className="text-[#FFF4F4] text-[1rem] my-1">
-                      {qaPair.question}
-                    </div>
-                    {qaPair.question_type !== "Boolean" && (
-                      <>
-                        <div className="text-[#E4E4E4] text-sm">Answer</div>
-                        <div className="text-[#FFF4F4] text-[1rem]">
-                          {qaPair.answer}
-                        </div>
-                        {qaPair.options && qaPair.options.length > 0 && (
-                          <div className="text-[#FFF4F4] text-[1rem]">
-                            {shuffledOptions.map((option, idx) => (
-                              <div key={idx}>
-                                <span className="text-[#E4E4E4] text-sm">
-                                  Option {idx + 1}:
-                                </span>{" "}
-                                <span className="text-[#FFF4F4] text-[1rem]">
-                                  {option}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </>
+        </a>
+        <h1 className="text-lg sm:text-xl font-bold text-gray-800">Generated Questions</h1>
+      </header>
+
+      <main className="flex-grow p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <div className="space-y-4 mb-8">
+          {qaPairs && qaPairs.map((qaPair, index) => {
+            const combinedOptions = qaPair.options
+              ? [...qaPair.options, qaPair.answer]
+              : [qaPair.answer];
+            const shuffledOptions = shuffleArray(combinedOptions);
+            return (
+              <div
+                key={index}
+                className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 shadow-sm"
+              >
+                <h2 className="text-lg font-semibold text-gray-800 mb-2">
+                  Question {index + 1}
+                </h2>
+                <p className="text-gray-700 mb-2">{qaPair.question}</p>
+                {qaPair.question_type !== "Boolean" && (
+                  <>
+                    <h3 className="font-semibold text-gray-700 mt-2 mb-1">Answer</h3>
+                    <p className="text-gray-600 mb-2">{qaPair.answer}</p>
+                    {qaPair.options && qaPair.options.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold text-gray-700 mb-1">Options</h3>
+                        <ul className="list-disc list-inside text-gray-600">
+                          {shuffledOptions.map((option, idx) => (
+                            <li key={idx}>{option}</li>
+                          ))}
+                        </ul>
+                      </div>
                     )}
-                  </div>
-                );
-              })}
-          </div>
-          <div className="items-center flex justify-center gap-6 mx-auto">
-            <button
-              className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"
-              onClick={generateGoogleForm}
-            >
-              Generate Google form
-            </button>
-            <button
-              className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"
-              onClick={generatePDF}
-            >
-              Generate PDF
-            </button>
-          </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
-      </div>
+      </main>
+
+      <footer className="bg-green-50 p-4 flex justify-center gap-4">
+        <button
+          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-300 flex items-center gap-2"
+          onClick={generateGoogleForm}
+        >
+          <FaGoogle /> Generate Google Form
+        </button>
+        <button
+          className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded transition duration-300 flex items-center gap-2"
+          onClick={generatePDF}
+        >
+          <FaFilePdf /> Generate PDF
+        </button>
+      </footer>
     </div>
   );
 };

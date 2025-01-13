@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
-import "../index.css";
 import logo from "../assets/aossie_logo.png";
-import starsImg from "../assets/stars.png";
-import arrow from "../assets/arrow.png";
-import gitStar from "../assets/gitStar.png";
 import { FaGithub } from "react-icons/fa";
 
 const Home = () => {
@@ -22,7 +18,7 @@ const Home = () => {
   }
 
   function isMoreThanOneDayOld(timestamp) {
-    const oneDay = 24 * 60 * 60 * 1000; // One day in milliseconds
+    const oneDay = 24 * 60 * 60 * 1000;
     return Date.now() - timestamp > oneDay;
   }
 
@@ -49,87 +45,60 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-        <div>
-          <img src={logo} alt="logo" className="w-24 my-6 mx-6 block" />
-          <div className="text-7xl text-center font-extrabold">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-              Edu
-            </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Aid
-            </span>
+    <div className="min-h-screen bg-white flex flex-col justify-between">
+      <header className="p-4 sm:p-6">
+        <img src={logo} alt="AOSSIE logo" className="w-16 sm:w-24" />
+      </header>
+      
+      <main className="flex-grow flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
+        <h1 className="text-4xl sm:text-5xl font-bold mb-4 sm:mb-6">
+          <span className="text-green-600">Edu</span>
+          <span className="text-yellow-500">Aid</span>
+        </h1>
+        
+        <p className="text-lg sm:text-xl text-center mb-6 sm:mb-8 max-w-2xl">
+          A tool that can auto-generate short quizzes based on user input
+        </p>
+        
+        <div className="space-y-3 sm:space-y-4 text-center mb-8 sm:mb-12 w-full max-w-md">
+          <div className="bg-yellow-100 rounded-lg p-3 hover:scale-90 transition-all duration-200">
+            <span className="font-semibold">Doc/Audio Input</span>
           </div>
-          <div className="text-white text-[1.5rem] text-center my-4">
-            <div>A tool that can auto-generate short quizzes</div>
-            <div className="flex text-center justify-center gap-4">
-              based on user input{" "}
-              <img src={starsImg} width={32} height={12} alt="" />
-            </div>
+          <div className="bg-yellow-100 rounded-lg p-3 hover:scale-90 transition-all duration-200">
+            <span className="font-semibold">In-depth questions gen</span>
           </div>
-          <div className="flex flex-col items-end">
-            <div className="my-6">
-              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
-                <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-xl">Doc/Audio Input</div>
-              </div>
-            </div>
-            <div className="my-4">
-              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
-                <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-xl">In-depth questions gen</div>
-              </div>
-            </div>
-            <div className="my-4">
-              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
-                <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-xl">
-                  Dynamic Google Form Integration
-                </div>
-              </div>
-            </div>
+          <div className="bg-yellow-100 rounded-lg p-3 hover:scale-90 transition-all duration-200">
+            <span className="font-semibold">Dynamic Google Form Integration</span>
           </div>
-          <div className="flex justify-center gap-6">
-            <div className="mt-8 rounded-2xl">
-              <a href="question-type">
-                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
-                  Let’s get Started{" "}
-                  <img src={arrow} width={28} height={24} alt="" />
-                </button>
-              </a>
-            </div>
-            <div className="mt-8 rounded-2xl">
-              <a href="history">
-                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
-                  Your previous Work!
-                  <img src={arrow} width={28} height={24} alt="" />
-                </button>
-              </a>
-            </div>
-          </div>
-          <a
-            href="https://github.com/AOSSIE-Org/EduAid"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group"
-          >
-            <div className="bg-[#45454599] mt-10 w-fit mx-auto px-4 py-3 rounded-xl flex gap-4 items-center group-hover:bg-[#5a5a5a99] transition-colors duration-300">
-              <img src={gitStar} className="" width={28} height={12} alt="" />
-              <div className="text-white font-semibold">
-                {stars !== null ? (
-                  <span className="flex text-2xl">
-                    {stars}
-                    <FaGithub size={36} className="ml-6" />
-                  </span>
-                ) : (
-                  <span>{error}</span>
-                )}
-              </div>
-            </div>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+          <a href="question-type" className="w-full sm:w-1/2">
+            <button className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded transition duration-300">
+              Let's get Started
+            </button>
+          </a>
+          <a href="history" className="w-full sm:w-1/2">
+            <button className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded transition duration-300">
+              Your previous Work!
+            </button>
           </a>
         </div>
-      </div>
+      </main>
+      
+      <footer className="p-4 sm:p-6 flex justify-center">
+        <a
+          href="https://github.com/AOSSIE-Org/EduAid"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition duration-300"
+        >
+          <FaGithub size={24} />
+          <span className="font-semibold">
+            {stars !== null ? stars : error}
+          </span>
+        </a>
+      </footer>
     </div>
   );
 };
