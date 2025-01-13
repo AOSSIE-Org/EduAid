@@ -1,8 +1,6 @@
 import React from "react";
-import "../index.css";
 import logo from "../assets/aossie_logo.png";
-import stars from "../assets/stars.png";
-import { FaArrowRight } from "react-icons/fa";
+import { FaArrowRight, FaTrash, FaChevronLeft } from "react-icons/fa";
 
 const Previous = () => {
   const getQuizzesFromLocalStorage = () => {
@@ -27,80 +25,66 @@ const Previous = () => {
   };
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex flex-col justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-        <a href="/">
-          <div className="flex items-end gap-[2px]">
-            <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
-            <div className="text-2xl mb-3 font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                Edu
-              </span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                Aid
-              </span>
-            </div>
+    <div className="min-h-screen bg-white flex flex-col">
+      <header className="bg-green-50 p-4 flex justify-between items-center">
+        <a href="/" className="flex items-center gap-2">
+          <img src={logo} alt="logo" className="w-12 sm:w-16" />
+          <div className="text-xl sm:text-2xl font-extrabold">
+            <span className="text-green-600">Edu</span>
+            <span className="text-yellow-500">Aid</span>
           </div>
         </a>
-        <div className="text-right mt-[-8px] mx-1">
-          <div className="text-white text-xl font-bold">Quiz Dashboard</div>
-          <div className="text-white text-right justify-end flex gap-2 text-xl font-bold">
-            Your{" "}
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Generated Quizzes
-            </span>{" "}
-            <img className="h-[20px] w-[20px]" src={stars} alt="stars" />
-          </div>
-        </div>
-        <div className="text-center my-2 text-sm">
-          <span className="bg-gradient-to-r text-xl from-[#7600F2] text-center to-[#00CBE7] font-bold text-transparent bg-clip-text">
-            Your Quizzes
-          </span>{" "}
-        </div>
-        <div className="mx-3 my-4 p-2 bg-[#83b6cc40] rounded-xl h-68 overflow-y-auto ">
+        <h1 className="text-lg sm:text-xl font-bold text-gray-800">Quiz Dashboard</h1>
+      </header>
+
+      <main className="flex-grow p-4 sm:p-6 lg:p-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-6">
+          Your Generated Quizzes
+        </h2>
+
+        <div className="bg-yellow-50 rounded-xl p-4 sm:p-6 mb-6 max-h-[calc(100vh-300px)] overflow-y-auto">
           {quizzes.length === 0 ? (
-            <div className="text-center text-white text-sm">
+            <div className="text-center text-gray-600">
               No quizzes available
             </div>
           ) : (
-            <ul className="space-y-2 max-h-96 overflow-y-auto">
+            <ul className="space-y-4">
               {quizzes.map((quiz, index) => (
                 <li
                   key={index}
-                  className="bg-[#202838] p-4 rounded-lg text-white cursor-pointer border-dotted border-2 border-[#7600F2] flex justify-between items-center"
+                  className="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow duration-300 border-l-4 border-green-500"
                   onClick={() => handleQuizClick(quiz)}
                 >
-                  <div>
-                    <div className="font-bold">
-                      {quiz.difficulty} - {quiz.numQuestions} Questions
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="font-bold text-gray-800">
+                        {quiz.difficulty} - {quiz.numQuestions} Questions
+                      </div>
+                      <div className="mt-1 text-sm text-gray-600">{quiz.date}</div>
                     </div>
-                    <div className="mt-2 text-sm">{quiz.date}</div>
+                    <FaArrowRight className="text-green-500" size={20} />
                   </div>
-                  <FaArrowRight className="text-[#7600F2]" size={20} />
                 </li>
               ))}
             </ul>
           )}
         </div>
-        <div className="flex my-2 justify-center gap-6 items-start">
-          <div>
-            <button
-              onClick={handleBack}
-              className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient"
-            >
-              Back
-            </button>
-          </div>
-          <div>
-            <button
-              onClick={handleClearQuizzes}
-              className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient"
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-      </div>
+      </main>
+
+      <footer className="bg-green-50 p-4 flex justify-center gap-4">
+        <button
+          onClick={handleBack}
+          className="bg-white text-green-600 border border-green-600 px-4 py-2 rounded-md hover:bg-green-600 hover:text-white transition-colors duration-300 flex items-center gap-2"
+        >
+          <FaChevronLeft /> Back
+        </button>
+        <button
+          onClick={handleClearQuizzes}
+          className="bg-white text-yellow-600 border border-yellow-600 px-4 py-2 rounded-md hover:bg-yellow-600 hover:text-white transition-colors duration-300 flex items-center gap-2"
+        >
+          <FaTrash /> Clear All
+        </button>
+      </footer>
     </div>
   );
 };
