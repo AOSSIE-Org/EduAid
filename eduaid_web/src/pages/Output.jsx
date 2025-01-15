@@ -2,9 +2,11 @@ import React, { useState, useEffect } from "react";
 import { PDFDocument } from "pdf-lib";
 import "../index.css";
 import logo from "../assets/aossie_logo.png";
+import AddQuestionModal from "../../components/AddQuestionModal";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
+  const [showModal, setShowModal] = useState(false);
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
@@ -221,7 +223,10 @@ const Output = () => {
   };
 
   return (
-    <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
+    <div className="popup min-h-screen w-full h-full bg-[#02000F] flex justify-center items-center relative">
+      {showModal && (
+        <AddQuestionModal handleCloseModal={() => setShowModal(false)} />
+      )}
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <div className="flex flex-col h-full">
           <a href="/">
@@ -285,6 +290,14 @@ const Output = () => {
               })}
           </div>
           <div className="items-center flex justify-center gap-6 mx-auto">
+            <button
+              className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"
+              onClick={() => {
+                setShowModal((prev) => !prev);
+              }}
+            >
+              Add Question Manually
+            </button>
             <button
               className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"
               onClick={generateGoogleForm}
