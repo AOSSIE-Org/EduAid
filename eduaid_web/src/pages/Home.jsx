@@ -49,7 +49,7 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
+    <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center overflow-hidden">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <div>
           <img src={logo} alt="logo" className="w-24 my-6 mx-6 block" />
@@ -90,18 +90,18 @@ const Home = () => {
               </div>
             </div>
           </div>
-          <div className="flex justify-center gap-6">
-            <div className="mt-8 rounded-2xl">
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-8">
+            <div className="w-full sm:w-auto mt-4 sm:mt-8 rounded-2xl">
               <a href="question-type">
-                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
+                <button className="items-center text-base sm:text-lg flex justify-center gap-4 text-white px-4 sm:px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
                   Let’s get Started{" "}
                   <img src={arrow} width={28} height={24} alt="" />
                 </button>
               </a>
             </div>
-            <div className="mt-8 rounded-2xl">
+            <div className="w-full sm:w-auto mt-4 sm:mt-8 rounded-2xl">
               <a href="history">
-                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
+                <button className="items-center text-base sm:text-lg flex justify-center gap-4 text-white px-4 sm:px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
                   Your previous Work!
                   <img src={arrow} width={28} height={24} alt="" />
                 </button>
