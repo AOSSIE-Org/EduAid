@@ -5,10 +5,15 @@ import starsImg from "../assets/stars.png";
 import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
 import { FaGithub } from "react-icons/fa";
+import IconButton from "@mui/material/IconButton";
+import MenuIcon from '@mui/icons-material/Menu';
+import Historysidebar from "../Utils/Historysidebar";
+import Drawer from "@mui/material/Drawer";
 
 const Home = () => {
   const [stars, setStars] = useState(null);
   const [error, setError] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   async function fetchGitHubStars() {
     const response = await fetch(
@@ -48,9 +53,27 @@ const Home = () => {
     }
   }, []);
 
+  const toggleSidebar = (open) => () => {
+    setIsSidebarOpen(open);
+  };
+
   return (
     <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
+      <div className="absolute top-4 right-4">
+          <IconButton
+            style={{ color: "white" }}
+            onClick={toggleSidebar(true)}
+            aria-label="menu"
+          >
+            <MenuIcon />
+          </IconButton>
+        </div>
+
+        {/* Sidebar Drawer */}
+        <Drawer anchor="left" open={isSidebarOpen} onClose={toggleSidebar(false)}>
+          <Historysidebar />
+        </Drawer>
         <div>
           <img src={logo} alt="logo" className="w-24 my-6 mx-6 block" />
           <div className="text-7xl text-center font-extrabold">
@@ -68,28 +91,24 @@ const Home = () => {
               <img src={starsImg} width={32} height={12} alt="" />
             </div>
           </div>
+         
           <div className="flex flex-col items-end">
-            <div className="my-6">
-              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
-                <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-xl">Doc/Audio Input</div>
-              </div>
-            </div>
-            <div className="my-4">
-              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
-                <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-xl">In-depth questions gen</div>
-              </div>
-            </div>
-            <div className="my-4">
-              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
-                <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-xl">
-                  Dynamic Google Form Integration
-                </div>
-              </div>
-            </div>
+      {[
+        { text: "Doc/Audio Input" },
+        { text: "In-depth questions gen" },
+        { text: "Dynamic Google Form Integration" },
+      ].map((item, index) => (
+        <div key={index} className="my-4 group w-auto">
+          <div
+            className="relative flex items-center rounded-l-2xl px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-between gap-4 transition-all duration-300 
+              md:group-hover:pl-10 md:group-hover:pr-10"
+          >
+            <img src={starsImg} width={32} height={16} alt="" />
+            <div className="text-white text-xl">{item.text}</div>
           </div>
+        </div>
+      ))}
+    </div>
           <div className="flex justify-center gap-6">
             <div className="mt-8 rounded-2xl">
               <a href="question-type">

@@ -7,7 +7,7 @@ import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
 import Loader from "../Utils/Loader";
 
-const Text_Input = () => {
+const Text_Input = (updateText) => {
   const [text, setText] = useState("");
   const [difficulty, setDifficulty] = useState("Easy Difficulty");
   const [numQuestions, setNumQuestions] = useState(10);
@@ -137,6 +137,7 @@ const Text_Input = () => {
 
         // Save quiz details to local storage
         const quizDetails = {
+          data,
           difficulty,
           numQuestions,
           date: new Date().toLocaleDateString(),
@@ -206,7 +207,7 @@ const Text_Input = () => {
           <textarea
             className="absolute inset-0 p-8 pt-4 bg-[#83b6cc40] text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            value={text}
+            value={text || updateText}
             onChange={(e) => setText(e.target.value)}
           />
           <style>
