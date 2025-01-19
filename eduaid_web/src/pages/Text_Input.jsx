@@ -5,6 +5,7 @@ import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
+import { CirclesWithBar } from "react-loader-spinner";
 
 const Text_Input = () => {
   const [text, setText] = useState("");
@@ -27,10 +28,13 @@ const Text_Input = () => {
       formData.append("file", file);
 
       try {
-        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/upload`, {
-          method: "POST",
-          body: formData,
-        });
+        const response = await fetch(
+          `${process.env.REACT_APP_BASE_URL}/upload`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
         const data = await response.json();
         setText(data.content || data.error);
       } catch (error) {
@@ -54,13 +58,16 @@ const Text_Input = () => {
     // Check if a Google Doc URL is provided
     if (docUrl) {
       try {
-        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/get_content`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ document_url: docUrl }),
-        });
+        const response = await fetch(
+          `${process.env.REACT_APP_BASE_URL}/get_content`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ document_url: docUrl }),
+          }
+        );
 
         if (response.ok) {
           const data = await response.json();
@@ -122,13 +129,16 @@ const Text_Input = () => {
         use_mediawiki: isToggleOn,
       });
 
-      const response = await fetch(`${process.env.REACT_APP_BASE_URL}/${endpoint}`, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `${process.env.REACT_APP_BASE_URL}/${endpoint}`,
+        {
+          method: "POST",
+          body: formData,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (response.ok) {
         const responseData = await response.json();
@@ -165,7 +175,18 @@ const Text_Input = () => {
     <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen">
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
-          <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
+          <CirclesWithBar
+            height="100"
+            width="100"
+            color="#FFFFFF"
+            outerCircleColor="#FFFFFF"
+            innerCircleColor="#FFFFFF"
+            barColor="#FFFFFF"
+            ariaLabel="circles-with-bar-loading"
+            wrapperStyle={{}}
+            wrapperClass=""
+            visible={true}
+          />
         </div>
       )}
       <div
