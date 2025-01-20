@@ -8,6 +8,27 @@ const Output = () => {
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
+  const [timeLeft, setTimeLeft] = useState(120);
+
+  useEffect(()=>{
+    if (timeLeft < 0) {
+       alert("Time is up! Submit the quiz...");
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+
+    return ()=> clearTimeout(timer)
+  }, [timeLeft])
+  
+  const quizTimer = () => {
+    if (timeLeft < 0) {return "0 : 00"}
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    return `${minutes} : ${seconds < 10 ? "0" : ""}${seconds}`;
+  };
 
   function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -101,16 +122,19 @@ const Output = () => {
   }, []);
 
   const generateGoogleForm = async () => {
-    const response = await fetch(`${process.env.REACT_APP_BASE_URL}/generate_gform`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        qa_pairs: qaPairs,
-        question_type: questionType,
-      }),
-    });
+    const response = await fetch(
+      `${process.env.REACT_APP_BASE_URL}/generate_gform`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          qa_pairs: qaPairs,
+          question_type: questionType,
+        }),
+      }
+    );
 
     if (response.ok) {
       const result = await response.json();
@@ -240,6 +264,7 @@ const Output = () => {
           <div className="font-bold text-xl text-white mt-3 mx-2">
             Generated Questions
           </div>
+          <h1 className="text-2xl font-bold text-center text-white">Time Left : {quizTimer()}</h1>
           <div className="flex-1 overflow-y-auto scrollbar-hide">
             {qaPairs &&
               qaPairs.map((qaPair, index) => {
@@ -293,7 +318,7 @@ const Output = () => {
             </button>
             <button
               className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"
-              onClick={generatePDF}
+              // onClick={generatePDF}
             >
               Generate PDF
             </button>
