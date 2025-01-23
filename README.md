@@ -97,6 +97,38 @@ In addition to the browser extension, EduAid also offers a web app that provides
 3. Start the Web App:
 `npm run start`
 
+## PyTorch Installation Troubleshooting for M-Series Macs
+
+If you’re facing issues while installing PyTorch on M1, M2, or M3 Macs, please refer to the steps below to troubleshoot common installation problems:
+
+### 1. Install Homebrew (if not already installed)
+
+Homebrew is essential for installing dependencies on M-series Macs. If you haven’t installed it yet, you can do so with the following command:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+### 2. Install PyTorch for Apple Silicon (M1/M2/M3 Macs)
+
+First, ensure that you have the latest version of pip
+```bash
+pip install --upgrade pip
+```
+
+Install PyTorch with support for Apple Silicon
+```bash
+pip install torch==1.13.1+cpu torchvision==0.14.1+cpu torchaudio==0.13.1 -f https://download.pytorch.org/whl/metal.html
+```
+
+### 3. Verify PyTorch Installation
+
+To ensure PyTorch has been installed correctly, try running the following Python code to check if the installation works:
+```bash
+import torch
+print(torch.__version__)
+print(torch.cuda.is_available())
+```
+
 ## Features
 
 1. **Dynamic Question Generation**:
