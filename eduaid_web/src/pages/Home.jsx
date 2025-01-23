@@ -49,16 +49,13 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
+    <div className="popup w-screen h-screen bg-black flex justify-center items-center">
+      <div className="w-full h-full bg-opacity-50 bg-gradient-to-r from-yellow-500 to-green-500">
         <div>
           <img src={logo} alt="logo" className="w-24 my-6 mx-6 block" />
           <div className="text-7xl text-center font-extrabold">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-              Edu
-            </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Aid
+            <span className=" text-transparent bg-clip-text text-shadow-white">
+              EduAid
             </span>
           </div>
           <div className="text-white text-[1.5rem] text-center my-4">
@@ -70,19 +67,19 @@ const Home = () => {
           </div>
           <div className="flex flex-col items-end">
             <div className="my-6">
-              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
+              <div className="flex items-center rounded-l-2xl border-2 border-white w-fit px-6 py-3 bg-gradient-to-r from-yellow-500 via-green-500 to-yellow-500 justify-center gap-4">
                 <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-xl">Doc/Audio Input</div>
+                <div className="text-white text-xl ">Doc/Audio Input</div>
               </div>
             </div>
             <div className="my-4">
-              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
+              <div className="flex items-center rounded-l-2xl w-fit border-2 border-white px-6 py-3 bg-gradient-to-r from-yellow-500 via-green-500 to-yellow-500 justify-center gap-4">
                 <img src={starsImg} width={32} height={16} alt="" />
                 <div className="text-white text-xl">In-depth questions gen</div>
               </div>
             </div>
             <div className="my-4">
-              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
+              <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 border-2 border-white bg-gradient-to-r from-yellow-500 via-green-500 to-yellow-500 justify-center gap-4">
                 <img src={starsImg} width={32} height={16} alt="" />
                 <div className="text-white text-xl">
                   Dynamic Google Form Integration
@@ -90,24 +87,25 @@ const Home = () => {
               </div>
             </div>
           </div>
-          <div className="flex justify-center gap-6">
-            <div className="mt-8 rounded-2xl">
+          <div className="flex justify-center gap-6 mb-6">
+            <div className="mt-2 rounded-2xl">
               <a href="question-type">
-                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
-                  Let’s get Started{" "}
+                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 bg-gradient-to-r from-green-400 to-yellow-400 hover:from-yellow-500 hover:to-green-500 rounded-md shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
+                  Let’s get Started
                   <img src={arrow} width={28} height={24} alt="" />
                 </button>
               </a>
             </div>
-            <div className="mt-8 rounded-2xl">
+            <div className="mt-2 rounded-2xl">
               <a href="history">
-                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
+                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 bg-gradient-to-r from-green-400 to-yellow-400 hover:from-yellow-500 hover:to-green-500 rounded-md shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
                   Your previous Work!
                   <img src={arrow} width={28} height={24} alt="" />
                 </button>
               </a>
             </div>
           </div>
+
           <a
             href="https://github.com/AOSSIE-Org/EduAid"
             target="_blank"

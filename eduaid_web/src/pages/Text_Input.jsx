@@ -27,10 +27,13 @@ const Text_Input = () => {
       formData.append("file", file);
 
       try {
-        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/upload`, {
-          method: "POST",
-          body: formData,
-        });
+        const response = await fetch(
+          `${process.env.REACT_APP_BASE_URL}/upload`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
         const data = await response.json();
         setText(data.content || data.error);
       } catch (error) {
@@ -54,13 +57,16 @@ const Text_Input = () => {
     // Check if a Google Doc URL is provided
     if (docUrl) {
       try {
-        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/get_content`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ document_url: docUrl }),
-        });
+        const response = await fetch(
+          `${process.env.REACT_APP_BASE_URL}/get_content`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ document_url: docUrl }),
+          }
+        );
 
         if (response.ok) {
           const data = await response.json();
@@ -122,13 +128,16 @@ const Text_Input = () => {
         use_mediawiki: isToggleOn,
       });
 
-      const response = await fetch(`${process.env.REACT_APP_BASE_URL}/${endpoint}`, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `${process.env.REACT_APP_BASE_URL}/${endpoint}`,
+        {
+          method: "POST",
+          body: formData,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (response.ok) {
         const responseData = await response.json();
@@ -162,7 +171,7 @@ const Text_Input = () => {
   };
 
   return (
-    <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen">
+    <div className="popup bg-gradient-to-r from-yellow-500 to-green-500 min-h-screen relative">
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
           <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
@@ -176,25 +185,21 @@ const Text_Input = () => {
         <a href="/">
           <div className="flex items-end gap-[2px]">
             <img src={logo} alt="logo" className="w-24 my-6 ml-6 block" />
-            <div className="text-4xl mb-5 font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                Edu
-              </span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                Aid
+            <div className="text-4xl absolute top-6 right-9 text-white mb-5 font-extrabold">
+              <span className="text-white text-transparent bg-clip-text">
+                EduAid
               </span>
             </div>
           </div>
         </a>
-        <div className="text-right mt-[-8px] mx-1">
-          <div className="text-white text-xl font-bold">Enter the Content</div>
-          <div className="text-white text-right justify-end flex gap-2 text-xl font-bold">
-            to Generate{" "}
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
+        <div className="text-left mt-[2px] mx-6 flex items-center gap-2">
+          <div className="text-white text-xl font-bold">
+            Enter the Content to Generate{" "}
+            <span className="bg-gradient-to-r from-green-600 to-yellow-600 text-transparent bg-clip-text">
               Questionaries
-            </span>{" "}
-            <img className="h-[30px] w-[30px]" src={stars} alt="stars" />
+            </span>
           </div>
+          <img className="h-[30px] w-[30px]" src={stars} alt="stars" />
         </div>
 
         <div className="relative bg-[#83b6cc40] mx-6 rounded-2xl p-4 h-40">
@@ -246,7 +251,7 @@ const Text_Input = () => {
           <input
             type="text"
             placeholder="Enter Google Doc URL"
-            className="bg-transparent border border-[#cbd0dc80] text-white text-xl rounded-2xl p-3 w-fit outline-none"
+            className="bg-transparent border placeholder-gray-500 border-[#8b8e9680] text-white text-xl rounded-2xl p-3 w-fit outline-none"
             value={docUrl}
             onChange={(e) => setDocUrl(e.target.value)}
           />
@@ -293,20 +298,18 @@ const Text_Input = () => {
             />
           </div>
         </div>
-        <div className="flex justify-center gap-8 my-6">
+        <div className="flex justify-center gap-8 py-6">
           <a href="question-type">
-            <button className="bg-black items-center text-xl text-white px-4 py-2 border-gradient">
+            <button className="bg-gradient-to-r from-orange-400 to-yellow-400 hover:from-orange-600 hover:to-yellow-600 active:from-orange-800 active:to-yellow-800 transform hover:scale-110 hover:shadow-lg hover:shadow-yellow-500/50 transition-all duration-300 text-xl text-white px-6 py-3 rounded-lg shadow-lg">
               Back
             </button>
           </a>
-          {/* <a href="output"> */}
           <button
             onClick={handleSaveToLocalStorage}
-            className="bg-black items-center text-xl text-white px-4 py-2 border-gradient flex"
+            className="bg-gradient-to-r from-orange-400 to-yellow-400 hover:from-orange-600 hover:to-yellow-600 active:from-orange-800 active:to-yellow-800 transform hover:scale-110 hover:shadow-lg hover:shadow-yellow-500/50 transition-all duration-300 text-xl text-white px-6 py-3 rounded-lg shadow-lg"
           >
             Next
           </button>
-          {/* </a> */}
         </div>
       </div>
     </div>

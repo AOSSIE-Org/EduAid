@@ -36,3 +36,24 @@
     transform: rotate(360deg);
   }
 }
+
+.text-shadow-white {
+  text-shadow: 0 0 3px white, 0 0 6px white;
+  transition: text-shadow 0.3s ease;
+}
+
+.text-shadow-white:hover {
+  text-shadow: 0 0 0px white, 0 0 0px white;
+}
+
+
+@keyframes gradient-animation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+button {
+  background-size: 200% 200%;
+  animation: gradient-animation 3s ease infinite;
+}
