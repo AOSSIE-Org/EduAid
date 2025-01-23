@@ -114,7 +114,7 @@ const Home = () => {
             rel="noopener noreferrer"
             className="group"
           >
-            <div className="bg-[#45454599] mt-10 w-fit mx-auto px-4 py-3 rounded-xl flex gap-4 items-center group-hover:bg-[#5a5a5a99] transition-colors duration-300">
+            <div className="absolute top-0 right-6 bg-[#45454599] mt-10 w-fit px-4 py-3 rounded-xl flex gap-4 items-center group-hover:bg-[#5a5a5a99] transition-colors duration-300">
               <img src={gitStar} className="" width={28} height={12} alt="" />
               <div className="text-white font-semibold">
                 {stars !== null ? (
