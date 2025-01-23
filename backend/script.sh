@@ -6,6 +6,7 @@ REPO_DIR="EduAid"
 S2V_ARCHIVE="s2v_reddit_2015_md.tar.gz"
 S2V_DIR="s2v_old"
 
+
 if [ ! -d "venv" ]; then
   python3 -m venv venv
 fi
