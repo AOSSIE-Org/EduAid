@@ -161,6 +161,17 @@ const Text_Input = () => {
     }
   };
 
+  const quizzes = JSON.parse(localStorage.getItem('quizzes')) || [];
+const newQuiz = {
+  quizTitle: "Sample Quiz",
+  numberOfQuestions: 10,
+  difficulty: "Medium",
+  creationDate: new Date().toISOString(),
+  context: "This quiz covers advanced Python concepts."
+};
+quizzes.push(newQuiz);
+localStorage.setItem('quizzes', JSON.stringify(quizzes));
+
   return (
     <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen">
       {loading && (
