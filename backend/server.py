@@ -1,8 +1,44 @@
+import argparse
+import sys
+
+
+parser = argparse.ArgumentParser(
+    description="This script starts the backend server for Edu Aid, with optional control over model quantization."
+)
+
+
+parser.add_argument(
+    "--quantization", 
+    type=str, 
+    default="auto", 
+    help="Controls model quantization. Options: 'on', 'off', or 'auto' (default: auto)."
+)
+
+parser.add_argument(
+    "--gpu_id",
+    type=str,
+    default="auto",
+    help="Specifies on which GPU based on cuda id , the models should be loaded to. (default: auto)."
+)
+
+parser.add_argument(
+    "--quantization_type",
+    type=str,
+    default="4bit",
+    help="Controls the type of quantization to be applied. Options '4bit','8bit' or '16bit' (default: 4bit)"
+)
+
+if "--help" in sys.argv:
+    parser.print_help()
+    sys.exit(0)
+
+## Importing afterwards checking if the help is invoked or not
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pprint import pprint
+import torch
 import nltk
-
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
@@ -22,6 +58,40 @@ from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
 
+
+
+
+args = parser.parse_args()
+
+if args.gpu_id!="auto":
+    try:
+        a=int(args.gpu_id)
+        if float(args.gpu_id)==a:
+            pass
+    except:
+        raise ValueError("Enter a valid type gpu id!!")
+
+if args.quantization_type not in ["4bit","8bit"]:
+    raise ValueError("Enter a valid quantiztion type in ['4bit','8bit']")
+
+if args.quantization not in ["auto","on","off"]:
+    raise ValueError("Enter a valid quantization setting in ['auto','on','off']")
+
+if not torch.cuda.is_available():
+    print("NO GPU found!!, switching to cpu, this would greatly increase the latency!!!")
+    args.gpu_id="auto"
+
+if args.gpu_id!="auto" and (int(args.gpu_id)>=torch.cuda.device_count() or int(args.gpu_id)<0):
+    raise ValueError(f"GPU with gpu_id {args.gpu_id} is not present. Enter a valid gpu id")
+
+
+
+MCQGen = main.MCQGenerator(quantization=args.quantization,gpu_id=args.gpu_id,quantization_type=args.quantization_type)
+answer = main.AnswerPredictor(quantization=args.quantization,gpu_id=args.gpu_id,quantization_type=args.quantization_type)
+BoolQGen = main.BoolQGenerator(quantization=args.quantization,gpu_id=args.gpu_id,quantization_type=args.quantization_type)
+ShortQGen = main.ShortQGenerator(quantization=args.quantization,gpu_id=args.gpu_id,quantization_type=args.quantization_type)
+qg = main.QuestionGenerator(quantization=args.quantization,gpu_id=args.gpu_id,quantization_type=args.quantization_type)
+
 app = Flask(__name__)
 CORS(app)
 print("Starting Flask App...")
@@ -29,11 +99,6 @@ print("Starting Flask App...")
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
 
-MCQGen = main.MCQGenerator()
-answer = main.AnswerPredictor()
-BoolQGen = main.BoolQGenerator()
-ShortQGen = main.ShortQGenerator()
-qg = main.QuestionGenerator()
 docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
