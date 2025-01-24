@@ -27,35 +27,31 @@ const Previous = () => {
   };
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex flex-col justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
+    <div className="popup w-screen h-screen bg-gradient-to-r from-yellow-500 to-green-500 flex flex-col justify-center items-center">
+      <div className="w-full h-full gap-[2px]">
         <a href="/">
           <div className="flex items-end gap-[2px]">
             <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
-            <div className="text-2xl mb-3 font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                Edu
-              </span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                Aid
+            <div className="text-3xl absolute top-6 right-9 mb-3 font-extrabold">
+              <span className="text-white text-transparent bg-clip-text">
+                EduAid
               </span>
             </div>
           </div>
         </a>
-        <div className="text-right mt-[-8px] mx-1">
-          <div className="text-white text-xl font-bold">Quiz Dashboard</div>
-          <div className="text-white text-right justify-end flex gap-2 text-xl font-bold">
-            Your{" "}
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Generated Quizzes
-            </span>{" "}
-            <img className="h-[20px] w-[20px]" src={stars} alt="stars" />
+        <div className="mt-[-8px] mx-1">
+          <div className="text-white text-left text-2xl mt-[2px] mx-6 font-bold">
+            Quiz Dashboard
           </div>
         </div>
         <div className="text-center my-2 text-sm">
-          <span className="bg-gradient-to-r text-xl from-[#7600F2] text-center to-[#00CBE7] font-bold text-transparent bg-clip-text">
+          <span className="bg-gradient-to-r text-xl text-white font-serif font-bold text-transparent bg-clip-text">
             Your Quizzes
           </span>{" "}
+          <div className=" text-left text-green-800 mx-6 flex gap-2 text-xl font-bold">
+            Your Generated Quizzes
+            <img className="h-[20px] w-[20px]" src={stars} alt="stars" />
+          </div>
         </div>
         <div className="mx-3 my-4 p-2 bg-[#83b6cc40] rounded-xl h-68 overflow-y-auto ">
           {quizzes.length === 0 ? (
@@ -86,7 +82,7 @@ const Previous = () => {
           <div>
             <button
               onClick={handleBack}
-              className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient"
+              className="bg-gradient-to-r from-orange-400 to-yellow-400 hover:from-orange-600 hover:to-yellow-600 active:from-orange-800 active:to-yellow-800 transform hover:scale-110 hover:shadow-lg hover:shadow-yellow-500/50 transition-all duration-300 text-xl text-white px-6 py-3 rounded-lg shadow-lg"
             >
               Back
             </button>
@@ -94,7 +90,7 @@ const Previous = () => {
           <div>
             <button
               onClick={handleClearQuizzes}
-              className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient"
+              className="bg-gradient-to-r from-orange-400 to-yellow-400 hover:from-orange-600 hover:to-yellow-600 active:from-orange-800 active:to-yellow-800 transform hover:scale-110 hover:shadow-lg hover:shadow-yellow-500/50 transition-all duration-300 text-xl text-white px-6 py-3 rounded-lg shadow-lg"
             >
               Clear
             </button>

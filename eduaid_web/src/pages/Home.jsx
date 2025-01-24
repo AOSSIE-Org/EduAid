@@ -90,7 +90,7 @@ const Home = () => {
           <div className="flex justify-center gap-6 mb-6">
             <div className="mt-2 rounded-2xl">
               <a href="question-type">
-                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 bg-gradient-to-r from-green-400 to-yellow-400 hover:from-yellow-500 hover:to-green-500 rounded-md shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
+                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 bg-gradient-to-r from-orange-400 to-yellow-400 hover:from-orange-600 hover:to-yellow-600 active:from-orange-800 active:to-yellow-800 rounded-md shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
                   Let’s get Started
                   <img src={arrow} width={28} height={24} alt="" />
                 </button>
@@ -98,7 +98,7 @@ const Home = () => {
             </div>
             <div className="mt-2 rounded-2xl">
               <a href="history">
-                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 bg-gradient-to-r from-green-400 to-yellow-400 hover:from-yellow-500 hover:to-green-500 rounded-md shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
+                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 bg-gradient-to-r from-orange-400 to-yellow-400 hover:from-orange-600 hover:to-yellow-600 active:from-orange-800 active:to-yellow-800 rounded-md shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
                   Your previous Work!
                   <img src={arrow} width={28} height={24} alt="" />
                 </button>

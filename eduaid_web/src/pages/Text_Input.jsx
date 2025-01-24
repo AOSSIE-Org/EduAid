@@ -276,14 +276,14 @@ const Text_Input = () => {
               +
             </button>
           </div>
-          <div className="text-center mt-2 mb-2">
+          <div className="text-center mt-2 mb-2 ">
             <select
               value={difficulty}
               onChange={handleDifficultyChange}
-              className="bg-[#3e5063] text-white text-lg rounded-xl p-2 outline-none"
+              className={difficulty === "Easy Difficulty" ? "bg-green-400 text-white text-lg rounded-xl p-2 outline-none cursor-pointer" : "bg-red-500 text-white text-lg cursor-pointer rounded-xl p-2 outline-none"}
             >
-              <option value="Easy Difficulty">Easy Difficulty</option>
-              <option value="Hard Difficulty">Hard Difficulty</option>
+              <option value="Easy Difficulty" className="bg-green-400">Easy Difficulty</option>
+              <option value="Hard Difficulty" className="bg-red-500">Hard Difficulty</option>
             </select>
           </div>
           <div className="flex gap-2">
@@ -291,7 +291,7 @@ const Text_Input = () => {
             <Switch
               onChange={toggleSwitch}
               checked={isToggleOn === 1}
-              onColor="#008080"
+              onColor="#FFA500"
               offColor="#3e5063"
               checkedIcon={false}
               uncheckedIcon={false}
