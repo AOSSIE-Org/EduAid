@@ -30,9 +30,13 @@ const Previous = () => {
     <div className="popup w-screen h-screen bg-[#02000F] flex flex-col justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <a href="/">
-          <div className="flex items-end gap-[2px]">
-            <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
-            <div className="text-2xl mb-3 font-extrabold">
+        <div className="flex items-end  gap-[2px]">
+        <img src={logo} alt="logo" className="w-24 my-4 ml-4 block" />
+
+        </div>
+          <div className="flex items-center justify-center gap-[2px]">
+            
+            <div className="text-6xl mb-14 font-extrabold">
               <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
                 Edu
               </span>
@@ -42,18 +46,28 @@ const Previous = () => {
             </div>
           </div>
         </a>
-        <div className="text-right mt-[-8px] mx-1">
-          <div className="text-white text-xl font-bold">Quiz Dashboard</div>
-          <div className="text-white text-right justify-end flex gap-2 text-xl font-bold">
+        <div className="flex flex-col items-center justify-center  mx-1 text-center">
+           {/* Quiz Dashboard */}
+            <div className="text-white text-5xl font-extrabold mb-2">
+               Quiz Dashboard
+              </div>
+
+            {/* Separator */}
+            <div className="mb-2"></div>
+
+             {/* Your Generated Quizzes */}
+            <div className="text-white flex justify-center items-center gap-2 text-xl font-bold">
             Your{" "}
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Generated Quizzes
-            </span>{" "}
-            <img className="h-[20px] w-[20px]" src={stars} alt="stars" />
-          </div>
+           <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
+           Generated Quizzes
+           </span>{" "}
+          <img className="h-[20px] w-[20px]" src={stars} alt="stars" />
         </div>
+      </div>
+        <div className="mb-10"></div>
+
         <div className="text-center my-2 text-sm">
-          <span className="bg-gradient-to-r text-xl from-[#7600F2] text-center to-[#00CBE7] font-bold text-transparent bg-clip-text">
+          <span className="bg-gradient-to-r text-3xl from-[#7600F2] text-center to-[#00CBE7] font-bold text-transparent bg-clip-text">
             Your Quizzes
           </span>{" "}
         </div>
@@ -62,6 +76,8 @@ const Previous = () => {
             <div className="text-center text-white text-sm">
               No quizzes available
             </div>
+
+
           ) : (
             <ul className="space-y-2 max-h-96 overflow-y-auto">
               {quizzes.map((quiz, index) => (
@@ -82,7 +98,8 @@ const Previous = () => {
             </ul>
           )}
         </div>
-        <div className="flex my-2 justify-center gap-6 items-start">
+        <div className="flex my-2 justify-center gap-6 items-start" style={{ marginTop: '330px' }}>
+
           <div>
             <button
               onClick={handleBack}
