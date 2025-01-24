@@ -5,6 +5,8 @@ import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Text_Input = () => {
   const [text, setText] = useState("");
@@ -15,6 +17,19 @@ const Text_Input = () => {
   const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
+
+  const notify = (message) => {
+    toast.error(message, {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "dark",
+    });
+  };
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
@@ -33,8 +48,10 @@ const Text_Input = () => {
         });
         const data = await response.json();
         setText(data.content || data.error);
+        notify(data.error);
       } catch (error) {
         console.error("Error uploading file:", error);
+        notify("Error uploading file");
         setText("Error uploading file");
       }
     }
@@ -50,8 +67,8 @@ const Text_Input = () => {
 
   const handleSaveToLocalStorage = async () => {
     setLoading(true);
-
     // Check if a Google Doc URL is provided
+
     if (docUrl) {
       try {
         const response = await fetch(`${process.env.REACT_APP_BASE_URL}/get_content`, {
@@ -68,10 +85,12 @@ const Text_Input = () => {
           setText(data || "Error in retrieving");
         } else {
           console.error("Error retrieving Google Doc content");
+          notify("Error retrieving Google Doc content");
           setText("Error retrieving Google Doc content");
         }
       } catch (error) {
         console.error("Error:", error);
+        notify("Error retrieving Google Doc content");
         setText("Error retrieving Google Doc content");
       } finally {
         setLoading(false);
@@ -133,7 +152,6 @@ const Text_Input = () => {
       if (response.ok) {
         const responseData = await response.json();
         localStorage.setItem("qaPairs", JSON.stringify(responseData));
-
         // Save quiz details to local storage
         const quizDetails = {
           difficulty,
@@ -146,15 +164,17 @@ const Text_Input = () => {
           JSON.parse(localStorage.getItem("last5Quizzes")) || [];
         last5Quizzes.push(quizDetails);
         if (last5Quizzes.length > 5) {
-          last5Quizzes.shift(); // Keep only the last 5 quizzes
+          last5Quizzes.shift();// Keep only the last 5 quizzes
         }
         localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
 
         window.location.href = "output";
       } else {
+        notify("Backend request failed");
         console.error("Backend request failed.");
       }
     } catch (error) {
+      notify("Error processing request");
       console.error("Error:", error);
     } finally {
       setLoading(false);
@@ -169,9 +189,8 @@ const Text_Input = () => {
         </div>
       )}
       <div
-        className={`w-full h-full bg-cust bg-opacity-50 ${
-          loading ? "pointer-events-none" : ""
-        }`}
+        className={`w-full h-full bg-cust bg-opacity-50 ${loading ? "pointer-events-none" : ""
+          }`}
       >
         <a href="/">
           <div className="flex items-end gap-[2px]">
@@ -202,14 +221,15 @@ const Text_Input = () => {
             <FaClipboard className="h-[24px] w-[24px]" />
           </button>
           <textarea
-            className="absolute inset-0 p-8 pt-4 bg-[#83b6cc40] text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
+            className="absolute inset-0 p-8 pt-2 mx-2 bg-[#83b6cc40] text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
+            readOnly={text === "Error uploading file" || text === "Unsupported file type or error processing file" || text === "No file part" || text === "No selected file"}
             onChange={(e) => setText(e.target.value)}
           />
           <style>
             {`
-          textarea::-webkit-scrollbar {
+                textarea::-webkit-scrollbar {
             display: none;
           }
         `}
@@ -309,6 +329,18 @@ const Text_Input = () => {
           {/* </a> */}
         </div>
       </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
     </div>
   );
 };
