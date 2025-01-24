@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { PDFDocument, rgb } from "pdf-lib";
-import "../index.css";
-import logo from "../assets/aossie_logo.png";
-import logoPNG from "../assets/aossie_logo_transparent.png";
+import "../../index.css"; 
+import logo from "../../assets/aossie_logo.png"; 
+import logoPNG from "../../assets/aossie_logo_transparent.png"; 
+import TimerComponent from "./timer"; 
 
 
 const Output = () => {
@@ -360,6 +361,7 @@ const Output = () => {
               </div>
             </div>
           </a>
+          <TimerComponent/>
           <div className="font-bold text-xl text-white mt-3 mx-2">
             Generated Questions
           </div>
