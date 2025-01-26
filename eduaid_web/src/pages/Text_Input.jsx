@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "../index.css";
 import logo from "../assets/aossie_logo.png";
 import stars from "../assets/stars.png";
@@ -15,6 +16,7 @@ const Text_Input = () => {
   const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
+  const navigate = useNavigate();
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
@@ -150,7 +152,7 @@ const Text_Input = () => {
         }
         localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
 
-        window.location.href = "output";
+        navigate("/output");
       } else {
         console.error("Backend request failed.");
       }
@@ -173,7 +175,7 @@ const Text_Input = () => {
           loading ? "pointer-events-none" : ""
         }`}
       >
-        <a href="/">
+        <Link to="/">
           <div className="flex items-end gap-[2px]">
             <img src={logo} alt="logo" className="w-24 my-6 ml-6 block" />
             <div className="text-4xl mb-5 font-extrabold">
@@ -185,7 +187,7 @@ const Text_Input = () => {
               </span>
             </div>
           </div>
-        </a>
+        </Link>
         <div className="text-right mt-[-8px] mx-1">
           <div className="text-white text-xl font-bold">Enter the Content</div>
           <div className="text-white text-right justify-end flex gap-2 text-xl font-bold">
@@ -294,19 +296,17 @@ const Text_Input = () => {
           </div>
         </div>
         <div className="flex justify-center gap-8 my-6">
-          <a href="question-type">
+          <Link to="/question-type">
             <button className="bg-black items-center text-xl text-white px-4 py-2 border-gradient">
               Back
             </button>
-          </a>
-          {/* <a href="output"> */}
+          </Link>
           <button
             onClick={handleSaveToLocalStorage}
             className="bg-black items-center text-xl text-white px-4 py-2 border-gradient flex"
           >
             Next
           </button>
-          {/* </a> */}
         </div>
       </div>
     </div>

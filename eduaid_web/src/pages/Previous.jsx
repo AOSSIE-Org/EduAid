@@ -1,10 +1,12 @@
 import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "../index.css";
 import logo from "../assets/aossie_logo.png";
 import stars from "../assets/stars.png";
 import { FaArrowRight } from "react-icons/fa";
 
 const Previous = () => {
+  const navigate = useNavigate();
   const getQuizzesFromLocalStorage = () => {
     const quizzes = localStorage.getItem("last5Quizzes");
     return quizzes ? JSON.parse(quizzes) : [];
@@ -14,7 +16,7 @@ const Previous = () => {
 
   const handleQuizClick = (quiz) => {
     localStorage.setItem("qaPairs", JSON.stringify(quiz.qaPair));
-    window.location.href = "/output";
+    navigate("/output");
   };
 
   const handleClearQuizzes = () => {
@@ -23,13 +25,13 @@ const Previous = () => {
   };
 
   const handleBack = () => {
-    window.location.href = "/";
+    navigate("/");
   };
 
   return (
     <div className="popup w-screen h-screen bg-[#02000F] flex flex-col justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-        <a href="/">
+        <Link to="/">
           <div className="flex items-end gap-[2px]">
             <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
             <div className="text-2xl mb-3 font-extrabold">
@@ -41,7 +43,7 @@ const Previous = () => {
               </span>
             </div>
           </div>
-        </a>
+        </Link>
         <div className="text-right mt-[-8px] mx-1">
           <div className="text-white text-xl font-bold">Quiz Dashboard</div>
           <div className="text-white text-right justify-end flex gap-2 text-xl font-bold">

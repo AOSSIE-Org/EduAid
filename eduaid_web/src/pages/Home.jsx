@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import "../index.css";
 import logo from "../assets/aossie_logo.png";
 import starsImg from "../assets/stars.png";
@@ -92,27 +93,25 @@ const Home = () => {
           </div>
           <div className="flex justify-center gap-6">
             <div className="mt-8 rounded-2xl">
-              <a href="question-type">
+              <Link to="/question-type">
                 <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
-                  Let’s get Started{" "}
+                  Let's get Started{" "}
                   <img src={arrow} width={28} height={24} alt="" />
                 </button>
-              </a>
+              </Link>
             </div>
             <div className="mt-8 rounded-2xl">
-              <a href="history">
+              <Link to="/history">
                 <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
                   Your previous Work!
                   <img src={arrow} width={28} height={24} alt="" />
                 </button>
-              </a>
+              </Link>
             </div>
           </div>
-          <a
-            href="https://github.com/AOSSIE-Org/EduAid"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group"
+          <button
+            onClick={() => window.open("https://github.com/AOSSIE-Org/EduAid", "_blank", "noopener,noreferrer")}
+            className="group w-full"
           >
             <div className="bg-[#45454599] mt-10 w-fit mx-auto px-4 py-3 rounded-xl flex gap-4 items-center group-hover:bg-[#5a5a5a99] transition-colors duration-300">
               <img src={gitStar} className="" width={28} height={12} alt="" />
@@ -127,7 +126,7 @@ const Home = () => {
                 )}
               </div>
             </div>
-          </a>
+          </button>
         </div>
       </div>
     </div>
