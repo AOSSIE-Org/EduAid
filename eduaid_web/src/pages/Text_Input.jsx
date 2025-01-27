@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "../index.css";
 import logo from "../assets/aossie_logo.png";
 import stars from "../assets/stars.png";
@@ -7,6 +8,7 @@ import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
 
 const Text_Input = () => {
+  const navigate = useNavigate();
   const [text, setText] = useState("");
   const [difficulty, setDifficulty] = useState("Easy Difficulty");
   const [numQuestions, setNumQuestions] = useState(10);
@@ -87,6 +89,7 @@ const Text_Input = () => {
         difficulty,
         localStorage.getItem("selectedQuestionType")
       );
+      navigate("/output");
     }
   };
 
@@ -149,8 +152,6 @@ const Text_Input = () => {
           last5Quizzes.shift(); // Keep only the last 5 quizzes
         }
         localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
-
-        window.location.href = "output";
       } else {
         console.error("Backend request failed.");
       }
@@ -173,7 +174,7 @@ const Text_Input = () => {
           loading ? "pointer-events-none" : ""
         }`}
       >
-        <a href="/">
+        <Link to="/">
           <div className="flex items-end gap-[2px]">
             <img src={logo} alt="logo" className="w-24 my-6 ml-6 block" />
             <div className="text-4xl mb-5 font-extrabold">
@@ -185,7 +186,7 @@ const Text_Input = () => {
               </span>
             </div>
           </div>
-        </a>
+        </Link>
         <div className="text-right mt-[-8px] mx-1">
           <div className="text-white text-xl font-bold">Enter the Content</div>
           <div className="text-white text-right justify-end flex gap-2 text-xl font-bold">
@@ -294,11 +295,11 @@ const Text_Input = () => {
           </div>
         </div>
         <div className="flex justify-center gap-8 my-6">
-          <a href="question-type">
+          <Link to="/question-type">
             <button className="bg-black items-center text-xl text-white px-4 py-2 border-gradient">
               Back
             </button>
-          </a>
+          </Link>
           {/* <a href="output"> */}
           <button
             onClick={handleSaveToLocalStorage}
