@@ -25,4 +25,4 @@ if [ ! -d "$REPO_DIR/$S2V_DIR" ]; then
 fi
 
 # Deactivate virtual environment after completion
-conda deactivate
+deactivate
