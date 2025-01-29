@@ -31,7 +31,7 @@ const Previous = () => {
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <a href="/">
           <div className="flex items-end gap-[2px]">
-            <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
+            <img src="Aossie_transparent.png" alt="logo" className="w-16 my-4 ml-4 block" />
             <div className="text-2xl mb-3 font-extrabold">
               <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
                 Edu
