@@ -123,15 +123,15 @@ const Output = () => {
 
   const generateGoogleForm = async () => {
     const response = await fetch(`${process.env.REACT_APP_BASE_URL}/generate_gform`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          qa_pairs: qaPairs,
-          question_type: questionType,
-        }),
-      });
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        qa_pairs: qaPairs,
+        question_type: questionType,
+      }),
+    });
 
     if (response.ok) {
       const result = await response.json();
