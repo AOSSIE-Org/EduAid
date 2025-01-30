@@ -318,7 +318,7 @@ const Output = () => {
             </button>
             <button
               className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"
-              // onClick={generatePDF}
+              onClick={generatePDF}
             >
               Generate PDF
             </button>
