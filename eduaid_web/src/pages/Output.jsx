@@ -10,7 +10,29 @@ const Output = () => {
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
+  const [timeLeft, setTimeLeft] = useState(120);
   const [pdfMode, setPdfMode] = useState("questions");
+
+  useEffect(()=>{
+    if (timeLeft < 0) {
+       alert("Time is up! Submit the quiz...");
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+
+    return ()=> clearTimeout(timer)
+  }, [timeLeft])
+  
+  const quizTimer = () => {
+    if (timeLeft < 0) {return "0 : 00"}
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    return `${minutes} : ${seconds < 10 ? "0" : ""}${seconds}`;
+  };
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -363,6 +385,7 @@ const Output = () => {
           <div className="font-bold text-xl text-white mt-3 mx-2">
             Generated Questions
           </div>
+          <h1 className="text-2xl font-bold text-center text-white">Time Left : {quizTimer()}</h1>
           <div className="flex-1 overflow-y-auto scrollbar-hide">
             {qaPairs &&
               qaPairs.map((qaPair, index) => {
