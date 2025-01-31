@@ -37,9 +37,11 @@ You can choose to set up the backend manually or use an automated shell script.
 ### Option 2: Automated Setup with Shell Script
 
 1. **Run the Setup Script**:
+
+  - Configure Google API before running shell script.
    - Navigate to the `backend` folder and run the following shell script:
      ```bash
-     ./script.sh
+     source script.sh
      ```
    - This script will automatically download and extract the Sense2Vec model, install Python dependencies, and start the Flask app.
 
