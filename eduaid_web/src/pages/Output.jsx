@@ -347,20 +347,7 @@ const Output = () => {
     <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <div className="flex flex-col h-full">
-          <a href="/">
-            <div className="flex items-end gap-[2px]">
-              <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
-              <div className="text-2xl mb-3 font-extrabold">
-                <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                  Edu
-                </span>
-                <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                  Aid
-                </span>
-              </div>
-            </div>
-          </a>
-          <div className="font-bold text-xl text-white mt-3 mx-2">
+          <div className="font-bold text-xl text-white mt-24 mx-2">
             Generated Questions
           </div>
           <div className="flex-1 overflow-y-auto scrollbar-hide">
@@ -423,7 +410,7 @@ const Output = () => {
               </button>
               <div
                 id="pdfDropdown"
-                className="hidden absolute bottom-full mb-1 bg-[#02000F] shadow-md text-white rounded-lg shadow-lg"
+                className="hidden absolute bottom-full mb-1 bg-[#02000F] shadow-md text-white rounded-lg"
               >
                 <button
                   className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-t-lg"

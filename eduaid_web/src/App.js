@@ -6,10 +6,12 @@ import Text_Input from "./pages/Text_Input";
 import Output from "./pages/Output";
 import Previous from "./pages/Previous";
 import NotFound from "./pages/PageNotFound";
+import Navbar from "./pages/Navbar";
 
 function App() {
   return (
     <BrowserRouter>
+    <Navbar/>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/question-type" element={<Question_Type />} />

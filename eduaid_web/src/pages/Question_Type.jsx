@@ -18,20 +18,7 @@ const Question_Type = () => {
   return (
     <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient p-6">
-        <a href="/">
-          <div className="flex items-end gap-4">
-            <img src={logo} alt="logo" className="w-24 my-6 block" />
-            <div className="text-5xl mb-5 font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                Edu
-              </span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                Aid
-              </span>
-            </div>
-          </div>
-        </a>
-        <div className="text-4xl mt-6 text-white text-center font-extrabold">
+        <div className="text-4xl mt-6 text-white text-center font-extrabold pt-10">
           What’s on your Mind?
         </div>
         <div className="mt-2 text-white text-xl text-center font-medium">

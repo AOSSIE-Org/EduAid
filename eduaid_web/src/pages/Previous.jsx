@@ -29,30 +29,7 @@ const Previous = () => {
   return (
     <div className="popup w-screen h-screen bg-[#02000F] flex flex-col justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-        <a href="/">
-          <div className="flex items-end gap-[2px]">
-            <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
-            <div className="text-2xl mb-3 font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                Edu
-              </span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                Aid
-              </span>
-            </div>
-          </div>
-        </a>
-        <div className="text-right mt-[-8px] mx-1">
-          <div className="text-white text-xl font-bold">Quiz Dashboard</div>
-          <div className="text-white text-right justify-end flex gap-2 text-xl font-bold">
-            Your{" "}
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Generated Quizzes
-            </span>{" "}
-            <img className="h-[20px] w-[20px]" src={stars} alt="stars" />
-          </div>
-        </div>
-        <div className="text-center my-2 text-sm">
+        <div className="text-center my-2 text-sm pt-32">
           <span className="bg-gradient-to-r text-xl from-[#7600F2] text-center to-[#00CBE7] font-bold text-transparent bg-clip-text">
             Your Quizzes
           </span>{" "}
