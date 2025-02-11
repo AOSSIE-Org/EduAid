@@ -173,9 +173,11 @@ const Text_Input = () => {
           loading ? "pointer-events-none" : ""
         }`}
       >
-        <a href="/">
-          <div className="flex items-end gap-[2px]">
+        <div className="flex items-end gap-[2px]">
+          <a href="/">
             <img src={logo} alt="logo" className="w-24 my-6 ml-6 block" />
+          </a>
+          <a href="/">
             <div className="text-4xl mb-5 font-extrabold">
               <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
                 Edu
@@ -184,11 +186,11 @@ const Text_Input = () => {
                 Aid
               </span>
             </div>
-          </div>
-        </a>
-        <div className="text-right mt-[-8px] mx-1">
+          </a>
+        </div>
+        <div className="text-center mt-[-8px] mx-1">
           <div className="text-white text-xl font-bold">Enter the Content</div>
-          <div className="text-white text-right justify-end flex gap-2 text-xl font-bold">
+          <div className="text-white text-center justify-center flex gap-2 text-xl font-bold">
             to Generate{" "}
             <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
               Questionaries
