@@ -1,13 +1,28 @@
-import React, { useState, useEffect } from 'react'
-import { PDFDocument } from 'pdf-lib'
-import '../index.css'
-import logo from '../assets/aossie_logo.png'
+import React, { useState, useEffect } from "react";
+import { PDFDocument, rgb } from "pdf-lib";
+import "../index.css";
+import logo from "../assets/aossie_logo.png";
+import logoPNG from "../assets/aossie_logo_transparent.png";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([])
   const [questionType, setQuestionType] = useState(
-    localStorage.getItem('selectedQuestionType')
-  )
+    localStorage.getItem("selectedQuestionType")
+  );
+  const [pdfMode, setPdfMode] = useState("questions");
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+        const dropdown = document.getElementById('pdfDropdown');
+        if (dropdown && !dropdown.contains(event.target) && 
+            !event.target.closest('button')) {
+            dropdown.classList.add('hidden');
+        }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+}, []);
 
   function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -116,131 +131,228 @@ const Output = () => {
     }
   }
 
-  const generatePDF = async () => {
-    const pdfDoc = await PDFDocument.create()
-    let page = pdfDoc.addPage()
-    const d = new Date(Date.now())
-    page.drawText('EduAid generated Quiz', { x: 50, y: 800, size: 20 })
-    page.drawText('Created On: ' + d.toString(), { x: 50, y: 770, size: 10 })
-    const form = pdfDoc.getForm()
-    let y = 700 // Starting y position for content
-    let questionIndex = 1
+  const loadLogoAsBytes = async () => {
+    try {
+      const response = await fetch(logoPNG);
+      const arrayBuffer = await response.arrayBuffer();
+      return new Uint8Array(arrayBuffer);
+    } catch (error) {
+      console.error('Error loading logo:', error);
+      return null;
+    }
+  };
 
-    console.log('here inside downloading', qaPairs)
+  const generatePDF = async (mode) => {
+    const pageWidth = 595.28;
+    const pageHeight = 841.89;
+    const margin = 50;
+    const maxContentWidth = pageWidth - (2 * margin);
+    const maxContentHeight = pageHeight - (2 * margin);
+    
+    const pdfDoc = await PDFDocument.create();
+    let page = pdfDoc.addPage([pageWidth, pageHeight]);
+    const d = new Date(Date.now());
+
+    // Load and embed logo
+    const logoBytes = await loadLogoAsBytes();
+    let logoImage;
+    if (logoBytes) {
+      try {
+        logoImage = await pdfDoc.embedPng(logoBytes);
+        const logoDims = logoImage.scale(0.2); // Scale down the logo
+        page.drawImage(logoImage, {
+          x: margin,
+          y: pageHeight - margin - 30,
+          width: logoDims.width,
+          height: logoDims.height,
+        });
+        // Adjust title position to be next to the logo
+        page.drawText('EduAid generated Quiz', {
+          x: margin + logoDims.width + 10,
+          y: pageHeight - margin,
+          size: 20
+        });
+        page.drawText('Created On: ' + d.toString(), {
+          x: margin + logoDims.width + 10,
+          y: pageHeight - margin - 30,
+          size: 10
+        });
+      } catch (error) {
+        console.error('Error embedding logo:', error);
+        // Fallback to text-only header if logo embedding fails
+        page.drawText('EduAid generated Quiz', {
+          x: margin,
+          y: pageHeight - margin,
+          size: 20
+        });
+        page.drawText('Created On: ' + d.toString(), {
+          x: margin,
+          y: pageHeight - margin - 30,
+          size: 10
+        });
+      }
+    }
+    
+    
+    const form = pdfDoc.getForm();
+    let y = pageHeight - margin - 70;
+    let questionIndex = 1;
+
+    const createNewPageIfNeeded = (requiredHeight) => {
+        if (y - requiredHeight < margin) {
+            page = pdfDoc.addPage([pageWidth, pageHeight]);
+            y = pageHeight - margin;
+            return true;
+        }
+        return false;
+    };
+
+    const wrapText = (text, maxWidth) => {
+      const words = text.split(' ');
+      const lines = [];
+      let currentLine = '';
+  
+      words.forEach(word => {
+          const testLine = currentLine ? `${currentLine} ${word}` : word;
+  
+          // Adjust the multiplier to reflect a more realistic line width based on font size
+          const testWidth = testLine.length * 6; // Update the multiplier for better wrapping.
+  
+          if (testWidth > maxWidth) {
+              lines.push(currentLine);
+              currentLine = word;
+          } else {
+              currentLine = testLine;
+          }
+      });
+  
+      if (currentLine) {
+          lines.push(currentLine);
+      }
+  
+      return lines;
+  };
+  
 
     qaPairs.forEach((qaPair) => {
-      if (y < 50) {
-        page = pdfDoc.addPage()
-        y = 700
-      }
+        let requiredHeight = 60;
+        const questionLines = wrapText(qaPair.question, maxContentWidth);
+        requiredHeight += questionLines.length * 20;
 
-      // i'm implementing a question text wrapping logic so that it doesn't overflow the page
-      const questionText = `Q${questionIndex}) ${qaPair.question}`
-      const maxLineLength = 67
-      const lines = []
-
-      let start = 0
-      while (start < questionText.length) {
-        let end = start + maxLineLength
-        if (end < questionText.length && questionText[end] !== ' ') {
-          while (end > start && questionText[end] !== ' ') {
-            end--
-          }
-        }
-        if (end === start) {
-          end = start + maxLineLength
-        }
-        lines.push(questionText.substring(start, end).trim())
-        start = end + 1
-      }
-
-      lines.forEach((line) => {
-        page.drawText(line, { x: 50, y, size: 15 })
-        y -= 20
-      })
-
-      y -= 10
-
-      if (qaPair.question_type === 'Boolean') {
-        // Create radio buttons for True/False
-        const radioGroup = form.createRadioGroup(
-          `question${questionIndex}_answer`
-        )
-        const drawRadioButton = (text, selected) => {
-          const options = {
-            x: 70,
-            y,
-            width: 15,
-            height: 15,
-          }
-
-          radioGroup.addOptionToPage(text, page, options)
-          page.drawText(text, { x: 90, y: y + 2, size: 12 })
-          y -= 20
-        }
-
-        drawRadioButton('True', false)
-        drawRadioButton('False', false)
-      } else if (
-        qaPair.question_type === 'MCQ' ||
-        qaPair.question_type === 'MCQ_Hard'
-      ) {
-        // Shuffle options including qaPair.answer
-        const options = [...qaPair.options, qaPair.answer] // Include correct answer in options
-        options.sort(() => Math.random() - 0.5) // Shuffle options randomly
-
-        const radioGroup = form.createRadioGroup(
-          `question${questionIndex}_answer`
-        )
-
-        options.forEach((option, index) => {
-          const drawRadioButton = (text, selected) => {
-            const radioOptions = {
-              x: 70,
-              y,
-              width: 15,
-              height: 15,
+        if (mode !== 'answers') {
+            if (qaPair.question_type === "Boolean") {
+                requiredHeight += 60;
+            } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
+                const optionsCount = qaPair.options ? qaPair.options.length + 1 : 1;
+                requiredHeight += optionsCount * 25;
+            } else {
+                requiredHeight += 40;
             }
-            radioGroup.addOptionToPage(text, page, radioOptions)
-            page.drawText(text, { x: 90, y: y + 2, size: 12 })
-            y -= 20
-          }
-          drawRadioButton(option, false)
-        })
-
-        if (questionIndex % 5 === 0) {
-          page = pdfDoc.addPage()
-          y = 700
         }
-      } else if (qaPair.question_type === 'Short') {
-        // Text field for Short answer
-        const answerField = form.createTextField(
-          `question${questionIndex}_answer`
-        )
-        answerField.setText('')
-        answerField.addToPage(page, {
-          x: 50,
-          y: y - 20,
-          width: 450,
-          height: 20,
-        })
-        y -= 40
-      }
 
-      y -= 20 // Space between questions
-      questionIndex += 1
-    })
+        if (mode === 'answers' || mode === 'questions_answers') {
+            requiredHeight += 40;
+        }
 
-    // Save PDF and create download link
-    const pdfBytes = await pdfDoc.save()
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = 'generated_questions.pdf'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+        createNewPageIfNeeded(requiredHeight);
+
+        if (mode !== 'answers') {
+          questionLines.forEach((line, lineIndex) => {
+              const textToDraw = lineIndex === 0 
+                  ? `Q${questionIndex}) ${line}`  // First line includes question number
+                  : `        ${line}`;           // Subsequent lines are indented
+              page.drawText(textToDraw, {
+                  x: margin,
+                  y: y - (lineIndex * 20),
+                  size: 12,
+                  maxWidth: maxContentWidth
+              });
+          });
+          y -= (questionLines.length * 20 + 20);
+
+            if (mode === 'questions') {
+                if (qaPair.question_type === "Boolean") {
+                    const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
+                    ['True', 'False'].forEach((option) => {
+                        const radioOptions = {
+                            x: margin + 20,
+                            y,
+                            width: 15,
+                            height: 15,
+                        };
+                        radioGroup.addOptionToPage(option, page, radioOptions);
+                        page.drawText(option, { x: margin + 40, y: y + 2, size: 12 });
+                        y -= 20;
+                    });
+                } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
+                    const allOptions = [...(qaPair.options || [])];
+                    if (qaPair.answer && !allOptions.includes(qaPair.answer)) {
+                        allOptions.push(qaPair.answer);
+                    }
+                    const shuffledOptions = shuffleArray([...allOptions]);
+                    
+                    const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
+                    shuffledOptions.forEach((option, index) => {
+                        const radioOptions = {
+                            x: margin + 20,
+                            y,
+                            width: 15,
+                            height: 15,
+                        };
+                        radioGroup.addOptionToPage(`option${index}`, page, radioOptions);
+                        const optionLines = wrapText(option, maxContentWidth - 60);
+                        optionLines.forEach((line, lineIndex) => {
+                            page.drawText(line, {
+                                x: margin + 40,
+                                y: y + 2 - (lineIndex * 15),
+                                size: 12
+                            });
+                        });
+                        y -= Math.max(25, optionLines.length * 20);
+                    });
+                } else if (qaPair.question_type === "Short") {
+                    const answerField = form.createTextField(`question${questionIndex}_answer`);
+                    answerField.setText("");
+                    answerField.addToPage(page, {
+                        x: margin,
+                        y: y - 20,
+                        width: maxContentWidth,
+                        height: 20
+                    });
+                    y -= 40;
+                }
+            }
+        }
+
+        if (mode === 'answers' || mode === 'questions_answers') {
+            const answerText = `Answer ${questionIndex}: ${qaPair.answer}`;
+            const answerLines = wrapText(answerText, maxContentWidth);
+            answerLines.forEach((line, lineIndex) => {
+                page.drawText(line, {
+                    x: margin,
+                    y: y - (lineIndex * 15),
+                    size: 12,
+                    color: rgb(0, 0.5, 0)
+                });
+            });
+            y -= answerLines.length * 20;
+        }
+
+        y -= 20;
+        questionIndex += 1;
+    });
+
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = "generated_questions.pdf";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    document.getElementById('pdfDropdown').classList.add('hidden');
+};
 
   return (
     <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
@@ -313,12 +425,37 @@ const Output = () => {
             >
               Generate Google form
             </button>
-            <button
-              className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"
-              onClick={generatePDF}
-            >
-              Generate PDF
-            </button>
+            <div className="relative">
+              <button
+                className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"
+                onClick={() => document.getElementById('pdfDropdown').classList.toggle('hidden')}
+              >
+                Generate PDF
+              </button>
+              <div
+                id="pdfDropdown"
+                className="hidden absolute bottom-full mb-1 bg-[#02000F] shadow-md text-white rounded-lg shadow-lg"
+              >
+                <button
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-t-lg"
+                  onClick={() => generatePDF('questions')}
+                >
+                  Questions Only
+                </button>
+                <button
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-500"
+                  onClick={() => generatePDF('questions_answers')}
+                >
+                  Questions with Answers
+                </button>
+                <button
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-b-lg"
+                  onClick={() => generatePDF('answers')}
+                >
+                  Answers Only
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
