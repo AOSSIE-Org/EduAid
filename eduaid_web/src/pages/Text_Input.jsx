@@ -5,6 +5,7 @@ import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
+import wifipediaLogo from "../assets/wifipedia_logo.png"; // Import Wikipedia logo
 
 const Text_Input = () => {
   const [text, setText] = useState("");
@@ -12,12 +13,11 @@ const Text_Input = () => {
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
-  const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
-  const [isToggleOn, setIsToggleOn] = useState(0);
+  const [isToggleOn, setIsToggleOn] = useState(false); // Toggle state as boolean
 
   const toggleSwitch = () => {
-    setIsToggleOn((isToggleOn + 1) % 2);
+    setIsToggleOn(!isToggleOn); // Toggle the state
   };
 
   const handleFileUpload = async (event) => {
@@ -285,11 +285,19 @@ const Text_Input = () => {
             <div className="text-white text-xl font-bold">Use Wikipedia: </div>
             <Switch
               onChange={toggleSwitch}
-              checked={isToggleOn === 1}
+              checked={isToggleOn}
               onColor="#008080"
               offColor="#3e5063"
-              checkedIcon={false}
-              uncheckedIcon={false}
+              checkedIcon={
+                <div className="flex justify-center items-center h-full">
+                  <img src={wifipediaLogo} alt="Wikipedia" className="h-5 w-5 opacity-100" />
+                </div>
+              }
+              uncheckedIcon={
+                <div className="flex justify-center items-center h-full">
+                  <img src={wifipediaLogo} alt="Wikipedia" className="h-5 w-5 opacity-40" />
+                </div>
+              }
             />
           </div>
         </div>
@@ -299,14 +307,12 @@ const Text_Input = () => {
               Back
             </button>
           </a>
-          {/* <a href="output"> */}
           <button
             onClick={handleSaveToLocalStorage}
             className="bg-black items-center text-xl text-white px-4 py-2 border-gradient flex"
           >
             Next
           </button>
-          {/* </a> */}
         </div>
       </div>
     </div>
