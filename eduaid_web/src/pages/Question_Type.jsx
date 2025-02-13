@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "../index.css";
 import logo from "../assets/aossie_logo.png";
 import { Link } from "react-router-dom";
+import SiteName from "../components/SiteTitle";
 
 const Question_Type = () => {
   const [selectedOption, setSelectedOption] = useState(null);
@@ -22,14 +23,7 @@ const Question_Type = () => {
         <Link to={"/"}>
           <div className="flex items-end gap-4">
             <img src={logo} alt="logo" className="w-24 my-6 block" />
-            <div className="text-5xl mb-5 font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                Edu
-              </span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                Aid
-              </span>
-            </div>
+            <SiteName ClassName={"text-5xl mb-5 "}/>
           </div>
         </Link>
         <div className="text-4xl mt-6 text-white text-center font-extrabold">

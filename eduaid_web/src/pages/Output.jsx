@@ -4,6 +4,7 @@ import "../index.css";
 import logo from "../assets/aossie_logo.png";
 import logoPNG from "../assets/aossie_logo_transparent.png";
 import { Link } from "react-router-dom";
+import SiteName from "../components/SiteTitle";
 
 
 const Output = () => {
@@ -351,14 +352,7 @@ const Output = () => {
           <Link to={"/"}>
             <div className="flex items-end gap-[2px]">
               <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
-              <div className="text-2xl mb-3 font-extrabold">
-                <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                  Edu
-                </span>
-                <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                  Aid
-                </span>
-              </div>
+              <SiteName ClassName={"text-2xl mb-3"}/>
             </div>
           </Link>
           <div className="font-bold text-xl text-white mt-3 mx-2">

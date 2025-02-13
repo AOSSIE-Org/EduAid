@@ -6,6 +6,8 @@ import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
 import { FaGithub } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import SiteName from "../components/SiteTitle";
+import NavBtn from "../components/NavBtn";
 
 const Home = () => {
   const [stars, setStars] = useState(null);
@@ -54,14 +56,7 @@ const Home = () => {
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <div>
           <img src={logo} alt="logo" className="w-24 my-6 mx-6 block" />
-          <div className="text-7xl text-center font-extrabold">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-              Edu
-            </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Aid
-            </span>
-          </div>
+          <SiteName ClassName={"text-7xl text-center"} />
           <div className="text-white text-[1.5rem] text-center my-4">
             <div>A tool that can auto-generate short quizzes</div>
             <div className="flex text-center justify-center gap-4">
@@ -93,20 +88,16 @@ const Home = () => {
           </div>
           <div className="flex justify-center gap-6">
             <div className="mt-8 rounded-2xl">
-              <Link to={'question-type'}>
-                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
-                  Let’s get Started{" "}
-                  <img src={arrow} width={28} height={24} alt="" />
-                </button>
-              </Link>
+              <NavBtn path={'question-type'} ClassName={'mt-6 py-3 flex gap-4'}>
+                Let’s get Started{" "}
+                <img src={arrow} width={28} height={24} alt="" />
+              </NavBtn>
             </div>
             <div className="mt-8 rounded-2xl">
-              <Link to={"history"}>
-                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
-                  Your previous Work!
-                  <img src={arrow} width={28} height={24} alt="" />
-                </button>
-              </Link>
+              <NavBtn path={'history'} ClassName={"mt-6 py-3 flex gap-4"}>
+                Your previous Work!
+                <img src={arrow} width={28} height={24} alt="" />
+              </NavBtn>
             </div>
           </div>
           <a

@@ -6,6 +6,8 @@ import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
 import { Link } from "react-router-dom";
+import SiteName from "../components/SiteTitle";
+import NavBtn from "../components/NavBtn";
 
 const Text_Input = () => {
   const [text, setText] = useState("");
@@ -50,6 +52,7 @@ const Text_Input = () => {
   };
 
   const handleSaveToLocalStorage = async () => {
+    console.log('saving to local storage')
     setLoading(true);
 
     // Check if a Google Doc URL is provided
@@ -177,14 +180,7 @@ const Text_Input = () => {
           <Link to={"/"}>
             <div className="flex gap-x-2">
               <img src={logo} alt="logo" className="w-24 my-6 ml-6 block" />
-              <div className="text-4xl mb-5 font-extrabold self-end">
-                <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                  Edu
-                </span>
-                <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                  Aid
-                </span>
-              </div>
+              <SiteName ClassName={"text-4xl mb-5 self-end"}/>
             </div>
           </Link>
         </div>
@@ -296,18 +292,13 @@ const Text_Input = () => {
           </div>
         </div>
         <div className="flex justify-center gap-8 my-6">
-          <Link to={"question-type"}>
-            <button className="bg-black items-center text-xl text-white px-4 py-2 border-gradient">
-              Back
-            </button>
-          </Link>
+          <NavBtn path={"/question-type"}>
+            Back
+          </NavBtn>
           {/* <a href="output"> */}
-          <button
-            onClick={handleSaveToLocalStorage}
-            className="bg-black items-center text-xl text-white px-4 py-2 border-gradient flex"
-          >
+          <NavBtn onClick={handleSaveToLocalStorage}>
             Next
-          </button>
+          </NavBtn>
           {/* </a> */}
         </div>
       </div>
