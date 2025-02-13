@@ -15,6 +15,7 @@ const Text_Input = () => {
   const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
@@ -161,6 +162,42 @@ const Text_Input = () => {
     }
   };
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const response = await fetch("http://localhost:5000/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+        setText(data.content || data.error);
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        setText("Error uploading file");
+      }
+    }
+  };
+
   return (
     <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen">
       {loading && (
@@ -216,7 +253,14 @@ const Text_Input = () => {
           </style>
         </div>
         <div className="text-white text-center my-4 text-lg">or</div>
-        <div className="border-[3px] rounded-2xl text-center mx-6 px-6 py-4 border-dotted border-[#3E5063] mt-6">
+        <div 
+          className={`border-[3px] rounded-2xl text-center mx-6 px-6 py-4 border-dotted ${
+            isDragging ? 'border-[#7600F2] bg-[#3e506320]' : 'border-[#3E5063]'
+          } mt-6`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <img
             className="mx-auto"
             height={32}
@@ -224,7 +268,9 @@ const Text_Input = () => {
             src={cloud}
             alt="cloud"
           />
-          <div className="text-center text-white text-lg">Choose a file</div>
+          <div className="text-center text-white text-lg">
+            {isDragging ? 'Drop your file here' : 'Choose a file or drag and drop'}
+          </div>
           <div className="text-center text-white text-lg">
             PDF, MP3 supported
           </div>
