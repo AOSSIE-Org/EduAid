@@ -177,22 +177,6 @@ const Text_Input = () => {
           <a href="/">
             <img src={logo} alt="logo" className="w-24 my-6 ml-6 block" />
           </a>
-<<<<<<< HEAD
-          <a href="/">
-            <div className="text-4xl mb-5 font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                Edu
-              </span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                Aid
-              </span>
-            </div>
-          </a>
-        </div>
-        <div className="text-center mt-[-8px] mx-1">
-          <div className="text-white text-xl font-bold">Enter the Content</div>
-          <div className="text-white text-center justify-center flex gap-2 text-xl font-bold">
-=======
           <div className="text-4xl mb-5 font-extrabold">
             <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
               Edu
@@ -205,7 +189,6 @@ const Text_Input = () => {
         <div className="text-center mt-[-8px] mx-1">
           <div className="text-white text-xl font-bold">Enter the Content</div>
           <div className="text-white flex justify-center items-center gap-2 text-xl font-bold">
->>>>>>> 0629530 (fixed the Fix Header Layout and Navigation Links on input page)
             to Generate{" "}
             <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
               Questionaries
