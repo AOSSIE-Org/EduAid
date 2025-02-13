@@ -5,6 +5,7 @@ import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
+import { Link } from "react-router-dom";
 
 const Text_Input = () => {
   const [text, setText] = useState("");
@@ -173,11 +174,11 @@ const Text_Input = () => {
           }`}
       >
         <div className="flex items-end gap-[2px]">
-          <a href="/">
+          <Link to={"/"}>
             <div className="flex gap-x-2">
               <img src={logo} alt="logo" className="w-24 my-6 ml-6 block" />
               <div className="text-4xl mb-5 font-extrabold self-end">
-                <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text -webkit-bg-clip-text">
+                <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
                   Edu
                 </span>
                 <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
@@ -185,7 +186,7 @@ const Text_Input = () => {
                 </span>
               </div>
             </div>
-          </a>
+          </Link>
         </div>
         <div className="mt-[-8px] mx-1 flex flex-col items-center justify-center">
           <div className="text-white text-xl font-bold w-fit">Enter the Content</div>
@@ -295,11 +296,11 @@ const Text_Input = () => {
           </div>
         </div>
         <div className="flex justify-center gap-8 my-6">
-          <a href="question-type">
+          <Link to={"question-type"}>
             <button className="bg-black items-center text-xl text-white px-4 py-2 border-gradient">
               Back
             </button>
-          </a>
+          </Link>
           {/* <a href="output"> */}
           <button
             onClick={handleSaveToLocalStorage}
