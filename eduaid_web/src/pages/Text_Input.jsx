@@ -161,6 +161,14 @@ const Text_Input = () => {
     }
   };
 
+  const clearContent = () => {
+    setText("");
+    setDocUrl("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; 
+    }
+  };
+
   return (
     <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen">
       {loading && (
@@ -228,7 +236,7 @@ const Text_Input = () => {
           <div className="text-center text-white text-lg">
             PDF, MP3 supported
           </div>
-          <div>
+          <div className="flex justify-center gap-4">
             <input
               type="file"
               ref={fileInputRef}
@@ -241,6 +249,14 @@ const Text_Input = () => {
             >
               Browse File
             </button>
+            {text && (
+              <button
+                className="bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2 hover:text-red-500"
+                onClick={clearContent}
+              >
+                Cancel
+              </button>
+            )}
           </div>
 
           <input
@@ -299,14 +315,14 @@ const Text_Input = () => {
               Back
             </button>
           </a>
-          {/* <a href="output"> */}
-          <button
-            onClick={handleSaveToLocalStorage}
-            className="bg-black items-center text-xl text-white px-4 py-2 border-gradient flex"
-          >
-            Next
-          </button>
-          {/* </a> */}
+          {text && (
+            <button
+              onClick={handleSaveToLocalStorage}
+              className="bg-black items-center text-xl text-white px-4 py-2 border-gradient flex"
+            >
+              Next
+            </button>
+          )}
         </div>
       </div>
     </div>
