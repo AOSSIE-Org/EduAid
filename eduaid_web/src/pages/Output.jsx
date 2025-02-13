@@ -3,6 +3,8 @@ import { PDFDocument, rgb } from "pdf-lib";
 import "../index.css";
 import logo from "../assets/aossie_logo.png";
 import logoPNG from "../assets/aossie_logo_transparent.png";
+import { Link } from "react-router-dom";
+import SiteName from "../components/SiteTitle";
 
 
 const Output = () => {
@@ -347,19 +349,12 @@ const Output = () => {
     <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <div className="flex flex-col h-full">
-          <a href="/">
+          <Link to={"/"}>
             <div className="flex items-end gap-[2px]">
               <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
-              <div className="text-2xl mb-3 font-extrabold">
-                <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                  Edu
-                </span>
-                <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                  Aid
-                </span>
-              </div>
+              <SiteName ClassName={"text-2xl mb-3"}/>
             </div>
-          </a>
+          </Link>
           <div className="font-bold text-xl text-white mt-3 mx-2">
             Generated Questions
           </div>

@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import "../index.css";
 import logo from "../assets/aossie_logo.png";
+import { Link } from "react-router-dom";
+import SiteName from "../components/SiteTitle";
 
 const Question_Type = () => {
   const [selectedOption, setSelectedOption] = useState(null);
@@ -18,19 +20,12 @@ const Question_Type = () => {
   return (
     <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient p-6">
-        <a href="/">
+        <Link to={"/"}>
           <div className="flex items-end gap-4">
             <img src={logo} alt="logo" className="w-24 my-6 block" />
-            <div className="text-5xl mb-5 font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                Edu
-              </span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                Aid
-              </span>
-            </div>
+            <SiteName ClassName={"text-5xl mb-5 "}/>
           </div>
-        </a>
+        </Link>
         <div className="text-4xl mt-6 text-white text-center font-extrabold">
           What’s on your Mind?
         </div>
@@ -99,14 +94,14 @@ const Question_Type = () => {
         </div>
         <div className="mx-auto text-center mt-10">
           {selectedOption ? (
-            <a href="input">
+            <Link to={"/input"}>
               <button
                 onClick={handleSaveToLocalStorage}
                 className="rounded-2xl text-2xl text-white w-fit px-8 font-bold py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7]"
               >
                 Fire Up{"  "}🚀
               </button>
-            </a>
+            </Link>
           ) : (
             <button
               onClick={() => alert("Please select a question type.")}
