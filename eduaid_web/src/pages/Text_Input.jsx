@@ -27,7 +27,7 @@ const Text_Input = () => {
       formData.append("file", file);
 
       try {
-        const response = await fetch("http://localhost:5000/upload", {
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/upload`, {
           method: "POST",
           body: formData,
         });
@@ -54,7 +54,7 @@ const Text_Input = () => {
     // Check if a Google Doc URL is provided
     if (docUrl) {
       try {
-        const response = await fetch("http://localhost:5000/get_content", {
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/get_content`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -122,7 +122,7 @@ const Text_Input = () => {
         use_mediawiki: isToggleOn,
       });
 
-      const response = await fetch(`http://localhost:5000/${endpoint}`, {
+      const response = await fetch(`${process.env.REACT_APP_BASE_URL}/${endpoint}`, {
         method: "POST",
         body: formData,
         headers: {
