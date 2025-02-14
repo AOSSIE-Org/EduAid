@@ -4,7 +4,6 @@ from .views.getQuestions import get_boolq, get_mcq, get_problems
 urlpatterns = [
     path('get_mcq/', get_mcq, name='get_mcq'),
     path('get_boolq/', get_boolq, name='get_boolq'),
-    path('get_shortq/', get_shortq, name='get_shortq'),
     path('get_problems/', get_problems, name='get_problems'),
     # path('get_mcq_answer/', views.get_mcq_answer, name='get_mcq_answer'),
     # path('get_shortq_answer/', views.get_shortq_answer, name='get_shortq_answer'),

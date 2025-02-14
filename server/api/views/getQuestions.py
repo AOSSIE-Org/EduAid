@@ -2,12 +2,13 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pprint import pprint
 import nltk
-
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
 nltk.download('punkt_tab')
-from Generator import main
+from api.Generator.main import MCQGenerator, AnswerPredictor, BoolQGenerator, ShortQGenerator, QuestionGenerator, GoogleDocsService, FileProcessor
 import re
 import json
 import spacy
@@ -21,16 +22,19 @@ from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
+from django.conf import settings 
+from rest_framework.response import Response
+import os
 
-SERVICE_ACCOUNT_FILE = '../utils/keys/service_account_key.json'
+SERVICE_ACCOUNT_FILE = os.path.join(settings.BASE_DIR, 'api/utils/keys/service_account_key.json')
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
-MCQGen = main.MCQGenerator()
-answer = main.AnswerPredictor()
-BoolQGen = main.BoolQGenerator()
-ShortQGen = main.ShortQGenerator()
-qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
-file_processor = main.FileProcessor()
+MCQGen = MCQGenerator()
+answer = AnswerPredictor()
+BoolQGen = BoolQGenerator()
+ShortQGen = ShortQGenerator()
+qg = QuestionGenerator()
+docs_service = GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+file_processor = FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
 
@@ -40,9 +44,10 @@ def process_input_text(input_text, use_mediawiki):
         input_text = mediawikiapi.summary(input_text,8)
     return input_text
 
-
-def get_mcq():
-    data = request.get_json()
+@csrf_exempt
+@api_view(['POST'])
+def get_mcq(request):
+    data = request.data  # Use DRF's request.data
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
@@ -51,12 +56,13 @@ def get_mcq():
         {"input_text": input_text, "max_questions": max_questions}
     )
     questions = output["questions"]
-    return jsonify({"output": questions})
+    return Response({"output": questions})
 
 
-
+@csrf_exempt
+@api_view(['POST'])
 def get_boolq():
-    data = request.get_json()
+    data = request.data
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
@@ -67,9 +73,10 @@ def get_boolq():
     boolean_questions = output["Boolean_Questions"]
     return jsonify({"output": boolean_questions})
 
-
-def get_shortq():
-    data = request.get_json()
+@csrf_exempt
+@api_view(['POST'])
+def get_shortq(request):
+    data = request.data
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
@@ -80,8 +87,9 @@ def get_shortq():
     questions = output["questions"]
     return jsonify({"output": questions})
 
-
-def get_problems():
+@csrf_exempt
+@api_view(['POST'])
+def get_problems(request):
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)

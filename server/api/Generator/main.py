@@ -10,8 +10,8 @@ from collections import OrderedDict
 from nltk import FreqDist
 from nltk.corpus import brown
 from similarity.normalized_levenshtein import NormalizedLevenshtein
-from Generator.mcq import tokenize_into_sentences, identify_keywords, find_sentences_with_keywords, generate_multiple_choice_questions, generate_normal_questions
-from Generator.encoding import beam_search_decoding
+from .mcq import tokenize_into_sentences, identify_keywords, find_sentences_with_keywords, generate_multiple_choice_questions, generate_normal_questions
+from .encoding import beam_search_decoding
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import en_core_web_sm
@@ -22,6 +22,8 @@ import re
 import os
 import fitz 
 import mammoth
+from django.conf import settings
+# model_path = 'api/sv2_model'
 
 class MCQGenerator:
     
@@ -31,7 +33,7 @@ class MCQGenerator:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
-        self.s2v = Sense2Vec().from_disk('s2v_old')
+        self.s2v = Sense2Vec().from_disk(os.path.join(settings.BASE_DIR, 's2v_old'))
         self.fdist = FreqDist(brown.words())
         self.normalized_levenshtein = NormalizedLevenshtein()
         self.set_seed(42)
@@ -89,7 +91,7 @@ class ShortQGenerator:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
-        self.s2v = Sense2Vec().from_disk('s2v_old')
+        self.s2v = Sense2Vec().from_disk(os.path.join(settings.BASE_DIR, 's2v_old'))
         self.fdist = FreqDist(brown.words())
         self.normalized_levenshtein = NormalizedLevenshtein()
         self.set_seed(42)
