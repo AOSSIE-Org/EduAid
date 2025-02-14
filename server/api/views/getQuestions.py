@@ -28,7 +28,7 @@ def get_boolq():
         {"input_text": input_text, "max_questions": max_questions}
     )
     boolean_questions = output["Boolean_Questions"]
-    return jsonify({"output": boolean_questions})
+    return Response({"output": boolean_questions})
 
 @csrf_exempt
 @api_view(['POST'])
@@ -42,7 +42,7 @@ def get_shortq(request):
         {"input_text": input_text, "max_questions": max_questions}
     )
     questions = output["questions"]
-    return jsonify({"output": questions})
+    return Response({"output": questions})
 
 @csrf_exempt
 @api_view(['POST'])
@@ -63,7 +63,7 @@ def get_problems(request):
     output3 = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions_shortq}
     )
-    return jsonify(
+    return Response(
         {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
     )
 
@@ -78,7 +78,7 @@ def get_shortq_hard(request):
     output = qg.generate(
         article=input_text, num_questions=input_questions, answer_style="sentences"
     )
-    return jsonify({"output": output})
+    return Response({"output": output})
 
 
 @csrf_exempt
@@ -92,4 +92,4 @@ def get_mcq_hard(request):
     output = qg.generate(
         article=input_text, num_questions=input_questions, answer_style="multiple_choice"
     )
-    return jsonify({"output": output})
+    return Response({"output": output})

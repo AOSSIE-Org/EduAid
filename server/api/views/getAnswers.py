@@ -10,7 +10,7 @@ def get_mcq_answer(request):
     outputs = []
 
     if not input_questions or not input_options or len(input_questions) != len(input_options):
-        return jsonify({"outputs": outputs})
+        return Response({"outputs": outputs})
 
     for question, options in zip(input_questions, input_options):
         # Generate answer using the QA model
@@ -31,12 +31,12 @@ def get_mcq_answer(request):
         
         outputs.append(best_option)
 
-    return jsonify({"output": outputs})
+    return Response({"output": outputs})
 
 
 @csrf_exempt
 @api_view(['POST'])
-def get_answer(request):
+def get_shortq_answer(request):
     data = request.data
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
@@ -45,7 +45,7 @@ def get_answer(request):
         qa_response = qa_model(question=question, context=input_text)
         answers.append(qa_response["answer"])
 
-    return jsonify({"output": answers})
+    return Response({"output": answers})
 
 
 @csrf_exempt
@@ -65,6 +65,6 @@ def get_boolean_answer(request):
         else:
             output.append("False")
 
-    return jsonify({"output": output})
+    return Response({"output": output})
 
 

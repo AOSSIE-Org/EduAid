@@ -163,7 +163,7 @@ def generate_gform(request):
         formId=result["formId"], body=NEW_QUESTION
     ).execute()
 
-    edit_url = jsonify(result["responderUri"])
+    edit_url = Response(result["responderUri"])
     webbrowser.open_new_tab(
         "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
     )
