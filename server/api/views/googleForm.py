@@ -48,21 +48,14 @@ def generate_gform(request):
             requests_list.append(requests)
     elif question_type == "get_mcq":
         for index, qapair in enumerate(qa_pairs):
-            # Extract and filter the options
             options = qapair.get("options", [])
             valid_options = [
                 opt for opt in options if opt
-            ]  # Filter out empty or None options
-
-            # Ensure the answer is included in the choices
+            ] 
             choices = [qapair["answer"]] + valid_options[
                 :3
-            ]  # Include up to the first 3 options
-
-            # Randomize the order of the choices
+            ]  
             random.shuffle(choices)
-
-            # Prepare the request structure
             choices_list = [{"value": choice} for choice in choices]
 
             requests = {

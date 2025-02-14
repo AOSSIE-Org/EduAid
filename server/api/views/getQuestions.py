@@ -3,22 +3,30 @@ from api.utils.imports import *
 @csrf_exempt
 @api_view(['POST'])
 def get_mcq(request):
+    try:
+        data = request.data
+        input_text = data.get("input_text", "")
+        use_mediawiki = data.get("use_mediawiki", 0)
+        max_questions = data.get("max_questions", 4)
+        
+        processed_text = process_input_text(input_text, use_mediawiki)
+        output = MCQGen.generate_mcq({"input_text": processed_text, "max_questions": max_questions})
+        if isinstance(output, dict):
+            questions = output.get("questions", [])
+        elif isinstance(output, list):
+            questions = output
+        else:
+            questions = []
+            
+        return Response({"output": questions})
     
-    data = request.data  # Use DRF's request.data
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output = MCQGen.generate_mcq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    questions = output["questions"]
-    return Response({"output": questions})
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
 
 
 @csrf_exempt
 @api_view(['POST'])
-def get_boolq():
+def get_boolq(request):
     data = request.data
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)

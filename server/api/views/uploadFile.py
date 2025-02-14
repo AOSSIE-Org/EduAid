@@ -1,19 +1,22 @@
 from api.utils.imports import *
+import logging
 
 @csrf_exempt
 @api_view(['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return Response({"error": "No file part"}), 400
+def upload_file(request):
+    # Log the entire request for debugging
+    print("hi 69")
+    logging.info(f"Request Data: {request.FILES}")
 
-    file = request.files['file']
+    if 'file' not in request.FILES:
+        return Response({"error": "No file part"}, status=400)
 
-    if file.filename == '':
-        return Response({"error": "No selected file"}), 400
-
-    content = file_processor.process_file(file)
-    
+    uploaded_file = request.FILES['file']
+    print(request.FILES)
+    if uploaded_file.name == '':
+        return Response({"error": "No selected file"}, status=400)
+    content = file_processor.process_file(uploaded_file)
     if content:
         return Response({"content": content})
     else:
-        return Response({"error": "Unsupported file type or error processing file"}), 400
+        return Response({"error": "Unsupported file type or error processing file"}, status=400)

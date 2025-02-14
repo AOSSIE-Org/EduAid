@@ -364,19 +364,25 @@ class FileProcessor:
             return result.value
 
     def process_file(self, file):
-        file_path = os.path.join(self.upload_folder, file.filename)
-        file.save(file_path)
-        content = ""
+        # Get the file name using 'name'
+        file_path = os.path.join(self.upload_folder, file.name)
+        
+        # Open the file in write-binary mode and save the contents
+        with open(file_path, 'wb') as f:
+            for chunk in file.chunks():  # Iterate over chunks
+                f.write(chunk)  # Write each chunk to the file
 
-        if file.filename.endswith('.txt'):
+        content = ""
+        
+        if file.name.endswith('.txt'):
             with open(file_path, 'r') as f:
                 content = f.read()
-        elif file.filename.endswith('.pdf'):
+        elif file.name.endswith('.pdf'):
             content = self.extract_text_from_pdf(file_path)
-        elif file.filename.endswith('.docx'):
+        elif file.name.endswith('.docx'):
             content = self.extract_text_from_docx(file_path)
 
-        os.remove(file_path)
+        os.remove(file_path)  # Delete the file after processing
         return content
 
 class QuestionGenerator:

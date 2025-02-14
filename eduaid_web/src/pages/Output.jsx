@@ -3,7 +3,7 @@ import { PDFDocument, rgb } from "pdf-lib";
 import "../index.css";
 import logo from "../assets/aossie_logo.png";
 import logoPNG from "../assets/aossie_logo_transparent.png";
-
+import { REACT_APP_BASE_URL } from "../utils/constants";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
@@ -100,7 +100,7 @@ const Output = () => {
   }, []);
 
   const generateGoogleForm = async () => {
-    const response = await fetch(`${process.env.REACT_APP_BASE_URL}/generate_gform`, {
+    const response = await fetch(`${REACT_APP_BASE_URL}/generate_gform/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
