@@ -35,3 +35,4 @@ server/api/Eduaid
 server/api/utils/keys/service_account_key.json
 server/s2v_old
 server/db.sqlite3
+*.env
