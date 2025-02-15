@@ -2,6 +2,7 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
 from django.urls import reverse
+from api.views.getQuestions import get_mcq, get_boolq, get_shortq, get_problems, get_mcq_hard, get_shortq_hard
 
 class QuestionGenerationTests(TestCase):
     def setUp(self):

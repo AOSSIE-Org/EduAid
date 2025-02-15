@@ -10,7 +10,7 @@ def get_mcq_answer(request):
     outputs = []
 
     if not input_questions or not input_options or len(input_questions) != len(input_options):
-        return Response({"outputs": outputs})
+        return Response({"output": outputs})
 
     for question, options in zip(input_questions, input_options):
         # Generate answer using the QA model
