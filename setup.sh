@@ -9,15 +9,30 @@ S2V_ARCHIVE="s2v_reddit_2015_md.tar.gz"
 
 echo "Setting up EduAid"
 
+# Detect OS
+OS="$(uname)"
+if [[ "$OS" == "Linux" || "$OS" == "Darwin" ]]; then
+    PYTHON_CMD="python3"
+    VENV_PATH="./venv/bin/activate"
+elif [[ "$OS" =~ MINGW.* || "$OS" =~ MSYS.* || "$OS" =~ CYGWIN.* ]]; then
+    PYTHON_CMD="python"
+    VENV_PATH="./venv/Scripts/activate"
+else
+    echo "Unsupported OS: $OS"
+    exit 1
+fi
+
 if [ ! -d "venv" ]; then
     echo "creating virtual environment"
-    python -m venv venv
+    ${PYTHON_CMD} -m venv venv
+    pip install -r requirements.txt
 fi
 
 echo "virtual environment activating"
 
-VENV_PATH="./venv/Scripts/activate"
+# VENV_PATH="./venv/Scripts/activate"
 source "$VENV_PATH"
+echo $VENV_PATH
 echo "insstalling requirements for python"
 pip install -r requirements.txt
 
