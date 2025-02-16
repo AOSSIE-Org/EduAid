@@ -37,6 +37,7 @@ qg = main.QuestionGenerator()
 docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
+MatchingGen= main.MatchingGenerator()
 qa_model = pipeline("question-answering")
 
 
@@ -190,7 +191,6 @@ def get_content():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
 @app.route("/generate_gform", methods=["POST"])
 def generate_gform():
     data = request.get_json()
@@ -299,6 +299,73 @@ def generate_gform():
             }
 
             requests_list.append(requests)
+    elif question_type == "get_matching":
+            print("Processing matching questions...")
+            
+            for qa_set in qa_pairs:
+                # Get the original pairs from the data structure
+                original_pairs = qa_set.get('originalPairs', [])
+                if not original_pairs:
+                    print("Warning: No original pairs found")
+                    continue
+                    
+                # Create a list of all left items to use as options
+                left_items = []
+                for pair in original_pairs:
+                    left_item = pair.get('left_item', '')
+                    if left_item and left_item not in left_items:
+                        left_items.append(left_item)
+                
+                if not left_items:
+                    print("Warning: No valid left items found")
+                    continue
+                    
+                print(f"Found {len(left_items)} left items for options")
+                
+                # Create a question for each right item
+                for pair in original_pairs:
+                    right_item = pair.get('right_item', '')
+                    if not right_item:
+                        continue
+                        
+                    # Create the request for this question
+                    request1 = {
+                        "createItem": {
+                            "item": {
+                                "title": right_item,  # Use the right item as the question
+                                "questionItem": {
+                                    "question": {
+                                        "required": True,
+                                        "choiceQuestion": {
+                                            "type": "RADIO",
+                                            "options": [{"value": option} for option in left_items]
+                                        }
+                                    }
+                                }
+                            },
+                            "location": {"index": len(requests_list)}
+                        }
+                    }
+                    
+                    requests_list.append(request1)
+                    print(f"Added question for matching: {right_item[:50]}...")
+            
+            # Verify we have requests
+            if not requests_list:
+                print("Error: No questions were created!")
+                return jsonify({"error": "No valid matching questions could be created"}), 400
+            
+            print(f"Successfully created {len(requests_list)} matching questions")
+            
+            # Create the form update request
+            NEW_QUESTION = {
+                "requests": requests_list
+            }
+            
+            # Verify the request list is not empty before executing
+            if not requests_list:
+                return jsonify({"error": "No valid questions to create"}), 400                    
+            print("req", requests_list)    
     else:
         for index, qapair in enumerate(qa_pairs):
             if "options" in qapair and qapair["options"]:
@@ -359,7 +426,6 @@ def generate_gform():
     )
     return edit_url
 
-
 @app.route("/get_shortq_hard", methods=["POST"])
 def get_shortq_hard():
     data = request.get_json()
@@ -383,6 +449,24 @@ def get_mcq_hard():
     output = qg.generate(
         article=input_text, num_questions=input_questions, answer_style="multiple_choice"
     )
+    return jsonify({"output": output})
+
+@app.route("/get_matching", methods=["POST"])
+def get_matching():
+    data = request.get_json()
+
+    input_text = data.get("input_text", "")
+    use_mediawiki = data.get("use_mediawiki", 0)
+    if "max_questions" not in data:
+        raise ValueError("num_pairs must be specified in the input data")
+    num_pairs = data["max_questions"]    
+    input_text = process_input_text(input_text, use_mediawiki)
+
+    output = MatchingGen.generate_matching(
+    input_text=input_text,  # Changed from text= to input_text=
+    num_pairs=num_pairs
+    )
+
     return jsonify({"output": output})
 
 @app.route('/upload', methods=['POST'])

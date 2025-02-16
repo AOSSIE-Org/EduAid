@@ -121,7 +121,7 @@ const Text_Input = () => {
         max_questions: numQuestions,
         use_mediawiki: isToggleOn,
       });
-
+      console.log("p", process.env.REACT_APP_BASE_URL);
       const response = await fetch(`${process.env.REACT_APP_BASE_URL}/${endpoint}`, {
         method: "POST",
         body: formData,

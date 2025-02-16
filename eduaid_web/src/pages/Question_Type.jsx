@@ -84,6 +84,21 @@ const Question_Type = () => {
             </div>
           </div>
           <div
+            onClick={() => handleOptionClick("get_matching")}
+            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
+          >
+            <div
+              className={`w-10 h-10 rounded-full ${
+                selectedOption === "get_matching"
+                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
+                  : "bg-[#999C9D]"
+              } `}
+            ></div>
+            <div className="text-white text-2xl font-medium">
+              Matching Type Questions
+            </div>
+          </div>
+          <div
             onClick={() => handleOptionClick("get_problems")}
             className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
           >

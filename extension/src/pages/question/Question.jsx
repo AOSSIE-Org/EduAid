@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
-import { PDFDocument, rgb } from 'pdf-lib';
+import { PDFDocument, rgb} from 'pdf-lib';
 import "../../index.css";
 import logo from "../../assets/aossie_logo.webp";
 import logoPNG from "../../assets/aossie_logo.png";
@@ -10,20 +10,6 @@ function Question() {
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
-  const [pdfMode, setPdfMode] = useState("questions");
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-        const dropdown = document.getElementById('pdfDropdown');
-        if (dropdown && !dropdown.contains(event.target) && 
-            !event.target.closest('button')) {
-            dropdown.classList.add('hidden');
-        }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-}, []);
 
   function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -63,16 +49,64 @@ function Question() {
         });
       }
 
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+      if (qaPairsFromStorage["output_shortq"]) {
+        qaPairsFromStorage["output_shortq"]["questions"].forEach((qaPair) => {
           combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
+            question: qaPair.Question,
+            question_type: "Short",
+            answer: qaPair.Answer,
             context: qaPair.context,
           });
         });
+      }
+
+      if (questionType === "get_mcq") {
+        qaPairsFromStorage["output"].forEach((qaPair) => {
+          const options = qaPair.answer
+            .filter((ans) => !ans.correct)
+            .map((ans) => ans.answer);
+          const correctAnswer = qaPair.answer.find(
+            (ans) => ans.correct
+          )?.answer;
+
+          combinedQaPairs.push({
+            question: qaPair.question,
+            question_type: "MCQ_Hard",
+            options: options,
+            answer: correctAnswer,
+          });
+        });
+      }
+
+      if (questionType === "get_matching" && qaPairsFromStorage["output"]) {
+        const matchingQuestions = qaPairsFromStorage["output"].matching_questions;
+        console.log(qaPairsFromStorage["output"]);
+        if (matchingQuestions && Array.isArray(matchingQuestions)) {
+          matchingQuestions.forEach((pair) => {
+            combinedQaPairs.push({
+              left_item: pair.term || pair.left,
+              right_item: pair.definition || pair.right,
+              question_type: "Matching",
+              id: pair.id || Math.random().toString(36).substr(2, 9),
+              isMatched: false
+            });
+          });
+  
+          const shuffledRightItems = shuffleArray([...combinedQaPairs.map(pair => ({
+            item: pair.right_item,
+            id: pair.id
+          }))]);
+          console.log("/", combinedQaPairs);
+          setQaPairs([{
+            question: "Match the following",
+            originalPairs: combinedQaPairs,
+            shuffledRightItems: shuffledRightItems,
+            currentMatches: new Map(),
+            question_type: "Matching"
+          }]);
+          console.log(qaPairs);
+          return; // Add this to prevent further processing
+        }
       }
 
       if (questionType == "get_boolq") {
@@ -119,7 +153,6 @@ function Question() {
       console.error("Failed to generate Google Form");
     }
   };
-
   const loadLogoAsBytes = async () => {
     try {
       const response = await fetch(logoPNG);
@@ -130,220 +163,464 @@ function Question() {
       return null;
     }
   };
-
   const generatePDF = async (mode) => {
-    const pageWidth = 595.28;
-    const pageHeight = 841.89;
-    const margin = 50;
-    const maxContentWidth = pageWidth - (2 * margin);
-    const maxContentHeight = pageHeight - (2 * margin);
-    
-    const pdfDoc = await PDFDocument.create();
-    let page = pdfDoc.addPage([pageWidth, pageHeight]);
-    const d = new Date(Date.now());
-
-    // Load and embed logo
-    const logoBytes = await loadLogoAsBytes();
-    let logoImage;
-    if (logoBytes) {
-      try {
-        logoImage = await pdfDoc.embedPng(logoBytes);
-        const logoDims = logoImage.scale(0.2); // Scale down the logo
-        page.drawImage(logoImage, {
-          x: margin,
-          y: pageHeight - margin - 30,
-          width: logoDims.width,
-          height: logoDims.height,
-        });
-        // Adjust title position to be next to the logo
-        page.drawText('EduAid generated Quiz', {
-          x: margin + logoDims.width + 10,
-          y: pageHeight - margin,
-          size: 20
-        });
-        page.drawText('Created On: ' + d.toString(), {
-          x: margin + logoDims.width + 10,
-          y: pageHeight - margin - 30,
-          size: 10
-        });
-      } catch (error) {
-        console.error('Error embedding logo:', error);
-        // Fallback to text-only header if logo embedding fails
-        page.drawText('EduAid generated Quiz', {
-          x: margin,
-          y: pageHeight - margin,
-          size: 20
-        });
-        page.drawText('Created On: ' + d.toString(), {
-          x: margin,
-          y: pageHeight - margin - 30,
-          size: 10
-        });
-      }
-    }
-    
-    
-    const form = pdfDoc.getForm();
-    let y = pageHeight - margin - 70;
-    let questionIndex = 1;
-
-    const createNewPageIfNeeded = (requiredHeight) => {
-        if (y - requiredHeight < margin) {
-            page = pdfDoc.addPage([pageWidth, pageHeight]);
-            y = pageHeight - margin;
-            return true;
-        }
-        return false;
-    };
-
-    const wrapText = (text, maxWidth) => {
-      const words = text.split(' ');
-      const lines = [];
-      let currentLine = '';
+      const pageWidth = 595.28;
+      const pageHeight = 841.89;
+      const margin = 50;
+      const maxContentWidth = pageWidth - (2 * margin);
+      const maxContentHeight = pageHeight - (2 * margin);
+      
+      const pdfDoc = await PDFDocument.create();
+      let page = pdfDoc.addPage([pageWidth, pageHeight]);
+      const d = new Date(Date.now());
   
-      words.forEach(word => {
-          const testLine = currentLine ? `${currentLine} ${word}` : word;
-  
-          // Adjust the multiplier to reflect a more realistic line width based on font size
-          const testWidth = testLine.length * 6; // Update the multiplier for better wrapping.
-  
-          if (testWidth > maxWidth) {
-              lines.push(currentLine);
-              currentLine = word;
-          } else {
-              currentLine = testLine;
-          }
-      });
-  
-      if (currentLine) {
-          lines.push(currentLine);
-      }
-  
-      return lines;
-  };
-  
-
-    qaPairs.forEach((qaPair) => {
-        let requiredHeight = 60;
-        const questionLines = wrapText(qaPair.question, maxContentWidth);
-        requiredHeight += questionLines.length * 20;
-
-        if (mode !== 'answers') {
-            if (qaPair.question_type === "Boolean") {
-                requiredHeight += 60;
-            } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
-                const optionsCount = qaPair.options ? qaPair.options.length + 1 : 1;
-                requiredHeight += optionsCount * 25;
-            } else {
-                requiredHeight += 40;
-            }
-        }
-
-        if (mode === 'answers' || mode === 'questions_answers') {
-            requiredHeight += 40;
-        }
-
-        createNewPageIfNeeded(requiredHeight);
-
-        if (mode !== 'answers') {
-          questionLines.forEach((line, lineIndex) => {
-              const textToDraw = lineIndex === 0 
-                  ? `Q${questionIndex}) ${line}`  // First line includes question number
-                  : `        ${line}`;           // Subsequent lines are indented
-              page.drawText(textToDraw, {
-                  x: margin,
-                  y: y - (lineIndex * 20),
-                  size: 12,
-                  maxWidth: maxContentWidth
-              });
+      // Load and embed logo
+      const logoBytes = await loadLogoAsBytes();
+      let logoImage;
+      if (logoBytes) {
+        try {
+          logoImage = await pdfDoc.embedPng(logoBytes);
+          const logoDims = logoImage.scale(0.2); // Scale down the logo
+          page.drawImage(logoImage, {
+            x: margin,
+            y: pageHeight - margin - 30,
+            width: logoDims.width,
+            height: logoDims.height,
           });
-          y -= (questionLines.length * 20 + 20);
-
-            if (mode === 'questions') {
-                if (qaPair.question_type === "Boolean") {
-                    const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
-                    ['True', 'False'].forEach((option) => {
-                        const radioOptions = {
-                            x: margin + 20,
-                            y,
-                            width: 15,
-                            height: 15,
-                        };
-                        radioGroup.addOptionToPage(option, page, radioOptions);
-                        page.drawText(option, { x: margin + 40, y: y + 2, size: 12 });
-                        y -= 20;
-                    });
-                } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
-                    const allOptions = [...(qaPair.options || [])];
-                    if (qaPair.answer && !allOptions.includes(qaPair.answer)) {
-                        allOptions.push(qaPair.answer);
-                    }
-                    const shuffledOptions = shuffleArray([...allOptions]);
+          // Adjust title position to be next to the logo
+          page.drawText('EduAid generated Quiz', {
+            x: margin + logoDims.width + 10,
+            y: pageHeight - margin,
+            size: 20
+          });
+          page.drawText('Created On: ' + d.toString(), {
+            x: margin + logoDims.width + 10,
+            y: pageHeight - margin - 30,
+            size: 10
+          });
+        } catch (error) {
+          console.error('Error embedding logo:', error);
+          // Fallback to text-only header if logo embedding fails
+          page.drawText('EduAid generated Quiz', {
+            x: margin,
+            y: pageHeight - margin,
+            size: 20
+          });
+          page.drawText('Created On: ' + d.toString(), {
+            x: margin,
+            y: pageHeight - margin - 30,
+            size: 10
+          });
+        }
+      }
+      
+      
+      const form = pdfDoc.getForm();
+      let y = pageHeight - margin - 70;
+      let questionIndex = 1;
+  
+      const createNewPageIfNeeded = (requiredHeight) => {
+          if (y - requiredHeight < margin) {
+              page = pdfDoc.addPage([pageWidth, pageHeight]);
+              y = pageHeight - margin;
+              return true;
+          }
+          return false;
+      };
+  
+      const wrapText = (text, maxWidth) => {
+        // Convert to string and handle null/undefined
+        const safeText = String(text || '');
+        const words = safeText.split(' ');
+        const lines = [];
+        let currentLine = '';
+    
+        words.forEach(word => {
+            const testLine = currentLine ? `${currentLine} ${word}` : word;
+            const testWidth = testLine.length * 6;
+    
+            if (testWidth > maxWidth) {
+                lines.push(currentLine);
+                currentLine = word;
+            } else {
+                currentLine = testLine;
+            }
+        });
+    
+        if (currentLine) {
+            lines.push(currentLine);
+        }
+    
+        return lines;
+    };
+    
+  
+      qaPairs.forEach((qaPair) => {
+          let requiredHeight = 60;
+          const questionLines = wrapText(qaPair.question, maxContentWidth);
+          requiredHeight += questionLines.length * 20;
+  
+          if (mode !== 'answers') {
+              if (qaPair.question_type === "Boolean") {
+                  requiredHeight += 60;
+              } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
+                  const optionsCount = qaPair.options ? qaPair.options.length + 1 : 1;
+                  requiredHeight += optionsCount * 25;
+              } else if (qaPair.question_type === "Matching") {
+                requiredHeight += 25; 
+                requiredHeight += (qaPair.originalPairs.length * 25);
+                requiredHeight += 80; 
+              } else {
+                  requiredHeight += 40;
+              }
+          }
+  
+          if (mode === 'answers' || mode === 'questions_answers') {
+            // if (qaPair.question_type === "Matching") {
+            //   requiredHeight += 20; 
+            //   requiredHeight += (qaPair.originalPairs.length * 20); 
+            // }
+            requiredHeight += 40;
+          }
+  
+          createNewPageIfNeeded(requiredHeight);
+  
+          if (mode !== 'answers') {
+            questionLines.forEach((line, lineIndex) => {
+                const textToDraw = lineIndex === 0 
+                    ? `Q${questionIndex}) ${line}`  
+                    : `        ${line}`;           
+                page.drawText(textToDraw, {
+                    x: margin,
+                    y: y - (lineIndex * 20),
+                    size: 12,
+                    maxWidth: maxContentWidth
+                });
+            });
+            y -= (questionLines.length * 20 + 20);
+  
+              if (mode === 'questions') {
+                  if (qaPair.question_type === "Boolean") {
+                      const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
+                      ['True', 'False'].forEach((option) => {
+                          const radioOptions = {
+                              x: margin + 20,
+                              y,
+                              width: 15,
+                              height: 15,
+                          };
+                          radioGroup.addOptionToPage(option, page, radioOptions);
+                          page.drawText(option, { x: margin + 40, y: y + 2, size: 12 });
+                          y -= 20;
+                      });
+                  } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
+                      const allOptions = [...(qaPair.options || [])];
+                      if (qaPair.answer && !allOptions.includes(qaPair.answer)) {
+                          allOptions.push(qaPair.answer);
+                      }
+                      const shuffledOptions = shuffleArray([...allOptions]);
+                      
+                      const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
+                      shuffledOptions.forEach((option, index) => {
+                          const radioOptions = {
+                              x: margin + 20,
+                              y,
+                              width: 15,
+                              height: 15,
+                          };
+                          radioGroup.addOptionToPage(`option${index}`, page, radioOptions);
+                          const optionLines = wrapText(option, maxContentWidth - 60);
+                          optionLines.forEach((line, lineIndex) => {
+                              page.drawText(line, {
+                                  x: margin + 40,
+                                  y: y + 2 - (lineIndex * 15),
+                                  size: 12
+                              });
+                          });
+                          y -= Math.max(25, optionLines.length * 20);
+                      });
+                  } else if (qaPair.question_type === "Short") {
+                      const answerField = form.createTextField(`question${questionIndex}_answer`);
+                      answerField.setText("");
+                      answerField.addToPage(page, {
+                          x: margin,
+                          y: y - 20,
+                          width: maxContentWidth,
+                          height: 20
+                      });
+                      y -= 40;
+                  } else if (qaPair.question_type === "Matching") {
+                    const leftColumnWidth = maxContentWidth * 0.25;  
+                    const rightColumnWidth = maxContentWidth * 0.65; 
+                    const columnSpacing = maxContentWidth * 0.1;     
                     
-                    const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
-                    shuffledOptions.forEach((option, index) => {
-                        const radioOptions = {
-                            x: margin + 20,
-                            y,
-                            width: 15,
-                            height: 15,
-                        };
-                        radioGroup.addOptionToPage(`option${index}`, page, radioOptions);
-                        const optionLines = wrapText(option, maxContentWidth - 60);
-                        optionLines.forEach((line, lineIndex) => {
+                    page.drawText("Column A", {
+                        x: margin,
+                        y: y,
+                        size: 12,
+                        color: rgb(0, 0, 0)
+                    });
+                    
+                    page.drawText("Column B", {
+                        x: margin + leftColumnWidth + columnSpacing,
+                        y: y,
+                        size: 12,
+                        color: rgb(0, 0, 0)
+                    });
+                    y -= 25;
+                
+                    qaPair.originalPairs.forEach((pair, index) => {
+                        const rightText = qaPair.shuffledRightItems[index];
+                        
+                        const leftLines = wrapText(`${String.fromCharCode(65 + index)}) ${pair.left_item}`, leftColumnWidth - 10);
+                        const rightLines = wrapText(String(rightText.item), rightColumnWidth - 10);
+                        
+                        const pairHeight = Math.max(
+                            leftLines.length * 15 + 10,
+                            rightLines.length * 15 + 10,
+                            25
+                        );
+                        
+                        if (y - pairHeight < margin) {
+                            page = pdfDoc.addPage([pageWidth, pageHeight]);
+                            y = pageHeight - margin - 70;
+                            
+                            page.drawText("Column A", {
+                                x: margin,
+                                y: y,
+                                size: 12,
+                                color: rgb(0, 0, 0)
+                            });
+                            
+                            page.drawText("Column B", {
+                                x: margin + leftColumnWidth + columnSpacing,
+                                y: y,
+                                size: 12,
+                                color: rgb(0, 0, 0)
+                            });
+                            y -= 25;
+                        }
+                
+                        leftLines.forEach((line, lineIndex) => {
                             page.drawText(line, {
-                                x: margin + 40,
-                                y: y + 2 - (lineIndex * 15),
-                                size: 12
+                                x: margin,
+                                y: y - (lineIndex * 15),
+                                size: 12,
+                                maxWidth: leftColumnWidth - 10
                             });
                         });
-                        y -= Math.max(25, optionLines.length * 20);
+                
+                        rightLines.forEach((line, lineIndex) => {
+                            const textToDraw = lineIndex === 0 
+                                ? `${index + 1}) ${line}`
+                                : `    ${line}`;
+                            
+                            page.drawText(textToDraw, {
+                                x: margin + leftColumnWidth + columnSpacing,
+                                y: y - (lineIndex * 15),
+                                size: 12,
+                                maxWidth: rightColumnWidth - 10
+                            });
+                        });
+                
+                        y -= pairHeight;
                     });
-                } else if (qaPair.question_type === "Short") {
+                
+                    if (y - 80 < margin) {
+                        page = pdfDoc.addPage([pageWidth, pageHeight]);
+                        y = pageHeight - margin - 70;
+                    }
+                
+                    y -= 20;
+                    page.drawText("Write your answers (e.g., A-2, B-1, etc.):", {
+                        x: margin,
+                        y: y,
+                        size: 10
+                    });
+                    y -= 20;
+                
                     const answerField = form.createTextField(`question${questionIndex}_answer`);
                     answerField.setText("");
                     answerField.addToPage(page, {
                         x: margin,
                         y: y - 20,
                         width: maxContentWidth,
-                        height: 20
+                        height: 40
                     });
-                    y -= 40;
+                    y -= 60;
                 }
+              }
+          }
+  
+          if (mode === 'answers' || mode === 'questions_answers') {
+            if (qaPair.question_type === "Matching") {
+              if(mode =="questions_answers"){
+                    const leftColumnWidth = maxContentWidth * 0.25;  
+                    const rightColumnWidth = maxContentWidth * 0.65; 
+                    const columnSpacing = maxContentWidth * 0.1;     
+                    
+                    page.drawText("Column A", {
+                        x: margin,
+                        y: y,
+                        size: 12,
+                        color: rgb(0, 0, 0)
+                    });
+                    
+                    page.drawText("Column B", {
+                        x: margin + leftColumnWidth + columnSpacing,
+                        y: y,
+                        size: 12,
+                        color: rgb(0, 0, 0)
+                    });
+                    y -= 25;
+                
+                    qaPair.originalPairs.forEach((pair, index) => {
+                        const rightText = qaPair.shuffledRightItems[index];
+                        
+                        const leftLines = wrapText(`${String.fromCharCode(65 + index)}) ${pair.left_item}`, leftColumnWidth - 10);
+                        const rightLines = wrapText(String(rightText.item), rightColumnWidth - 10);
+                        
+                        const pairHeight = Math.max(
+                            leftLines.length * 15 + 10,
+                            rightLines.length * 15 + 10,
+                            25
+                        );
+                        
+                        if (y - pairHeight < margin) {
+                            page = pdfDoc.addPage([pageWidth, pageHeight]);
+                            y = pageHeight - margin - 70;
+                            
+                            page.drawText("Column A", {
+                                x: margin,
+                                y: y,
+                                size: 12,
+                                color: rgb(0, 0, 0)
+                            });
+                            
+                            page.drawText("Column B", {
+                                x: margin + leftColumnWidth + columnSpacing,
+                                y: y,
+                                size: 12,
+                                color: rgb(0, 0, 0)
+                            });
+                            y -= 25;
+                        }
+                
+                        leftLines.forEach((line, lineIndex) => {
+                            page.drawText(line, {
+                                x: margin,
+                                y: y - (lineIndex * 15),
+                                size: 12,
+                                maxWidth: leftColumnWidth - 10
+                            });
+                        });
+                
+                        rightLines.forEach((line, lineIndex) => {
+                            const textToDraw = lineIndex === 0 
+                                ? `${index + 1}) ${line}`
+                                : `    ${line}`;
+                            
+                            page.drawText(textToDraw, {
+                                x: margin + leftColumnWidth + columnSpacing,
+                                y: y - (lineIndex * 15),
+                                size: 12,
+                                maxWidth: rightColumnWidth - 10
+                            });
+                        });
+                
+                        y -= pairHeight;
+                    });
+                
+                    if (y - 80 < margin) {
+                        page = pdfDoc.addPage([pageWidth, pageHeight]);
+                        y = pageHeight - margin - 70;
+                    }
+                
+                    y -= 20;
+                    page.drawText("Write your answers (e.g., A-2, B-1, etc.):", {
+                        x: margin,
+                        y: y,
+                        size: 10
+                    });
+                    y -= 20;
+                
+                    const answerField = form.createTextField(`question${questionIndex}_answer`);
+                    answerField.setText("");
+                    answerField.addToPage(page, {
+                        x: margin,
+                        y: y - 20,
+                        width: maxContentWidth,
+                        height: 40
+                    });
+                    y -= 60;
+                  }
+              // Check if we need a new page for answers
+              if (y - (qaPair.originalPairs.length * 20 + 40) < margin) {
+                  page = pdfDoc.addPage([pageWidth, pageHeight]);
+                  y = pageHeight - margin - 70;
+              }
+      
+              // Draw "Correct Matches:" header
+              y -= 10;
+              page.drawText("Correct Matches:", {
+                  x: margin,
+                  y: y,
+                  size: 12,
+                  color: rgb(0, 0.5, 0)
+              });
+              y -= 20;
+      
+              // Draw each match
+              qaPair.originalPairs.forEach((pair, index) => {
+                  const matchIndex = qaPair.shuffledRightItems.findIndex(item => 
+                      item.item === pair.right_item
+                  );
+                  const answerText = `${String.fromCharCode(65 + index)} matches with ${matchIndex + 1}`;
+                  
+                  // Check if we need a new page for this answer
+                  if (y - 20 < margin) {
+                      page = pdfDoc.addPage([pageWidth, pageHeight]);
+                      y = pageHeight - margin - 70;
+                  }
+                  
+                  page.drawText(answerText, {
+                      x: margin,
+                      y: y,
+                      size: 12,
+                      color: rgb(0, 0.5, 0)
+                  });
+                  y -= 20;
+              });
+          } else{
+              const answerText = `Answer ${questionIndex}: ${qaPair.answer}`;
+              const answerLines = wrapText(answerText, maxContentWidth);
+              answerLines.forEach((line, lineIndex) => {
+                  page.drawText(line, {
+                      x: margin,
+                      y: y - (lineIndex * 15),
+                      size: 12,
+                      color: rgb(0, 0.5, 0)
+                  });
+              });
+              y -= answerLines.length * 20;
             }
-        }
-
-        if (mode === 'answers' || mode === 'questions_answers') {
-            const answerText = `Answer ${questionIndex}: ${qaPair.answer}`;
-            const answerLines = wrapText(answerText, maxContentWidth);
-            answerLines.forEach((line, lineIndex) => {
-                page.drawText(line, {
-                    x: margin,
-                    y: y - (lineIndex * 15),
-                    size: 12,
-                    color: rgb(0, 0.5, 0)
-                });
-            });
-            y -= answerLines.length * 20;
-        }
-
-        y -= 20;
-        questionIndex += 1;
-    });
-
-    const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = "generated_questions.pdf";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    document.getElementById('pdfDropdown').classList.add('hidden');
-};
-
-
+          }
+  
+          y -= 20;
+          questionIndex += 1;
+      });
+  
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = "generated_questions.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  
+      document.getElementById('pdfDropdown').classList.add('hidden');
+  };
 
   return (
     <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
@@ -381,12 +658,54 @@ function Question() {
                     <div className="text-[#FFF4F4] text-[1rem] my-1">
                       {qaPair.question}
                     </div>
+                    {qaPair.question_type === "Matching" && qaPairs.map((qaPairSet, idx) => (
+                      <div key={idx}>
+                        <div className="text-[#E4E4E4] text-lg mb-4"></div>
+                        <table className="table-auto w-full border-collapse border border-[#E4E4E4]">
+                          <thead>
+                            <tr>
+                              <th className="border border-[#E4E4E4] p-2 text-left text-[#FFF4F4]">
+                                Left Items
+                              </th>
+                              <th className="border border-[#E4E4E4] p-2 text-left text-[#FFF4F4]">
+                                Shuffled Right Items
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {qaPairSet.originalPairs.map((pair, index) => (
+                              <tr key={index}>
+                                <td className="border border-[#E4E4E4] p-4 text-[#E4E4E4] text-sm">
+                                  {pair.left_item}
+                                </td>
+                                <td className="border border-[#E4E4E4] p-4 text-[#FFF4F4] text-sm">
+                                  {qaPairSet.shuffledRightItems[index]?.item || ""}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ))}
                     {qaPair.question_type !== "Boolean" && (
                       <>
                         <div className="text-[#E4E4E4] text-sm">Answer</div>
                         <div className="text-[#FFF4F4] text-[1rem]">
-                          {qaPair.answer}
-                        </div>
+                        {qaPair.originalPairs && qaPair.originalPairs.length > 0 && (
+                          <div className="text-[#FFF4F4] text-[1rem] mt-2">
+                            {qaPair.originalPairs.map((question, idx) => (
+                              <div key={idx} className="mb-1">
+                                <span className="text-[#E4E4E4] text-sm">
+                                  {idx + 1}:
+                                </span>{" "}
+                                <span className="text-[#FFF4F4] text-[1rem]">
+                                  {`${question.left_item} - ${question.right_item}`}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        </div>                     
                         {qaPair.options && qaPair.options.length > 0 && (
                           <div className="text-[#FFF4F4] text-[1rem]">
                             {shuffledOptions.map((option, idx) => (
@@ -422,7 +741,6 @@ function Question() {
             >
               Generate Google form
             </button>
-            
             <div className="relative">
               <button
                 className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"
