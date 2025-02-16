@@ -32,7 +32,6 @@ echo "virtual environment activating"
 
 # VENV_PATH="./venv/Scripts/activate"
 source "$VENV_PATH"
-echo $VENV_PATH
 echo "insstalling requirements for python"
 pip install -r requirements.txt
 
@@ -55,12 +54,20 @@ else
     exit 1
 fi
 
+echo Removing ${S2V_ARCHIVE}
 rm -rf ${S2V_ARCHIVE}
 
 cd ..
+
+
 # React dependencies for web app
 echo "Setting up web application dependencies"
 cd "$WEB_DIR"
+
+# create a .env file and copy the .env.example content to .env 
+echo "Setting up environment configuration"
+cp .env.example .env 
+
 npm install
 cd ..
 
