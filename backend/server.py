@@ -442,18 +442,9 @@ def get_transcript():
     if not video_id:
         return jsonify({"error": "No video ID provided"}), 400
 
-    video_url = f"https://www.youtube.com/watch?v={video_id}"
-    command = [
-        "yt-dlp",
-        "--write-auto-sub",
-        "--sub-lang", "en",
-        "--skip-download",
-        "--sub-format", "vtt",
-        "-o", "subtitles/%(title)s [%(id)s].%(ext)s",
-        video_url
-    ]
-
-    subprocess.run(command, capture_output=True, text=True)
+    subprocess.run(["yt-dlp", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
+                "--sub-format", "vtt", "-o", f"subtitles/{video_id}.vtt", f"https://www.youtube.com/watch?v={video_id}"],
+               check=True, capture_output=True, text=True)
 
     # Find the latest .vtt file in the "subtitles" folder
     subtitle_files = glob.glob("subtitles/*.vtt")
