@@ -24,6 +24,9 @@ from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
+from transformers import pipeline
+
+whisper = pipeline('automatic-speech-recognition', model = 'openai/whisper-tiny', device = 0)
 
 app = Flask(__name__)
 CORS(app)
@@ -398,12 +401,20 @@ def upload_file():
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
-    content = file_processor.process_file(file)
+    # Check if file is an audio file based on extension
+    ALLOWED_AUDIO_EXTENSIONS = {'mp3', 'wav', 'm4a'}
+    if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in ALLOWED_AUDIO_EXTENSIONS:
+        audio_path = f"/tmp/{file.filename}"
+        file.save(audio_path)
+        transcription = whisper(audio_path)
+        return jsonify({"content": transcription["text"]})
     
+    content = file_processor.process_file(file)
     if content:
         return jsonify({"content": content})
     else:
         return jsonify({"error": "Unsupported file type or error processing file"}), 400
+
 
 @app.route("/", methods=["GET"])
 def hello():
@@ -462,3 +473,4 @@ def get_transcript():
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
     app.run()
+

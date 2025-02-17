@@ -27,3 +27,4 @@ backend/token.json
 backend/service_account_key.json
 venv
 backend/Eduaid
+*.env
