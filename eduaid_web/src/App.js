@@ -3,9 +3,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Question_Type from "./pages/Question_Type";
 import Text_Input from "./pages/Text_Input";
-import Output from "./pages/Output";
+import Output from "./pages/Output/Output";
 import Previous from "./pages/Previous";
 import NotFound from "./pages/PageNotFound";
+
 
 function App() {
   return (
