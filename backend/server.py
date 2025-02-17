@@ -23,7 +23,7 @@ from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
 from transformers import pipeline
 
-whisper = pipeline('automatic-speech-recognition', model = 'openai/whisper-medium', device = 0)
+whisper = pipeline('automatic-speech-recognition', model = 'openai/whisper-tiny', device = 0)
 
 app = Flask(__name__)
 CORS(app)
