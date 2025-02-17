@@ -1,14 +1,20 @@
-// Create context menu on installation
-chrome.runtime.onInstalled.addListener(() => {
-    chrome.contextMenus.create({
-      id: "askExtension",
-      title: "Generate Quiz with Selected Text",
-      contexts: ["selection"]
-    });
+// Create context menus
+  chrome.contextMenus.create({
+    id: "askExtension",
+    title: "Generate Quiz with Selected Text",
+    contexts: ["selection"]
   });
-  
-  // Handle context menu clicks
-  chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+
+  // YouTube-specific quiz generator
+  chrome.contextMenus.create({
+      id: "generateQuizFromYouTube",
+      title: "Generate Quiz from YouTube Video",
+      contexts: ["page"],
+      documentUrlPatterns: ["*://www.youtube.com/watch?v=*"]
+  });
+
+// Handle context menu clicks
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     if (info.menuItemId === "askExtension" && info.selectionText) {
       try {
         // Store the selected text first
@@ -51,10 +57,43 @@ chrome.runtime.onInstalled.addListener(() => {
         console.error("Error in context menu handler:", error);
       }
     }
-  });
-  
-  // Listen for messages from content script
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+
+    if (info.menuItemId === "generateQuizFromYouTube") {
+        try {
+            // Check if script has already been injected
+            const [{ result }] = await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: () => window.youtubeScriptLoaded || false
+            });
+    
+            if (!result) {
+                await chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    files: ["youtubeContentScript.js"]
+                });
+            } else {
+                console.log("YouTube script already loaded");
+            }
+            // Add badge notification
+            chrome.action.setBadgeText({ 
+                text: "!"
+            });
+            chrome.action.setBadgeBackgroundColor({ 
+                color: "#FF005C"
+            });
+
+            // Clear the badge after 2 seconds
+            setTimeout(() => {
+                chrome.action.setBadgeText({ text: "" });
+            }, 2000);
+        } catch (error) {
+            console.error("Error in YouTube quiz generation handler:", error);
+        }
+    }
+});
+
+// Listen for messages from content script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === "TEXT_SELECTED") {
       chrome.storage.local.set({ 
         selectedText: request.text 
@@ -89,12 +128,3 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     }
 });
 
-  
-  // Optional: Handle extension install/update
-  chrome.runtime.onInstalled.addListener((details) => {
-    if (details.reason === "install") {
-      console.log("Extension installed");
-    } else if (details.reason === "update") {
-      console.log("Extension updated");
-    }
-  });

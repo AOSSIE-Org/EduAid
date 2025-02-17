@@ -5,8 +5,7 @@ import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
 import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
-import { FaClipboard } from "react-icons/fa";
-import Switch from "react-switch";
+import { FaClipboard , FaWikipediaW  } from "react-icons/fa";
 
 function Second() {
   const [text, setText] = useState("");
@@ -298,14 +297,15 @@ function Second() {
             </button>
           </div>
           <div className="items-center bg-[#202838] text-white rounded-xl px-2 py-2">
-            <Switch
-              checked={isToggleOn}
-              onChange={toggleSwitch}
-              offColor="#FF005C"
-              onColor="#00CBE7"
-              height={24}
-              width={44}
-            />
+           <button
+            title={isToggleOn ? "Disable Wikipedia Context" : "Enable Wikipedia Context"}
+            onClick={toggleSwitch}
+            className={`p-1 rounded-md transition 
+              ${isToggleOn ? "bg-green-500 text-white" : "bg-gray-400 text-gray-300"}
+            `}
+          >
+            <FaWikipediaW className="text-2xl" />
+          </button>
           </div>
         </div>
         <div className="flex my-2 justify-center gap-6 items-start">
