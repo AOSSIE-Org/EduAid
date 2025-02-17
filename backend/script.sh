@@ -31,6 +31,16 @@ command -v python3 >/dev/null 2>&1 || error "python3 is required but not install
 command -v git >/dev/null 2>&1 || error "git is required but not installed"
 command -v wget >/dev/null 2>&1 || error "wget is required but not installed"
 
+# Increase Git buffer size
+echo "Increasing Git buffer size..."
+git config --global http.postBuffer 524288000 || error "Failed to set Git buffer size"
+success "Git buffer size increased to 500MB"
+
+# Disable HTTP/2 for Git
+echo "Disabling HTTP/2 for Git..."
+git config --global http.version HTTP/1.1 || error "Failed to disable HTTP/2"
+success "HTTP/2 disabled for Git"
+
 # Create and activate virtual environment
 if [ ! -d "venv" ]; then
     echo "Creating virtual environment..."
