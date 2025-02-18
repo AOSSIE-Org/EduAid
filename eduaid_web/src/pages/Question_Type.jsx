@@ -38,64 +38,76 @@ const Question_Type = () => {
           Choose one
         </div>
         <div className="flex flex-col items-center mt-8">
+        <button style={{width:'500px'}}class=" transition delay-0 duration-300 ease-in-out hover:-translate-y-1 hover:scale-110  ...">
           <div
-            onClick={() => handleOptionClick("get_shortq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
+              onClick={() => handleOptionClick("get_shortq")}
+              className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
           >
-            <div
+              <div
               className={`w-10 h-10 rounded-full ${
                 selectedOption === "get_shortq"
                   ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
                   : "bg-[#999C9D]"
-              } `}
-            ></div>
-            <div className="text-white text-2xl font-medium">
-              Short-Answer Type Questions
+                } `}
+              ></div>
+              <div className="text-white text-2xl font-medium">
+              Short-Answer Type Questions 
             </div>
           </div>
+        </button>
+
+        <button style={{width:'500px'}} class="transition delay-0 duration-300 ease-in-out hover:-translate-y-1 hover:scale-110 ">
           <div
-            onClick={() => handleOptionClick("get_mcq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
-          >
-            <div
-              className={`w-10 h-10 rounded-full ${
-                selectedOption === "get_mcq"
-                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                  : "bg-[#999C9D]"
-              } `}
-            ></div>
-            <div className="text-white text-2xl font-medium">
-              Multiple Choice Questions
+              onClick={() => handleOptionClick("get_mcq")}
+              className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
+            >
+              <div
+                className={`w-10 h-10 rounded-full ${
+                  selectedOption === "get_mcq"
+                    ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
+                    : "bg-[#999C9D]"
+                } `}
+              ></div>
+              <div className="text-white text-2xl font-medium">
+                Multiple Choice Questions
+              </div>
             </div>
-          </div>
+        </button>
+          
+        <button style={{width:'500px'}} class="transition delay-0 duration-300 ease-in-out hover:-translate-y-1 hover:scale-110">
           <div
-            onClick={() => handleOptionClick("get_boolq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
-          >
-            <div
-              className={`w-10 h-10 rounded-full ${
-                selectedOption === "get_boolq"
-                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                  : "bg-[#999C9D]"
-              } `}
-            ></div>
-            <div className="text-white text-2xl font-medium">
-              True/False Questions
+              onClick={() => handleOptionClick("get_boolq")}
+              className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
+            >
+              <div
+                className={`w-10 h-10 rounded-full ${
+                  selectedOption === "get_boolq"
+                    ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
+                    : "bg-[#999C9D]"
+                } `}
+              ></div>
+              <div className="text-white text-2xl font-medium">
+                True/False Questions
+              </div>
             </div>
-          </div>
-          <div
-            onClick={() => handleOptionClick("get_problems")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
-          >
+        </button>  
+          
+          
+          <button style={{width:'500px'}}class="transition delay-0 duration-300 ease-in-out hover:-translate-y-1 hover:scale-110">
             <div
-              className={`w-10 h-10 rounded-full ${
-                selectedOption === "get_problems"
-                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                  : "bg-[#999C9D]"
-              } `}
-            ></div>
-            <div className="text-white text-2xl font-medium">All Questions</div>
-          </div>
+              onClick={() => handleOptionClick("get_problems")}
+              className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
+            >
+              <div
+                className={`w-10 h-10 rounded-full ${
+                  selectedOption === "get_problems"
+                    ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
+                    : "bg-[#999C9D]"
+                } `}
+              ></div>
+              <div className="text-white text-2xl font-medium">All Questions</div>
+            </div>
+          </button>
         </div>
         <div className="mx-auto text-center mt-10">
           {selectedOption ? (
