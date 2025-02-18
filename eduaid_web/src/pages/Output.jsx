@@ -4,9 +4,8 @@ import "../index.css";
 import logo from "../assets/aossie_logo.png";
 import logoPNG from "../assets/aossie_logo_transparent.png";
 
-
 const Output = () => {
-  const [qaPairs, setQaPairs] = useState([]);
+  const [qaPairs, setQaPairs] = useState([])
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
@@ -27,98 +26,110 @@ const Output = () => {
 
   function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[array[i], array[j]] = [array[j], array[i]]
     }
-    return array;
+    return array
   }
 
   useEffect(() => {
-    const qaPairsFromStorage =
-      JSON.parse(localStorage.getItem("qaPairs")) || {};
+    const qaPairsFromStorage = JSON.parse(localStorage.getItem('qaPairs')) || {}
     if (qaPairsFromStorage) {
-      const combinedQaPairs = [];
+      const combinedQaPairs = []
 
-      if (qaPairsFromStorage["output_boolq"]) {
-        qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
+      if (qaPairsFromStorage['output_boolq']) {
+        qaPairsFromStorage['output_boolq']['Boolean_Questions'].forEach(
           (question, index) => {
             combinedQaPairs.push({
               question,
-              question_type: "Boolean",
-              context: qaPairsFromStorage["output_boolq"]["Text"],
-            });
+              question_type: 'Boolean',
+              context: qaPairsFromStorage['output_boolq']['Text'],
+            })
           }
-        );
+        )
       }
 
-      if (qaPairsFromStorage["output_mcq"]) {
-        qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
+      if (qaPairsFromStorage['output_mcq']) {
+        qaPairsFromStorage['output_mcq']['questions'].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
-            question_type: "MCQ",
+            question_type: 'MCQ',
             options: qaPair.options,
             answer: qaPair.answer,
             context: qaPair.context,
-          });
-        });
+          })
+        })
       }
 
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+      if (qaPairsFromStorage['output_shortq']) {
+        qaPairsFromStorage['output_shortq']['questions'].forEach((qaPair) => {
+          combinedQaPairs.push({
+            question: qaPair.Question,
+            question_type: 'Short',
+            answer: qaPair.Answer,
+            context: qaPair.context,
+          })
+        })
+      }
+
+      if (questionType === 'get_mcq') {
+        qaPairsFromStorage['output'].forEach((qaPair) => {
+          const options = qaPair.options
+          const correctAnswer = qaPair.answer
+
           combinedQaPairs.push({
             question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
-          });
-        });
+            question_type: 'MCQ_Hard',
+            options: options,
+            answer: correctAnswer,
+          })
+        })
       }
 
-      if (questionType == "get_boolq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+      if (questionType == 'get_boolq') {
+        qaPairsFromStorage['output'].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair,
-            question_type: "Boolean",
-          });
-        });
-      } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+            question_type: 'Boolean',
+          })
+        })
+      } else if (qaPairsFromStorage['output'] && questionType !== 'get_mcq') {
+        qaPairsFromStorage['output'].forEach((qaPair) => {
           combinedQaPairs.push({
             question:
               qaPair.question || qaPair.question_statement || qaPair.Question,
             options: qaPair.options,
             answer: qaPair.answer || qaPair.Answer,
             context: qaPair.context,
-            question_type: "Short",
-          });
-        });
+            question_type: 'Short',
+          })
+        })
       }
 
-      setQaPairs(combinedQaPairs);
+      setQaPairs(combinedQaPairs)
     }
-  }, []);
+  }, [])
 
   const generateGoogleForm = async () => {
     const response = await fetch(`${process.env.REACT_APP_BASE_URL}/generate_gform`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         qa_pairs: qaPairs,
         question_type: questionType,
       }),
-    });
+    })
 
     if (response.ok) {
-      const result = await response.json();
-      const formUrl = result.form_link;
-      window.open(formUrl, "_blank");
+      const result = await response.json()
+      const formUrl = result.form_link
+      window.open(formUrl, '_blank')
     } else {
-      console.error("Failed to generate Google Form");
+      console.error('Failed to generate Google Form.')
     }
-  };
+  }
 
   const loadLogoAsBytes = async () => {
     try {
@@ -361,15 +372,15 @@ const Output = () => {
             </div>
           </a>
           <div className="font-bold text-xl text-white mt-3 mx-2">
-            Generated Questions
+            Generated Questions for Quiz
           </div>
           <div className="flex-1 overflow-y-auto scrollbar-hide">
             {qaPairs &&
               qaPairs.map((qaPair, index) => {
                 const combinedOptions = qaPair.options
                   ? [...qaPair.options, qaPair.answer]
-                  : [qaPair.answer];
-                const shuffledOptions = shuffleArray(combinedOptions);
+                  : [qaPair.answer]
+                const shuffledOptions = shuffleArray(combinedOptions)
                 return (
                   <div
                     key={index}
@@ -381,7 +392,7 @@ const Output = () => {
                     <div className="text-[#FFF4F4] text-[1rem] my-1">
                       {qaPair.question}
                     </div>
-                    {qaPair.question_type !== "Boolean" && (
+                    {qaPair.question_type !== 'Boolean' && (
                       <>
                         <div className="text-[#E4E4E4] text-sm">Answer</div>
                         <div className="text-[#FFF4F4] text-[1rem]">
@@ -393,7 +404,7 @@ const Output = () => {
                               <div key={idx}>
                                 <span className="text-[#E4E4E4] text-sm">
                                   Option {idx + 1}:
-                                </span>{" "}
+                                </span>{' '}
                                 <span className="text-[#FFF4F4] text-[1rem]">
                                   {option}
                                 </span>
@@ -404,7 +415,7 @@ const Output = () => {
                       </>
                     )}
                   </div>
-                );
+                )
               })}
           </div>
           <div className="items-center flex justify-center gap-6 mx-auto">
@@ -449,7 +460,7 @@ const Output = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Output;
+export default Output
