@@ -2,7 +2,13 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pprint import pprint
 import nltk
+ fix/header-layout
 from transformers import T5Tokenizer
+
+import subprocess
+import os
+import glob
+ main
 
 tokenizer = T5Tokenizer.from_pretrained("t5-small", legacy=False)
 from sklearn.metrics.pairwise import cosine_similarity
@@ -408,6 +414,56 @@ def upload_file():
 def hello():
     return "The server is working fine"
 
+def clean_transcript(file_path):
+    """Extracts and cleans transcript from a VTT file."""
+    with open(file_path, "r", encoding="utf-8") as file:
+        lines = file.readlines()
+
+    transcript_lines = []
+    skip_metadata = True  # Skip lines until we reach actual captions
+
+    for line in lines:
+        line = line.strip()
+
+        # Skip metadata lines like "Kind: captions" or "Language: en"
+        if line.lower().startswith(("kind:", "language:", "webvtt")):
+            continue
+        
+        # Detect timestamps like "00:01:23.456 --> 00:01:25.789"
+        if "-->" in line:
+            skip_metadata = False  # Now real captions start
+            continue
+        
+        if not skip_metadata:
+            # Remove formatting tags like <c>...</c> and <00:00:00.000>
+            line = re.sub(r"<[^>]+>", "", line)
+            transcript_lines.append(line)
+
+    return " ".join(transcript_lines).strip()
+
+@app.route('/getTranscript', methods=['GET'])
+def get_transcript():
+    video_id = request.args.get('videoId')
+    if not video_id:
+        return jsonify({"error": "No video ID provided"}), 400
+
+    subprocess.run(["yt-dlp", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
+                "--sub-format", "vtt", "-o", f"subtitles/{video_id}.vtt", f"https://www.youtube.com/watch?v={video_id}"],
+               check=True, capture_output=True, text=True)
+
+    # Find the latest .vtt file in the "subtitles" folder
+    subtitle_files = glob.glob("subtitles/*.vtt")
+    if not subtitle_files:
+        return jsonify({"error": "No subtitles found"}), 404
+
+    latest_subtitle = max(subtitle_files, key=os.path.getctime)
+    transcript_text = clean_transcript(latest_subtitle)
+
+    # Optional: Clean up the file after reading
+    os.remove(latest_subtitle)
+
+    return jsonify({"transcript": transcript_text})
 
 if __name__ == "__main__":
+    os.makedirs("subtitles", exist_ok=True)
     app.run()
