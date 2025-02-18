@@ -2,8 +2,9 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pprint import pprint
 import nltk
-import logging
-
+import subprocess
+import os
+import glob
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
@@ -488,5 +489,6 @@ def hello():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+    os.makedirs("subtitles", exist_ok=True)
+    app.run()
 
