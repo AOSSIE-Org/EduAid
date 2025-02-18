@@ -52,7 +52,7 @@ const Home = () => {
     <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <div>
-          <img src={logo} alt="logo" className="w-24 my-6 mx-6 block" />
+          <img src="aossie_transparent.png" alt="logo" className="w-24 my-6 mx-6 block" />
           <div className="text-7xl text-center font-extrabold">
             <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
               Edu
