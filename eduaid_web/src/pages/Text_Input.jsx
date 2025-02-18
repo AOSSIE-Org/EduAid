@@ -5,6 +5,7 @@ import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
+import { Link } from "react-router-dom";
 
 const Text_Input = () => {
   const [text, setText] = useState("");
@@ -169,26 +170,27 @@ const Text_Input = () => {
         </div>
       )}
       <div
-        className={`w-full h-full bg-cust bg-opacity-50 ${
-          loading ? "pointer-events-none" : ""
-        }`}
+        className={`w-full h-full bg-cust bg-opacity-50 ${loading ? "pointer-events-none" : ""
+          }`}
       >
-        <a href="/">
-          <div className="flex items-end gap-[2px]">
-            <img src={logo} alt="logo" className="w-24 my-6 ml-6 block" />
-            <div className="text-4xl mb-5 font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                Edu
-              </span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                Aid
-              </span>
+        <div className="flex items-end gap-[2px]">
+          <Link to={"/"}>
+            <div className="flex gap-x-2">
+              <img src={logo} alt="logo" className="w-24 my-6 ml-6 block" />
+              <div className="text-4xl mb-5 font-extrabold self-end">
+                <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
+                  Edu
+                </span>
+                <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
+                  Aid
+                </span>
+              </div>
             </div>
-          </div>
-        </a>
-        <div className="text-right mt-[-8px] mx-1">
-          <div className="text-white text-xl font-bold">Enter the Content</div>
-          <div className="text-white text-right justify-end flex gap-2 text-xl font-bold">
+          </Link>
+        </div>
+        <div className="mt-[-8px] mx-1 flex flex-col items-center justify-center">
+          <div className="text-white text-xl font-bold w-fit">Enter the Content</div>
+          <div className="text-white flex gap-2 text-xl font-bold w-fit">
             to Generate{" "}
             <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
               Questionaries
@@ -294,11 +296,11 @@ const Text_Input = () => {
           </div>
         </div>
         <div className="flex justify-center gap-8 my-6">
-          <a href="question-type">
+          <Link to={"question-type"}>
             <button className="bg-black items-center text-xl text-white px-4 py-2 border-gradient">
               Back
             </button>
-          </a>
+          </Link>
           {/* <a href="output"> */}
           <button
             onClick={handleSaveToLocalStorage}
