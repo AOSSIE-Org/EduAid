@@ -79,14 +79,18 @@ const Text_Input = () => {
     } else if (text) {
       // Proceed with existing functionality for local storage
       localStorage.setItem("textContent", text);
+      console.log("difficulty", difficulty);
       localStorage.setItem("difficulty", difficulty);
+      console.log("numQuestions", numQuestions);
       localStorage.setItem("numQuestions", numQuestions);
+      console.log("selectedQuestionType", localStorage.getItem("selectedQuestionType"));
 
       await sendToBackend(
         text,
         difficulty,
         localStorage.getItem("selectedQuestionType")
       );
+      console.log("sent to backend");
     }
   };
 
@@ -108,6 +112,11 @@ const Text_Input = () => {
         return "get_shortq_hard";
       } else if (questionType === "get_mcq") {
         return "get_mcq_hard";
+      } else if (questionType === "get_boolq") {
+        return "get_boolq_hard";
+      }
+      else if(questionType === "get_problems") {
+        return "get_problems_hard";
       }
     }
     return questionType;
@@ -116,12 +125,25 @@ const Text_Input = () => {
   const sendToBackend = async (data, difficulty, questionType) => {
     const endpoint = getEndpoint(difficulty, questionType);
     try {
-      const formData = JSON.stringify({
-        input_text: data,
-        max_questions: numQuestions,
-        use_mediawiki: isToggleOn,
-      });
+      let formData;
+      
+      // Special handling for get_problems endpoint
+      if (questionType === "get_problems" || questionType === "get_problems_hard") {
+        formData = JSON.stringify({
+          input_text: data,
+          max_questions: numQuestions, // Changed from max_questions_mcq/boolq/shortq
+          use_mediawiki: isToggleOn,
+        });
+      } else {
+        // Standard format for other endpoints
+        formData = JSON.stringify({
+          input_text: data,
+          max_questions: numQuestions,
+          use_mediawiki: isToggleOn,
+        });
+      }
 
+      console.log("endpoint", endpoint);
       const response = await fetch(`${process.env.REACT_APP_BASE_URL}/${endpoint}`, {
         method: "POST",
         body: formData,
@@ -129,6 +151,7 @@ const Text_Input = () => {
           "Content-Type": "application/json",
         },
       });
+      console.log("response", response);
 
       if (response.ok) {
         const responseData = await response.json();

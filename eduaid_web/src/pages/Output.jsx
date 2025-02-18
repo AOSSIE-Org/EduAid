@@ -4,6 +4,275 @@ import "../index.css";
 import logo from "../assets/aossie_logo.png";
 import logoPNG from "../assets/aossie_logo_transparent.png";
 
+const processMCQQuestion = (qaPair, index) => {
+  return (
+    <div key={index} className="px-4 bg-[#d9d9d90d] border-[#518E8E] border my-4 mx-4 rounded-xl py-4">
+      <div className="text-[#E4E4E4] text-sm font-semibold">
+        Question {index + 1} (MCQ)
+      </div>
+      <div className="text-white text-lg my-3">
+        {qaPair.question}
+      </div>
+      <div className="ml-4 mb-3">
+        {qaPair.options?.map((option, idx) => (
+          <div key={idx} 
+            className={`text-[#E4E4E4] p-2 my-2 rounded ${
+              option === qaPair.answer ? 'bg-[#518E8E40] border-l-4 border-[#518E8E]' : ''
+            }`}>
+            {String.fromCharCode(65 + idx)}. {option}
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 pt-2 border-t border-[#518E8E40]">
+        <div className="text-[#E4E4E4] text-sm font-medium">Correct Answer:</div>
+        <div className="text-[#518E8E] font-medium mt-1">{qaPair.answer}</div>
+      </div>
+    </div>
+  );
+};
+
+const processBooleanQuestion = (qaPair, index) => {
+  return (
+    <div key={index} className="px-4 bg-[#d9d9d90d] border-[#518E8E] border my-4 mx-4 rounded-xl py-4">
+      <div className="text-[#E4E4E4] text-sm font-semibold">
+        Question {index + 1} (Boolean)
+      </div>
+      <div className="text-white text-lg my-3">
+        {qaPair.question}
+      </div>
+      <div className="ml-4 mb-3">
+        {['True', 'False'].map((option) => (
+          <div key={option} 
+            className={`text-[#E4E4E4] p-2 my-2 rounded ${
+              option === qaPair.answer ? 'bg-[#518E8E40] border-l-4 border-[#518E8E]' : ''
+            }`}>
+            {option}
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 pt-2 border-t border-[#518E8E40]">
+        <div className="text-[#E4E4E4] text-sm font-medium">Answer:</div>
+        <div className="text-[#518E8E] font-medium mt-1">{qaPair.answer}</div>
+      </div>
+    </div>
+  );
+};
+
+const processShortQuestion = (qaPair, index) => {
+  return (
+    <div key={index} className="px-4 bg-[#d9d9d90d] border-[#518E8E] border my-4 mx-4 rounded-xl py-4">
+      <div className="text-[#E4E4E4] text-sm font-semibold">
+        Question {index + 1} (Short Answer)
+      </div>
+      <div className="text-white text-lg my-3">
+        {qaPair.question}
+      </div>
+      <div className="mt-3 pt-2 border-t border-[#518E8E40]">
+        <div className="text-[#E4E4E4] text-sm font-medium">Answer:</div>
+        <div className="text-[#518E8E] bg-[#518E8E20] p-3 rounded mt-2">
+          {qaPair.answer}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Add these helper functions to process different question types
+const processQuestionsByType = (qaPairsFromStorage, questionType) => {
+  const combinedQaPairs = [];
+
+  // Process Boolean Questions
+  if (qaPairsFromStorage.output_boolq || questionType === "get_boolq") {
+    const boolQuestions = processBooleanQuestions(qaPairsFromStorage);
+    combinedQaPairs.push(...boolQuestions);
+  }
+
+  // Process MCQ Questions
+  if (qaPairsFromStorage.output_mcq || questionType === "get_mcq") {
+    const mcqQuestions = processMCQQuestions(qaPairsFromStorage);
+    combinedQaPairs.push(...mcqQuestions);
+  }
+
+  // Process Short Questions
+  if (qaPairsFromStorage.output || questionType === "get_shortq") {
+    const shortQuestions = processShortQuestions(qaPairsFromStorage);
+    combinedQaPairs.push(...shortQuestions);
+  }
+
+  return combinedQaPairs;
+};
+
+const processBooleanQuestions = (data) => {
+  const boolQuestions = [];
+
+  // Handle Boolean questions from output array
+  if (data.output && Array.isArray(data.output)) {
+    data.output.forEach((qaPair) => {
+      if (typeof qaPair.answer === 'boolean' || qaPair.question_type === "Boolean") {
+        boolQuestions.push({
+          question: qaPair.question || '',
+          question_type: "Boolean",
+          answer: typeof qaPair.answer === 'boolean' ? (qaPair.answer ? "True" : "False") : String(qaPair.answer),
+          context: qaPair.context || "",
+          id: qaPair.id
+        });
+      }
+    });
+  }
+
+  // Handle Boolean questions from output_boolq (keep existing functionality)
+  if (data.output_boolq?.Boolean_Questions) {
+    data.output_boolq.Boolean_Questions.forEach((questionObj) => {
+      boolQuestions.push({
+        question: questionObj.question || questionObj,
+        question_type: "Boolean",
+        answer: typeof questionObj.answer === 'boolean' 
+          ? (questionObj.answer ? "True" : "False") 
+          : (typeof questionObj === 'object' ? String(questionObj.answer) : "Unknown"),
+        context: data.output_boolq.Text || "",
+      });
+    });
+  }
+
+  console.log('Processed Boolean questions:', boolQuestions);
+  return boolQuestions;
+};
+
+const processMCQQuestions = (data) => {
+  const mcqQuestions = [];
+
+  // Handle when MCQ questions are directly in output
+  if (data.output?.output && Array.isArray(data.output.output)) {
+    data.output.output.forEach((qaPair) => {
+      mcqQuestions.push({
+        question: qaPair.question_statement || qaPair.question || '',
+        question_type: "MCQ",
+        options: [...(qaPair.options || []), ...(qaPair.extra_options || [])].filter(Boolean),
+        answer: qaPair.answer || '',
+        context: qaPair.context || "",
+        id: qaPair.id
+      });
+    });
+  }
+
+  // Handle MCQ questions from output array
+  if (data.output && Array.isArray(data.output)) {
+    data.output.forEach((qaPair) => {
+      mcqQuestions.push({
+        question: qaPair.question_statement || qaPair.question || '',
+        question_type: "MCQ",
+        options: [...(qaPair.options || []), ...(qaPair.extra_options || [])].filter(Boolean),
+        answer: qaPair.answer || '',
+        context: qaPair.context || "",
+        id: qaPair.id
+      });
+    });
+  }
+
+  // Handle MCQ questions from output_mcq
+  if (data.output_mcq?.questions) {
+    data.output_mcq.questions.forEach((qaPair) => {
+      mcqQuestions.push({
+        question: qaPair.question_statement || qaPair.question || '',
+        question_type: "MCQ",
+        options: [...(qaPair.options || [])].filter(Boolean),
+        answer: qaPair.answer || '',
+        context: qaPair.context || "",
+        id: qaPair.id
+      });
+    });
+  }
+
+  console.log('Raw MCQ data:', data);
+  console.log('Processed MCQ questions:', mcqQuestions);
+  return mcqQuestions;
+};
+
+const processShortQuestions = (data) => {
+  const shortQuestions = [];
+
+  // Handle questions from output_shortq
+  if (data.output_shortq?.questions) {
+    data.output_shortq.questions.forEach((qaPair) => {
+      shortQuestions.push({
+        question: qaPair.Question || qaPair.question || '',
+        question_type: "Short",
+        answer: qaPair.Answer || qaPair.answer || '',
+        context: qaPair.context || data.output_shortq.statement || "",
+        id: qaPair.id
+      });
+    });
+  }
+
+  // Handle questions from output array (keep existing functionality)
+  if (data.output && Array.isArray(data.output)) {
+    data.output.forEach((qaPair) => {
+      if (typeof qaPair === 'object' && qaPair !== null) {
+        shortQuestions.push({
+          question: qaPair.Question || qaPair.question || '',
+          question_type: "Short",
+          answer: qaPair.Answer || qaPair.answer || '',
+          context: qaPair.context || "",
+          id: qaPair.id
+        });
+      }
+    });
+  }
+
+  console.log('Processed Short questions:', shortQuestions);
+  return shortQuestions;
+};
+
+const processRawData = (data) => {
+  const processedQuestions = [];
+
+  // Handle array in output property
+  if (data.output && Array.isArray(data.output)) {
+    data.output.forEach((item) => {
+      if (item.question_type) {
+        // If question_type is explicitly specified
+        processedQuestions.push({
+          question: item.question,
+          question_type: item.question_type,
+          answer: item.answer,
+          options: item.options || [],
+          id: item.id,
+          context: item.context || ""
+        });
+      } else {
+        // Determine question type based on answer and options
+        if (typeof item.answer === 'boolean') {
+          processedQuestions.push({
+            question: item.question,
+            question_type: "Boolean",
+            answer: item.answer ? "True" : "False",
+            id: item.id,
+            context: item.context || ""
+          });
+        } else if (Array.isArray(item.options)) {
+          processedQuestions.push({
+            question: item.question,
+            question_type: "MCQ",
+            answer: item.answer,
+            options: item.options,
+            id: item.id,
+            context: item.context || ""
+          });
+        } else {
+          processedQuestions.push({
+            question: item.question,
+            question_type: "Short",
+            answer: item.answer,
+            id: item.id,
+            context: item.context || ""
+          });
+        }
+      }
+    });
+  }
+
+  return processedQuestions;
+};
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
@@ -34,70 +303,121 @@ const Output = () => {
   }
 
   useEffect(() => {
-    const qaPairsFromStorage =
-      JSON.parse(localStorage.getItem("qaPairs")) || {};
-    if (qaPairsFromStorage) {
-      const combinedQaPairs = [];
+    try {
+      const qaPairsFromStorage = JSON.parse(localStorage.getItem("qaPairs")) || {};
+      console.log("Raw data from storage:", qaPairsFromStorage);
 
-      if (qaPairsFromStorage["output_boolq"]) {
-        qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
-          (question, index) => {
-            combinedQaPairs.push({
-              question,
-              question_type: "Boolean",
-              context: qaPairsFromStorage["output_boolq"]["Text"],
-            });
-          }
-        );
-      }
+      let processedQaPairs = [];
 
-      if (qaPairsFromStorage["output_mcq"]) {
-        qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
-          });
-        });
-      }
-
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
-          });
-        });
-      }
-
-      if (questionType == "get_boolq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair,
+      // Handle specific question types based on questionType
+      if (questionType === "get_problems" || questionType === "get_problems_hard") {
+        // Process Boolean Questions
+        if (Array.isArray(qaPairsFromStorage.output_boolq)) {
+          const boolQuestions = qaPairsFromStorage.output_boolq.map(q => ({
+            question: q.question || '',
             question_type: "Boolean",
-          });
-        });
-      } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question:
-              qaPair.question || qaPair.question_statement || qaPair.Question,
-            options: qaPair.options,
-            answer: qaPair.answer || qaPair.Answer,
-            context: qaPair.context,
+            answer: typeof q.answer === 'boolean' ? (q.answer ? "True" : "False") : String(q.answer),
+            context: q.context || "",
+            id: q.id
+          }));
+          processedQaPairs = [...processedQaPairs, ...boolQuestions];
+        } else if (qaPairsFromStorage.output_boolq?.Boolean_Questions) {
+          const boolQuestions = qaPairsFromStorage.output_boolq.Boolean_Questions.map(q => ({
+            question: q.question || '',
+            question_type: "Boolean",
+            answer: typeof q.answer === 'boolean' ? (q.answer ? "True" : "False") : String(q.answer),
+            context: qaPairsFromStorage.output_boolq.Text || "",
+            id: q.id
+          }));
+          processedQaPairs = [...processedQaPairs, ...boolQuestions];
+        }
+  
+        // Process MCQ Questions - Updated part
+        if (qaPairsFromStorage.output_mcq?.questions) {
+          const mcqQuestions = qaPairsFromStorage.output_mcq.questions.map(q => ({
+            question: q.question_statement || q.question || '',
+            question_type: "MCQ",
+            options: [...(q.options || []), ...(q.extra_options || [])].filter(Boolean),
+            answer: q.answer || '',
+            context: qaPairsFromStorage.output_mcq.statement || "",
+            id: q.id
+          }));
+          processedQaPairs = [...processedQaPairs, ...mcqQuestions];
+        }
+        // Handle MCQ questions from output.output format
+        if (qaPairsFromStorage.output_mcq?.output) {
+          const mcqQuestions = qaPairsFromStorage.output_mcq.output.map(q => ({
+            question: q.question_statement || q.question || '',
+            question_type: "MCQ",
+            options: [...(q.options || []), ...(q.extra_options || [])].filter(Boolean),
+            answer: q.answer || '',
+            context: q.context || "",
+            id: q.id
+          }));
+          processedQaPairs = [...processedQaPairs, ...mcqQuestions];
+        }
+  
+        // Process Short Questions
+        if (Array.isArray(qaPairsFromStorage.output_shortq)) {
+          const shortQuestions = qaPairsFromStorage.output_shortq.map(q => ({
+            question: q.Question || q.question || '',
             question_type: "Short",
-          });
-        });
+            answer: q.Answer || q.answer || '',
+            context: q.context || "",
+            id: q.id
+          }));
+          processedQaPairs = [...processedQaPairs, ...shortQuestions];
+        } else if (qaPairsFromStorage.output_shortq?.questions) {
+          const shortQuestions = qaPairsFromStorage.output_shortq.questions.map(q => ({
+            question: q.Question || q.question || '',
+            question_type: "Short",
+            answer: q.Answer || q.answer || '',
+            context: qaPairsFromStorage.output_shortq.statement || "",
+            id: q.id
+          }));
+          processedQaPairs = [...processedQaPairs, ...shortQuestions];
+        }
+      } else {
+        // Handle individual question types
+        switch(questionType) {
+          case "get_mcq":
+          case "get_mcq_hard":
+            const mcqQuestions = processMCQQuestions(qaPairsFromStorage);
+            processedQaPairs = [...mcqQuestions];
+            break;
+          case "get_boolq":
+          case "get_boolq_hard":
+            const boolQuestions = processBooleanQuestions(qaPairsFromStorage);
+            processedQaPairs = [...boolQuestions];
+            break;
+          case "get_shortq":
+          case "get_shortq_hard":
+            const shortQuestions = processShortQuestions(qaPairsFromStorage);
+            processedQaPairs = [...shortQuestions];
+            break;
+        }
       }
 
-      setQaPairs(combinedQaPairs);
+      console.log("Processed QA pairs:", processedQaPairs);
+      setQaPairs(processedQaPairs);
+
+    } catch (error) {
+      console.error("Error processing QA pairs:", error);
+      setQaPairs([]);
     }
-  }, []);
+  }, [questionType]);
+
+  useEffect(() => {
+    console.log('Current qaPairs:', qaPairs);
+    qaPairs.forEach((pair, index) => {
+      console.log(`Question ${index + 1}:`, {
+        type: pair.question_type,
+        question: pair.question,
+        answer: pair.answer,
+        options: pair.options
+      });
+    });
+  }, [qaPairs]);
 
   const generateGoogleForm = async () => {
     const response = await fetch(`${process.env.REACT_APP_BASE_URL}/generate_gform`, {
@@ -291,7 +611,7 @@ const Output = () => {
                         radioGroup.addOptionToPage(`option${index}`, page, radioOptions);
                         const optionLines = wrapText(option, maxContentWidth - 60);
                         optionLines.forEach((line, lineIndex) => {
-                            page.drawText(line, {
+                            page.drawText(line, { 
                                 x: margin + 40,
                                 y: y + 2 - (lineIndex * 15),
                                 size: 12
@@ -311,6 +631,7 @@ const Output = () => {
                     y -= 40;
                 }
             }
+
         }
 
         if (mode === 'answers' || mode === 'questions_answers') {
@@ -347,65 +668,25 @@ const Output = () => {
     <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <div className="flex flex-col h-full">
-          <a href="/">
-            <div className="flex items-end gap-[2px]">
-              <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
-              <div className="text-2xl mb-3 font-extrabold">
-                <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                  Edu
-                </span>
-                <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                  Aid
-                </span>
-              </div>
-            </div>
-          </a>
-          <div className="font-bold text-xl text-white mt-3 mx-2">
-            Generated Questions
-          </div>
           <div className="flex-1 overflow-y-auto scrollbar-hide">
-            {qaPairs &&
+            {qaPairs && qaPairs.length > 0 ? (
               qaPairs.map((qaPair, index) => {
-                const combinedOptions = qaPair.options
-                  ? [...qaPair.options, qaPair.answer]
-                  : [qaPair.answer];
-                const shuffledOptions = shuffleArray(combinedOptions);
-                return (
-                  <div
-                    key={index}
-                    className="px-2 bg-[#d9d9d90d] border-black border my-1 mx-2 rounded-xl py-2"
-                  >
-                    <div className="text-[#E4E4E4] text-sm">
-                      Question {index + 1}
-                    </div>
-                    <div className="text-[#FFF4F4] text-[1rem] my-1">
-                      {qaPair.question}
-                    </div>
-                    {qaPair.question_type !== "Boolean" && (
-                      <>
-                        <div className="text-[#E4E4E4] text-sm">Answer</div>
-                        <div className="text-[#FFF4F4] text-[1rem]">
-                          {qaPair.answer}
-                        </div>
-                        {qaPair.options && qaPair.options.length > 0 && (
-                          <div className="text-[#FFF4F4] text-[1rem]">
-                            {shuffledOptions.map((option, idx) => (
-                              <div key={idx}>
-                                <span className="text-[#E4E4E4] text-sm">
-                                  Option {idx + 1}:
-                                </span>{" "}
-                                <span className="text-[#FFF4F4] text-[1rem]">
-                                  {option}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                );
-              })}
+                switch(qaPair.question_type) {
+                  case "MCQ":
+                    return processMCQQuestion(qaPair, index);
+                  case "Boolean":
+                    return processBooleanQuestion(qaPair, index);
+                  case "Short":
+                    return processShortQuestion(qaPair, index);
+                  default:
+                    return null;
+                }
+              })
+            ) : (
+              <div className="text-white text-center mt-4">
+                No questions available
+              </div>
+            )}
           </div>
           <div className="items-center flex justify-center gap-6 mx-auto">
             <button
