@@ -2,10 +2,15 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pprint import pprint
 import nltk
+ fix/header-layout
+from transformers import T5Tokenizer
+
 import subprocess
 import os
 import glob
+ main
 
+tokenizer = T5Tokenizer.from_pretrained("t5-small", legacy=False)
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
