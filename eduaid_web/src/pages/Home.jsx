@@ -49,9 +49,11 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-        <div>
+    <div className="relative popup w-full min-h-screen flex justify-center overflow-auto">
+      
+      <div className="fixed z-[-1] top-0 left-0 w-full h-full bg-cust bg-opacity-50 bg-custom-gradient"></div>
+      <div className="fixed z-[-2] top-0 left-0 w-full h-full bg-[#02000F] "></div>
+        <div className="h-full w-full">
           <img src="aossie_transparent.png" alt="logo" className="w-24 my-6 mx-6 block" />
           <div className="text-7xl text-center font-extrabold">
             <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
@@ -114,7 +116,7 @@ const Home = () => {
             rel="noopener noreferrer"
             className="group"
           >
-            <div className="bg-[#45454599] mt-10 w-fit mx-auto px-4 py-3 rounded-xl flex gap-4 items-center group-hover:bg-[#5a5a5a99] transition-colors duration-300">
+            <div className="bg-[#45454599] my-10 w-fit mx-auto px-4 py-3 rounded-xl flex gap-4 items-center group-hover:bg-[#5a5a5a99] transition-colors duration-300">
               <img src={gitStar} className="" width={28} height={12} alt="" />
               <div className="text-white font-semibold">
                 {stars !== null ? (
@@ -129,7 +131,6 @@ const Home = () => {
             </div>
           </a>
         </div>
-      </div>
     </div>
   );
 };

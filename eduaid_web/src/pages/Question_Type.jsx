@@ -16,8 +16,10 @@ const Question_Type = () => {
   };
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient p-6">
+    <div className="relative popup min-h-screen flex justify-center p-6">
+      <div className="fixed z-[-1] top-0 left-0 w-full h-full bg-cust bg-opacity-50 bg-custom-gradient"></div>
+      <div className="fixed z-[-2] top-0 left-0 w-full h-full bg-[#02000F] "></div>
+      <div className="w-full h-full">
         <a href="/">
           <div className="flex items-end gap-4">
             <img src="aossie_transparent.png" alt="logo" className="w-24 my-6 block" />

@@ -3,6 +3,8 @@ import "../index.css";
 import logo from "../assets/aossie_logo.png";
 import stars from "../assets/stars.png";
 import { FaArrowRight } from "react-icons/fa";
+import logoPNG from "../assets/aossie_logo_transparent.png";
+
 
 const Previous = () => {
   const getQuizzesFromLocalStorage = () => {
@@ -27,12 +29,14 @@ const Previous = () => {
   };
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex flex-col justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
+    <div className="relative popup w-full min-h-screen flex flex-col items-center">
+       <div className="fixed z-[-1] top-0 left-0 w-full h-full bg-cust bg-opacity-50 bg-custom-gradient"></div>
+       <div className="fixed z-[-2] top-0 left-0 w-full h-full bg-[#02000F] "></div>
+      <div className="w-full h-full">
         <a href="/">
-          <div className="flex items-end gap-[2px]">
-            <img src="Aossie_transparent.png" alt="logo" className="w-16 my-4 ml-4 block" />
-            <div className="text-2xl mb-3 font-extrabold">
+          <div className="flex items-end gap-4">
+            <img src={logoPNG} alt="logo" className="w-24 my-6 ml-6 block" />
+            <div className="text-5xl mb-5 font-extrabold">
               <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
                 Edu
               </span>

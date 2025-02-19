@@ -344,13 +344,14 @@ const Output = () => {
 };
 
   return (
-    <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-        <div className="flex flex-col h-full">
+    <div className="relative popup w-full min-h-screen flex justify-center overflow-auto">
+      <div className="fixed z-[-1] top-0 left-0 w-full h-full bg-cust bg-opacity-50 bg-custom-gradient"></div>
+      <div className="fixed z-[-2] top-0 left-0 w-full h-full bg-[#02000F] "></div>
+        <div className="flex flex-col h-full w-full">
           <a href="/">
-            <div className="flex items-end gap-[2px]">
-              <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
-              <div className="text-2xl mb-3 font-extrabold">
+            <div className="flex items-end gap-4">
+              <img src={logoPNG} alt="logo" className="w-16 my-6 ml-6 block" />
+              <div className="text-4xl mb-5 font-extrabold">
                 <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
                   Edu
                 </span>
@@ -447,7 +448,6 @@ const Output = () => {
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 };
