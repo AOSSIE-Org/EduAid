@@ -214,7 +214,6 @@ class BoolQGenerator:
             torch.cuda.manual_seed_all(seed)
     
     def random_choice(self):
-        """Returns a random boolean (True or False)."""
         return random.choice([True, False])
     
     def tokenize_into_sentences(self, text):
