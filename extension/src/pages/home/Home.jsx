@@ -123,6 +123,24 @@ function Home() {
           </div>
 
           <div
+            onClick={() => handleOptionClick("get_matching")}
+            className={`flex my-3 items-center mx-3 cursor-pointer rounded-xl gap-4 px-4 py-4 bg-opacity-50 bg-[#202838] ${
+              selectedOption === "get_matching" ? "border border-[#405EED]" : ""
+            }`}
+          >
+            <div
+              className={`px-3 py-3 rounded-full ${
+                selectedOption === "get_matching"
+                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
+                  : "bg-[#999C9D]"
+              }`}
+            ></div>
+            <div className="text-white text-lg font-medium">
+              Matching Type Questions
+            </div>
+          </div>
+
+          <div
             onClick={() => handleOptionClick("get_problems")}
             className={`flex my-3 items-center mx-3 cursor-pointer rounded-xl gap-4 px-4 py-4 bg-opacity-50 bg-[#202838] ${
               selectedOption === "get_problems" ? "border border-[#405EED]" : ""

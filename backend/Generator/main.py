@@ -22,7 +22,14 @@ import re
 import os
 import fitz 
 import mammoth
-
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from nltk.tag import pos_tag
+from sklearn.feature_extraction.text import TfidfVectorizer
+from string import punctuation
+from itertools import combinations
+import pandas as pd
 class MCQGenerator:
     
     def __init__(self):
@@ -236,7 +243,70 @@ class BoolQGenerator:
         final['Boolean_Questions']= output
             
         return final
+    
+class MatchingGenerator:
+    def __init__(self):
+        # Load the T5 model and tokenizer
+        self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
+        self.model = T5ForConditionalGeneration.from_pretrained('t5-base')
+        self.nlp = spacy.load('en_core_web_sm')
+
+    def generate_matching(self, input_text, num_pairs):
+        """
+        Generate matching questions from input text.
+        
+        Args:
+            input_text (str): The source text to generate questions from
+            num_pairs (int): Number of matching pairs to generate
             
+        Returns:
+            dict: Contains matching_questions (list of pairs) and num_pairs (int)
+        """
+
+        if not input_text or not isinstance(input_text, str):
+            raise ValueError("Input text must be a non-empty string")
+
+        if not isinstance(num_pairs, int) or num_pairs < 1:
+            raise ValueError("num_pairs must be a positive integer")
+
+        doc = self.nlp(input_text)
+
+        matching_pairs = []
+        for sent in doc.sents:
+            entities = [(ent.text, ent.label_) for ent in sent.ents]
+
+            noun_chunks = [(chunk.text, 'NOUN_CHUNK') 
+                         for chunk in sent.noun_chunks 
+                         if len(chunk.text.split()) <= 3]  # Limit length of terms
+
+            all_candidates = entities + noun_chunks
+
+            for term, label in all_candidates:
+                context = sent.text
+                term_pattern = r'\b' + re.escape(term) + r'\b'
+                context = re.sub(term_pattern, '_____', context)
+
+                if '_____' in context:
+                    matching_pairs.append({
+                        'term': term.strip(),
+                        'definition': context.strip(),
+                        'type': label
+                    })
+
+        seen_terms = set()
+        unique_pairs = []
+        for pair in matching_pairs:
+            if pair['term'].lower() not in seen_terms:
+                seen_terms.add(pair['term'].lower())
+                unique_pairs.append(pair)
+
+        if len(unique_pairs) > num_pairs:
+            unique_pairs = random.sample(unique_pairs, num_pairs)
+
+        return {
+            'matching_questions': unique_pairs,
+            'num_pairs': len(unique_pairs)
+        }
 
 class AnswerPredictor:
           

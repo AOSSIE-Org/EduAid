@@ -53,6 +53,17 @@ def test_get_shortq():
     print(f'/get_shortq Response: {response}')
     assert 'output' in response
 
+def test_get_matching():
+    endpoint = '/get_matching'
+    data = {
+        'input_text': input_text,
+        'use_mediawiki': 0,
+        'num_pairs': 5
+    }
+    response = make_post_request(endpoint, data)
+    print(f'/get_matching Response: {response}')
+    assert 'output' in response
+
 def test_get_problems():
     endpoint = '/get_problems'
     data = {
@@ -116,3 +127,4 @@ if __name__ == '__main__':
     test_root()
     test_get_answer()
     test_get_boolean_answer()
+    test_get_matching()
