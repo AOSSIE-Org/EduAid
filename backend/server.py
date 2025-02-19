@@ -82,7 +82,7 @@ def get_shortq():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
+    max_questions = int(data.get("max_questions", 4))
     input_text = process_input_text(input_text, use_mediawiki)
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
@@ -90,28 +90,47 @@ def get_shortq():
     questions = output["questions"]
     return jsonify({"output": questions})
 
-
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions_mcq = data.get("max_questions_mcq", 4)
-    max_questions_boolq = data.get("max_questions_boolq", 4)
-    max_questions_shortq = data.get("max_questions_shortq", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output1 = MCQGen.generate_mcq(
-        {"input_text": input_text, "max_questions": max_questions_mcq}
-    )
-    output2 = BoolQGen.generate_boolq(
-        {"input_text": input_text, "max_questions": max_questions_boolq}
-    )
-    output3 = ShortQGen.generate_shortq(
-        {"input_text": input_text, "max_questions": max_questions_shortq}
-    )
-    return jsonify(
-        {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
-    )
+    try:
+        data = request.get_json()
+        input_text = data.get("input_text", "")
+        use_mediawiki = data.get("use_mediawiki", 0)
+        
+        # Get total number of questions and split equally
+        total_questions = int(data.get("max_questions", 12))  # Default to 12 if not provided
+        questions_per_type = total_questions // 3  # Divide equally among 3 types
+        
+        # Handle remaining questions if total is not divisible by 3
+        remaining = total_questions % 3
+        
+        # Distribute remaining questions
+        max_questions_mcq = questions_per_type + (1 if remaining > 0 else 0)
+        max_questions_boolq = questions_per_type + (1 if remaining > 1 else 0)
+        max_questions_shortq = questions_per_type + (1 if remaining > 2 else 0)
+
+        input_text = process_input_text(input_text, use_mediawiki)
+        
+        output1 = MCQGen.generate_mcq(
+            {"input_text": input_text, "max_questions": max_questions_mcq}
+        )
+        output2 = BoolQGen.generate_boolq(
+            {"input_text": input_text, "max_questions": max_questions_boolq}
+        )
+        output3 = ShortQGen.generate_shortq(
+            {"input_text": input_text, "max_questions": max_questions_shortq}
+        )
+        
+        return jsonify({
+            "output_mcq": output1,
+            "output_boolq": output2,
+            "output_shortq": output3
+        })
+
+    except ValueError as e:
+        return jsonify({"error": f"Invalid number format: {str(e)}"}), 400
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
@@ -369,8 +388,8 @@ def get_shortq_hard():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
-    output = qg.generate(
+    input_questions = int(data.get("max_question", 10))
+    output = qg.generate_shortq_hard(
         article=input_text, num_questions=input_questions, answer_style="sentences"
     )
     return jsonify({"output": output})
@@ -382,11 +401,71 @@ def get_mcq_hard():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
-    output = qg.generate(
+    input_questions = int(data.get("max_question", 10))
+    output = qg.generate_mcq_hard(
         article=input_text, num_questions=input_questions, answer_style="multiple_choice"
     )
     return jsonify({"output": output})
+
+@app.route("/get_boolq_hard", methods=["POST"])
+def get_boolq_hard():
+    data = request.get_json()
+    input_text = data.get("input_text", "")
+    use_mediawiki = data.get("use_mediawiki", 0)
+    input_text = process_input_text(input_text,use_mediawiki)
+    input_questions = int(data.get("max_question", 10))
+    output = qg.generate_boolq_hard(
+        article=input_text, num_questions=input_questions, answer_style="multiple_choice"
+    )
+    return jsonify({"output": output})
+
+@app.route("/get_problems_hard", methods=["POST"])
+def get_problems_hard():
+    try:
+        data = request.get_json()
+        input_text = data.get("input_text", "")
+        use_mediawiki = data.get("use_mediawiki", 0)
+        
+        # Get total number of questions and split equally
+        total_questions = int(data.get("max_questions", 12))  # Default to 12 if not provided
+        questions_per_type = total_questions // 3  # Divide equally among 3 types
+        
+        # Handle remaining questions if total is not divisible by 3
+        remaining = total_questions % 3
+        
+        # Distribute remaining questions
+        max_questions_mcq = questions_per_type + (1 if remaining > 0 else 0)
+        max_questions_boolq = questions_per_type + (1 if remaining > 1 else 0)
+        max_questions_shortq = questions_per_type + (1 if remaining > 2 else 0)
+
+        input_text = process_input_text(input_text, use_mediawiki)
+        
+        output1 = qg.generate_mcq_hard(
+            article=input_text, 
+            num_questions=max_questions_mcq, 
+            answer_style="multiple_choice"
+        )
+        output2 = qg.generate_boolq_hard(
+            article=input_text, 
+            num_questions=max_questions_boolq, 
+            answer_style="multiple_choice"
+        )
+        output3 = qg.generate_shortq_hard(
+            article=input_text, 
+            num_questions=max_questions_shortq, 
+            answer_style="sentences"
+        )
+        
+        return jsonify({
+            "output_mcq": output1,
+            "output_boolq": output2, 
+            "output_shortq": output3
+        })
+
+    except ValueError as e:
+        return jsonify({"error": f"Invalid number format: {str(e)}"}), 400
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -462,3 +541,4 @@ def get_transcript():
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
     app.run()
+

@@ -56,16 +56,83 @@ def find_similar_words(word, s2v_model):
 
 def get_answer_choices(answer, s2v_model):
     choices = []
-
+    
+    # Handle long phrases by breaking them into key terms
+    words = answer.split()
+    if (len(words) > 3):
+        # Extract key nouns/phrases for long answers
+        key_terms = extract_key_terms(answer)
+        if key_terms:
+            answer = key_terms[0]  # Use the most relevant key term
+    
     try:
-        choices = find_similar_words(answer, s2v_model)
-        if len(choices) > 0:
-            print("Generated choices successfully for word:", answer)
-            return choices, "sense2vec"
+        if len(answer.split()) <= 3:  # Only process relatively short phrases
+            choices = find_similar_words(answer, s2v_model)
+            if choices:
+                print(f"Generated choices successfully for: {answer}")
+                return choices, "sense2vec"
+        
+        # Fallback option generation if sense2vec fails
+        fallback_choices = generate_fallback_options(answer)
+        if fallback_choices:
+            return fallback_choices, "fallback"
+            
     except Exception as e:
-        print(f"Failed to generate choices for word: {answer}. Error: {e}")
+        print(f"Failed to generate choices for: {answer}. Error: {e}")
+    
+    # Default options if everything fails
+    return generate_default_options(answer), "default"
 
-    return choices, "None"
+def extract_key_terms(text):
+    """Extract key nouns from longer phrases."""
+    try:
+        # Use existing extract_noun_phrases function
+        key_terms = extract_noun_phrases(text)
+        if key_terms:
+            return key_terms
+        
+        # Fallback to simple noun extraction
+        words = text.split()
+        return [word for word in words if len(word) > 3][:3]
+    except:
+        return []
+
+def generate_fallback_options(answer):
+    """Generate alternative options when sense2vec fails."""
+    try:
+        # Split into words and generate variations
+        words = answer.lower().split()
+        options = []
+        
+        # Generate some variations
+        if len(words) == 1:
+            # For single words, use common variations
+            options = [
+                answer.upper(),
+                answer.title(),
+                f"Not {answer}",
+                f"Another {answer}"
+            ]
+        else:
+            # For phrases, create variations
+            options = [
+                " ".join(words[::-1]),  # Reverse words
+                f"Alternative {answer}",
+                f"Different {answer}",
+                f"Modified {answer}"
+            ]
+            
+        return options[:3]  # Return top 3 options
+    except:
+        return []
+
+def generate_default_options(answer):
+    """Generate default options when all else fails."""
+    return [
+        f"Not {answer}",
+        f"Alternative to {answer}",
+        f"Different from {answer}"
+    ]
 
 def tokenize_into_sentences(text):
     sentences = [sent_tokenize(text)]
@@ -149,24 +216,49 @@ def identify_keywords(nlp_model, text, max_keywords, s2v_model, fdist, normalize
     doc = nlp_model(text)
     max_keywords = int(max_keywords)
 
+    # Extract noun phrases and phrases with weights
     keywords = extract_noun_phrases(text)
-    keywords = sorted(keywords, key=lambda x: fdist[x])
-    keywords = filter_useful_phrases(keywords, max_keywords, normalized_levenshtein)
+    if not keywords:
+        # Fallback to basic noun chunks if no keyphrases found
+        keywords = [chunk.text for chunk in doc.noun_chunks]
+    
+    # Sort by frequency and filter
+    keywords = sorted(keywords, key=lambda x: fdist[x.lower()], reverse=True)
+    keywords = filter_useful_phrases(keywords, max_keywords * 2, normalized_levenshtein)
 
+    # Get additional phrases as backup
     phrase_keys = extract_phrases_from_doc(doc)
-    filtered_phrases = filter_useful_phrases(phrase_keys, max_keywords, normalized_levenshtein)
+    filtered_phrases = filter_useful_phrases(phrase_keys, max_keywords * 2, normalized_levenshtein)
 
+    # Combine and filter all phrases
     total_phrases = keywords + filtered_phrases
+    total_phrases = list(dict.fromkeys(total_phrases))  # Remove duplicates
 
-    total_phrases_filtered = filter_useful_phrases(total_phrases, min(max_keywords, 2 * num_sentences), normalized_levenshtein)
+    # Ensure we have enough phrases
+    if len(total_phrases) < max_keywords:
+        # Add single-token keywords if needed
+        tokens = [token.text for token in doc if not token.is_stop and token.is_alpha]
+        tokens = sorted(tokens, key=lambda x: fdist[x.lower()], reverse=True)
+        total_phrases.extend(tokens)
 
+    # Filter phrases by sense2vec availability
     answers = []
-    for answer in total_phrases_filtered:
+    for answer in total_phrases:
+        if len(answers) >= max_keywords:
+            break
         if answer not in answers and is_word_available(answer, s2v_model):
             answers.append(answer)
+        
+    # If still not enough, reduce filtering criteria
+    if len(answers) < max_keywords:
+        for answer in total_phrases:
+            if answer not in answers:
+                answers.append(answer)
+            if len(answers) >= max_keywords:
+                break
 
-    answers = answers[:max_keywords]
-    return answers
+    print(f"Found {len(answers)} keywords out of {max_keywords} requested")
+    return answers[:max_keywords]
 
 def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, model, sense2vec_model, normalized_levenshtein):
     batch_text = []
@@ -184,8 +276,8 @@ def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, 
 
     with torch.no_grad():
         outputs = model.generate(input_ids=input_ids,
-                                 attention_mask=attention_masks,
-                                 max_length=150)
+                               attention_mask=attention_masks,
+                               max_length=150)
 
     generated_questions = []
     for index, answer in enumerate(answers):
@@ -194,18 +286,33 @@ def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, 
 
         question_statement = decoded_question.replace("question:", "").strip()
         options, options_algorithm = get_answer_choices(answer, sense2vec_model)
-        options = filter_useful_phrases(options, 10, normalized_levenshtein)
-        extra_options = options[3:]
-        options = options[:3]
+        
+        # Filter and prepare options
+        options = filter_useful_phrases(options, 3, normalized_levenshtein)  # Only need 3 distractors
+        
+        # Ensure exactly 3 distractors
+        if len(options) > 3:
+            options = options[:3]  # Take only first 3 if we have more
+        else:
+            # If we have fewer than 3 options, add default options
+            while len(options) < 3:
+                default_option = f"Alternative {len(options) + 1} to {answer}"
+                options.append(default_option)
 
+        # Create final options list with exactly 4 options (answer + 3 distractors)
+        all_options = [answer] + options[:3]  # Ensure exactly 4 options
+        
+        # Shuffle options to randomize answer position
+        import random
+        random.shuffle(all_options)
+        
         question_data = {
             "question_statement": question_statement,
             "question_type": "MCQ",
             "answer": answer,
             "id": index + 1,
-            "options": options,
+            "options": all_options,  # Now guaranteed to have exactly 4 options
             "options_algorithm": options_algorithm,
-            "extra_options": extra_options,
             "context": keyword_sent_mapping[answer]
         }
 

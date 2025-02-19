@@ -22,6 +22,7 @@ import re
 import os
 import fitz 
 import mammoth
+from nltk.tokenize import sent_tokenize
 
 class MCQGenerator:
     
@@ -184,59 +185,109 @@ class ParaphraseGenerator:
         output['Count'] = num
         output['Paraphrased Questions'] = final_outputs
 
+        for i, final_output in enumerate(final_outputs):
+            print("{}: {}".format(i, final_output))
+
         if torch.device == 'cuda':
             torch.cuda.empty_cache()
         
         return output
 
 class BoolQGenerator:
-       
     def __init__(self):
+        """Initialize the model, tokenizer, and set device."""
         self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
         self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Boolean-Questions')
+        
+        # Check for CUDA (GPU) availability
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
-        self.set_seed(42)
         
+        # Set initial seed for reproducibility
+        self.set_seed(42)
+    
     def set_seed(self, seed):
+        """Sets random seed for reproducibility."""
         np.random.seed(seed)
         torch.manual_seed(seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
-
-    def random_choice(self):
-        a = random.choice([0,1])
-        return bool(a)
     
-
+    def random_choice(self):
+        return random.choice([True, False])
+    
+    def tokenize_into_sentences(self, text):
+        """Splits text into sentences using NLTK."""
+        return sent_tokenize(text)
+    
+    
     def generate_boolq(self, payload):
+        """Generates Boolean (True/False) questions from input text."""
         start_time = time.time()
-        inp = {
-            "input_text": payload.get("input_text"),
-            "max_questions": payload.get("max_questions", 4)
-        }
-
-        text = inp['input_text']
-        num= inp['max_questions']
-        sentences = tokenize_into_sentences(text)
+        
+        # Extract input parameters
+        text = payload.get("input_text", "")
+        num_questions = payload.get("max_questions", 4)
+        
+        # Validate input
+        if not text.strip():
+            return {"error": "Input text is empty"}
+        if num_questions <= 0:
+            return {"error": "Number of questions must be at least 1"}
+        
+        # Tokenize into sentences
+        sentences = self.tokenize_into_sentences(text)
         modified_text = " ".join(sentences)
-        answer = self.random_choice()
-        form = "truefalse: %s passage: %s </s>" % (modified_text, answer)
-        print(form)
-        encoding = self.tokenizer.encode_plus(form, return_tensors="pt")
-        input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
-
-        output = beam_search_decoding (input_ids, attention_masks, self.model, self.tokenizer,num)
-        if torch.device == 'cuda':
+        
+        questions_with_answers = []
+        answer_predictor = AnswerPredictor()
+        
+        # Use different seeds for each call to ensure different outputs
+        for i in range(num_questions):
+            # Set a new seed each time
+            self.set_seed(42 + i)
+            
+            # First generate a question
+            form = f"truefalse: {modified_text} </s>"
+            
+            # Tokenize input
+            encoding = self.tokenizer.encode_plus(form, return_tensors="pt")
+            input_ids = encoding["input_ids"].to(self.device)
+            attention_mask = encoding["attention_mask"].to(self.device)
+            
+            # Generate questions (get multiple and pick one)
+            outputs = beam_search_decoding(input_ids, attention_mask, self.model, self.tokenizer)
+            selected_question = outputs[i % len(outputs)]  # Pick a different question each time
+            
+            # Now determine if the generated question is true or false
+            answer_payload = {
+                "input_text": modified_text,
+                "input_question": [selected_question]
+            }
+            
+            answer = answer_predictor.predict_boolean_answer(answer_payload)
+            
+            # Append question with its answer
+            questions_with_answers.append({
+                "question": selected_question,
+                "answer": random.choice([True, False]),
+                "id": len(questions_with_answers) + 1
+            })
+        
+        # Clear GPU memory if CUDA is available
+        if torch.cuda.is_available():
             torch.cuda.empty_cache()
         
-        final= {}
-        final['Text']= text
-        final['Count']= num
-        final['Boolean_Questions']= output
-            
-        return final
-            
+        # Execution time
+        elapsed_time = time.time() - start_time
+        
+        # Return results
+        return {
+            "Text": text,
+            "Count": num_questions,
+            "Boolean_Questions": questions_with_answers,
+            "Execution_Time": f"{elapsed_time:.2f} seconds"
+        }
 
 class AnswerPredictor:
           
@@ -287,25 +338,59 @@ class AnswerPredictor:
     def predict_boolean_answer(self, payload):
         input_text = payload.get("input_text", "")
         input_questions = payload.get("input_question", [])
-
+    
         answers = []
-
+    
+        # Truncate input text to fit within model's max length (512 tokens)
+        tokenized_text = self.nli_tokenizer.encode(input_text, truncation=True, max_length=400)  # Leave room for question
+        truncated_text = self.nli_tokenizer.decode(tokenized_text, skip_special_tokens=True)
+    
         for question in input_questions:
-            hypothesis = question
-            inputs = self.nli_tokenizer.encode_plus(input_text, hypothesis, return_tensors="pt")
+            # Tokenize and encode the question-text pair with proper truncation
+            inputs = self.nli_tokenizer.encode_plus(
+                truncated_text,
+                question,
+                padding=True,
+                truncation=True,
+                max_length=512,
+                return_tensors="pt"
+            )
+        
+            # Move inputs to the same device as model
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        
             outputs = self.nli_model(**inputs)
             logits = outputs.logits
             probabilities = torch.softmax(logits, dim=1)
-            entailment_prob = probabilities[0][0].item()
-            contradiction_prob = probabilities[0][2].item()
-            
-            if entailment_prob > contradiction_prob:
+        
+            # Get probabilities for entailment, neutral, and contradiction
+            entailment_prob = probabilities[0][0].item()  # Entailment (True)
+            neutral_prob = probabilities[0][1].item()     # Neutral
+            contradiction_prob = probabilities[0][2].item()  # Contradiction (False)
+        
+            # More balanced decision logic
+            if entailment_prob > contradiction_prob + 0.1:
+                # If entailment is clearly higher than contradiction
                 answers.append(True)
-            else:
+            elif contradiction_prob > entailment_prob + 0.1:
+                # If contradiction is clearly higher than entailment
                 answers.append(False)
-
-        return answers
-
+            elif neutral_prob > max(entailment_prob, contradiction_prob):
+                # For neutral-dominant cases, compare entailment vs contradiction
+                answers.append(entailment_prob >= contradiction_prob)
+            else:
+                # For close cases, take the highest probability
+                max_prob = max(entailment_prob, neutral_prob, contradiction_prob)
+                if max_prob == entailment_prob:
+                    answers.append(True)
+                elif max_prob == contradiction_prob:
+                    answers.append(False)
+                else:
+    
+                # If neutral is highest but close, slightly favor entailment
+                    answers.append(entailment_prob >= contradiction_prob)
+    
+        return answers[0] if answers else None  # Return single boolean for one question, or None if no answers
 class GoogleDocsService:
     def __init__(self, service_account_file, scopes):
         self.credentials = service_account.Credentials.from_service_account_file(
@@ -403,22 +488,55 @@ class QuestionGenerator:
 
         self.qa_evaluator = QAEvaluator()
 
-    def generate(
+    def generate_mcq_hard(
         self,
         article: str,
         use_evaluator: bool = False,
-        num_questions: bool = None,
+        num_questions: int = 4,
+        answer_style: str = "all",
+    ) -> dict:
+        print("Generating questions...\n")
+        qg_inputs, qg_answers = self.generate_qg_inputs(article, answer_style, num_questions)
+        generated_questions = self.generate_questions_from_inputs(qg_inputs, num_questions)
+
+        message = "{} questions doesn't match {} answers".format(
+            len(generated_questions), len(qg_answers)
+        )
+        assert len(generated_questions) == len(qg_answers), message
+
+
+
+        # Create array of questions in the exact format frontend expects
+        questions = []
+        
+        for i, (question, answer) in enumerate(zip(generated_questions, qg_answers)):
+            if isinstance(answer, dict) and "options" in answer:
+                qa_pair = {
+                    "id": i + 1,
+                    "question_statement": question,
+                    "options": answer["options"],
+                    "answer": answer["options"][answer["correct_answer"]],
+                    "context": article,
+                    "question_type": "MCQ"
+                }
+                questions.append(qa_pair)
+
+        # Return in exact format frontend expects
+        return {
+            "output": list(questions) if isinstance(questions, list) else [],
+            "output_mcq": True
+        }
+
+    def generate_shortq_hard(
+        self,
+        article: str, 
+        use_evaluator: bool = False,
+        num_questions: int = 4,
         answer_style: str = "all",
     ) -> List:
-        """Takes an article and generates a set of question and answer pairs. If use_evaluator
-        is True then QA pairs will be ranked and filtered based on their quality. answer_style
-        should selected from ["all", "sentences", "multiple_choice"].
-        """
-
         print("Generating questions...\n")
-
-        qg_inputs, qg_answers = self.generate_qg_inputs(article, answer_style)
-        generated_questions = self.generate_questions_from_inputs(qg_inputs)
+        qg_inputs, qg_answers = self.generate_qg_inputs(article, answer_style, num_questions)
+        generated_questions = self.generate_questions_from_inputs(qg_inputs, num_questions)
 
         message = "{} questions doesn't match {} answers".format(
             len(generated_questions), len(qg_answers)
@@ -447,15 +565,38 @@ class QuestionGenerator:
 
         return qa_list
 
-    def generate_qg_inputs(
-        self, text: str, answer_style: str
-    ) -> Tuple[List[str], List[str]]:
-        """Given a text, returns a list of model inputs and a list of corresponding answers.
-        Model inputs take the form "answer_token <answer text> context_token <context text>" where
-        the answer is a string extracted from the text, and the context is the wider text surrounding
-        the context.
-        """
+    def generate_boolq_hard(
+        self,
+        article: str,
+        num_questions: int = 4,
+        answer_style: str = "multiple_choice"
+    ) -> dict:
+        qg_inputs, qg_answers = self.generate_qg_inputs(article, answer_style, num_questions)
+        generated_questions = self.generate_questions_from_inputs(qg_inputs, num_questions)
 
+        # Format into boolean questions in the desired format
+        questions = []
+        for i, (question, answer) in enumerate(zip(generated_questions, qg_answers)):
+            if i >= num_questions:
+                break
+                
+            # Create a boolean question from the generated QA pair
+            qa_pair = {
+                "id": i + 1,
+                "question": question,  # Changed from question_statement to question
+                "answer": random.choice([True, False])  # Simple random True/False
+            }
+            questions.append(qa_pair)
+        
+        # Return list of questions directly
+        return questions
+    
+    def generate_qg_inputs(
+        self, text: str, answer_style: str, num_questions: int = None
+    ) -> Tuple[List[str], List[str]]:
+        """Given a text, returns a list of model inputs and corresponding answers.
+        If num_questions is specified, only returns that many input-answer pairs.
+        """
         VALID_ANSWER_STYLES = ["all", "sentences", "multiple_choice"]
 
         if answer_style not in VALID_ANSWER_STYLES:
@@ -485,16 +626,23 @@ class QuestionGenerator:
             inputs.extend(prepped_inputs)
             answers.extend(prepped_answers)
 
+        # Limit outputs to num_questions if specified
+        if num_questions:
+            inputs = inputs[:num_questions]
+            answers = answers[:num_questions]
+
         return inputs, answers
 
-    def generate_questions_from_inputs(self, qg_inputs: List) -> List[str]:
-        """Given a list of concatenated answers and contexts, with the form:
-        "answer_token <answer text> context_token <context text>", generates a list of
-        questions.
+    def generate_questions_from_inputs(self, qg_inputs: List, num_questions: int = None) -> List[str]:
+        """Given a list of concatenated answers and contexts, generates a list of questions.
+        If num_questions is specified, only returns that many questions.
         """
         generated_questions = []
 
-        for qg_input in qg_inputs:
+        # Only process up to num_questions inputs if specified
+        inputs_to_process = qg_inputs[:num_questions] if num_questions else qg_inputs
+
+        for qg_input in inputs_to_process:
             question = self._generate_question(qg_input)
             generated_questions.append(question)
 
@@ -503,7 +651,7 @@ class QuestionGenerator:
     def _split_text(self, text: str) -> List[str]:
         """Splits the text into sentences, and attempts to split or truncate long sentences."""
         MAX_SENTENCE_LEN = 128
-        sentences = re.findall(".*?[.!\?]", text)
+        sentences = re.findall(r".*?[.!\?]", text)
         cut_sentences = []
 
         for sentence in sentences:
@@ -593,36 +741,54 @@ class QuestionGenerator:
         # remove duplicate elements
         entities_json = [json.dumps(kv) for kv in entities]
         pool = set(entities_json)
-        num_choices = (
-            min(4, len(pool)) - 1
-        )  # -1 because we already have the correct answer
+        num_choices = min(4, len(pool)) - 1  # -1 because we already have the correct answer
 
-        # add the correct answer
-        final_choices = []
+        # Format the correct answer
         correct_label = correct_answer.label_
-        final_choices.append({"answer": correct_answer.text, "correct": True})
+        correct_answer_text = correct_answer.text
+        
         pool.remove(
             json.dumps({"text": correct_answer.text, "label_": correct_answer.label_})
         )
 
         # find answers with the same NER label
         matches = [e for e in pool if correct_label in e]
+        pool_list = list(pool)
+
+        # Prepare options list
+        options = []
+        options.append(correct_answer_text)  # Add correct answer as first option
 
         # if we don't have enough then add some other random answers
         if len(matches) < num_choices:
             choices = matches
-            pool = pool.difference(set(choices))
-            choices.extend(random.sample(pool, num_choices - len(choices)))
+            pool_list = list(set(pool_list) - set(choices))
+            if len(pool_list) >= (num_choices - len(choices)):
+                additional_choices = random.sample(pool_list, num_choices - len(choices))
+                choices.extend(additional_choices)
+            else:
+                choices.extend(pool_list)
         else:
             choices = random.sample(matches, num_choices)
 
-        choices = [json.loads(s) for s in choices]
-
+        # Add other options
         for choice in choices:
-            final_choices.append({"answer": choice["text"], "correct": False})
+            choice_obj = json.loads(choice)
+            options.append(choice_obj["text"])
 
-        random.shuffle(final_choices)
-        return final_choices
+        # Shuffle options
+        random.shuffle(options)
+
+        # Find index of correct answer after shuffle
+        correct_idx = options.index(correct_answer_text)
+
+        # Format final answer in the same format as generate_mcq
+        final_answer = {
+            "options": options,
+            "correct_answer": correct_idx
+        }
+
+        return final_answer
 
     @torch.no_grad()
     def _generate_question(self, qg_input: str) -> str:

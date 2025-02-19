@@ -8,12 +8,12 @@ def greedy_decoding (inp_ids,attn_mask,model,tokenizer):
   return Question.strip().capitalize()
 
 
-def beam_search_decoding (inp_ids,attn_mask,model,tokenizer,num):
+def beam_search_decoding (inp_ids,attn_mask,model,tokenizer):
   beam_output = model.generate(input_ids=inp_ids,
                                  attention_mask=attn_mask,
                                  max_length=256,
                                num_beams=10,
-                               num_return_sequences=num,
+                               num_return_sequences=3,
                                no_repeat_ngram_size=2,
                                early_stopping=True
                                )
