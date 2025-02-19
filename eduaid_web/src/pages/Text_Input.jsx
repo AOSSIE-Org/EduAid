@@ -271,14 +271,16 @@ const Text_Input = () => {
               +
             </button>
           </div>
-          <div className="text-center mt-2 mb-2">
+          <div className="flex items-center gap-4 mt-2 mb-2">
+            <div className="text-white text-xl font-bold">Difficulty:</div>
             <select
               value={difficulty}
               onChange={handleDifficultyChange}
               className="bg-[#3e5063] text-white text-lg rounded-xl p-2 outline-none"
             >
-              <option value="Easy Difficulty">Easy Difficulty</option>
-              <option value="Hard Difficulty">Hard Difficulty</option>
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
             </select>
           </div>
           <div className="flex gap-2">
