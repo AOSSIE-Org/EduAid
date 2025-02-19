@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import "../index.css";
 import logo from "../assets/aossie_logo.png";
+import logoPNG from "../assets/aossie_logo_transparent.png";
 import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
@@ -162,21 +163,23 @@ const Text_Input = () => {
   };
 
   return (
-    <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen">
+    <div className="relative popup min-h-screen w-full">
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
           <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
         </div>
       )}
+        <div className="fixed z-[-1] top-0 left-0 w-full h-full bg-cust bg-opacity-50 bg-custom-gradient"></div>
+        <div className="fixed z-[-2] top-0 left-0 w-full h-full bg-[#02000F] "></div>
       <div
-        className={`w-full h-full bg-cust bg-opacity-50 ${
+        className={`w-full h-full ${
           loading ? "pointer-events-none" : ""
         }`}
       >
         <a href="/">
-          <div className="flex items-end gap-[2px]">
-            <img src={logo} alt="logo" className="w-24 my-6 ml-6 block" />
-            <div className="text-4xl mb-5 font-extrabold">
+          <div className="flex items-end gap-4">
+            <img src={logoPNG} alt="logo" className="w-24 my-6 ml-6 block" />
+            <div className="text-5xl mb-5 font-extrabold">
               <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
                 Edu
               </span>
