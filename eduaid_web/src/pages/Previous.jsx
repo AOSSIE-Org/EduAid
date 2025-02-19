@@ -30,7 +30,11 @@ const Previous = () => {
     <div className="popup w-screen h-screen bg-[#02000F] flex flex-col justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <a href="/">
-          
+          <div className="flex items-end  gap-[2px]">
+            <img src={logo} alt="logo" className="w-24 my-4 ml-4 block" />
+          </div>
+          <div className="flex items-center justify-center gap-[2px]">
+            <div className="text-6xl mb-14 font-extrabold">
               <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
                 Edu
               </span>
