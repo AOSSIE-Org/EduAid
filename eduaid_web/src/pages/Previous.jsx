@@ -26,6 +26,10 @@ const Previous = () => {
     window.location.href = "/";
   };
 
+  const truncateText = (text, maxLength) => {
+    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+  };
+
   return (
     <div className="popup w-screen h-screen bg-[#02000F] flex flex-col justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
@@ -64,7 +68,7 @@ const Previous = () => {
             </div>
           ) : (
             <ul className="space-y-2 max-h-96 overflow-y-auto">
-              {quizzes.map((quiz, index) => (
+              {/* {quizzes.map((quiz, index) => (
                 <li
                   key={index}
                   className="bg-[#202838] p-4 rounded-lg text-white cursor-pointer border-dotted border-2 border-[#7600F2] flex justify-between items-center"
@@ -72,11 +76,38 @@ const Previous = () => {
                 >
                   <div>
                     <div className="font-bold">
-                      {quiz.difficulty} - {quiz.numQuestions} Questions
+                      {quiz.difficulty} - {quiz.numQuestions} - {quiz.data} Questions
                     </div>
                     <div className="mt-2 text-sm">{quiz.date}</div>
                   </div>
                   <FaArrowRight className="text-[#7600F2]" size={20} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div> */}
+        {quizzes.slice().reverse().map((quiz, index) => (
+                <li
+                  key={index}
+                  className="bg-[#202838] p-4 rounded-lg text-white cursor-pointer border-dotted border-2 border-[#7600F2] flex flex-col"
+                  onClick={() => handleQuizClick(quiz)}
+                >
+                  <div className="font-bold flex justify-between items-center">
+                    <span>
+                      {quiz.difficulty} - {quiz.numQuestions} Questions
+                    </span>
+                    <FaArrowRight className="text-[#7600F2]" size={20} />
+                  </div>
+                  <div
+                   className="text-sm text-gray-300 mt-2 truncate break-words"
+                    title={quiz.data || "Not provided"}
+                  >
+                 <strong>Topic:</strong> {truncateText(quiz.data || "Not provided", 100)}
+                 </div>
+
+                  <div className="text-sm text-gray-300 mt-1">
+                    <strong>Date:</strong> {quiz.date}
+                  </div>
                 </li>
               ))}
             </ul>

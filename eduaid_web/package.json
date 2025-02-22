@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@material/icon-button": "^14.0.0",
+    "@mui/icons-material": "^6.4.0",
+    "@mui/material": "^6.4.0",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -14,6 +19,7 @@
     "react-router-dom": "^6.26.0",
     "react-scripts": "5.0.1",
     "react-switch": "^7.0.0",
+    "styled-components": "^6.1.14",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

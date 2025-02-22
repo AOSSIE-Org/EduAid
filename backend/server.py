@@ -24,6 +24,7 @@ from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
+# from mediawikiapi.exceptions import PageError
 
 app = Flask(__name__)
 CORS(app)
@@ -47,6 +48,15 @@ def process_input_text(input_text, use_mediawiki):
     if use_mediawiki == 1:
         input_text = mediawikiapi.summary(input_text,8)
     return input_text
+
+
+# def process_input_text(input_text, use_mediawiki):
+#     try:
+#         if use_mediawiki == 1:
+#             input_text = mediawikiapi.summary(input_text, 8)
+#         return input_text
+#     except PageError:
+#         return f"No matching Wikipedia page found for: {input_text}"
 
 
 @app.route("/get_mcq", methods=["POST"])
