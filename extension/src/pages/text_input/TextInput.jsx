@@ -61,42 +61,48 @@ function Second() {
   };
 
   const handleSaveToLocalStorage = async () => {
+    // Validation: Check if input text or file content is provided
+    if (!text.trim() && !fileContent && !docUrl.trim()) {
+      alert("Please enter content, upload a file, or provide a Google Doc URL before proceeding.");
+      return;
+    }
+  
     setLoading(true);
-
+  
     // Check if a Google Doc URL is provided
-    if (docUrl) {
+    if (docUrl.trim()) {
       try {
         const response = await fetch('http://localhost:5000/get_content', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ document_url: docUrl })
+          body: JSON.stringify({ document_url: docUrl }),
         });
-
+  
         if (response.ok) {
           const data = await response.json();
-          setDocUrl("")
+          setDocUrl("");
           setText(data || "Error in retrieving");
         } else {
-          console.error('Error retrieving Google Doc content');
-          setText('Error retrieving Google Doc content');
+          console.error("Error retrieving Google Doc content");
+          setText("Error retrieving Google Doc content");
         }
       } catch (error) {
-        console.error('Error:', error);
-        setText('Error retrieving Google Doc content');
+        console.error("Error:", error);
+        setText("Error retrieving Google Doc content");
       } finally {
         setLoading(false);
         chrome.storage.local.remove(["selectedText"], () => {
           console.log("Chrome storage cleared");
         });
       }
-    } else if (text) {
+    } else if (text.trim()) {
       // Proceed with existing functionality for local storage
       localStorage.setItem("textContent", text);
       localStorage.setItem("difficulty", difficulty);
       localStorage.setItem("numQuestions", numQuestions);
-
+  
       await sendToBackend(
         text,
         difficulty,
@@ -104,7 +110,7 @@ function Second() {
       );
     }
   };
-
+  
   const handleDifficultyChange = (e) => {
     setDifficulty(e.target.value);
   };

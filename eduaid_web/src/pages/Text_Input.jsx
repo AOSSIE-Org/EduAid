@@ -48,47 +48,51 @@ const Text_Input = () => {
     fileInputRef.current.click();
   };
 
-  const handleSaveToLocalStorage = async () => {
-    setLoading(true);
+const handleSaveToLocalStorage = async () => {
+  if (!text.trim() && !fileContent.trim() && !docUrl.trim()) {
+    alert("Please provide input (text, file, or URL) to generate your quiz");
+    return;
+  }
 
-    // Check if a Google Doc URL is provided
-    if (docUrl) {
-      try {
-        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/get_content`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ document_url: docUrl }),
-        });
+  setLoading(true);
 
-        if (response.ok) {
-          const data = await response.json();
-          setDocUrl("");
-          setText(data || "Error in retrieving");
-        } else {
-          console.error("Error retrieving Google Doc content");
-          setText("Error retrieving Google Doc content");
-        }
-      } catch (error) {
-        console.error("Error:", error);
+  if (docUrl) {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BASE_URL}/get_content`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ document_url: docUrl }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setDocUrl("");
+        setText(data || "Error in retrieving");
+      } else {
+        console.error("Error retrieving Google Doc content");
         setText("Error retrieving Google Doc content");
-      } finally {
-        setLoading(false);
       }
-    } else if (text) {
-      // Proceed with existing functionality for local storage
-      localStorage.setItem("textContent", text);
-      localStorage.setItem("difficulty", difficulty);
-      localStorage.setItem("numQuestions", numQuestions);
-
-      await sendToBackend(
-        text,
-        difficulty,
-        localStorage.getItem("selectedQuestionType")
-      );
+    } catch (error) {
+      console.error("Error:", error);
+      setText("Error retrieving Google Doc content");
+    } finally {
+      setLoading(false);
     }
-  };
+  } else if (text) {
+    localStorage.setItem("textContent", text);
+    localStorage.setItem("difficulty", difficulty);
+    localStorage.setItem("numQuestions", numQuestions);
+
+    await sendToBackend(
+      text,
+      difficulty,
+      localStorage.getItem("selectedQuestionType")
+    );
+  }
+};
+
 
   const handleDifficultyChange = (e) => {
     setDifficulty(e.target.value);
