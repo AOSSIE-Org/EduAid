@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import "../index.css";
 import logo from "../assets/aossie_logo.png";
 import stars from "../assets/stars.png";
+import loader from "../assets/loader.gif"
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
@@ -162,10 +163,20 @@ const Text_Input = () => {
   };
 
   return (
-    <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen">
+    <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen pb-6">
       {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
-          <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 pointer-events-auto">
+          <div className="flex flex-col items-center">
+            {/* Spinner */}
+            <img src={loader} alt="" />
+            {/* Cancel Button */}
+            <button
+              className="px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700"
+              onClick={() => setLoading(false)} // Stops loading when clicked
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
       <div

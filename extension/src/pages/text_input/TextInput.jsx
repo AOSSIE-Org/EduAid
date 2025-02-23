@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import "../../index.css";
 import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
+import loader from "../../assets/loader.gif"
 import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
 import { FaClipboard , FaWikipediaW  } from "react-icons/fa";
@@ -178,8 +179,18 @@ function Second() {
   return (
     <div className="popup w-42rem h-35rem bg-[#02000F] flex justify-center items-center">
       {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
-          <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 pointer-events-auto">
+          <div className="flex flex-col items-center">
+            {/* Spinner */}
+            <img src={loader} alt="" />
+            {/* Cancel Button */}
+            <button
+              className="px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700"
+              onClick={() => setLoading(false)} // Stops loading when clicked
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
       <div

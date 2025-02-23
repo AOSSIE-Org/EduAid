@@ -27,8 +27,8 @@ const Previous = () => {
   };
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex flex-col justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
+    <div className="popup w-screen h-full bg-[#02000F] flex flex-col justify-center items-center">
+      <div className="w-full min-h-screen bg-cust bg-opacity-50 bg-custom-gradient pb-4">
         <a href="/">
           <div className="flex items-end gap-[2px]">
             <img src="Aossie_transparent.png" alt="logo" className="w-16 my-4 ml-4 block" />
