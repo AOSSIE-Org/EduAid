@@ -177,11 +177,11 @@ function Second() {
 
   return (
     <div className="popup w-42rem h-35rem bg-[#02000F] flex justify-center items-center">
-      {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
-          <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
-        </div>
-      )}
+         {loading && (
+     <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
+      <img src="/spinner.svg" alt="Loading..." className="w-16 h-16 animate-spin" />
+     </div>
+    )}
       <div
         className={`w-full h-full bg-cust bg-opacity-50 bg-custom-gradient ${loading ? "pointer-events-none" : ""
           }`}

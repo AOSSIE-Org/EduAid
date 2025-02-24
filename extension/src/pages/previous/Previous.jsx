@@ -1,18 +1,18 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
+import React, { useState } from "react";
+import ReactDOM from "react-dom";
 import "../../index.css";
 import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
-import { FaClipboard } from "react-icons/fa";
-import { FaArrowRight } from "react-icons/fa"; // Import the enter icon
+import { FaArrowRight } from "react-icons/fa";
 
 const Previous = () => {
   const getQuizzesFromLocalStorage = () => {
-    const quizzes = localStorage.getItem('last5Quizzes');
+    const quizzes = localStorage.getItem("last5Quizzes");
     return quizzes ? JSON.parse(quizzes) : [];
   };
 
-  const [quizzes, setQuizzes] = React.useState(getQuizzesFromLocalStorage());
+  const [quizzes, setQuizzes] = useState(getQuizzesFromLocalStorage());
+  const [selectedQuizzes, setSelectedQuizzes] = useState([]);
 
   const handleQuizClick = (quiz) => {
     localStorage.setItem("qaPairs", JSON.stringify(quiz.qaPair));
@@ -20,12 +20,30 @@ const Previous = () => {
   };
 
   const handleClearQuizzes = () => {
-    localStorage.removeItem('last5Quizzes');
+    localStorage.removeItem("last5Quizzes");
     setQuizzes([]);
+    setSelectedQuizzes([]);
   };
 
   const handleBack = () => {
     window.location.href = "/src/popup/popup.html";
+  };
+
+  const handleCheckboxChange = (quizIndex) => {
+    setSelectedQuizzes((prevSelected) =>
+      prevSelected.includes(quizIndex)
+        ? prevSelected.filter((index) => index !== quizIndex)
+        : [...prevSelected, quizIndex]
+    );
+  };
+
+  const handleDeleteSelected = () => {
+    const updatedQuizzes = quizzes.filter(
+      (_, index) => !selectedQuizzes.includes(index)
+    );
+    setQuizzes(updatedQuizzes);
+    setSelectedQuizzes([]);
+    localStorage.setItem("last5Quizzes", JSON.stringify(updatedQuizzes));
   };
 
   return (
@@ -53,9 +71,9 @@ const Previous = () => {
           </div>
         </div>
         <div className="text-center my-2 text-sm">
-        <span className="bg-gradient-to-r from-[#7600F2] text-center to-[#00CBE7] font-bold text-transparent bg-clip-text">
-              Your Quizzes
-            </span>{" "}
+          <span className="bg-gradient-to-r from-[#7600F2] text-center to-[#00CBE7] font-bold text-transparent bg-clip-text">
+            Your Quizzes
+          </span>
         </div>
         <div className="mx-3 my-4 p-2 bg-[#83b6cc40] rounded-xl h-68 overflow-y-auto ">
           {quizzes.length === 0 ? (
@@ -64,42 +82,57 @@ const Previous = () => {
             </div>
           ) : (
             <ul className="space-y-2 max-h-96 overflow-y-auto">
-                {quizzes.map((quiz, index) => (
-                    <li 
-                    key={index} 
-                    className="bg-[#202838] p-4 rounded-lg text-white cursor-pointer border-dotted border-2 border-[#7600F2] flex justify-between items-center"
-                    onClick={() => handleQuizClick(quiz)}
-                    >
-                    <div>
-                        <div className="font-bold">{quiz.difficulty} - {quiz.numQuestions} Questions</div>
-                        <div className="mt-2 text-sm">{quiz.date}</div>
+              {quizzes.map((quiz, index) => (
+                <li
+                  key={index}
+                  className="bg-[#202838] p-4 rounded-lg text-white cursor-pointer border-dotted border-2 border-[#7600F2] flex justify-between items-center"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedQuizzes.includes(index)}
+                    onChange={() => handleCheckboxChange(index)}
+                    className="mr-2"
+                  />
+                  <div onClick={() => handleQuizClick(quiz)} className="flex-grow">
+                    <div className="font-bold">
+                      {quiz.difficulty} - {quiz.numQuestions} Questions
                     </div>
-                    <FaArrowRight className="text-[#7600F2]" size={20} />
-                    </li>
-                ))}
-                </ul>
+                    <div className="mt-2 text-sm">{quiz.date}</div>
+                  </div>
+                  <FaArrowRight className="text-[#7600F2]" size={20} />
+                </li>
+              ))}
+            </ul>
           )}
         </div>
         <div className="flex my-2 justify-center gap-6 items-start">
-          <div>
-              <button
-                onClick={handleBack}
-               className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient">
-                Back
-              </button>
-          </div>
-          <div>
-            <button 
-              onClick={handleClearQuizzes} 
-              className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient"
-            >
-              Clear
-            </button>
-          </div>
+          <button
+            onClick={handleBack}
+            className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient"
+          >
+            Back
+          </button>
+          <button
+            onClick={handleDeleteSelected}
+            disabled={selectedQuizzes.length === 0}
+            className={`${
+              selectedQuizzes.length === 0
+                ? "bg-gray-600 cursor-not-allowed"
+                : "bg-black"
+            } items-center text-sm text-white px-4 py-2 mx-auto border-gradient`}
+          >
+            Delete Selected
+          </button>
+          <button
+            onClick={handleClearQuizzes}
+            className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient"
+          >
+            Clear All
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-ReactDOM.render(<Previous />, document.getElementById('root'));
+ReactDOM.render(<Previous />, document.getElementById("root"));

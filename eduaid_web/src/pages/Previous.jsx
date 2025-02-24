@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "../index.css";
 import logo from "../assets/aossie_logo.png";
 import stars from "../assets/stars.png";
@@ -10,7 +10,8 @@ const Previous = () => {
     return quizzes ? JSON.parse(quizzes) : [];
   };
 
-  const [quizzes, setQuizzes] = React.useState(getQuizzesFromLocalStorage());
+  const [quizzes, setQuizzes] = useState(getQuizzesFromLocalStorage());
+  const [selectedQuizzes, setSelectedQuizzes] = useState([]);
 
   const handleQuizClick = (quiz) => {
     localStorage.setItem("qaPairs", JSON.stringify(quiz.qaPair));
@@ -20,10 +21,30 @@ const Previous = () => {
   const handleClearQuizzes = () => {
     localStorage.removeItem("last5Quizzes");
     setQuizzes([]);
+    setSelectedQuizzes([]); 
   };
 
   const handleBack = () => {
     window.location.href = "/";
+  };
+
+ 
+  const handleCheckboxChange = (quizIndex) => {
+    setSelectedQuizzes((prevSelected) =>
+      prevSelected.includes(quizIndex)
+        ? prevSelected.filter((index) => index !== quizIndex)
+        : [...prevSelected, quizIndex]
+    );
+  };
+
+ 
+  const handleDeleteSelected = () => {
+    const updatedQuizzes = quizzes.filter(
+      (_, index) => !selectedQuizzes.includes(index)
+    );
+    setQuizzes(updatedQuizzes);
+    setSelectedQuizzes([]); 
+    localStorage.setItem("last5Quizzes", JSON.stringify(updatedQuizzes)); // Update localStorage
   };
 
   return (
@@ -31,7 +52,11 @@ const Previous = () => {
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <a href="/">
           <div className="flex items-end gap-[2px]">
-            <img src="Aossie_transparent.png" alt="logo" className="w-16 my-4 ml-4 block" />
+            <img
+              src="Aossie_transparent.png"
+              alt="logo"
+              className="w-16 my-4 ml-4 block"
+            />
             <div className="text-2xl mb-3 font-extrabold">
               <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
                 Edu
@@ -68,9 +93,14 @@ const Previous = () => {
                 <li
                   key={index}
                   className="bg-[#202838] p-4 rounded-lg text-white cursor-pointer border-dotted border-2 border-[#7600F2] flex justify-between items-center"
-                  onClick={() => handleQuizClick(quiz)}
                 >
-                  <div>
+                  <input
+                    type="checkbox"
+                    checked={selectedQuizzes.includes(index)}
+                    onChange={() => handleCheckboxChange(index)}
+                    className="mr-2"
+                  />
+                  <div onClick={() => handleQuizClick(quiz)} className="flex-grow">
                     <div className="font-bold">
                       {quiz.difficulty} - {quiz.numQuestions} Questions
                     </div>
@@ -83,22 +113,27 @@ const Previous = () => {
           )}
         </div>
         <div className="flex my-2 justify-center gap-6 items-start">
-          <div>
-            <button
-              onClick={handleBack}
-              className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient"
-            >
-              Back
-            </button>
-          </div>
-          <div>
-            <button
-              onClick={handleClearQuizzes}
-              className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient"
-            >
-              Clear
-            </button>
-          </div>
+          <button
+            onClick={handleBack}
+            className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient"
+          >
+            Back
+          </button>
+          <button
+            onClick={handleDeleteSelected}
+            disabled={selectedQuizzes.length === 0}
+            className={`${
+              selectedQuizzes.length === 0 ? "bg-gray-600 cursor-not-allowed" : "bg-black"
+            } items-center text-sm text-white px-4 py-2 mx-auto border-gradient`}
+          >
+            Delete Selected
+          </button>
+          <button
+            onClick={handleClearQuizzes}
+            className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient"
+          >
+            Clear All
+          </button>
         </div>
       </div>
     </div>
