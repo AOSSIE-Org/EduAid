@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { PDFDocument } from "pdf-lib";
-import "../index.css";
-import logo from "../assets/aossie_logo.png";
+import React, { useState, useEffect } from 'react';
+import { PDFDocument } from 'pdf-lib';
+import '../index.css';
+import logo from '../assets/aossie_logo.png';
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
   const [questionType, setQuestionType] = useState(
-    localStorage.getItem("selectedQuestionType")
+    localStorage.getItem('selectedQuestionType')
   );
 
   function shuffleArray(array) {
@@ -19,27 +19,27 @@ const Output = () => {
 
   useEffect(() => {
     const qaPairsFromStorage =
-      JSON.parse(localStorage.getItem("qaPairs")) || {};
+      JSON.parse(localStorage.getItem('qaPairs')) || {};
     if (qaPairsFromStorage) {
       const combinedQaPairs = [];
 
-      if (qaPairsFromStorage["output_boolq"]) {
-        qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
+      if (qaPairsFromStorage['output_boolq']) {
+        qaPairsFromStorage['output_boolq']['Boolean_Questions'].forEach(
           (question, index) => {
             combinedQaPairs.push({
               question,
-              question_type: "Boolean",
-              context: qaPairsFromStorage["output_boolq"]["Text"],
+              question_type: 'Boolean',
+              context: qaPairsFromStorage['output_boolq']['Text'],
             });
           }
         );
       }
 
-      if (qaPairsFromStorage["output_mcq"]) {
-        qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
+      if (qaPairsFromStorage['output_mcq']) {
+        qaPairsFromStorage['output_mcq']['questions'].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
-            question_type: "MCQ",
+            question_type: 'MCQ',
             options: qaPair.options,
             answer: qaPair.answer,
             context: qaPair.context,
@@ -47,19 +47,19 @@ const Output = () => {
         });
       }
 
-      if (qaPairsFromStorage["output_shortq"]) {
-        qaPairsFromStorage["output_shortq"]["questions"].forEach((qaPair) => {
+      if (qaPairsFromStorage['output_shortq']) {
+        qaPairsFromStorage['output_shortq']['questions'].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.Question,
-            question_type: "Short",
+            question_type: 'Short',
             answer: qaPair.Answer,
             context: qaPair.context,
           });
         });
       }
 
-      if (questionType === "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+      if (questionType === 'get_mcq') {
+        qaPairsFromStorage['output'].forEach((qaPair) => {
           const options = qaPair.answer
             .filter((ans) => !ans.correct)
             .map((ans) => ans.answer);
@@ -69,29 +69,29 @@ const Output = () => {
 
           combinedQaPairs.push({
             question: qaPair.question,
-            question_type: "MCQ_Hard",
+            question_type: 'MCQ_Hard',
             options: options,
             answer: correctAnswer,
           });
         });
       }
 
-      if (questionType == "get_boolq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+      if (questionType == 'get_boolq') {
+        qaPairsFromStorage['output'].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair,
-            question_type: "Boolean",
+            question_type: 'Boolean',
           });
         });
-      } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+      } else if (qaPairsFromStorage['output'] && questionType !== 'get_mcq') {
+        qaPairsFromStorage['output'].forEach((qaPair) => {
           combinedQaPairs.push({
             question:
               qaPair.question || qaPair.question_statement || qaPair.Question,
             options: qaPair.options,
             answer: qaPair.answer || qaPair.Answer,
             context: qaPair.context,
-            question_type: "Short",
+            question_type: 'Short',
           });
         });
       }
@@ -101,23 +101,26 @@ const Output = () => {
   }, []);
 
   const generateGoogleForm = async () => {
-    const response = await fetch(`${process.env.REACT_APP_BASE_URL}/generate_gform`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        qa_pairs: qaPairs,
-        question_type: questionType,
-      }),
-    });
+    const response = await fetch(
+      `${process.env.REACT_APP_BASE_URL}/generate_gform`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          qa_pairs: qaPairs,
+          question_type: questionType,
+        }),
+      }
+    );
 
     if (response.ok) {
       const result = await response.json();
       const formUrl = result.form_link;
-      window.open(formUrl, "_blank");
+      window.open(formUrl, '_blank');
     } else {
-      console.error("Failed to generate Google Form");
+      console.error('Failed to generate Google Form');
     }
   };
 
@@ -125,8 +128,8 @@ const Output = () => {
     const pdfDoc = await PDFDocument.create();
     let page = pdfDoc.addPage();
     const d = new Date(Date.now());
-    page.drawText("EduAid generated Quiz", { x: 50, y: 800, size: 20 });
-    page.drawText("Created On: " + d.toString(), { x: 50, y: 770, size: 10 });
+    page.drawText('EduAid generated Quiz', { x: 50, y: 800, size: 20 });
+    page.drawText('Created On: ' + d.toString(), { x: 50, y: 770, size: 10 });
     const form = pdfDoc.getForm();
     let y = 700; // Starting y position for content
     let questionIndex = 1;
@@ -144,7 +147,7 @@ const Output = () => {
       });
       y -= 30;
 
-      if (qaPair.question_type === "Boolean") {
+      if (qaPair.question_type === 'Boolean') {
         // Create radio buttons for True/False
         const radioGroup = form.createRadioGroup(
           `question${questionIndex}_answer`
@@ -162,11 +165,11 @@ const Output = () => {
           y -= 20;
         };
 
-        drawRadioButton("True", false);
-        drawRadioButton("False", false);
+        drawRadioButton('True', false);
+        drawRadioButton('False', false);
       } else if (
-        qaPair.question_type === "MCQ" ||
-        qaPair.question_type === "MCQ_Hard"
+        qaPair.question_type === 'MCQ' ||
+        qaPair.question_type === 'MCQ_Hard'
       ) {
         // Shuffle options including qaPair.answer
         const options = [...qaPair.options, qaPair.answer]; // Include correct answer in options
@@ -190,12 +193,12 @@ const Output = () => {
           };
           drawRadioButton(option, false);
         });
-      } else if (qaPair.question_type === "Short") {
+      } else if (qaPair.question_type === 'Short') {
         // Text field for Short answer
         const answerField = form.createTextField(
           `question${questionIndex}_answer`
         );
-        answerField.setText("");
+        answerField.setText('');
         answerField.addToPage(page, {
           x: 50,
           y: y - 20,
@@ -211,10 +214,10 @@ const Output = () => {
 
     // Save PDF and create download link
     const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: "application/pdf" });
-    const link = document.createElement("a");
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = "generated_questions.pdf";
+    link.download = 'generated_questions.pdf';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -258,7 +261,7 @@ const Output = () => {
                     <div className="text-[#FFF4F4] text-[1rem] my-1">
                       {qaPair.question}
                     </div>
-                    {qaPair.question_type !== "Boolean" && (
+                    {qaPair.question_type !== 'Boolean' && (
                       <>
                         <div className="text-[#E4E4E4] text-sm">Answer</div>
                         <div className="text-[#FFF4F4] text-[1rem]">
@@ -270,7 +273,7 @@ const Output = () => {
                               <div key={idx}>
                                 <span className="text-[#E4E4E4] text-sm">
                                   Option {idx + 1}:
-                                </span>{" "}
+                                </span>{' '}
                                 <span className="text-[#FFF4F4] text-[1rem]">
                                   {option}
                                 </span>
