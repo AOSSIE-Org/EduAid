@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
-import "../index.css";
-import logo from "../assets/aossie_logo.png";
-import starsImg from "../assets/stars.png";
-import arrow from "../assets/arrow.png";
-import gitStar from "../assets/gitStar.png";
-import { FaGithub } from "react-icons/fa";
+import React, { useState, useEffect } from 'react';
+import '../index.css';
+import logo from '../assets/aossie_logo_transparent.png';
+import starsImg from '../assets/stars.png';
+import arrow from '../assets/arrow.png';
+import gitStar from '../assets/gitStar.png';
+import { FaGithub } from 'react-icons/fa';
 
 const Home = () => {
   const [stars, setStars] = useState(null);
