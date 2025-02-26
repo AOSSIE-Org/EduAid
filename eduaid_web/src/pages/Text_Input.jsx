@@ -1,10 +1,10 @@
-import React, { useState, useRef } from "react";
-import "../index.css";
-import logo from "../assets/aossie_logo.png";
-import stars from "../assets/stars.png";
-import cloud from "../assets/cloud.png";
-import { FaClipboard } from "react-icons/fa";
-import Switch from "react-switch";
+import React, { useState, useRef } from 'react';
+import '../index.css';
+import logo from '../assets/aossie_logo_transparent.png';
+import stars from '../assets/stars.png';
+import cloud from '../assets/cloud.png';
+import { FaClipboard } from 'react-icons/fa';
+import Switch from 'react-switch';
 
 const Text_Input = () => {
   const [text, setText] = useState("");

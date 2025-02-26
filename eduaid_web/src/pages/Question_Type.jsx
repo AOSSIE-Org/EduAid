@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import "../index.css";
-import logo from "../assets/aossie_logo.png";
+import React, { useState } from 'react';
+import '../index.css';
+import logo from '../assets/aossie_logo_transparent.png';
 
 const Question_Type = () => {
   const [selectedOption, setSelectedOption] = useState(null);
