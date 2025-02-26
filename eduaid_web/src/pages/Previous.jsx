@@ -1,29 +1,29 @@
-import React from "react";
-import "../index.css";
-import logo from "../assets/aossie_logo.png";
-import stars from "../assets/stars.png";
-import { FaArrowRight } from "react-icons/fa";
+import React from 'react';
+import '../index.css';
+import logo from '../assets/aossie_logo.png';
+import stars from '../assets/stars.png';
+import { FaArrowRight } from 'react-icons/fa';
 
 const Previous = () => {
   const getQuizzesFromLocalStorage = () => {
-    const quizzes = localStorage.getItem("last5Quizzes");
+    const quizzes = localStorage.getItem('last5Quizzes');
     return quizzes ? JSON.parse(quizzes) : [];
   };
 
   const [quizzes, setQuizzes] = React.useState(getQuizzesFromLocalStorage());
 
   const handleQuizClick = (quiz) => {
-    localStorage.setItem("qaPairs", JSON.stringify(quiz.qaPair));
-    window.location.href = "/output";
+    localStorage.setItem('qaPairs', JSON.stringify(quiz.qaPair));
+    window.location.href = '/output';
   };
 
   const handleClearQuizzes = () => {
-    localStorage.removeItem("last5Quizzes");
+    localStorage.removeItem('last5Quizzes');
     setQuizzes([]);
   };
 
   const handleBack = () => {
-    window.location.href = "/";
+    window.location.href = '/';
   };
 
   return (
@@ -31,7 +31,11 @@ const Previous = () => {
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <a href="/">
           <div className="flex items-end gap-[2px]">
-            <img src="Aossie_transparent.png" alt="logo" className="w-16 my-4 ml-4 block" />
+            <img
+              src="Aossie_transparent.png"
+              alt="logo"
+              className="w-16 my-4 ml-4 block"
+            />
             <div className="text-2xl mb-3 font-extrabold">
               <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
                 Edu
@@ -45,17 +49,17 @@ const Previous = () => {
         <div className="text-right mt-[-8px] mx-1">
           <div className="text-white text-xl font-bold">Quiz Dashboard</div>
           <div className="text-white text-right justify-end flex gap-2 text-xl font-bold">
-            Your{" "}
+            Your{' '}
             <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
               Generated Quizzes
-            </span>{" "}
+            </span>{' '}
             <img className="h-[20px] w-[20px]" src={stars} alt="stars" />
           </div>
         </div>
         <div className="text-center my-2 text-sm">
           <span className="bg-gradient-to-r text-xl from-[#7600F2] text-center to-[#00CBE7] font-bold text-transparent bg-clip-text">
             Your Quizzes
-          </span>{" "}
+          </span>{' '}
         </div>
         <div className="mx-3 my-4 p-2 bg-[#83b6cc40] rounded-xl h-68 overflow-y-auto ">
           {quizzes.length === 0 ? (
