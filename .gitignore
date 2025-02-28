@@ -28,3 +28,5 @@ backend/service_account_key.json
 venv
 backend/Eduaid
 ._s2v_old
+.DS_Store
+
