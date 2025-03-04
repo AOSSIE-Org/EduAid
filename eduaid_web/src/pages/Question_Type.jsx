@@ -16,8 +16,8 @@ const Question_Type = () => {
   };
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient p-6">
+    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center overflow-hidden">
+      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient p-6 overflow-y-auto">
         <a href="/">
           <div className="flex items-end gap-4">
             <img src="aossie_transparent.png" alt="logo" className="w-24 my-6 block" />
@@ -97,14 +97,14 @@ const Question_Type = () => {
             <div className="text-white text-2xl font-medium">All Questions</div>
           </div>
         </div>
-        <div className="mx-auto text-center mt-10">
+        <div className="fixed bottom-4 left-0 right-0 flex justify-center">
           {selectedOption ? (
             <a href="input">
               <button
                 onClick={handleSaveToLocalStorage}
-                className="rounded-2xl text-2xl text-white w-fit px-8 font-bold py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7]"
+                className="rounded-2xl text-2xl text-white w-fit px-8 font-bold py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:scale-105 transition-transform"
               >
-                Fire Up{"  "}🚀
+                Fire Up 🚀
               </button>
             </a>
           ) : (
@@ -113,7 +113,7 @@ const Question_Type = () => {
               className="rounded-2xl text-2xl text-white w-fit px-8 font-bold py-3 bg-gray-500 cursor-not-allowed"
               disabled
             >
-              Fire Up{"  "}🚀
+              Fire Up 🚀
             </button>
           )}
         </div>
