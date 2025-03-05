@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, url_for, session, redirect
 from flask_cors import CORS
 from pprint import pprint
 import nltk
@@ -24,10 +24,14 @@ from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
+from authlib.integrations.flask_client import OAuth
+import requests
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True)
 print("Starting Flask App...")
+app.secret_key = "your_super_secret_key"
+
 
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
@@ -48,6 +52,148 @@ def process_input_text(input_text, use_mediawiki):
         input_text = mediawikiapi.summary(input_text,8)
     return input_text
 
+with open("credentials.json") as f:
+    creds = json.load(f)["web"]
+
+app.config["GOOGLE_CLIENT_ID"] = creds["client_id"]
+app.config["GOOGLE_CLIENT_SECRET"] = creds["client_secret"]
+app.config["GOOGLE_DISCOVERY_URL"] = "https://accounts.google.com/.well-known/openid-configuration"
+
+oauth=OAuth(app)
+oauth.register(
+    name="google",
+    client_id=creds["client_id"],
+    client_secret=creds["client_secret"],
+    authorize_url="https://accounts.google.com/o/oauth2/auth",
+    authorize_params={"scope": "openid email profile https://www.googleapis.com/auth/classroom.courses https://www.googleapis.com/auth/classroom.coursework.me https://www.googleapis.com/auth/forms.body https://www.googleapis.com/auth/classroom.coursework.students"},
+    access_token_url="https://oauth2.googleapis.com/token",
+    access_token_params=None,
+    redirect_uri="http://localhost:5000/callback",
+    client_kwargs={
+        "scope": "openid email profile https://www.googleapis.com/auth/classroom.courses https://www.googleapis.com/auth/classroom.coursework.me https://www.googleapis.com/auth/forms.body https://www.googleapis.com/auth/classroom.coursework.students",
+    },
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",  # Fixes JWKS issue
+)
+
+# @app.route("/home")
+# def home():
+#     return jsonify({
+#         'msg':"User login successful",
+#         'data':session['user']
+#     })
+
+@app.route("/auth")
+def auth():
+    redirect_uri=url_for("callback", _external=True)
+    return oauth.google.authorize_redirect(redirect_uri)
+
+@app.route("/callback")
+def callback():
+    token=oauth.google.authorize_access_token()
+    nonce=session.pop("nonce", None)
+    user_info=oauth.google.parse_id_token(token, nonce=nonce)
+    session["access_token"]=token["access_token"]
+    session["user"]=user_info
+    return redirect("http://localhost:3000/courses")
+
+@app.route("/api/v1/courses")
+def get_courses():
+    
+    access_token=session.get('access_token')
+    if not access_token:
+        return jsonify({"redirect": url_for("auth"), "url": "http://localhost:5000/auth"}), 401
+    headers={"Authorization": f"Bearer {access_token}"}
+    response=requests.get(
+        "https://classroom.googleapis.com/v1/courses",
+        headers=headers
+    )
+    if response.status_code==200:
+        return jsonify(response.json())
+    else:
+        return jsonify({"error":"Failed to fetch courses", "details":f"{response.json()}"}), response.status_code
+
+
+@app.route("/api/v1/<course_id>/add/quiz", methods=["POST"])
+def add_quiz(course_id):
+    access_token=session.get("access_token")
+    if not access_token:
+        return jsonify({"error": "Access token is missing"}), 401
+    header={
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    data = request.get_json()
+    qa_pairs = data.get("qa_pairs", [])
+    if not qa_pairs:
+        return jsonify({"error": "Qa pairs are from the body of the request"})
+    question_type = data.get("question_type", "")
+    form_data={
+        "info":{
+            "title":"A sample quiz",
+            "documentTitle":"Sample Quiz"
+        }
+    }
+    response=requests.post(
+        "https://forms.googleapis.com/v1/forms",
+        headers=header,
+        json=form_data
+    )
+    if(response.status_code!=200):
+        return jsonify({"error":"Failed to create", "details": f"{response.json()}"})
+    form_id=response.json().get("formId")
+    batch_data={
+        'requests':[]
+    }
+    for index, qa in enumerate(qa_pairs):
+        question = qa.get("question")
+        answer = qa.get("answer")
+
+        batch_data["requests"].append({
+            "createItem": {
+                "item": {
+                    "title": question,
+                    "questionItem": {
+                        "question": {
+                            "required": True,
+                            "textQuestion": {}
+                        }
+                    }
+                },
+                "location": {
+                    "index": index
+                }
+            }
+        })
+    batch_response=requests.post(
+        f"https://forms.googleapis.com/v1/forms/{form_id}:batchUpdate",
+        headers=header,
+        json=batch_data
+    )
+    
+    if batch_response.status_code!=200:
+        return jsonify({"error": "Failed to create google form", "details": f"{batch_response.json()}"})
+    coursework_data={
+        "title":"A new assignment",
+        "description":"This is a sample quiz for the course",
+        "materials":[
+            {
+                "link":{
+                    "url":f"https://forms.gle/{form_id}"
+                }
+            }
+        ],
+        "workType":"ASSIGNMENT",
+        "state":"PUBLISHED"
+    }
+    course_response=requests.post(
+        f"https://classroom.googleapis.com/v1/courses/{course_id}/courseWork",
+        headers=header,
+        json=coursework_data
+    )
+    if course_response.status_code!=200:
+        return jsonify({"error": "There is some problem in create the assignent", "details": f"{course_response.json()}"})
+    else:
+        return jsonify({'message': 'Quiz posted successfully!', 'coursework': course_response.json()})
 
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
