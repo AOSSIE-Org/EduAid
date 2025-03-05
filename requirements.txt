@@ -31,3 +31,5 @@ tokenizers
 mammoth
 mediawikiapi
 PyMuPDF
+authlib
+requests

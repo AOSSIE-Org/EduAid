@@ -3,9 +3,11 @@ import { PDFDocument, rgb } from "pdf-lib";
 import "../index.css";
 import logo from "../assets/aossie_logo.png";
 import logoPNG from "../assets/aossie_logo_transparent.png";
+import { useNavigate } from "react-router-dom"
 
 
 const Output = () => {
+  const navigate=useNavigate()
   const [qaPairs, setQaPairs] = useState([]);
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType")
@@ -130,6 +132,10 @@ const Output = () => {
       return null;
     }
   };
+
+  const addToCourse= async ()=>{
+    navigate("/courses", { state:{qaPairs}})
+  }
 
   const generatePDF = async (mode) => {
     const pageWidth = 595.28;
@@ -413,6 +419,12 @@ const Output = () => {
               onClick={generateGoogleForm}
             >
               Generate Google form
+            </button>
+            <button
+              className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"
+              onClick={addToCourse}
+            >
+              Add to Course
             </button>
             <div className="relative">
               <button
