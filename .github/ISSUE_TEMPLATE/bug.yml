@@ -1,0 +1,56 @@
+name: "🐞 Bug Report"
+description: "Create a report to help us improve"
+title: "BUG:"
+labels: ["Bug"]
+body:
+  - type: checkboxes
+    attributes:
+      label: "Is there an existing issue for this?"
+      description: "Please search to see if an issue already exists for the bug you encountered."
+      options:
+        - label: "I have searched the existing issues"
+          required: true
+  - type: markdown
+    attributes:
+      value: |
+        > [!IMPORTANT]
+        > Before posting, remove sensitive data, such as passwords, secret keys, session cookies, etc.
+  - type: textarea
+    attributes:
+      label: "What happened?"
+      description: "Please provide a detailed description of the issue, including the following information:"
+      value: |
+        ## 📌 Issue Overview  
+        <!-- Provide a brief summary of the issue -->
+
+        ## 🔍 Steps to Reproduce  
+        1. Go to '...'  
+        2. Click on '...'  
+        3. Scroll down to '...'  
+        4. See the error  
+
+        ## 🎯 Expected Behavior  
+        <!-- What should happen? -->
+
+        ## 🚨 Actual Behavior  
+        <!-- What actually happened? -->
+
+        ## 📷 Screenshot  
+        <!-- Attach screenshots if applicable -->
+
+        ## 💡 Suggested Improvements  
+        <!-- Any ideas for a fix? -->
+    validations:
+      required: true
+  - type: checkboxes
+    attributes:
+      label: "Record"
+      options:
+        - label: "I agree to follow this project's Code of Conduct"
+          required: true
+        - label: "I want to work on this issue"
+          required: false
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! 👍
