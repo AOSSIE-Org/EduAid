@@ -175,7 +175,7 @@ const Text_Input = () => {
       >
         <a href="/">
           <div className="flex items-end gap-[2px]">
-            <img src={logo} alt="logo" className="w-24 my-6 ml-6 block" />
+            <img src="aossie_transparent.png" alt="logo" className="w-24 my-6 ml-6 block" />
             <div className="text-4xl mb-5 font-extrabold">
               <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
                 Edu

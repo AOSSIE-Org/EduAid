@@ -69,19 +69,19 @@ const Home = () => {
             </div>
           </div>
           <div className="flex flex-col items-end">
-            <div className="my-6">
+            <div className="my-6 animated-slide">
               <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
                 <img src={starsImg} width={32} height={16} alt="" />
                 <div className="text-white text-xl">Doc/Audio Input</div>
               </div>
             </div>
-            <div className="my-4">
+            <div className="my-4 animated-slide">
               <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
                 <img src={starsImg} width={32} height={16} alt="" />
                 <div className="text-white text-xl">In-depth questions gen</div>
               </div>
             </div>
-            <div className="my-4">
+            <div className="my-4 animated-slide">
               <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
                 <img src={starsImg} width={32} height={16} alt="" />
                 <div className="text-white text-xl">
