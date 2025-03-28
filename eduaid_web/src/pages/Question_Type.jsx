@@ -20,7 +20,7 @@ const Question_Type = () => {
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient p-6">
         <a href="/">
           <div className="flex items-end gap-4">
-            <img src="aossie_transparent.png" alt="logo" className="w-24 my-6 block" />
+            <img src="aossie_transparent.png" alt="logo" className="w-24 my-4 block" />
             <div className="text-5xl mb-5 font-extrabold">
               <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
                 Edu
@@ -31,7 +31,7 @@ const Question_Type = () => {
             </div>
           </div>
         </a>
-        <div className="text-4xl mt-6 text-white text-center font-extrabold">
+        <div className="text-4xl  text-white text-center font-extrabold">
           What’s on your Mind?
         </div>
         <div className="mt-2 text-white text-xl text-center font-medium">
