@@ -93,7 +93,7 @@ const Home = () => {
           <div className="flex justify-center gap-6">
             <div className="mt-8 rounded-2xl">
               <a href="question-type">
-                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
+                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mt-6 border-2px border-gradient hover-effect hover:bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:rounded-none transition-all ease-in-out duration-500">
                   Let’s get Started{" "}
                   <img src={arrow} width={28} height={24} alt="" />
                 </button>
@@ -101,7 +101,7 @@ const Home = () => {
             </div>
             <div className="mt-8 rounded-2xl">
               <a href="history">
-                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover:wave-effect rounded-md">
+                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover-effect hover:bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:rounded-none transition-all ease-in-out duration-500 rounded-none">
                   Your previous Work!
                   <img src={arrow} width={28} height={24} alt="" />
                 </button>
