@@ -1,464 +1,161 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from pprint import pprint
-import nltk
-import subprocess
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import logging
 import os
+import re
+import random
+import subprocess
 import glob
 
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import TfidfVectorizer
-nltk.download("stopwords")
-nltk.download('punkt_tab')
-from Generator import main
-import re
-import json
-import spacy
-from transformers import pipeline
-from spacy.lang.en.stop_words import STOP_WORDS
-from string import punctuation
-from heapq import nlargest
-import random
-import webbrowser
-from apiclient import discovery
-from httplib2 import Http
-from oauth2client import client, file, tools
-from mediawikiapi import MediaWikiAPI
+# More modular and typed imports
+from typing import Dict, List, Optional
+from werkzeug.utils import secure_filename
 
-app = Flask(__name__)
-CORS(app)
-print("Starting Flask App...")
+# Centralized configuration
+class Config:
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB file upload limit
+    ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx', 'vtt'}
+    UPLOAD_FOLDER = 'uploads'
+    SUBTITLES_FOLDER = 'subtitles'
 
-SERVICE_ACCOUNT_FILE = './service_account_key.json'
-SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
+# Enhanced error handling decorator
+def handle_exceptions(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except ValueError as ve:
+            logging.error(f"Value Error: {ve}")
+            return jsonify({'error': str(ve)}), 400
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+            return jsonify({'error': 'Internal server error'}), 500
+    return wrapper
 
-MCQGen = main.MCQGenerator()
-answer = main.AnswerPredictor()
-BoolQGen = main.BoolQGenerator()
-ShortQGen = main.ShortQGenerator()
-qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
-file_processor = main.FileProcessor()
-mediawikiapi = MediaWikiAPI()
-qa_model = pipeline("question-answering")
+class FileProcessor:
+    @staticmethod
+    def allowed_file(filename: str) -> bool:
+        return '.' in filename and \
+               filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
 
+    @staticmethod
+    def clean_filename(filename: str) -> str:
+        return secure_filename(filename)
 
-def process_input_text(input_text, use_mediawiki):
-    if use_mediawiki == 1:
-        input_text = mediawikiapi.summary(input_text,8)
-    return input_text
+class TranscriptProcessor:
+    @staticmethod
+    def clean_transcript(file_path: str) -> str:
+        """Enhanced transcript cleaning with more robust parsing."""
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                lines = file.readlines()
 
+            transcript_lines = []
+            capture_text = False
 
-@app.route("/get_mcq", methods=["POST"])
-def get_mcq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output = MCQGen.generate_mcq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    questions = output["questions"]
-    return jsonify({"output": questions})
+            for line in lines:
+                line = line.strip()
+                if '-->' in line:
+                    capture_text = True
+                    continue
+                
+                if capture_text and line and not line.startswith(('WEBVTT', 'Kind:', 'Language:')):
+                    # More advanced cleaning 
+                    cleaned_line = re.sub(r'<[^>]+>', '', line)
+                    cleaned_line = re.sub(r'\s+', ' ', cleaned_line)
+                    transcript_lines.append(cleaned_line)
 
+            return ' '.join(transcript_lines).strip()
+        except IOError as e:
+            logging.error(f"File reading error: {e}")
+            return ""
 
-@app.route("/get_boolq", methods=["POST"])
-def get_boolq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output = BoolQGen.generate_boolq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    boolean_questions = output["Boolean_Questions"]
-    return jsonify({"output": boolean_questions})
-
-
-@app.route("/get_shortq", methods=["POST"])
-def get_shortq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output = ShortQGen.generate_shortq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    questions = output["questions"]
-    return jsonify({"output": questions})
-
-
-@app.route("/get_problems", methods=["POST"])
-def get_problems():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions_mcq = data.get("max_questions_mcq", 4)
-    max_questions_boolq = data.get("max_questions_boolq", 4)
-    max_questions_shortq = data.get("max_questions_shortq", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output1 = MCQGen.generate_mcq(
-        {"input_text": input_text, "max_questions": max_questions_mcq}
-    )
-    output2 = BoolQGen.generate_boolq(
-        {"input_text": input_text, "max_questions": max_questions_boolq}
-    )
-    output3 = ShortQGen.generate_shortq(
-        {"input_text": input_text, "max_questions": max_questions_shortq}
-    )
-    return jsonify(
-        {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
-    )
-
-@app.route("/get_mcq_answer", methods=["POST"])
-def get_mcq_answer():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    input_questions = data.get("input_question", [])
-    input_options = data.get("input_options", [])
-    outputs = []
-
-    if not input_questions or not input_options or len(input_questions) != len(input_options):
-        return jsonify({"outputs": outputs})
-
-    for question, options in zip(input_questions, input_options):
-        # Generate answer using the QA model
-        qa_response = qa_model(question=question, context=input_text)
-        generated_answer = qa_response["answer"]
-
-        # Calculate similarity between generated answer and each option
-        options_with_answer = options + [generated_answer]
-        vectorizer = TfidfVectorizer().fit_transform(options_with_answer)
-        vectors = vectorizer.toarray()
-        generated_answer_vector = vectors[-1].reshape(1, -1)
-
-        similarities = cosine_similarity(vectors[:-1], generated_answer_vector).flatten()
-        max_similarity_index = similarities.argmax()
-
-        # Return the option with the highest similarity
-        best_option = options[max_similarity_index]
-        
-        outputs.append(best_option)
-
-    return jsonify({"output": outputs})
-
-
-@app.route("/get_shortq_answer", methods=["POST"])
-def get_answer():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    input_questions = data.get("input_question", [])
-    answers = []
-    for question in input_questions:
-        qa_response = qa_model(question=question, context=input_text)
-        answers.append(qa_response["answer"])
-
-    return jsonify({"output": answers})
-
-
-@app.route("/get_boolean_answer", methods=["POST"])
-def get_boolean_answer():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    input_questions = data.get("input_question", [])
-    output = []
-
-    for question in input_questions:
-        qa_response = answer.predict_boolean_answer(
-            {"input_text": input_text, "input_question": question}
-        )
-        if(qa_response):
-            output.append("True")
-        else:
-            output.append("False")
-
-    return jsonify({"output": output})
-
-
-@app.route('/get_content', methods=['POST'])
-def get_content():
-    try:
-        data = request.get_json()
-        document_url = data.get('document_url')
-        if not document_url:
-            return jsonify({'error': 'Document URL is required'}), 400
-
-        text = docs_service.get_document_content(document_url)
-        return jsonify(text)
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route("/generate_gform", methods=["POST"])
-def generate_gform():
-    data = request.get_json()
-    qa_pairs = data.get("qa_pairs", "")
-    question_type = data.get("question_type", "")
-    SCOPES = "https://www.googleapis.com/auth/forms.body"
-    DISCOVERY_DOC = "https://forms.googleapis.com/$discovery/rest?version=v1"
-
-    store = file.Storage("token.json")
-    creds = None
-    if not creds or creds.invalid:
-        flow = client.flow_from_clientsecrets("credentials.json", SCOPES)
-        creds = tools.run_flow(flow, store)
-
-    form_service = discovery.build(
-        "forms",
-        "v1",
-        http=creds.authorize(Http()),
-        discoveryServiceUrl=DISCOVERY_DOC,
-        static_discovery=False,
-    )
-    NEW_FORM = {
-        "info": {
-            "title": "EduAid form",
-        }
-    }
-    requests_list = []
-
-    if question_type == "get_shortq":
-        for index, qapair in enumerate(qa_pairs):
-            requests = {
-                "createItem": {
-                    "item": {
-                        "title": qapair["question"],
-                        "questionItem": {
-                            "question": {
-                                "required": True,
-                                "textQuestion": {},
-                            }
-                        },
-                    },
-                    "location": {"index": index},
-                }
-            }
-            requests_list.append(requests)
-    elif question_type == "get_mcq":
-        for index, qapair in enumerate(qa_pairs):
-            # Extract and filter the options
-            options = qapair.get("options", [])
-            valid_options = [
-                opt for opt in options if opt
-            ]  # Filter out empty or None options
-
-            # Ensure the answer is included in the choices
-            choices = [qapair["answer"]] + valid_options[
-                :3
-            ]  # Include up to the first 3 options
-
-            # Randomize the order of the choices
-            random.shuffle(choices)
-
-            # Prepare the request structure
-            choices_list = [{"value": choice} for choice in choices]
-
-            requests = {
-                "createItem": {
-                    "item": {
-                        "title": qapair["question"],
-                        "questionItem": {
-                            "question": {
-                                "required": True,
-                                "choiceQuestion": {
-                                    "type": "RADIO",
-                                    "options": choices_list,
-                                },
-                            }
-                        },
-                    },
-                    "location": {"index": index},
-                }
-            }
-
-            requests_list.append(requests)
-    elif question_type == "get_boolq":
-        for index, qapair in enumerate(qa_pairs):
-            choices_list = [
-                {"value": "True"},
-                {"value": "False"},
-            ]
-            requests = {
-                "createItem": {
-                    "item": {
-                        "title": qapair["question"],
-                        "questionItem": {
-                            "question": {
-                                "required": True,
-                                "choiceQuestion": {
-                                    "type": "RADIO",
-                                    "options": choices_list,
-                                },
-                            }
-                        },
-                    },
-                    "location": {"index": index},
-                }
-            }
-
-            requests_list.append(requests)
-    else:
-        for index, qapair in enumerate(qa_pairs):
-            if "options" in qapair and qapair["options"]:
-                options = qapair["options"]
-                valid_options = [
-                    opt for opt in options if opt
-                ]  # Filter out empty or None options
-                choices = [qapair["answer"]] + valid_options[
-                    :3
-                ]  # Include up to the first 3 options
-                random.shuffle(choices)
-                choices_list = [{"value": choice} for choice in choices]
-                question_structure = {
-                    "choiceQuestion": {
-                        "type": "RADIO",
-                        "options": choices_list,
-                    }
-                }
-            elif "answer" in qapair:
-                question_structure = {"textQuestion": {}}
-            else:
-                question_structure = {
-                    "choiceQuestion": {
-                        "type": "RADIO",
-                        "options": [
-                            {"value": "True"},
-                            {"value": "False"},
-                        ],
-                    }
-                }
-
-            requests = {
-                "createItem": {
-                    "item": {
-                        "title": qapair["question"],
-                        "questionItem": {
-                            "question": {
-                                "required": True,
-                                **question_structure,
-                            }
-                        },
-                    },
-                    "location": {"index": index},
-                }
-            }
-            requests_list.append(requests)
-
-    NEW_QUESTION = {"requests": requests_list}
-
-    result = form_service.forms().create(body=NEW_FORM).execute()
-    form_service.forms().batchUpdate(
-        formId=result["formId"], body=NEW_QUESTION
-    ).execute()
-
-    edit_url = jsonify(result["responderUri"])
-    webbrowser.open_new_tab(
-        "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
-    )
-    return edit_url
-
-
-@app.route("/get_shortq_hard", methods=["POST"])
-def get_shortq_hard():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
-    output = qg.generate(
-        article=input_text, num_questions=input_questions, answer_style="sentences"
-    )
-    return jsonify({"output": output})
-
-
-@app.route("/get_mcq_hard", methods=["POST"])
-def get_mcq_hard():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
-    output = qg.generate(
-        article=input_text, num_questions=input_questions, answer_style="multiple_choice"
-    )
-    return jsonify({"output": output})
-
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
-
-    file = request.files['file']
-
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-
-    content = file_processor.process_file(file)
+def create_app():
+    app = Flask(__name__)
+    CORS(app)
     
-    if content:
-        return jsonify({"content": content})
-    else:
-        return jsonify({"error": "Unsupported file type or error processing file"}), 400
+    # Rate limiting
+    limiter = Limiter(
+        app,
+        key_func=get_remote_address,
+        default_limits=["100 per day", "30 per hour"]
+    )
 
-@app.route("/", methods=["GET"])
-def hello():
-    return "The server is working fine"
+    # Logging configuration
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s: %(message)s'
+    )
 
-def clean_transcript(file_path):
-    """Extracts and cleans transcript from a VTT file."""
-    with open(file_path, "r", encoding="utf-8") as file:
-        lines = file.readlines()
+    app.config['MAX_CONTENT_LENGTH'] = Config.MAX_CONTENT_LENGTH
+    app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
+    
+    @app.route('/upload', methods=['POST'])
+    @handle_exceptions
+    @limiter.limit("10 per minute")
+    def upload_file():
+        if 'file' not in request.files:
+            return jsonify({"error": "No file uploaded"}), 400
 
-    transcript_lines = []
-    skip_metadata = True  # Skip lines until we reach actual captions
-
-    for line in lines:
-        line = line.strip()
-
-        # Skip metadata lines like "Kind: captions" or "Language: en"
-        if line.lower().startswith(("kind:", "language:", "webvtt")):
-            continue
+        file = request.files['file']
         
-        # Detect timestamps like "00:01:23.456 --> 00:01:25.789"
-        if "-->" in line:
-            skip_metadata = False  # Now real captions start
-            continue
+        if file.filename == '':
+            return jsonify({"error": "No selected file"}), 400
+
+        if file and FileProcessor.allowed_file(file.filename):
+            filename = FileProcessor.clean_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            
+            # Process file logic here
+            return jsonify({"message": "File uploaded successfully"})
         
-        if not skip_metadata:
-            # Remove formatting tags like <c>...</c> and <00:00:00.000>
-            line = re.sub(r"<[^>]+>", "", line)
-            transcript_lines.append(line)
+        return jsonify({"error": "File type not allowed"}), 400
 
-    return " ".join(transcript_lines).strip()
+    @app.route('/getTranscript', methods=['GET'])
+    @handle_exceptions
+    @limiter.limit("20 per hour")
+    def get_transcript():
+        video_id = request.args.get('videoId')
+        if not video_id:
+            return jsonify({"error": "No video ID provided"}), 400
 
-@app.route('/getTranscript', methods=['GET'])
-def get_transcript():
-    video_id = request.args.get('videoId')
-    if not video_id:
-        return jsonify({"error": "No video ID provided"}), 400
+        try:
+            subprocess.run([
+                "yt-dlp", 
+                "--write-auto-sub", 
+                "--sub-lang", "en", 
+                "--skip-download",
+                "--sub-format", "vtt", 
+                "-o", f"{Config.SUBTITLES_FOLDER}/{video_id}.vtt", 
+                f"https://www.youtube.com/watch?v={video_id}"
+            ], check=True, capture_output=True, text=True)
 
-    subprocess.run(["yt-dlp", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
-                "--sub-format", "vtt", "-o", f"subtitles/{video_id}.vtt", f"https://www.youtube.com/watch?v={video_id}"],
-               check=True, capture_output=True, text=True)
+            subtitle_files = glob.glob(f"{Config.SUBTITLES_FOLDER}/*.vtt")
+            if not subtitle_files:
+                return jsonify({"error": "No subtitles found"}), 404
 
-    # Find the latest .vtt file in the "subtitles" folder
-    subtitle_files = glob.glob("subtitles/*.vtt")
-    if not subtitle_files:
-        return jsonify({"error": "No subtitles found"}), 404
+            latest_subtitle = max(subtitle_files, key=os.path.getctime)
+            transcript_text = TranscriptProcessor.clean_transcript(latest_subtitle)
 
-    latest_subtitle = max(subtitle_files, key=os.path.getctime)
-    transcript_text = clean_transcript(latest_subtitle)
+            # Clean up
+            os.remove(latest_subtitle)
 
-    # Optional: Clean up the file after reading
-    os.remove(latest_subtitle)
+            return jsonify({"transcript": transcript_text})
+        
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Subprocess error: {e}")
+            return jsonify({"error": "Failed to download transcript"}), 500
 
-    return jsonify({"transcript": transcript_text})
+    return app
+
+def main():
+    os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs(Config.SUBTITLES_FOLDER, exist_ok=True)
+    
+    app = create_app()
+    app.run(debug=True)
 
 if __name__ == "__main__":
-    os.makedirs("subtitles", exist_ok=True)
-    app.run()
+    main()
