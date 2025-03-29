@@ -38,9 +38,10 @@ const Question_Type = () => {
           Choose one
         </div>
         <div className="flex flex-col items-center mt-8">
+          {/* Short-Answer Type Questions */}
           <div
             onClick={() => handleOptionClick("get_shortq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
+            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838] hover:bg-opacity-70 hover:scale-105 transition-all duration-300"
           >
             <div
               className={`w-10 h-10 rounded-full ${
@@ -53,9 +54,11 @@ const Question_Type = () => {
               Short-Answer Type Questions
             </div>
           </div>
+
+          {/* Multiple Choice Questions */}
           <div
             onClick={() => handleOptionClick("get_mcq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
+            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838] hover:bg-opacity-70 hover:scale-105 transition-all duration-300"
           >
             <div
               className={`w-10 h-10 rounded-full ${
@@ -68,9 +71,11 @@ const Question_Type = () => {
               Multiple Choice Questions
             </div>
           </div>
+
+          {/* True/False Questions */}
           <div
             onClick={() => handleOptionClick("get_boolq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
+            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838] hover:bg-opacity-70 hover:scale-105 transition-all duration-300"
           >
             <div
               className={`w-10 h-10 rounded-full ${
@@ -83,9 +88,11 @@ const Question_Type = () => {
               True/False Questions
             </div>
           </div>
+
+          {/* All Questions */}
           <div
             onClick={() => handleOptionClick("get_problems")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
+            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838] hover:bg-opacity-70 hover:scale-105 transition-all duration-300"
           >
             <div
               className={`w-10 h-10 rounded-full ${
@@ -97,12 +104,14 @@ const Question_Type = () => {
             <div className="text-white text-2xl font-medium">All Questions</div>
           </div>
         </div>
+
+        {/* Fire Up Button */}
         <div className="mx-auto text-center mt-10">
           {selectedOption ? (
             <a href="input">
               <button
                 onClick={handleSaveToLocalStorage}
-                className="rounded-2xl text-2xl text-white w-fit px-8 font-bold py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7]"
+                className="rounded-2xl text-2xl text-white w-fit px-8 font-bold py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:from-[#FF005C] hover:via-[#7600F2] hover:to-[#00CBE7] hover:scale-105 transition-all duration-300"
               >
                 Fire Up{"  "}🚀
               </button>
