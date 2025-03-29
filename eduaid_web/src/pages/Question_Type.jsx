@@ -40,7 +40,7 @@ const Question_Type = () => {
         <div className="flex flex-col items-center mt-8">
           <div
             onClick={() => handleOptionClick("get_shortq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
+            className={`flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838] hover:bg-[#2a3349]`}
           >
             <div
               className={`w-10 h-10 rounded-full ${
@@ -55,7 +55,7 @@ const Question_Type = () => {
           </div>
           <div
             onClick={() => handleOptionClick("get_mcq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
+            className={`flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838] hover:bg-[#2a3349]`}
           >
             <div
               className={`w-10 h-10 rounded-full ${
@@ -70,7 +70,7 @@ const Question_Type = () => {
           </div>
           <div
             onClick={() => handleOptionClick("get_boolq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
+            className={`flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838] hover:bg-[#2a3349]`}
           >
             <div
               className={`w-10 h-10 rounded-full ${
@@ -85,7 +85,7 @@ const Question_Type = () => {
           </div>
           <div
             onClick={() => handleOptionClick("get_problems")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
+            className={`flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838] hover:bg-[#2a3349]`}
           >
             <div
               className={`w-10 h-10 rounded-full ${
