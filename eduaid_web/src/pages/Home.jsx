@@ -5,8 +5,25 @@ import starsImg from "../assets/stars.png";
 import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
 import { FaGithub } from "react-icons/fa";
+import {motion} from 'framer-motion'
 
 const Home = () => {
+
+  const variants = {
+    initial: {
+      opacity: 0,
+      x: '100%'
+    },
+    animate: {
+      opacity: 1,
+      x: 0,
+      transition:{
+        duration: 0.5,
+        ease: 'easeInOut',
+        staggerChildren: 0.3
+      }
+    }
+  }
   const [stars, setStars] = useState(null);
   const [error, setError] = useState("");
 
@@ -68,28 +85,28 @@ const Home = () => {
               <img src={starsImg} width={32} height={12} alt="" />
             </div>
           </div>
-          <div className="flex flex-col items-end">
-            <div className="my-6">
+          <motion.div className="flex flex-col items-end" variants={variants} initial='initial' animate='animate'>
+            <motion.div className="my-6" variants={variants} whileHover={{scale:1.1}}>
               <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
                 <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-xl">Doc/Audio Input</div>
+                <div className="text-white text-xl" >Doc/Audio Input</div>
               </div>
-            </div>
-            <div className="my-4">
+            </motion.div>
+            <motion.div className="my-4" variants={variants} whileHover={{scale:1.1}}>
               <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
                 <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-xl">In-depth questions gen</div>
+                <div className="text-white text-xl" >In-depth questions gen</div>
               </div>
-            </div>
-            <div className="my-4">
+            </motion.div>
+            <motion.div className="my-4" variants={variants} whileHover={{scale:1.1}}>
               <div className="flex items-center rounded-l-2xl w-fit px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-4">
                 <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-xl">
+                <div className="text-white text-xl" >
                   Dynamic Google Form Integration
                 </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
           <div className="flex justify-center gap-6">
             <div className="mt-8 rounded-2xl">
               <a href="question-type">
