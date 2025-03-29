@@ -23,35 +23,40 @@ input_text = '''
     with data collection, and the impact of AI on jobs and society as a whole.
 '''
 
+def make_post_request(endpoint, data):
+    url = f'{BASE_URL}{endpoint}'
+    headers = {'Content-Type': 'application/json'}
+    try:
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+        response.raise_for_status()  # Raise an error for bad status codes
+        return response.json()
+    except requests.RequestException as e:
+        print(f'Error with POST request to {endpoint}: {e}')
+        return {}
+    except json.JSONDecodeError as e:
+        print(f'Error decoding JSON response from {endpoint}: {e}')
+        return {}
+
 def test_get_mcq():
     endpoint = '/get_mcq'
-    data = {
-        'input_text': input_text,
-        'max_questions': 5
-    }
+    data = {'input_text': input_text, 'max_questions': 5}
     response = make_post_request(endpoint, data)
     print(f'/get_mcq Response: {response}')
-    assert 'output' in response
+    assert 'output' in response, "Response missing 'output' key"
 
 def test_get_boolq():
     endpoint = '/get_boolq'
-    data = {
-        'input_text': input_text,
-        'max_questions': 3
-    }
+    data = {'input_text': input_text, 'max_questions': 3}
     response = make_post_request(endpoint, data)
     print(f'/get_boolq Response: {response}')
-    assert 'output' in response
+    assert 'output' in response, "Response missing 'output' key"
 
 def test_get_shortq():
     endpoint = '/get_shortq'
-    data = {
-        'input_text': input_text,
-        'max_questions': 4
-    }
+    data = {'input_text': input_text, 'max_questions': 4}
     response = make_post_request(endpoint, data)
     print(f'/get_shortq Response: {response}')
-    assert 'output' in response
+    assert 'output' in response, "Response missing 'output' key"
 
 def test_get_problems():
     endpoint = '/get_problems'
@@ -63,15 +68,19 @@ def test_get_problems():
     }
     response = make_post_request(endpoint, data)
     print(f'/get_problems Response: {response}')
-    assert 'output_mcq' in response
-    assert 'output_boolq' in response
-    assert 'output_shortq' in response
+    assert 'output_mcq' in response, "Response missing 'output_mcq' key"
+    assert 'output_boolq' in response, "Response missing 'output_boolq' key"
+    assert 'output_shortq' in response, "Response missing 'output_shortq' key"
 
 def test_root():
     endpoint = '/'
-    response = requests.get(f'{BASE_URL}{endpoint}')
-    print(f'Root Endpoint Response: {response.text}')
-    assert response.status_code == 200
+    try:
+        response = requests.get(f'{BASE_URL}{endpoint}')
+        response.raise_for_status()
+        print(f'Root Endpoint Response: {response.text}')
+        assert response.status_code == 200, "Unexpected status code"
+    except requests.RequestException as e:
+        print(f'Error with GET request to {endpoint}: {e}')
 
 def test_get_answer():
     endpoint = '/get_answer'
@@ -86,7 +95,7 @@ def test_get_answer():
     }
     response = make_post_request(endpoint, data)
     print(f'/get_answer Response: {response}')
-    assert 'output' in response
+    assert 'output' in response, "Response missing 'output' key"
 
 def test_get_boolean_answer():
     endpoint = '/get_boolean_answer'
@@ -100,13 +109,7 @@ def test_get_boolean_answer():
     }
     response = make_post_request(endpoint, data)
     print(f'/get_boolean_answer Response: {response}')
-    assert 'output' in response
-
-def make_post_request(endpoint, data):
-    url = f'{BASE_URL}{endpoint}'
-    headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-    return response.json()
+    assert 'output' in response, "Response missing 'output' key"
 
 if __name__ == '__main__':
     test_get_mcq()
