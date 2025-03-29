@@ -49,6 +49,9 @@ You can choose to set up the backend manually or use an automated shell script.
   ```bash
   chmod +x script.sh
 
+  For issues related to Mac System:
+   Go to TROUBLESHOOTING.md file
+
 
 ### 3. Configure Google APIs
 
