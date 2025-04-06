@@ -5,6 +5,7 @@ import starsImg from "../assets/stars.png";
 import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
 import { FaGithub } from "react-icons/fa";
+import { Link } from 'react-router-dom';
 
 const Home = () => {
   const [stars, setStars] = useState(null);
@@ -128,6 +129,17 @@ const Home = () => {
               </div>
             </div>
           </a>
+
+          {/* Add FAQ link below */}
+          <div className="mt-4 text-center">
+            <Link
+              to="/faq"  // Changed from href="faq"
+              className="text-[#00CBE7] hover:underline text-lg"
+            >
+              Need help? Visit FAQs
+            </Link>
+              
+          </div>
         </div>
       </div>
     </div>
