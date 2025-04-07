@@ -9,6 +9,7 @@ const Output = () => {
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
+  //Canvas export form state
   const [canvasForm, setCanvasForm] = useState({
     courseId: "",
     title: "EduAid Generated Quiz",
