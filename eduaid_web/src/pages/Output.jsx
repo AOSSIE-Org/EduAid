@@ -6,6 +6,15 @@ import logoPNG from "../assets/aossie_logo_transparent.png";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
+  const [editingIndex, setEditingIndex] = useState(null); // Track which question is being edited
+const [editedPairs, setEditedPairs] = useState([]); // Store edited versions of qaPairs
+const [newQuestion, setNewQuestion] = useState({
+  question: "",
+  question_type: "Short",
+  options: [],
+  answer: "",
+  context: "",
+});
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
@@ -112,8 +121,68 @@ const Output = () => {
       }
 
       setQaPairs(combinedQaPairs);
+      setEditedPairs([...combinedQaPairs]);
     }
   }, []);
+
+  const startEditing = (index) => {
+    setEditingIndex(index);
+  };
+  
+  const saveEdit = (index) => {
+    setEditingIndex(null);
+    setQaPairs([...editedPairs]); // Sync qaPairs with editedPairs for export
+    localStorage.setItem("qaPairs", JSON.stringify(editedPairs)); // Update localStorage
+  };
+  
+  const handleEditChange = (index, field, value) => {
+    const updatedPairs = [...editedPairs];
+    updatedPairs[index] = { ...updatedPairs[index], [field]: value };
+    setEditedPairs(updatedPairs);
+  };
+  
+  const handleOptionChange = (index, optionIdx, value) => {
+    const updatedPairs = [...editedPairs];
+    const options = [...updatedPairs[index].options];
+    options[optionIdx] = value;
+    updatedPairs[index].options = options;
+    setEditedPairs(updatedPairs);
+  };
+
+  const deleteQuestion = (index) => {
+    const updatedPairs = editedPairs.filter((_, i) => i !== index);
+    setEditedPairs(updatedPairs);
+    setQaPairs(updatedPairs);
+    localStorage.setItem("qaPairs", JSON.stringify(updatedPairs));
+  };
+  
+  const addOption = (index) => {
+    const updatedPairs = [...editedPairs];
+    updatedPairs[index].options = [...(updatedPairs[index].options || []), ""];
+    setEditedPairs(updatedPairs);
+  };
+  
+  const removeOption = (index, optionIdx) => {
+    const updatedPairs = [...editedPairs];
+    updatedPairs[index].options = updatedPairs[index].options.filter((_, i) => i !== optionIdx);
+    setEditedPairs(updatedPairs);
+  };
+  
+  const handleNewQuestionChange = (field, value) => {
+    setNewQuestion((prev) => ({ ...prev, [field]: value }));
+  };
+  
+  const addNewQuestion = () => {
+    if (!newQuestion.question || !newQuestion.answer) {
+      alert("Please fill in the question and answer!");
+      return;
+    }
+    const updatedPairs = [...editedPairs, { ...newQuestion }];
+    setEditedPairs(updatedPairs);
+    setQaPairs(updatedPairs);
+    localStorage.setItem("qaPairs", JSON.stringify(updatedPairs));
+    setNewQuestion({ question: "", question_type: "Short", options: [], answer: "", context: "" });
+  };
 
   const generateGoogleForm = async () => {
     const response = await fetch(
@@ -420,32 +489,173 @@ const Output = () => {
   
         {/* Questions List */}
         <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
-          {qaPairs.map((qaPair, index) => {
-            const combinedOptions = qaPair.options ? [...qaPair.options, qaPair.answer] : [qaPair.answer];
-            const shuffledOptions = shuffleArray(combinedOptions);
-            return (
-              <div key={index} className="bg-[#d9d9d90d] border border-gray-800 rounded-lg p-4 mb-3">
-                <p className="text-[#E4E4E4] text-sm">Question {index + 1}</p>
-                <p className="text-[#FFF4F4] text-lg my-1">{qaPair.question}</p>
-                {qaPair.question_type !== "Boolean" && (
-                  <>
-                    <p className="text-[#E4E4E4] text-sm">Answer</p>
-                    <p className="text-[#FFF4F4] text-base">{qaPair.answer}</p>
-                    {qaPair.options && qaPair.options.length > 0 && (
-                      <div className="mt-2">
-                        {shuffledOptions.map((option, idx) => (
-                          <p key={idx} className="text-[#FFF4F4] text-base">
-                            <span className="text-[#E4E4E4] text-sm">Option {idx + 1}: </span>{option}
-                          </p>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            );
-          })}
+  {editedPairs.map((qaPair, index) => (
+    <div key={index} className="bg-[#d9d9d90d] border border-gray-800 rounded-lg p-4 mb-3">
+      {editingIndex === index ? (
+        <div className="space-y-2">
+          <input
+            type="text"
+            value={qaPair.question}
+            onChange={(e) => handleEditChange(index, "question", e.target.value)}
+            className="w-full bg-[#3e5063] text-white rounded-lg p-2 outline-none focus:ring-2 focus:ring-[#518E8E]"
+            placeholder="Edit question"
+          />
+          <select
+            value={qaPair.question_type}
+            onChange={(e) => handleEditChange(index, "question_type", e.target.value)}
+            className="bg-[#3e5063] text-white rounded-lg p-2 outline-none"
+          >
+            <option value="Short">Short Answer</option>
+            <option value="MCQ">Multiple Choice</option>
+            <option value="Boolean">Boolean</option>
+          </select>
+          {qaPair.question_type === "MCQ" && (
+            <div className="space-y-1">
+              {qaPair.options.map((option, optionIdx) => (
+                <div key={optionIdx} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={option}
+                    onChange={(e) => handleOptionChange(index, optionIdx, e.target.value)}
+                    className="w-full bg-[#3e5063] text-white rounded-lg p-2 outline-none focus:ring-2 focus:ring-[#518E8E]"
+                    placeholder={`Option ${optionIdx + 1}`}
+                  />
+                  <button
+                    onClick={() => removeOption(index, optionIdx)}
+                    className="text-red-400 hover:text-red-600"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={() => addOption(index)}
+                className="text-[#00CBE7] text-sm hover:underline"
+              >
+                + Add Option
+              </button>
+            </div>
+          )}
+          <input
+            type="text"
+            value={qaPair.answer}
+            onChange={(e) => handleEditChange(index, "answer", e.target.value)}
+            className="w-full bg-[#3e5063] text-white rounded-lg p-2 outline-none focus:ring-2 focus:ring-[#518E8E]"
+            placeholder="Edit answer"
+          />
+          <button
+            onClick={() => saveEdit(index)}
+            className="bg-[#518E8E] text-white px-4 py-1 rounded-lg hover:bg-[#3e706e] transition-colors"
+          >
+            Save
+          </button>
         </div>
+      ) : (
+        <>
+          <p className="text-[#E4E4E4] text-sm">Question {index + 1}</p>
+          <p className="text-[#FFF4F4] text-lg my-1">{qaPair.question}</p>
+          {qaPair.question_type !== "Boolean" && (
+            <>
+              <p className="text-[#E4E4E4] text-sm">Answer</p>
+              <p className="text-[#FFF4F4] text-base">{qaPair.answer}</p>
+              {qaPair.options && qaPair.options.length > 0 && (
+                <div className="mt-2">
+                  {qaPair.options.map((option, idx) => (
+                    <p key={idx} className="text-[#FFF4F4] text-base">
+                      <span className="text-[#E4E4E4] text-sm">Option {idx + 1}: </span>{option}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+          <div className="flex gap-4 mt-2">
+            <button
+              onClick={() => startEditing(index)}
+              className="text-[#00CBE7] text-sm hover:underline"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => deleteQuestion(index)}
+              className="text-red-400 text-sm hover:underline"
+            >
+              Delete
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  ))}
+</div>
+<div className="bg-[#1a1a2e] p-4 rounded-lg mt-4">
+  <h3 className="text-white font-semibold mb-2">Add New Question</h3>
+  <div className="space-y-2">
+    <input
+      type="text"
+      value={newQuestion.question}
+      onChange={(e) => handleNewQuestionChange("question", e.target.value)}
+      className="w-full bg-[#3e5063] text-white rounded-lg p-2 outline-none focus:ring-2 focus:ring-[#518E8E]"
+      placeholder="Enter new question"
+    />
+    <select
+      value={newQuestion.question_type}
+      onChange={(e) => handleNewQuestionChange("question_type", e.target.value)}
+      className="w-full bg-[#3e5063] text-white rounded-lg p-2 outline-none"
+    >
+      <option value="Short">Short Answer</option>
+      <option value="MCQ">Multiple Choice</option>
+      <option value="Boolean">Boolean</option>
+    </select>
+    {newQuestion.question_type === "MCQ" && (
+      <div className="space-y-1">
+        {newQuestion.options.map((option, idx) => (
+          <div key={idx} className="flex gap-2">
+            <input
+              type="text"
+              value={option}
+              onChange={(e) => {
+                const updatedOptions = [...newQuestion.options];
+                updatedOptions[idx] = e.target.value;
+                setNewQuestion((prev) => ({ ...prev, options: updatedOptions }));
+              }}
+              className="w-full bg-[#3e5063] text-white rounded-lg p-2 outline-none focus:ring-2 focus:ring-[#518E8E]"
+              placeholder={`Option ${idx + 1}`}
+            />
+            <button
+              onClick={() => {
+                const updatedOptions = newQuestion.options.filter((_, i) => i !== idx);
+                setNewQuestion((prev) => ({ ...prev, options: updatedOptions }));
+              }}
+              className="text-red-400 hover:text-red-600"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+        <button
+          onClick={() => setNewQuestion((prev) => ({ ...prev, options: [...prev.options, ""] }))}
+          className="text-[#00CBE7] text-sm hover:underline"
+        >
+          + Add Option
+        </button>
+      </div>
+    )}
+    <input
+      type="text"
+      value={newQuestion.answer}
+      onChange={(e) => handleNewQuestionChange("answer", e.target.value)}
+      className="w-full bg-[#3e5063] text-white rounded-lg p-2 outline-none focus:ring-2 focus:ring-[#518E8E]"
+      placeholder="Enter answer"
+    />
+    <button
+      onClick={addNewQuestion}
+      className="w-full bg-[#518E8E] text-white px-4 py-2 rounded-lg hover:bg-[#3e706e] transition-colors"
+    >
+      Add Question
+    </button>
+  </div>
+</div>
   
         {/* Action Buttons */}
         <div className="mt-6 flex flex-col items-center gap-6">
