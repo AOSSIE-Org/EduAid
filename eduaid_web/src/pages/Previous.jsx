@@ -1,6 +1,5 @@
 import React from "react";
 import "../index.css";
-import logo from "../assets/aossie_logo.png";
 import stars from "../assets/stars.png";
 import { FaArrowRight } from "react-icons/fa";
 
