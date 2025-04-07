@@ -7,6 +7,7 @@ import subprocess
 import os
 import glob
 import logging
+from collections import defaultdict
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -559,6 +560,73 @@ def export_to_canvas():
         logger.exception("An error occurred in export_to_canvas")
         return jsonify({"error": "Server error", "details": str(e)}), 500
 
+@app.route('/summarize', methods=['POST'])
+def summarize_text():
+    from collections import defaultdict  # Keep this for local scope
+    try:
+        data = request.get_json()
+        input_text = data.get("input_text", "")
+        if not input_text:
+            return jsonify({"error": "No input text provided"}), 400
+
+        # Load spaCy model
+        nlp = spacy.load("en_core_web_sm")
+        doc = nlp(input_text)
+
+        # Word frequency for scoring
+        word_freq = defaultdict(int)
+        for token in doc:
+            if token.text.lower() not in STOP_WORDS and token.text not in punctuation:
+                word_freq[token.text.lower()] += 1
+
+        # Sentence scoring
+        sent_scores = defaultdict(float)
+        for sent in doc.sents:
+            for word in sent:
+                if word.text.lower() in word_freq:
+                    sent_scores[sent] += word_freq[word.text.lower()]
+
+        # Get top 3 sentences (one per card, max 3 cards)
+        top_sents = nlargest(5, sent_scores, key=sent_scores.get)
+        top_sents_text = [sent.text.strip() for sent in top_sents]
+
+        # Create 2-3 cards with dynamic headers
+        notes_cards = []
+        for sent_text in top_sents_text:
+            # Re-process each sentence with spaCy to extract a header
+            sent_doc = nlp(sent_text)
+            # Look for the first noun chunk or verb phrase as the header
+            header = None
+            for chunk in sent_doc.noun_chunks:
+                if chunk.text.lower() not in STOP_WORDS:
+                    header = chunk.text
+                    break
+            if not header:  # Fallback to first verb or main subject
+                for token in sent_doc:
+                    if token.pos_ in ("VERB", "NOUN") and token.text.lower() not in STOP_WORDS:
+                        header = token.text
+                        break
+            if not header:  # Ultimate fallback
+                header = "Note"
+
+            notes_cards.append({
+                "header": header.capitalize(),  # Capitalize for readability
+                "points": [f"- {sent_text}"]
+            })
+
+        # Fallback: ensure at least 2 cards if possible
+        if len(notes_cards) < 2 and top_sents_text:
+            all_points = [f"- {top_sents_text[0]}"] + ([f"- {top_sents_text[0]}"] if len(top_sents_text) == 1 else [f"- {top_sents_text[1]}"])
+            notes_cards = [
+                {"header": nlp(top_sents_text[0]).noun_chunks.__next__().text.capitalize(), "points": [all_points[0]]},
+                {"header": nlp(top_sents_text[1] if len(top_sents_text) > 1 else top_sents_text[0]).noun_chunks.__next__().text.capitalize(), "points": [all_points[1]]}
+            ]
+
+        return jsonify({"notes": notes_cards})
+    except Exception as e:
+        logger.exception("Error in summarization")
+        return jsonify({"error": str(e)}), 500
+    
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
     app.run()
