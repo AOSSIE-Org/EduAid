@@ -41,6 +41,7 @@
     ]
   },
   "devDependencies": {
+    "eslint": "^8.57.1",
     "tailwindcss": "^3.4.9"
   }
 }
