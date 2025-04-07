@@ -4,6 +4,7 @@ import logo from "../assets/aossie_logo.png";
 import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import Switch from "react-switch";
 
 const Text_Input = () => {
@@ -15,6 +16,7 @@ const Text_Input = () => {
   const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
+  const navigate = useNavigate();
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
@@ -161,6 +163,40 @@ const Text_Input = () => {
     }
   };
 
+  const handleCreateNotes = async () => {
+    setLoading(true);
+    try {
+      const inputText = text || localStorage.getItem("textContent") || "";
+      if (!inputText) {
+        alert("Please enter some content first!");
+        setLoading(false);
+        return;
+      }
+  
+      const response = await fetch(`${process.env.REACT_APP_BASE_URL}/summarize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input_text: inputText }),
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        if (data.notes) {
+          localStorage.setItem("studyNotes", JSON.stringify(data.notes)); // Store array of cards
+          navigate("/notes");
+        } else {
+          console.error("No notes returned:", data.error);
+        }
+      } else {
+        console.error("Failed to generate study notes");
+      }
+    } catch (error) {
+      console.error("Error creating study notes:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen">
       {loading && (
@@ -294,20 +330,24 @@ const Text_Input = () => {
           </div>
         </div>
         <div className="flex justify-center gap-8 my-6">
-          <a href="question-type">
-            <button className="bg-black items-center text-xl text-white px-4 py-2 border-gradient">
-              Back
-            </button>
-          </a>
-          {/* <a href="output"> */}
-          <button
-            onClick={handleSaveToLocalStorage}
-            className="bg-black items-center text-xl text-white px-4 py-2 border-gradient flex"
-          >
-            Next
-          </button>
-          {/* </a> */}
-        </div>
+  <a href="question-type">
+    <button className="bg-black items-center text-xl text-white px-4 py-2 border-gradient">
+      Back
+    </button>
+  </a>
+  <button
+    onClick={handleSaveToLocalStorage}
+    className="bg-black items-center text-xl text-white px-4 py-2 border-gradient flex"
+  >
+    Next
+  </button>
+  <button
+    onClick={handleCreateNotes}
+    className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] items-center text-xl text-white px-4 py-2 rounded-lg hover:from-[#5a00b8] hover:to-[#009bb3] transition-colors flex"
+  >
+    Create Notes
+  </button>
+</div>
       </div>
     </div>
   );
