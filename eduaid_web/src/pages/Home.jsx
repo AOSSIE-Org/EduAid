@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import "../index.css";
-import logo from "../assets/aossie_logo.png";
 import starsImg from "../assets/stars.png";
 import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";

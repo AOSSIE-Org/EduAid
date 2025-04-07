@@ -7,10 +7,9 @@ import logoPNG from "../assets/aossie_logo_transparent.png";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
-  const [questionType, setQuestionType] = useState(
+  const [questionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
-  const [pdfMode, setPdfMode] = useState("questions");
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -75,7 +74,7 @@ const Output = () => {
         });
       }
 
-      if (questionType == "get_boolq") {
+      if (questionType === "get_boolq") {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair,
@@ -97,7 +96,7 @@ const Output = () => {
 
       setQaPairs(combinedQaPairs);
     }
-  }, []);
+  }, [questionType]);
 
   const generateGoogleForm = async () => {
     const response = await fetch(`${process.env.REACT_APP_BASE_URL}/generate_gform`, {
@@ -136,7 +135,7 @@ const Output = () => {
     const pageHeight = 841.89;
     const margin = 50;
     const maxContentWidth = pageWidth - (2 * margin);
-    const maxContentHeight = pageHeight - (2 * margin);
+    // const maxContentHeight = pageHeight - (2 * margin);
     
     const pdfDoc = await PDFDocument.create();
     let page = pdfDoc.addPage([pageWidth, pageHeight]);
@@ -423,7 +422,7 @@ const Output = () => {
               </button>
               <div
                 id="pdfDropdown"
-                className="hidden absolute bottom-full mb-1 bg-[#02000F] shadow-md text-white rounded-lg shadow-lg"
+                className="hidden absolute bottom-full mb-1 bg-[#02000F] shadow-md text-white rounded-lg"
               >
                 <button
                   className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-t-lg"

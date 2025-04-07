@@ -18,7 +18,7 @@ const NotFound = () => {
             clearInterval(timer);
             clearTimeout(redirect);
         };
-    }, []);
+    }, [router]);
 
     return (
         <div className="min-h-screen flex items-center justify-center  popup bg-[#02000F] bg-custom-gradient">
@@ -26,7 +26,7 @@ const NotFound = () => {
                 <h1 className="text-6xl font-bold text-blue-400 mb-4">404</h1>
                 <h2 className="text-2xl font-semibold text-gray-200 mb-4">Page Not Found</h2>
                 <p className="text-gray-300 mb-6">
-                    Oops! The page you're looking for doesn't exist.
+                    Oops! The page you&apos;re looking for doesn&apos;t exist.
                 </p>
                 <p className="text-gray-400">
                     Redirecting to home page in <span className="text-blue-400">{countdown}</span> seconds...
