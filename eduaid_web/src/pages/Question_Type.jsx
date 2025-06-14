@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "../index.css";
-import logo from "../assets/aossie_logo.png";
+import logo from "../assets/aossie_logo_transparent.png";
 
 const Question_Type = () => {
   const [selectedOption, setSelectedOption] = useState(null);
@@ -20,7 +20,11 @@ const Question_Type = () => {
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient p-6">
         <a href="/">
           <div className="flex items-end gap-4">
-            <img src="aossie_transparent.png" alt="logo" className="w-24 my-6 block" />
+          <div className="logo-container">
+            <img src={logo} className="App-logo front" alt="logo" />
+            <img src={logo} className="App-logo back" alt="logo" />
+          </div>
+            
             <div className="text-5xl mb-5 font-extrabold">
               <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
                 Edu
