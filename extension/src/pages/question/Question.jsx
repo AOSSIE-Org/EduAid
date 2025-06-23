@@ -146,10 +146,12 @@ function Question() {
       document.body.removeChild(link);
 
       document.getElementById('pdfDropdown').classList.add('hidden');
+      worker.terminate();
     };
 
     worker.onerror = (err) => {
       console.error("PDF generation failed in worker:", err);
+      worker.terminate();
     };
   };
 
