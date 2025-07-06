@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../index.css";
-import logo from "../assets/aossie_logo.png";
+import logo from "../assets/aossie_logo_transparent.png";
 import starsImg from "../assets/stars.png";
 import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
@@ -52,7 +52,10 @@ const Home = () => {
     <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <div>
-          <img src="aossie_transparent.png" alt="logo" className="w-24 my-6 mx-6 block" />
+        <div className="logo-container">
+          <img src={logo} className="App-logo front" alt="logo" />
+          <img src={logo} className="App-logo back" alt="logo" />
+        </div>
           <div className="text-7xl text-center font-extrabold">
             <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
               Edu
