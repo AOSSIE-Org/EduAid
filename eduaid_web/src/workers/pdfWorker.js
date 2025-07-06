@@ -28,6 +28,7 @@ const wrapText = (text, maxWidth) => {
   return lines;
 };
 
+// eslint-disable-next-line no-restricted-globals
 self.onmessage = async (e) => {
   const { qaPairs, mode, logoBytes } = e.data;
 
@@ -158,5 +159,6 @@ self.onmessage = async (e) => {
   }
 
   const pdfBytes = await pdfDoc.save();
+  // eslint-disable-next-line no-restricted-globals
   self.postMessage(pdfBytes);
 };
