@@ -1,16 +1,68 @@
-# EduAid: AI Quiz Generation 🚀
+<h1 align="center">EduAid 🎓 | AI-Powered Quiz Generator</h1>
 
-Online learning has taken the front seat in the post-pandemic age. With the advent of sophisticated AI architectures like Transformers, it is only natural that AI would find its way into education. Learning online via platforms like YouTube or MOOCs is often a method of self-learning. The biggest obstacle faced by students in self-learning is the lack of attention span. An online tool that can generate short quizzes from input educational content can be a great resource for both teachers and students. It helps retain important information, frame questions, and quickly revise large chunks of content.
+<p align="center">
+  <img src="https://img.shields.io/badge/GSoC-2025-orange?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Built%20With-AI%20%26%20NLP-blueviolet?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/License-MIT-success?style=for-the-badge" />
+</p>
 
-EduAid is one such project currently available in the form of a browser extension.
+> ⚡️ EduAid is your intelligent study buddy. It transforms learning content into customizable, interactive quizzes — perfect for students, teachers, and lifelong learners.
 
-## Installation and Setup
+---
+
+## 🌟 Why EduAid?
+
+With online learning becoming the new normal, it's essential to keep students engaged and focused. EduAid helps reinforce knowledge by transforming educational content into smart, interactive quizzes. Whether you're revising a lecture or building study material from scratch — EduAid has your back.
+
+EduAid is currently available as a **browser extension** and a **web platform**.
+
+---
+
+## 🚀 Features
+
+### 🧠 Intelligent Quiz Generation
+
+- ✅ **Boolean Questions** (True/False)
+- ✅ **MCQs** with up to 4 answer options
+- ✅ **Single Answer Questions**
+- ✅ **Fill-in-the-Blank (Coming Soon)**
+- ✅ **Match-the-Following (Planned)**
+
+### 📁 Flexible Content Input
+
+- Upload `.txt`, `.docx`, or `.pdf` files
+- Paste or type custom text
+- Use public **Google Docs** links
+- Wiki-based question generation from topic keywords 🌐
+
+### 📄 Export & Integration
+
+- Export quizzes to **CSV** and **PDF**
+- Auto-generate **Google Forms**
+- Integrate with popular LMS platforms (Google Classroom support coming!)
+
+### 📜 Quiz Management
+
+- View your **last 5 quizzes**
+- Edit or regenerate with a single click
+- SidePanel view for distraction-free experience
+
+### 🤖 Smart Answer Generator
+
+- MCQ answer prediction
+- Auto-answer support for other question types
+- Toggleable for full user control
+
+---
+
+## 🔧 Installation & Setup
 
 ### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/AOSSIE-Org/EduAid.git
 cd EduAid
+
 ```
 ## 2. Backend Setup
 
