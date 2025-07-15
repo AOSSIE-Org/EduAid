@@ -31,3 +31,4 @@ tokenizers
 mammoth
 mediawikiapi
 PyMuPDF
+textblob

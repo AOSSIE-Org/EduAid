@@ -11,6 +11,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
 nltk.download('punkt_tab')
 from Generator import main
+from Generator.question_filters import make_question_harder
 import re
 import json
 import spacy
@@ -370,9 +371,14 @@ def get_shortq_hard():
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
     input_questions = data.get("input_question", [])
+
     output = qg.generate(
         article=input_text, num_questions=input_questions, answer_style="sentences"
     )
+
+    for item in output:
+        item["question"] = make_question_harder(item["question"])
+
     return jsonify({"output": output})
 
 
@@ -386,7 +392,32 @@ def get_mcq_hard():
     output = qg.generate(
         article=input_text, num_questions=input_questions, answer_style="multiple_choice"
     )
+    
+    for q in output:
+        q["question"] = make_question_harder(q["question"])
+        
     return jsonify({"output": output})
+
+@app.route("/get_boolq_hard", methods=["POST"])
+def get_boolq_hard():
+    data = request.get_json()
+    input_text = data.get("input_text", "")
+    use_mediawiki = data.get("use_mediawiki", 0)
+    input_questions = data.get("input_question", [])
+
+    input_text = process_input_text(input_text, use_mediawiki)
+
+    # Generate questions using the same QG model
+    generated = qg.generate(
+        article=input_text,
+        num_questions=input_questions,
+        answer_style="true_false"
+    )
+
+    # Apply transformation to make each question harder
+    harder_questions = [make_question_harder(q) for q in generated]
+
+    return jsonify({"output": harder_questions})
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
