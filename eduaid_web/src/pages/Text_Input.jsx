@@ -66,11 +66,15 @@ const Text_Input = () => {
           },
           body: JSON.stringify({ document_url: docUrl }),
         });
-
         if (response.ok) {
           const data = await response.json();
           setDocUrl("");
-          data ? setText(data):setErrorText("Error in retrieving");
+          if (data?.content) {
+            setText(data.content);
+            setErrorText("");
+          } else {
+            setErrorText(data?.error || "Error retrieving Google Doc content");
+          }
         } else {
           console.error("Error retrieving Google Doc content");
           setErrorText("Error retrieving Google Doc content");
