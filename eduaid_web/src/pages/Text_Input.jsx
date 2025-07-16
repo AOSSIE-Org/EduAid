@@ -8,11 +8,11 @@ import Switch from "react-switch";
 
 const Text_Input = () => {
   const [text, setText] = useState("");
+  const [errorText, setErrorText] = useState("");
   const [difficulty, setDifficulty] = useState("Easy Difficulty");
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
-  const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
 
@@ -32,10 +32,15 @@ const Text_Input = () => {
           body: formData,
         });
         const data = await response.json();
-        setText(data.content || data.error);
+        if (data.content) {
+          setText(data.content);
+          setErrorText("");
+        } else {
+          setErrorText(data.error || "Unknown error");
+        }
       } catch (error) {
         console.error("Error uploading file:", error);
-        setText("Error uploading file");
+        setErrorText("Error uploading file");
       }
     }
   };
@@ -61,18 +66,22 @@ const Text_Input = () => {
           },
           body: JSON.stringify({ document_url: docUrl }),
         });
-
         if (response.ok) {
           const data = await response.json();
           setDocUrl("");
-          setText(data || "Error in retrieving");
+          if (data?.content) {
+            setText(data.content);
+            setErrorText("");
+          } else {
+            setErrorText(data?.error || "Error retrieving Google Doc content");
+          }
         } else {
           console.error("Error retrieving Google Doc content");
-          setText("Error retrieving Google Doc content");
+          setErrorText("Error retrieving Google Doc content");
         }
       } catch (error) {
         console.error("Error:", error);
-        setText("Error retrieving Google Doc content");
+        setErrorText("Error retrieving Google Doc content");
       } finally {
         setLoading(false);
       }
@@ -166,6 +175,24 @@ const Text_Input = () => {
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
           <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
+        </div>
+      )}
+
+      {/*Pop up to display when error occurs while uploading tthe file*/}
+      {errorText && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#02000F] bg-opacity-40 backdrop-blur-sm">
+          <div className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] rounded-2xl p-1 max-w-md w-full">
+            <div className="bg-black rounded-2xl p-6 text-center text-white">
+              <div className="text-xl font-extrabold mb-3">Error</div>
+              <div className="mb-6 text-white/90">{errorText}</div>
+              <button
+                className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] hover:opacity-90 transition rounded-xl px-5 py-2 font-semibold"
+                onClick={() => setErrorText("")}
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
