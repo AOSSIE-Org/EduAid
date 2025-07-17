@@ -11,16 +11,16 @@ const Output = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-        const dropdown = document.getElementById('pdfDropdown');
-        if (dropdown && !dropdown.contains(event.target) && 
-            !event.target.closest('button')) {
-            dropdown.classList.add('hidden');
-        }
+      const dropdown = document.getElementById('pdfDropdown');
+      if (dropdown && !dropdown.contains(event.target) &&
+        !event.target.closest('button')) {
+        dropdown.classList.add('hidden');
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-}, []);
+  }, []);
 
   function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -31,59 +31,70 @@ const Output = () => {
   }
 
   useEffect(() => {
-    const qaPairsFromStorage =
-      JSON.parse(localStorage.getItem("qaPairs")) || {};
-    if (qaPairsFromStorage) {
-      const combinedQaPairs = [];
+    const qaPairsFromStorage = JSON.parse(localStorage.getItem("qaPairs")) || {};
+    const combinedQaPairs = [];
 
-      if (qaPairsFromStorage["output_boolq"]) {
-        qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
-          (question, index) => {
-            combinedQaPairs.push({
-              question,
-              question_type: "Boolean",
-              context: qaPairsFromStorage["output_boolq"]["Text"],
-            });
-          }
-        );
-      }
-
-      if (qaPairsFromStorage["output_mcq"]) {
-        qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
+    // Handle Boolean Questions
+    if (qaPairsFromStorage["output_boolq"]) {
+      qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
+        (question) => {
           combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
+            question,
+            question_type: "Boolean",
+            context: qaPairsFromStorage["output_boolq"]["Text"],
           });
-        });
-      }
+        }
+      );
+    }
 
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
-          });
+    // Handle MCQ Questions
+    if (qaPairsFromStorage["output_mcq"]) {
+      qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
+        combinedQaPairs.push({
+          question: qaPair.question_statement,
+          question_type: "MCQ",
+          options: qaPair.options,
+          answer: qaPair.answer,
+          context: qaPair.context,
         });
-      }
+      });
+    }
 
-      if (questionType == "get_boolq") {
+    // Handle Short Questions
+    if (qaPairsFromStorage["output_shortq"]) {
+      qaPairsFromStorage["output_shortq"].forEach((qaPair) => {
+        combinedQaPairs.push({
+          question: qaPair.question || qaPair.question_statement || qaPair.Question,
+          answer: qaPair.answer || qaPair.Answer,
+          context: qaPair.context,
+          question_type: "Short",
+        });
+      });
+    }
+
+    // Handle specific question types from "output" if they exist
+    if (qaPairsFromStorage["output"]) {
+      if (questionType === "get_boolq") {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair,
             question_type: "Boolean",
           });
         });
-      } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
+      } else if (questionType === "get_mcq") {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
-            question:
-              qaPair.question || qaPair.question_statement || qaPair.Question,
+            question: qaPair.question_statement,
+            question_type: "MCQ",
+            options: qaPair.options,
+            answer: qaPair.answer,
+            context: qaPair.context,
+          });
+        });
+      } else if (questionType !== "all_type") {
+        qaPairsFromStorage["output"].forEach((qaPair) => {
+          combinedQaPairs.push({
+            question: qaPair.question || qaPair.question_statement || qaPair.Question,
             options: qaPair.options,
             answer: qaPair.answer || qaPair.Answer,
             context: qaPair.context,
@@ -91,10 +102,10 @@ const Output = () => {
           });
         });
       }
-
-      setQaPairs(combinedQaPairs);
     }
-  }, []);
+
+    setQaPairs(combinedQaPairs);
+  }, [questionType]);
 
   const generateGoogleForm = async () => {
     const response = await fetch(`${process.env.REACT_APP_BASE_URL}/generate_gform`, {
