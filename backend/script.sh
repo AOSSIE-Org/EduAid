@@ -6,11 +6,13 @@ REPO_DIR="EduAid"
 S2V_ARCHIVE="s2v_reddit_2015_md.tar.gz"
 S2V_DIR="s2v_old"
 
+echo "Running on $OSTYPE"
+
 if [ ! -d "venv" ]; then
   python3 -m venv venv || python -m venv venv
 fi
 
-if [[ "$OSTYPE" == "msys" ]]; then
+if [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* || "$OSTYPE" == "win32" ]]; then
   source venv/Scripts/activate
 else
   source venv/bin/activate
@@ -28,6 +30,5 @@ if [ ! -d "$REPO_DIR/$S2V_DIR" ]; then
   mkdir -p $REPO_DIR/$S2V_DIR
   tar -xzvf $S2V_ARCHIVE -C $REPO_DIR/$S2V_DIR --strip-components=1
 fi
-
 
 deactivate
