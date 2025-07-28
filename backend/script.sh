@@ -7,16 +7,21 @@ S2V_ARCHIVE="s2v_reddit_2015_md.tar.gz"
 S2V_DIR="s2v_old"
 
 if [ ! -d "venv" ]; then
-  python3 -m venv venv
+  python3 -m venv venv || python -m venv venv
 fi
-source venv/bin/activate
+
+if [[ "$OSTYPE" == "msys" ]]; then
+  source venv/Scripts/activate
+else
+  source venv/bin/activate
+fi
 
 if [ ! -d "$REPO_DIR" ]; then
   git clone $REPO_URL
 fi
 
 if [ ! -f "$S2V_ARCHIVE" ]; then
-  wget $S2V_URL -O $S2V_ARCHIVE
+  curl -L $S2V_URL -o $S2V_ARCHIVE
 fi
 
 if [ ! -d "$REPO_DIR/$S2V_DIR" ]; then
@@ -24,5 +29,5 @@ if [ ! -d "$REPO_DIR/$S2V_DIR" ]; then
   tar -xzvf $S2V_ARCHIVE -C $REPO_DIR/$S2V_DIR --strip-components=1
 fi
 
-# Deactivate virtual environment after completion
-source deactivate
+
+deactivate
