@@ -13,6 +13,7 @@ const Text_Input = () => {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
   const [fileContent, setFileContent] = useState("");
+  const [questionType, setQuestionType] = useState("get_mcq");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
 
@@ -82,13 +83,13 @@ const Text_Input = () => {
       localStorage.setItem("difficulty", difficulty);
       localStorage.setItem("numQuestions", numQuestions);
 
-      await sendToBackend(
-        text,
-        difficulty,
-        localStorage.getItem("selectedQuestionType")
-      );
-    }
-  };
+  localStorage.setItem("selectedQuestionType", questionType);
+
+  await sendToBackend(
+    text,
+    difficulty,
+    questionType
+  );
 
   const handleDifficultyChange = (e) => {
     setDifficulty(e.target.value);
@@ -251,6 +252,19 @@ const Text_Input = () => {
               <option value="Hard Difficulty">Hard Difficulty</option>
             </select>
           </div>
+
+        {/* Question Type Dropdown */}
+        <div className="text-center">
+          <select
+            value={questionType}
+            onChange={(e) => setQuestionType(e.target.value)}
+            className="bg-[#3e5063] text-white text-lg rounded-xl p-2 outline-none"
+          >
+            <option value="get_mcq">MCQ</option>
+            <option value="get_shortq">Short Answer</option>
+            <option value="get_fillintheblank">Fill in the Blank</option>
+          </select>
+        </div>
 
           {/* Wikipedia Toggle */}
           <div className="flex items-center gap-2">
