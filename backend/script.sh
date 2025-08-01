@@ -31,4 +31,7 @@ if [ ! -d "$REPO_DIR/$S2V_DIR" ]; then
   tar -xzvf $S2V_ARCHIVE -C $REPO_DIR/$S2V_DIR --strip-components=1
 fi
 
-deactivate
+if declare -F deactivate >/dev/null 2>&1; then
+  deactivate
+fi
+
