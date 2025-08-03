@@ -1,0 +1,49 @@
+name: "📚 Documentation Update"
+description: "Suggest updates or improvements to the documentation"
+title: "DOCS UPDATE:"
+labels: ["Documentation"]
+body:
+  - type: checkboxes
+    attributes:
+      label: "Is this related to an existing part of the documentation?"
+      description: "Please confirm if your suggestion is related to an existing section of the documentation."
+      options:
+        - label: "Yes, it is related to an existing section"
+          required: false
+  - type: markdown
+    attributes:
+      value: |
+        > [!IMPORTANT]
+        > Please ensure your suggestion aligns with the project's goals and scope. Provide as much detail as possible for clarity.
+  - type: textarea
+    attributes:
+      label: "What needs to be updated?"
+      description: "Provide a clear and concise description of the section that needs updating or improvement."
+      value: |
+        ## 📌 Current Documentation Issue  
+        <!-- Describe what is missing, unclear, or incorrect in the current documentation. -->
+
+        ## ✨ Proposed Changes  
+        <!-- Describe the changes you are suggesting. -->
+
+        ## 📋 Additional Context  
+        <!-- Add any other context, screenshots, or examples about your suggestion here. -->
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: "Relevant Documentation Link (if any)"
+      description: "Provide a link to the relevant documentation page that needs updating."
+      placeholder: "e.g., https://github.com/your-repo/docs/README.md"
+  - type: checkboxes
+    attributes:
+      label: "Record"
+      options:
+        - label: "I agree to follow this project's Code of Conduct"
+          required: true
+        - label: "I want to work on this update"
+          required: false
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve our documentation! 📖 Your contribution is greatly appreciated.

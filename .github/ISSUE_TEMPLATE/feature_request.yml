@@ -1,0 +1,50 @@
+name: "✨ Feature Request"
+description: "Suggest a new feature or enhancement"
+title: "FEATURE REQUEST:"
+labels: ["Feature Request"]
+body:
+  - type: checkboxes
+    attributes:
+      label: "Is your feature request related to a problem?"
+      description: "Please check if your feature request is related to an existing problem."
+      options:
+        - label: "Yes, it is related to a problem"
+          required: true
+  - type: markdown
+    attributes:
+      value: |
+        > [!IMPORTANT]
+        > Before submitting, please ensure your feature request aligns with the project's goals and scope.
+  - type: textarea
+    attributes:
+      label: "Describe the feature you'd like"
+      description: "Provide a clear and concise description of the feature or enhancement you'd like to see."
+      value: |
+        ## 🌟 Feature Description  
+        <!-- What is the feature or enhancement you are suggesting? -->
+
+        ## 🔍 Problem Statement  
+        <!-- If applicable, explain the problem your feature request will solve. -->
+
+        ## 🎯 Expected Outcome  
+        <!-- Describe what you want to achieve with this feature. -->
+
+        ## 📷 Screenshots and Design Ideas
+        <!-- Attach any relevant screenshots or mockups. Describe your design ideas that could solve this. -->
+
+        ## 📋 Additional Context  
+        <!-- Add any other context about the feature request here. -->
+    validations:
+      required: true
+  - type: checkboxes
+    attributes:
+      label: "Record"
+      options:
+        - label: "I agree to follow this project's Code of Conduct"
+          required: true
+        - label: "I want to work on implementing this feature"
+          required: false
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! 🚀 We appreciate your input and will review it soon.
