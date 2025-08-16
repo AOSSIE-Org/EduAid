@@ -92,9 +92,10 @@ In addition to the browser extension, EduAid also offers a web app that provides
 
 1. Navigate to the Web App Directory:
 `cd eduaid_web`
-2. Install Dependencies:
+2. Rename the .env.example file to .env
+3. Install Dependencies:
 `npm install`
-3. Start the Web App:
+4. Start the Web App:
 `npm run start`
 
 ## Features
