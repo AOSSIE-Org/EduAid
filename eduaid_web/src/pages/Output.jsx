@@ -97,7 +97,7 @@ const Output = () => {
   }, []);
 
   const generateGoogleForm = async () => {
-    const response = await fetch(`${process.env.REACT_APP_BASE_URL}/generate_gform`, {
+    const response = await fetch(`${process.env.REACT_APP_BASED_URL}/generate_gform`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

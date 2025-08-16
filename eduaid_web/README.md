@@ -14,7 +14,7 @@ Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 The page will reload when you make changes.\
 You may also see any lint errors in the console.
 
-Rename the `.env.example` file to `.env` after setting up the project.
+Rename the '.env.example' file to '.env' once the project setup is complete.
 
 ### `npm test`
 
