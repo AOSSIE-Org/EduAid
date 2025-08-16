@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "../index.css";
 import logoPNG from "../assets/aossie_logo_transparent.png";
+import { Link } from "react-router-dom";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
@@ -158,7 +159,7 @@ const Output = () => {
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <div className="flex flex-col h-full">
           {/* Header - Responsive logo and title */}
-          <a href="/">
+          <Link to="/">
             <div className="flex items-end gap-[2px] px-4 sm:px-6">
               <img 
                 src={logoPNG} 
@@ -174,7 +175,7 @@ const Output = () => {
                 </span>
               </div>
             </div>
-          </a>
+          </Link>
 
           {/* Title */}
           <div className="font-bold text-lg sm:text-xl text-white mt-3 mx-4 sm:mx-6">

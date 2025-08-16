@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../index.css";
 import logo_trans from "../assets/aossie_logo_transparent.png"
+import { Link } from "react-router-dom";
 
 const Question_Type = () => {
   const [selectedOption, setSelectedOption] = useState(null);
@@ -19,7 +20,7 @@ const Question_Type = () => {
     <div className="popup w-full min-h-screen bg-[#02000F] flex justify-center items-center ">
       <div className="w-full bg-cust bg-opacity-50 bg-custom-gradient shadow-lg p-6 sm:p-10">
         {/* Header */}
-        <a href="/" className="flex flex-col sm:flex-row items-center gap-4 mb-6">
+        <Link to="/" className="flex flex-col sm:flex-row items-center gap-4 mb-6">
           <img
             src={logo_trans}
             alt="logo"
@@ -33,7 +34,7 @@ const Question_Type = () => {
               Aid
             </span>
           </div>
-        </a>
+        </Link>
 
         {/* Title */}
         <div className="text-center">
@@ -82,14 +83,14 @@ const Question_Type = () => {
         {/* Action Button */}
         <div className="text-center mt-10">
           {selectedOption ? (
-            <a href="input">
+            <Link to="/input">
               <button
                 onClick={handleSaveToLocalStorage}
                 className="rounded-2xl text-xl sm:text-2xl text-white px-6 sm:px-8 font-bold py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:brightness-110 transition-all"
               >
                 Fire Up 🚀
               </button>
-            </a>
+            </Link>
           ) : (
             <button
               onClick={() => alert("Please select a question type.")}

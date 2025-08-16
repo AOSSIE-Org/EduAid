@@ -5,6 +5,7 @@ import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
+import { Link } from "react-router-dom";
 
 const Text_Input = () => {
   const [text, setText] = useState("");
@@ -171,7 +172,7 @@ const Text_Input = () => {
 
       <div className={`w-full h-full bg-cust bg-opacity-50 ${loading ? "pointer-events-none" : ""}`}>
         {/* Header */}
-        <a href="/" className="block">
+        <Link to="/" className="block">
           <div className="flex items-end gap-2 p-4">
             <img src={logo_trans} alt="logo" className="w-20 sm:w-24" />
             <div className="text-3xl sm:text-4xl font-extrabold">
@@ -179,7 +180,7 @@ const Text_Input = () => {
               <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">Aid</span>
             </div>
           </div>
-        </a>
+        </Link>
 
         {/* Headline */}
         <div className="text-white text-center sm:text-right mx-4 sm:mx-8">
@@ -268,9 +269,9 @@ const Text_Input = () => {
 
         {/* Navigation Buttons */}
         <div className="flex flex-col sm:flex-row justify-center gap-6 mt-6 pb-10 px-4 sm:px-8">
-          <a href="question-type">
+          <Link to="/question-type">
             <button className="bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient rounded-xl w-full sm:w-auto">Back</button>
-          </a>
+          </Link>
           <button
             onClick={handleSaveToLocalStorage}
             className="bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient flex justify-center items-center rounded-xl w-full sm:w-auto"

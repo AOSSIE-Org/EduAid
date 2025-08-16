@@ -3,8 +3,12 @@ import "../index.css";
 import logoPNG from "../assets/aossie_logo_transparent.png";
 import stars from "../assets/stars.png";
 import { FaArrowRight } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import { useNavigate } from 'react-router-dom';
 
 const Previous = () => {
+  const navigate = useNavigate();
+
   const getQuizzesFromLocalStorage = () => {
     const quizzes = localStorage.getItem("last5Quizzes");
     return quizzes ? JSON.parse(quizzes) : [];
@@ -14,7 +18,7 @@ const Previous = () => {
 
   const handleQuizClick = (quiz) => {
     localStorage.setItem("qaPairs", JSON.stringify(quiz.qaPair));
-    window.location.href = "/output";
+    navigate('/output'); 
   };
 
   const handleClearQuizzes = () => {
@@ -23,14 +27,14 @@ const Previous = () => {
   };
 
   const handleBack = () => {
-    window.location.href = "/";
+    navigate('/'); 
   };
 
   return (
     <div className="w-screen h-screen bg-[#02000F] flex flex-col justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient p-4 md:p-6 overflow-y-auto">
         {/* Header */}
-        <a href="/" className="flex items-end gap-2">
+        <Link to="/" className="flex items-end gap-2">
           <img src={logoPNG} alt="logo" className="w-14 md:w-16" />
           <div className="text-xl md:text-2xl font-extrabold">
             <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
@@ -40,7 +44,7 @@ const Previous = () => {
               Aid
             </span>
           </div>
-        </a>
+        </Link>
 
         {/* Titles */}
         <div className="mt-3 text-right">

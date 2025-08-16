@@ -5,6 +5,7 @@ import starsImg from "../assets/stars.png";
 import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
 import { FaGithub } from "react-icons/fa";
+import { Link } from "react-router-dom";
 
 const Home = () => {
   const [stars, setStars] = useState(null);
@@ -83,18 +84,18 @@ const Home = () => {
 
           {/* Buttons */}
           <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-10">
-            <a href="question-type" className="w-full sm:w-auto">
+            <Link to="/question-type" className="w-full sm:w-auto">
               <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
                 Let’s get Started
                 <img src={arrow} width={24} height={24} alt="arrow" />
               </button>
-            </a>
-            <a href="history" className="w-full sm:w-auto">
+            </Link>
+            <Link to="/history" className="w-full sm:w-auto">
               <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
                 Your previous Work!
                 <img src={arrow} width={24} height={24} alt="arrow" />
               </button>
-            </a>
+            </Link>
           </div>
 
           {/* GitHub Stars */}
