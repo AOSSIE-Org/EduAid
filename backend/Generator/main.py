@@ -14,9 +14,6 @@ from Generator.mcq import tokenize_into_sentences, identify_keywords, find_sente
 from Generator.encoding import beam_search_decoding
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from transformers import pipeline
-from .fitb_generator import FillInTheBlankGenerator
-from qaeval import QAEvaluator
 import en_core_web_sm
 import json
 import re
