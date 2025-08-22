@@ -460,17 +460,17 @@ class QuestionGenerator:
         
         if answer_style not in VALID_ANSWER_STYLES:
             raise ValueError(
-                "Invalid answer style {}. Please Choose from {}".format(
+                "Invalid answer style {}. Please choose from {}".format(
                     answer_style, VALID_ANSWER_STYLES
                 )
             )
 
         inputs = []
         answers = []
-
+    
         if answer_style == "sentences" or answer_style == "all":
             segments = self._split_into_segments(text)
-            
+
             for segment in segments:
                 sentences = self._split_text(segment)
                 prepped_inputs, prepped_answers = self._prepare_qg_inputs(
