@@ -9,6 +9,7 @@ S2V_DIR="s2v_old"
 echo "Running on $OSTYPE"
 
 if [ ! -d "venv" ]; then
+  python3 -m venv venv
   python3 -m venv venv || python -m venv venv
 fi
 
@@ -17,12 +18,14 @@ if [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* || "$OSTYPE" == "win32" ]];
 else
   source venv/bin/activate
 fi
+source venv/bin/activate
 
 if [ ! -d "$REPO_DIR" ]; then
   git clone $REPO_URL
 fi
 
 if [ ! -f "$S2V_ARCHIVE" ]; then
+  wget $S2V_URL -0 $S2V_ARCHIVE
   curl -L $S2V_URL -o $S2V_ARCHIVE
 fi
 
@@ -31,7 +34,7 @@ if [ ! -d "$REPO_DIR/$S2V_DIR" ]; then
   tar -xzvf $S2V_ARCHIVE -C $REPO_DIR/$S2V_DIR --strip-components=1
 fi
 
-deactivate
+source deactivate
 if declare -F deactivate >/dev/null 2>&1; then
   deactivate
 fi
