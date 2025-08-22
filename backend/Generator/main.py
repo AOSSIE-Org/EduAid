@@ -447,22 +447,37 @@ class QuestionGenerator:
 
         return qa_list
 
-    def generate_qg_inputs(self, text: str, answer_style: str) -> Tuple[List[str], List[str]]:
-        VALID_ANSWER_STYLES = ["all", "sentences", "multiple_choice", "fill_in_blank"]
+    def generate_qg_inputs(
+        self, text: str, answer_style: str
+    ) -> Tuple[List[str], List[str]]:
+        """Given a text, returns a list of model inputs and a list of corresponding answers.
+        Model inputs take the form "answer_token <answer text> context_token <context text>" where
+        the answer is a string extracted from the text, and the context is the wider text surrounding
+        the context.
+        """
+
+        VALID_ANSWER_STYLES = ["all", "sentences", "multiple_choice"]
         if answer_style not in VALID_ANSWER_STYLES:
-            raise ValueError(f"Invalid answer style {answer_style}. Choose from {VALID_ANSWER_STYLES}")
+            raise ValueError(
+                "Invalid answer style {}. Choose from {}".format(
+                    answer_style, VALID_ANSWER_STYLES:
+                )
+            )
 
-        inputs, answers = [], []
+        inputs = [] 
+        answers = []
 
-        if answer_style in ["sentences", "all"]:
+        if answer_style == "sentences" or answer_style == "all":
             segments = self._split_into_segments(text)
             for segment in segments:
                 sentences = self._split_text(segment)
-                prepped_inputs, prepped_answers = self._prepare_qg_inputs(sentences, segment)
+                prepped_inputs, prepped_answers = self._prepare_qg_inputs(
+                    sentences, segment
+                )
                 inputs.extend(prepped_inputs)
                 answers.extend(prepped_answers)
 
-        if answer_style in ["multiple_choice", "all"]:
+        if answer_style == "multiple_choice" or answer_style == "all":
             sentences = self._split_text(text)
             prepped_inputs, prepped_answers = self._prepare_qg_inputs_MC(sentences)
             inputs.extend(prepped_inputs)
@@ -473,12 +488,13 @@ class QuestionGenerator:
             for sentence in sentences:
                 words = sentence.split()
                 if len(words) > 5:
-                    blank_index = random.randint(0, len(words) - 1)
+                    blank_index = random.randint(0, len(words) - 2)
                     answer = words[blank_index]
                     words[blank_index] = "_____"
                     question = " ".join(words)
                     inputs.append(f"{self.ANSWER_TOKEN} {answer} {self.CONTEXT_TOKEN} {sentence}")
                     answers.append({"question": question, "answer": answer})
+                    answers.append(answer)
 
         return inputs, answers
 
