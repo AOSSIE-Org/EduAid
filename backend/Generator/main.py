@@ -459,8 +459,8 @@ class QuestionGenerator:
         VALID_ANSWER_STYLES = ["all", "sentences", "multiple_choice"]
         if answer_style not in VALID_ANSWER_STYLES:
             raise ValueError(
-                "Invalid answer style {}. Choose from {}".format(
-                    answer_style, VALID_ANSWER_STYLES:
+                "Invalid answer style {}. Please Choose from {}".format(
+                    answer_style, VALID_ANSWER_STYLES
                 )
             )
 
