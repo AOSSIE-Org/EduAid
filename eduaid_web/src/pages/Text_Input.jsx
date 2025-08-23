@@ -13,7 +13,6 @@ const Text_Input = () => {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
   const [fileContent, setFileContent] = useState("");
-  const [questionType, setQuestionType] = useState("get_mcq");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
 
@@ -83,11 +82,10 @@ const Text_Input = () => {
       localStorage.setItem("difficulty", difficulty);
       localStorage.setItem("numQuestions", numQuestions);
 
-
       await sendToBackend(
         text,
         difficulty,
-        localStorage.getItem("selectedQuestionType");
+        localStorage.getItem("selectedQuestionType")
       );
     }
   };
