@@ -457,7 +457,7 @@ class QuestionGenerator:
         """
 
         VALID_ANSWER_STYLES = ["all", "sentences", "multiple_choice"]
-        
+
         if answer_style not in VALID_ANSWER_STYLES:
             raise ValueError(
                 "Invalid answer style {}. Please choose from {}".format(
@@ -467,7 +467,7 @@ class QuestionGenerator:
 
         inputs = []
         answers = []
-    
+
         if answer_style == "sentences" or answer_style == "all":
             segments = self._split_into_segments(text)
 
