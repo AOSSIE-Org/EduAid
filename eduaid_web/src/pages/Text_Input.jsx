@@ -83,13 +83,14 @@ const Text_Input = () => {
       localStorage.setItem("difficulty", difficulty);
       localStorage.setItem("numQuestions", numQuestions);
 
-  localStorage.setItem("selectedQuestionType", questionType);
 
-  await sendToBackend(
-    text,
-    difficulty,
-    questionType
-  );
+      await sendToBackend(
+        text,
+        difficulty,
+        localStorage.getItem("selectedQuestionType");
+      );
+    }
+  };
 
   const handleDifficultyChange = (e) => {
     setDifficulty(e.target.value);
