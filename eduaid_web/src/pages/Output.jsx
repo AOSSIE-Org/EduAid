@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "../index.css";
 import logoPNG from "../assets/aossie_logo_transparent.png";
 import { Link } from "react-router-dom";
+import apiClient from "../utils/apiClient";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
@@ -98,23 +99,15 @@ const Output = () => {
   }, []);
 
   const generateGoogleForm = async () => {
-    const response = await fetch(`${process.env.REACT_APP_BASE_URL}/generate_gform`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    try {
+      const result = await apiClient.post("/generate_gform", {
         qa_pairs: qaPairs,
         question_type: questionType,
-      }),
-    });
-
-    if (response.ok) {
-      const result = await response.json();
+      });
       const formUrl = result.form_link;
       window.open(formUrl, "_blank");
-    } else {
-      console.error("Failed to generate Google Form");
+    } catch (error) {
+      console.error("Failed to generate Google Form:", error);
     }
   };
 

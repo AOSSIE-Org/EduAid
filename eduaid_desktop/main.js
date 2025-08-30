@@ -1,7 +1,9 @@
-const { app, BrowserWindow, Menu, shell, dialog } = require('electron');
+const { app, BrowserWindow, Menu, shell, dialog, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const config = require('./config');
+const https = require('https');
+const http = require('http');
 
 // Keep a global reference of the window object
 let mainWindow;
@@ -215,4 +217,55 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
   } else {
     callback(false);
   }
+});
+
+// API request handler for the renderer process
+ipcMain.handle('api-request', async (event, { endpoint, options }) => {
+  return new Promise((resolve, reject) => {
+    const apiUrl = new URL(endpoint, config.apiUrl);
+    const requestOptions = {
+      method: options.method || 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+      }
+    };
+
+    const protocol = apiUrl.protocol === 'https:' ? https : http;
+    
+    const req = protocol.request(apiUrl, requestOptions, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          const jsonData = JSON.parse(data);
+          resolve({
+            ok: res.statusCode >= 200 && res.statusCode < 300,
+            status: res.statusCode,
+            data: jsonData
+          });
+        } catch (error) {
+          resolve({
+            ok: res.statusCode >= 200 && res.statusCode < 300,
+            status: res.statusCode,
+            data: data
+          });
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(error);
+    });
+
+    if (options.body) {
+      req.write(options.body);
+    }
+
+    req.end();
+  });
 });

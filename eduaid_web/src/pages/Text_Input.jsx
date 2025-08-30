@@ -6,6 +6,7 @@ import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
 import { Link } from "react-router-dom";
+import apiClient from "../utils/apiClient";
 
 const Text_Input = () => {
   const [text, setText] = useState("");
@@ -28,11 +29,7 @@ const Text_Input = () => {
       formData.append("file", file);
 
       try {
-        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/upload`, {
-          method: "POST",
-          body: formData,
-        });
-        const data = await response.json();
+        const data = await apiClient.postFormData("/upload", formData);
         setText(data.content || data.error);
       } catch (error) {
         console.error("Error uploading file:", error);
@@ -55,22 +52,9 @@ const Text_Input = () => {
     // Check if a Google Doc URL is provided
     if (docUrl) {
       try {
-        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/get_content`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ document_url: docUrl }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setDocUrl("");
-          setText(data || "Error in retrieving");
-        } else {
-          console.error("Error retrieving Google Doc content");
-          setText("Error retrieving Google Doc content");
-        }
+        const data = await apiClient.post("/get_content", { document_url: docUrl });
+        setDocUrl("");
+        setText(data || "Error in retrieving");
       } catch (error) {
         console.error("Error:", error);
         setText("Error retrieving Google Doc content");
@@ -117,44 +101,32 @@ const Text_Input = () => {
   const sendToBackend = async (data, difficulty, questionType) => {
     const endpoint = getEndpoint(difficulty, questionType);
     try {
-      const formData = JSON.stringify({
+      const requestData = {
         input_text: data,
         max_questions: numQuestions,
         use_mediawiki: isToggleOn,
-      });
+      };
 
-      const response = await fetch(`${process.env.REACT_APP_BASE_URL}/${endpoint}`, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const responseData = await apiClient.post(`/${endpoint}`, requestData);
+      localStorage.setItem("qaPairs", JSON.stringify(responseData));
 
-      if (response.ok) {
-        const responseData = await response.json();
-        localStorage.setItem("qaPairs", JSON.stringify(responseData));
+      // Save quiz details to local storage
+      const quizDetails = {
+        difficulty,
+        numQuestions,
+        date: new Date().toLocaleDateString(),
+        qaPair: responseData,
+      };
 
-        // Save quiz details to local storage
-        const quizDetails = {
-          difficulty,
-          numQuestions,
-          date: new Date().toLocaleDateString(),
-          qaPair: responseData,
-        };
-
-        let last5Quizzes =
-          JSON.parse(localStorage.getItem("last5Quizzes")) || [];
-        last5Quizzes.push(quizDetails);
-        if (last5Quizzes.length > 5) {
-          last5Quizzes.shift(); // Keep only the last 5 quizzes
-        }
-        localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
-
-        window.location.href = "output";
-      } else {
-        console.error("Backend request failed.");
+      let last5Quizzes =
+        JSON.parse(localStorage.getItem("last5Quizzes")) || [];
+      last5Quizzes.push(quizDetails);
+      if (last5Quizzes.length > 5) {
+        last5Quizzes.shift(); // Keep only the last 5 quizzes
       }
+      localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
+
+      window.location.href = "output";
     } catch (error) {
       console.error("Error:", error);
     } finally {
