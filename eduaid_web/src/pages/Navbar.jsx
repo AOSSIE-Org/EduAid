@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import {
   Navbar,
   NavBody,
@@ -12,7 +13,7 @@ import {
 import { useState } from "react";
 
 export default function NavbarDemo() {
-    console.log("aaefe");
+  console.log("aaefe");
   const navItems = [
     {
       name: "Features",
@@ -38,9 +39,8 @@ export default function NavbarDemo() {
           <NavbarLogo />
           <NavItems items={navItems} />
           <div className="flex items-center gap-4">
-            <NavbarButton variant="secondary">Login</NavbarButton>
-            <NavbarButton variant="primary">Sign in </NavbarButton>
-            <NavbarButton variant="primary">Sign up </NavbarButton>
+            <Link to={'/signin'}><NavbarButton variant="primary">Sign in </NavbarButton></Link>
+            <Link to={'/signup'}><NavbarButton variant="primary">Sign up </NavbarButton></Link>
           </div>
         </NavBody>
 
@@ -50,32 +50,43 @@ export default function NavbarDemo() {
             <NavbarLogo />
             <MobileNavToggle
               isOpen={isMobileMenuOpen}
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            />
           </MobileNavHeader>
 
-          <MobileNavMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)}>
+          <MobileNavMenu
+            isOpen={isMobileMenuOpen}
+            onClose={() => setIsMobileMenuOpen(false)}
+          >
             {navItems.map((item, idx) => (
               <a
                 key={`mobile-link-${idx}`}
                 href={item.link}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="relative text-neutral-600 dark:text-neutral-300">
+                className="relative text-neutral-600 dark:text-neutral-300"
+              >
                 <span className="block">{item.name}</span>
               </a>
             ))}
             <div className="flex w-full flex-col gap-4">
-              <NavbarButton
-                onClick={() => setIsMobileMenuOpen(false)}
-                variant="primary"
-                className="w-full">
-                Sign in 
-              </NavbarButton>
-              <NavbarButton
-                onClick={() => setIsMobileMenuOpen(false)}
-                variant="primary"
-                className="w-full">
-                Sign up 
-              </NavbarButton>
+              <Link to={"/signin"}>
+                <NavbarButton
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  variant="primary"
+                  className="w-full"
+                >
+                  Sign in
+                </NavbarButton>
+              </Link>
+              <Link to={"/signup"}>
+                <NavbarButton
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  variant="primary"
+                  className="w-full"
+                >
+                  Sign up
+                </NavbarButton>
+              </Link>
             </div>
           </MobileNavMenu>
         </MobileNav>

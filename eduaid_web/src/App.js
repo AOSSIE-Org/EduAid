@@ -6,7 +6,8 @@ import Text_Input from "./pages/Text_Input";
 import Output from "./pages/Output";
 import Previous from "./pages/Previous";
 import NotFound from "./pages/PageNotFound";
-import KLO from "./pages/Navbar.jsx";
+import { Signin } from "./pages/Signin.jsx";
+import { Signup } from "./pages/Signup.jsx";
 function App() {
   return (
     <HashRouter>
@@ -16,7 +17,8 @@ function App() {
         <Route path="/input" element={<Text_Input />} />
         <Route path="/output" element={<Output />} />
         <Route path="/history" element={<Previous />} />
-        <Route path="/dd" element={<KLO />} />
+        <Route path="/signin" element={<Signin />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </HashRouter>
