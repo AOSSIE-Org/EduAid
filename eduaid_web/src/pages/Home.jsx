@@ -6,7 +6,7 @@ import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
 import { FaGithub } from "react-icons/fa";
 import { Link } from "react-router-dom";
-
+import NavbarDemo from "./Navbar.jsx"
 const Home = () => {
   const [stars, setStars] = useState(null);
   const [error, setError] = useState("");
@@ -41,7 +41,8 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
+    <div className="popup w-screen h-screen bg-[#000000] ">
+      <NavbarDemo/>
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient overflow-auto px-4 py-6 sm:px-8 md:px-16">
         <div className="max-w-5xl mx-auto">
           <img src={logo_trans} alt="logo" className="w-24 my-4 sm:my-6" />
