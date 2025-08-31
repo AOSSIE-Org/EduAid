@@ -1,0 +1,28 @@
+services:
+  eduaid_backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "5000:5000"
+    networks:
+      - eduaid_network
+  eduaid_web:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      target: ${BUILD_TARGET}
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_BASE_URL=http://localhost:5000
+    volumes:
+      - ./eduaid_web:/app/eduaid_web
+      - /app/eduaid_web/node_modules
+    networks:
+      - eduaid_network
+    depends_on:
+      [eduaid_backend]
+networks:
+  eduaid_network:
+    driver: bridge

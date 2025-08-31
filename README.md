@@ -43,6 +43,16 @@ You can choose to set up the backend manually or use an automated shell script.
      ```
    - This script will automatically download and extract the Sense2Vec model, install Python dependencies, and start the Flask app.
 
+### Option 3: Using Docker 
+
+1. **Download the Sense2Vec Model**
+   - Download the Sense2Vec model from [this link](https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz) and put into the `backend` folder.
+2. **Build Docker Image**
+   - Then on terminal run the following command: 
+     ```bash
+     docker build -f Dockerfile.backend -t <Container_Name>:<Tag> .
+     ```
+
 ### Troubleshooting
 
 - If the script fails to run, ensure that you have execution permissions:
@@ -179,6 +189,27 @@ The built applications will be available in the `eduaid_desktop/dist/` directory
 7. **Editable Forms**:
    - **PDF Forms**: Generate editable PDF forms based on your quizzes.
    - **Google Forms**: Create Google Forms for your quizzes, perfect for easy distribution and response collection.
+
+### Docker Setup
+
+   1. Download the Sense2Vec model from [this link](https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz) and put it into the `backend` folder.
+   
+   2. Run the following command with the target i.e., for Web -> BUILD_TARGET=web_app, for desktop -> BUILD_TARGET=eduaid_desktop, for extension -> BUILD_TARGET=eduaid_extension:
+      ```bash
+      BUILD_TARGET=${TARGET} docker compose up --build
+      ```
+
+   If server gives cors error then in server.py
+      Replace this
+         CORS(app)
+      With this
+         CORS(app, resources={r"/*": {"origins": "*"}})
+      Replace this
+         app.run()
+      With this
+         app.run(host='0.0.0.0', port=5000,debug=False)
+
+   Note:- the build might take some time
 
 ## How to contribute
 
