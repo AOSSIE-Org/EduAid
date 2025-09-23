@@ -1,5 +1,6 @@
 torch==2.5.1
 transformers==4.46.1
+git commit -m "fix: upgrade transformers to 4.50.2 (security patch)"
 sense2vec==2.0.2
 strsim==0.0.3
 six==1.16.0
