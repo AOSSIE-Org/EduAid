@@ -6,6 +6,7 @@ import Text_Input from "./pages/Text_Input";
 import Output from "./pages/Output";
 import Previous from "./pages/Previous";
 import NotFound from "./pages/PageNotFound";
+import Google_doc from "./pages/Google_doc";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/question-type" element={<Question_Type />} />
+        <Route path="/google-form" element={<Google_doc />} />
         <Route path="/input" element={<Text_Input />} />
         <Route path="/output" element={<Output />} />
         <Route path="/history" element={<Previous />} />
