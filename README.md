@@ -43,6 +43,13 @@ You can choose to set up the backend manually or use an automated shell script.
      ```
    - This script will automatically download and extract the Sense2Vec model, install Python dependencies, and start the Flask app.
 
+### 🪟 Windows Users
+If using Git Bash:
+- Replace `python3` with `python` if needed.
+- Use `source venv/Scripts/activate` instead of `source venv/bin/activate`.
+- If `wget` is not available, `curl -L -o` is used in script.
+
+
 ### Troubleshooting
 
 - If the script fails to run, ensure that you have execution permissions:
