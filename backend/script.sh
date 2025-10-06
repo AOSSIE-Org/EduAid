@@ -48,7 +48,17 @@ print_message success "Dependency check passed."
 
 # Variables
 REPO_URL="https://github.com/AOSSIE-Org/EduAid.git"
-REPO_DIR="EduAid"
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Check if the script is already inside a Git repo
+if git_root=$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null); then
+    REPO_DIR="$git_root"
+    print_message info "Using existing repository at $REPO_DIR"
+else
+    REPO_DIR="$SCRIPT_DIR/../EduAid"
+fi
+
 S2V_URL="https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz"
 S2V_ARCHIVE="s2v_reddit_2015_md.tar.gz"
 S2V_DIR="s2v_old"
@@ -85,9 +95,9 @@ $PYTHON_CMD -m pip install --upgrade pip || { print_message error "Failed to upg
 print_message success "pip upgraded successfully."
 
 # Clone EduAid repository
-if [ ! -d "$REPO_DIR" ]; then
+if [ ! -d "$REPO_DIR/.git" ]; then
     print_message info "Cloning EduAid repository..."
-    git clone "$REPO_URL" || { print_message error "Failed to clone repository."; exit 1; }
+    git clone "$REPO_URL" "$REPO_DIR" || { print_message error "Failed to clone repository."; exit 1; }
     print_message success "Repository cloned."
 else
     print_message info "Repository already exists, skipping clone."
