@@ -110,6 +110,7 @@ if [ -f "$REQUIREMENTS_FILE" ]; then
     if grep -q "torch==" "$REQUIREMENTS_FILE"; then
         print_message info "Updating torch version in requirements.txt..."
         sed -i.bak 's/torch==.*/torch==2.8.0/' "$REQUIREMENTS_FILE"
+        rm -f "$REQUIREMENTS_FILE.bak"
         print_message success "torch version updated to 2.8.0"
     fi
 fi
