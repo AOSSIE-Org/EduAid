@@ -14,6 +14,22 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}Starting EduAid setup...${NC}"
 
+# Safe directory change function
+safe_cd() {
+    local dir="$1"
+    if [ ! -d "$dir" ]; then
+        echo -e "${RED}Directory does not exist: $dir${NC}"
+        return 1
+    fi
+    if cd "$dir"; then
+        echo -e "${GREEN}Changed to directory: $(pwd)${NC}"
+        return 0
+    else
+        echo -e "${RED}Failed to change to directory: $dir${NC}"
+        return 1
+    fi
+}
+
 # Detect Python command
 if command -v python3 &> /dev/null; then
     PYTHON_CMD="python3"
@@ -37,28 +53,33 @@ else
     # Clone or update repository
     if [ ! -d "$REPO_DIR" ]; then
         echo -e "${GREEN}Cloning EduAid repository...${NC}"
-        git clone $REPO_URL
+        git clone "$REPO_URL"
         if [ $? -ne 0 ]; then
             echo -e "${RED}Failed to clone repository${NC}"
             exit 1
         fi
     else
         echo -e "${YELLOW}EduAid repository already exists. Updating...${NC}"
-        cd $REPO_DIR
+        if ! safe_cd "$REPO_DIR"; then
+            exit 1
+        fi
         git fetch origin
         git pull origin main
-        cd ..
+        if ! safe_cd ".."; then
+            exit 1
+        fi
     fi
 fi
 
 # Change to working directory once
-cd "$WORKING_DIR"
-echo -e "${GREEN}Working directory: $(pwd)${NC}"
+if ! safe_cd "$WORKING_DIR"; then
+    exit 1
+fi
 
 # Create and activate virtual environment
 if [ ! -d "venv" ]; then
     echo -e "${GREEN}Creating virtual environment...${NC}"
-    $PYTHON_CMD -m venv venv
+    "$PYTHON_CMD" -m venv venv
     if [ $? -ne 0 ]; then
         echo -e "${RED}Failed to create virtual environment${NC}"
         exit 1
@@ -71,9 +92,11 @@ fi
 echo -e "${GREEN}Activating virtual environment...${NC}"
 if [ -f "venv/bin/activate" ]; then
     # Linux/macOS
+    # shellcheck source=/dev/null
     source venv/bin/activate
 elif [ -f "venv/Scripts/activate" ]; then
     # Windows (Git Bash, WSL)
+    # shellcheck source=/dev/null
     source venv/Scripts/activate
 elif [ -f "venv/Scripts/Activate.ps1" ]; then
     # Windows PowerShell
@@ -106,9 +129,9 @@ if [ ! -f "$S2V_ARCHIVE" ]; then
     echo -e "${GREEN}Downloading Sense2Vec model...${NC}"
     # Use curl if wget not available
     if command -v wget &> /dev/null; then
-        wget $S2V_URL -O $S2V_ARCHIVE
+        wget "$S2V_URL" -O "$S2V_ARCHIVE"
     elif command -v curl &> /dev/null; then
-        curl -L $S2V_URL -o $S2V_ARCHIVE
+        curl -L "$S2V_URL" -o "$S2V_ARCHIVE"
     else
         echo -e "${RED}Neither wget nor curl available. Please install one of them.${NC}"
         exit 1
@@ -122,12 +145,12 @@ else
     echo -e "${YELLOW}Sense2Vec model already downloaded.${NC}"
 fi
 
-# Extract S2V model to correct directory
-if [ ! -d "$S2V_TARGET_DIR" ] || [ -z "$(ls -A $S2V_TARGET_DIR 2>/dev/null)" ]; then
+# Extract S2V model to correct directory - FIXED: quoted variables
+if [ ! -d "$S2V_TARGET_DIR" ] || [ -z "$(ls -A "$S2V_TARGET_DIR" 2>/dev/null)" ]; then
     echo -e "${GREEN}Extracting Sense2Vec model to $S2V_TARGET_DIR...${NC}"
-    mkdir -p $S2V_TARGET_DIR
-    # Use non-verbose extraction for cleaner output
-    tar -xzf $S2V_ARCHIVE -C $S2V_TARGET_DIR --strip-components=1
+    mkdir -p "$S2V_TARGET_DIR"
+    # Use non-verbose extraction for cleaner output - FIXED: quoted all variables
+    tar -xzf "$S2V_ARCHIVE" -C "$S2V_TARGET_DIR" --strip-components=1
     if [ $? -ne 0 ]; then
         echo -e "${RED}Failed to extract Sense2Vec model${NC}"
         exit 1
@@ -138,7 +161,7 @@ else
 fi
 
 # Verify the model extraction
-if [ -d "$S2V_TARGET_DIR" ] && [ "$(ls -A $S2V_TARGET_DIR)" ]; then
+if [ -d "$S2V_TARGET_DIR" ] && [ "$(ls -A "$S2V_TARGET_DIR")" ]; then
     echo -e "${GREEN}✓ Sense2Vec model verified in $S2V_TARGET_DIR${NC}"
     
     # Show model contents for debugging
@@ -168,12 +191,15 @@ echo -e "${GREEN}Starting Flask server...${NC}"
 echo -e "${GREEN}Server will be available at: http://localhost:5000${NC}"
 echo -e "${YELLOW}Press Ctrl+C to stop the server${NC}"
 
-# Start server with error handling
-cd backend
+# Start server with error handling - FIXED: use safe_cd
+if ! safe_cd "backend"; then
+    exit 1
+fi
+
 echo -e "${YELLOW}Current directory: $(pwd)${NC}"
 echo -e "${YELLOW}Model relative path: ../$S2V_TARGET_DIR${NC}"
 
-$PYTHON_CMD server.py || {
+"$PYTHON_CMD" server.py || {
     echo -e "${RED}Failed to start Flask server${NC}"
     echo -e "${YELLOW}Troubleshooting steps:${NC}"
     echo -e "${YELLOW}1. Check if port 5000 is already in use: netstat -tulpn | grep 5000${NC}"
