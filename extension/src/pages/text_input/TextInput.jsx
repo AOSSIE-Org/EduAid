@@ -310,7 +310,7 @@ function Second() {
         </div>
         <div className="flex my-2 justify-center gap-6 items-start">
           <div className="">
-            <a href="/src/popup/popup.html">
+            <a href="/src/pages/home/home.html">
               <button className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient">
                 Back
               </button>
