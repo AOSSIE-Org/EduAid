@@ -102,11 +102,18 @@ const Text_Input = () => {
   const handlePaste = async () => {
     try {
       const clipText = await navigator.clipboard.readText();
-      setText((prev) => prev + clipText);
+  
+      setText((prev) => {
+        const needsSpace = prev && !prev.endsWith(" ");
+        return prev + (needsSpace ? " " : "") + clipText;
+      });
+  
     } catch (err) {
       console.error("Failed to paste:", err);
+      alert("Failed to paste from clipboard. Please allow clipboard permissions.");
     }
   };
+  
   // Word count fix below
   const countWords = () => {
     if (!text.trim()) return 0;
@@ -183,12 +190,15 @@ const Text_Input = () => {
 
         {/* Textarea */}
         <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
-        <button 
-        className="absolute top-0 left-0 p-2 text-white focus:outline-none"
-        onClick={handlePaste}
+        <button
+          className="absolute top-2 left-2 p-2 text-white hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-white rounded"
+          onClick={handlePaste}
+          aria-label="Paste from clipboard"
+          title="Paste from clipboard"
         >
           <FaClipboard className="h-[24px] w-[24px]" />
         </button>
+
         {/* paste Button issue fixed ^ */}
 
           <textarea
