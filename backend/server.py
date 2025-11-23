@@ -21,9 +21,11 @@ from string import punctuation
 from heapq import nlargest
 import random
 import webbrowser
-from apiclient import discovery
-from httplib2 import Http
-from oauth2client import client, file, tools
+from googleapiclient.discovery import build
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+import os.path
 from mediawikiapi import MediaWikiAPI
 
 app = Flask(__name__)
@@ -197,22 +199,39 @@ def get_content():
 
 @app.route("/generate_gform", methods=["POST"])
 def generate_gform():
+    # Replaced deprecated oauth2client/apiclient/httplib2 with google-auth and google-api-python-client
     data = request.get_json()
     qa_pairs = data.get("qa_pairs", "")
     question_type = data.get("question_type", "")
-    SCOPES = "https://www.googleapis.com/auth/forms.body"
+    SCOPES = ["https://www.googleapis.com/auth/forms.body"]
     DISCOVERY_DOC = "https://forms.googleapis.com/$discovery/rest?version=v1"
 
-    store = file.Storage("token.json")
     creds = None
-    if not creds or creds.invalid:
-        flow = client.flow_from_clientsecrets("credentials.json", SCOPES)
-        creds = tools.run_flow(flow, store)
+    token_file = "token.json"
+    credentials_file = "credentials.json"
+    
+    # Load existing token if available
+    if os.path.exists(token_file):
+        creds = Credentials.from_authorized_user_file(token_file, SCOPES)
+    
+    # If no valid credentials, get new ones
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            if not os.path.exists(credentials_file):
+                return jsonify({'error': 'credentials.json file not found. Please set up Google Forms API credentials.'}), 400
+            flow = InstalledAppFlow.from_client_secrets_file(credentials_file, SCOPES)
+            creds = flow.run_local_server(port=0)
+        
+        # Save credentials for next run
+        with open(token_file, 'w') as token:
+            token.write(creds.to_json())
 
-    form_service = discovery.build(
+    form_service = build(
         "forms",
         "v1",
-        http=creds.authorize(Http()),
+        credentials=creds,
         discoveryServiceUrl=DISCOVERY_DOC,
         static_discovery=False,
     )

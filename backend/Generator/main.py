@@ -5,11 +5,11 @@ from transformers import T5ForConditionalGeneration, T5Tokenizer
 from transformers import AutoModelForSequenceClassification, AutoTokenizer,AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5Tokenizer
 import numpy as np
 import spacy
-from sense2vec import Sense2Vec
+from sentence_transformers import SentenceTransformer
 from collections import OrderedDict
 from nltk import FreqDist
 from nltk.corpus import brown
-from similarity.normalized_levenshtein import NormalizedLevenshtein
+from keybert import KeyBERT
 from Generator.mcq import tokenize_into_sentences, identify_keywords, find_sentences_with_keywords, generate_multiple_choice_questions, generate_normal_questions
 from Generator.encoding import beam_search_decoding
 from google.oauth2 import service_account
@@ -31,9 +31,10 @@ class MCQGenerator:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
-        self.s2v = Sense2Vec().from_disk('s2v_old')
+        # Replaced sense2vec with sentence-transformers
+        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
         self.fdist = FreqDist(brown.words())
-        self.normalized_levenshtein = NormalizedLevenshtein()
+        self.kw_model = KeyBERT()
         self.set_seed(42)
         
     def set_seed(self, seed):
@@ -53,7 +54,7 @@ class MCQGenerator:
         sentences = tokenize_into_sentences(text)
         modified_text = " ".join(sentences)
 
-        keywords = identify_keywords(self.nlp, modified_text, inp['max_questions'], self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
+        keywords = identify_keywords(self.nlp, modified_text, inp['max_questions'], self.embedding_model, self.fdist, len(sentences), self.kw_model)
         keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
 
         for k in keyword_sentence_mapping.keys():
@@ -66,7 +67,7 @@ class MCQGenerator:
             return final_output
         else:
             try:
-                generated_questions = generate_multiple_choice_questions(keyword_sentence_mapping, self.device, self.tokenizer, self.model, self.s2v, self.normalized_levenshtein)
+                generated_questions = generate_multiple_choice_questions(keyword_sentence_mapping, self.device, self.tokenizer, self.model, self.embedding_model)
             except:
                 return final_output
 
@@ -89,9 +90,10 @@ class ShortQGenerator:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
-        self.s2v = Sense2Vec().from_disk('s2v_old')
+        # Replaced sense2vec with sentence-transformers
+        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
         self.fdist = FreqDist(brown.words())
-        self.normalized_levenshtein = NormalizedLevenshtein()
+        self.kw_model = KeyBERT()
         self.set_seed(42)
         
     def set_seed(self, seed):
@@ -110,7 +112,7 @@ class ShortQGenerator:
         sentences = tokenize_into_sentences(text)
         modified_text = " ".join(sentences)
 
-        keywords = identify_keywords(self.nlp, modified_text, inp['max_questions'], self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
+        keywords = identify_keywords(self.nlp, modified_text, inp['max_questions'], self.embedding_model, self.fdist, len(sentences), self.kw_model)
         keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
         
         for k in keyword_sentence_mapping.keys():
@@ -160,7 +162,7 @@ class ParaphraseGenerator:
         sentence = text
         text_to_paraphrase = "paraphrase: " + sentence + " </s>"
 
-        encoding = self.tokenizer.encode_plus(text_to_paraphrase, pad_to_max_length=True, return_tensors="pt")
+        encoding = self.tokenizer.encode_plus(text_to_paraphrase, padding=True, return_tensors="pt")
         input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
 
         beam_outputs = self.model.generate(
@@ -503,7 +505,7 @@ class QuestionGenerator:
     def _split_text(self, text: str) -> List[str]:
         """Splits the text into sentences, and attempts to split or truncate long sentences."""
         MAX_SENTENCE_LEN = 128
-        sentences = re.findall(".*?[.!\?]", text)
+        sentences = re.findall(r".*?[.!\?]", text)
         cut_sentences = []
 
         for sentence in sentences:
