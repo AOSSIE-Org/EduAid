@@ -42,9 +42,8 @@ function Second() {
       const clipboardText = await navigator.clipboard.readText();
       if (!clipboardText) return;
 
-      // const el = textAreaRef.current;
       if (!el) {
-        setText((prev) => (prev ? `${prev}\n${clipboardText}` : clipboardText));
+        setText((prev) => `${prev}${clipboardText}`);
         return;
       }
 
