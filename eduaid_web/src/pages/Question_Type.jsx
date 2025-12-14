@@ -17,8 +17,8 @@ const Question_Type = () => {
   };
 
   return (
-    <div className="popup w-full min-h-screen bg-[#02000F] flex justify-center items-center ">
-      <div className="w-full bg-cust bg-opacity-50 bg-custom-gradient shadow-lg p-6 sm:p-10">
+    <div className="popup w-full min-h-screen bg-light-bg flex justify-center items-center ">
+      <div className="w-full bg-custom-gradient shadow-lg p-6 sm:p-10 rounded-2xl">
         {/* Header */}
         <Link to="/" className="flex flex-col sm:flex-row items-center gap-4 mb-6">
           <img
@@ -27,10 +27,10 @@ const Question_Type = () => {
             className="w-20 sm:w-24 object-contain"
           />
           <div className="text-4xl sm:text-5xl font-extrabold text-center sm:text-left">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
+            <span className="bg-gradient-to-r from-[#FF6B9D] to-[#9B7EDE] text-transparent bg-clip-text">
               Edu
             </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
+            <span className="bg-gradient-to-r from-[#9B7EDE] to-[#4ECDC4] text-transparent bg-clip-text">
               Aid
             </span>
           </div>
@@ -38,10 +38,10 @@ const Question_Type = () => {
 
         {/* Title */}
         <div className="text-center">
-          <h2 className="text-white text-3xl sm:text-4xl font-extrabold">
-            What’s on your Mind?
+          <h2 className="text-gray-800 text-3xl sm:text-4xl font-extrabold">
+            What's on your Mind?
           </h2>
-          <p className="text-white text-lg sm:text-xl font-medium mt-2">
+          <p className="text-gray-600 text-lg sm:text-xl font-medium mt-2">
             Choose one
           </p>
         </div>
@@ -57,8 +57,10 @@ const Question_Type = () => {
             <div
               key={option.id}
               onClick={() => handleOptionClick(option.id)}
-              className={`w-full max-w-xl flex items-center gap-6 px-6 py-5 rounded-xl cursor-pointer bg-[#202838] bg-opacity-50 hover:bg-opacity-70 transition-all duration-200 ${
-                selectedOption === option.id ? "ring-2 ring-[#00CBE7]" : ""
+              className={`w-full max-w-xl flex items-center gap-6 px-6 py-5 rounded-xl cursor-pointer bg-white hover:bg-gray-50 border-2 transition-all duration-200 shadow-md hover:shadow-lg ${
+                selectedOption === option.id 
+                  ? "ring-2 ring-[#4ECDC4] border-[#4ECDC4] shadow-lg" 
+                  : "border-light-border"
               }`}
               role="button"
               tabIndex={0}
@@ -67,13 +69,13 @@ const Question_Type = () => {
               }}
             >
               <div
-                className={`w-10 h-10 rounded-full flex-shrink-0 ${
+                className={`w-10 h-10 rounded-full flex-shrink-0 transition-all ${
                   selectedOption === option.id
-                    ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                    : "bg-[#999C9D]"
+                    ? "bg-gradient-to-b from-[#9B7EDE] to-[#4ECDC4] shadow-md"
+                    : "bg-gray-300"
                 }`}
               ></div>
-              <div className="text-white text-xl sm:text-2xl font-medium">
+              <div className="text-gray-800 text-xl sm:text-2xl font-medium">
                 {option.label}
               </div>
             </div>
@@ -86,7 +88,7 @@ const Question_Type = () => {
             <Link to="/input">
               <button
                 onClick={handleSaveToLocalStorage}
-                className="rounded-2xl text-xl sm:text-2xl text-white px-6 sm:px-8 font-bold py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:brightness-110 transition-all"
+                className="rounded-2xl text-xl sm:text-2xl text-white px-6 sm:px-8 font-bold py-3 bg-gradient-to-r from-[#FF6B9D] via-[#9B7EDE] to-[#4ECDC4] hover:shadow-xl hover:scale-105 transition-all duration-300"
               >
                 Fire Up 🚀
               </button>
@@ -94,7 +96,7 @@ const Question_Type = () => {
           ) : (
             <button
               onClick={() => alert("Please select a question type.")}
-              className="rounded-2xl text-xl sm:text-2xl text-white px-6 sm:px-8 font-bold py-3 bg-gray-500 cursor-not-allowed"
+              className="rounded-2xl text-xl sm:text-2xl text-gray-400 px-6 sm:px-8 font-bold py-3 bg-gray-200 cursor-not-allowed"
               disabled
             >
               Fire Up 🚀
