@@ -85,17 +85,19 @@ function Popup() {
 </div>
 
           <div className="flex flex-col gap-2 px-4 mt-6">
-  <a href="/src/pages/home/home.html">
-    <button className="w-full bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-white py-2 rounded-lg flex justify-center items-center gap-2">
-      Get Started
-      <img src={arrow} width={18} />
-    </button>
+  <a
+    href={chrome?.runtime?.getURL?.("pages/home/home.html") ?? "pages/home/home.html"}
+    className="w-full bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-white py-2 rounded-lg flex justify-center items-center gap-2"
+  >
+    <span>Get Started</span>
+    <img src={arrow} width={18} alt="" />
   </a>
 
-  <a href="/src/pages/previous/previous.html">
-    <button className="w-full bg-[#202838] text-white py-2 rounded-lg">
-      Previous Work
-    </button>
+  <a
+    href={chrome?.runtime?.getURL?.("pages/previous/previous.html") ?? "pages/previous/previous.html"}
+    className="w-full bg-[#202838] text-white py-2 rounded-lg text-center"
+  >
+    Previous Work
   </a>
 </div>
           <a
