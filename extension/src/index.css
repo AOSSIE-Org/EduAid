@@ -7,10 +7,9 @@
 }
 
 #root {
-  width: 25rem;
-  height: 33rem;
-  opacity: 0.95;
-  border-radius: 50%;
+  width: 360px;
+  height: 520px;
+  opacity: 0.98;
 }
 
 .my-custom-root {

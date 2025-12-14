@@ -48,11 +48,12 @@ function Popup() {
     }
   }, []);
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
+    <div className="w-[360px] h-[520px] bg-[#02000F] overflow-hidden">
+
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <div>
           <img src={logo} alt="logo" className="w-16 my-4 mx-4 block" />
-          <div className="text-5xl text-center font-extrabold">
+          <div className="text-3xl text-center font-extrabold">
             <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
               Edu
             </span>
@@ -67,65 +68,53 @@ function Popup() {
               <img src={starsImg} width={22} height={6} alt="" />
             </div>
           </div>
-          <div className="flex flex-col items-end">
-            <div className="my-4">
-              <div className="flex items-center rounded-l-2xl w-fit px-4 py-2 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-2">
-                <img src={starsImg} width={24} height={12} alt="" />
-                <div className="text-white text-lg">Doc/Audio Input</div>
-              </div>
-            </div>
-            <div className="my-2">
-              <div className="flex items-center rounded-l-2xl w-fit px-4 py-2 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-2">
-                <img src={starsImg} width={24} height={12} alt="" />
-                <div className="text-white text-lg">In-depth questions gen</div>
-              </div>
-            </div>
-            <div className="my-2">
-              <div className="flex items-center rounded-l-2xl w-fit px-4 py-2 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-2">
-                <img src={starsImg} width={24} height={12} alt="" />
-                <div className="text-white text-lg">
-                  Dynamic Google Form Integration
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="flex ml-2">
-            <div className="mt-6 rounded-2xl mr-4">
-              <a href="/src/pages/home/home.html">
-                <button className="bg-black items-center text-base flex justify-center gap-2 text-white px-4 py-2 mx-auto mt-4 border-gradient hover:wave-effect rounded-md">
-                  Let’s get Started{" "}
-                  <img src={arrow} width={20} height={18} alt="" />
-                </button>
-              </a>
-            </div>
-            <div className="mt-6 rounded-2xl mr-2">
-              <a href="/src/pages/previous/previous.html">
-                <button className="bg-black items-center text-base flex justify-center gap-2 text-white px-4 py-2 mx-auto mt-4 border-gradient hover:wave-effect rounded-md">
-                  Your previous Work!
-                  <img src={arrow} width={20} height={18} alt="" />
-                </button>
-              </a>
-            </div>
-          </div>
+          <div className="grid grid-cols-1 gap-2 px-4 mt-4">
+  {[
+    "Doc & Audio Input",
+    "In-depth Question Generation",
+    "Google Form Integration"
+  ].map((text) => (
+    <div
+      key={text}
+      className="bg-[#202838] text-white text-sm px-4 py-2 rounded-xl flex items-center gap-2"
+    >
+      <img src={starsImg} width={16} height={8} alt="" />
+      {text}
+    </div>
+  ))}
+</div>
+
+          <div className="flex flex-col gap-2 px-4 mt-6">
+  <a href="/src/pages/home/home.html">
+    <button className="w-full bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-white py-2 rounded-lg flex justify-center items-center gap-2">
+      Get Started
+      <img src={arrow} width={18} />
+    </button>
+  </a>
+
+  <a href="/src/pages/previous/previous.html">
+    <button className="w-full bg-[#202838] text-white py-2 rounded-lg">
+      Previous Work
+    </button>
+  </a>
+</div>
           <a
             href="https://github.com/AOSSIE-Org/EduAid"
             target="_blank"
             rel="noopener noreferrer"
             className="group"
           >
-            <div className="bg-[#45454599] mt-5 w-fit mx-auto px-2 py-2 rounded-xl flex gap-2 items-center group-hover:bg-[#5a5a5a99] transition-colors duration-300">
-              <img src={gitStar} className="" width={22} height={6} alt="" />
-              <div className="text-white font-semibold">
-                {stars !== null ? (
-                  <span className="flex text-xl">
-                    {stars}
-                    <FaGithub size={30} className="ml-4" />
-                  </span>
-                ) : (
-                  <span>{error}</span>
-                )}
-              </div>
-            </div>
+            <a
+  href="https://github.com/AOSSIE-Org/EduAid"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="absolute bottom-3 left-1/2 -translate-x-1/2"
+>
+  <div className="bg-[#202838] px-3 py-1 rounded-lg flex items-center gap-2 text-white text-sm">
+    <FaGithub />
+    {stars ?? "—"}
+  </div>
+</a>
           </a>
         </div>
       </div>
