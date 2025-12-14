@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import "../../index.css";
-import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
 import { FaClipboard } from "react-icons/fa";
-import Switch from "react-switch"
-import { FaQuestionCircle, FaClipboardList } from "react-icons/fa"; // Icons for the dropdown
+import ExtensionShell from "../../components/layout/ExtensionShell";
+import BrandHeader from "../../components/layout/BrandHeader";
+import { Button } from "../../components/ui/Button";
+import { Card, CardTitle, CardSubTitle } from "../../components/ui/Card";
+import { Label, Select, TextArea, TextInput } from "../../components/ui/Field";
 
 const Answer = () => {
   const [context, setContext] = useState("");
@@ -129,130 +131,150 @@ const Answer = () => {
   
 
   return (
-    <div className="popup w-36rem h-38rem bg-[#02000F] flex justify-center items-center">
+    <ExtensionShell>
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
           <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
         </div>
       )}
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-      <div className="flex items-end gap-[2px]">
-          <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
-          <div className="text-2xl mb-3 font-extrabold">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-              Edu
-            </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Aid
-            </span>
-          </div>
-          {/* <Switch
-            checked={isToggleOn}
-            onChange={toggleSwitch}
-            offColor="#FF005C"
-            onColor="#00CBE7"
-            height={32}
-            width={64}
-            className="ml-32 mb-8"
-          /> */}
-          {/* Dropdown for Mode Selection */}
-          <div className="relative ml-auto mb-3">
-            <select
-              value={mode}
-              onChange={handleModeChange}
-              className="bg-[#202838] text-white text-sm font-medium px-4 py-2 rounded-xl appearance-none"
-            >
-              <option value="generate_qna">
-                <FaClipboardList className="inline-block mr-2" />
-                Generate Q&A
-              </option>
-              <option value="ask_question">
-                <FaQuestionCircle className="inline-block mr-2" />
-                Ask Questions
-              </option>
-            </select>
-          </div>
 
+      <BrandHeader
+        compact
+        right={
+          <div className="w-40">
+            <Select value={mode} onChange={handleModeChange}>
+              <option value="generate_qna">Generate Q&A</option>
+              <option value="ask_question">Ask Questions</option>
+            </Select>
+          </div>
+        }
+      />
+
+      <div className={`px-4 pb-4 flex-1 flex flex-col ${loading ? "pointer-events-none" : ""}`}>
+        <div className="text-white font-extrabold text-2xl">Ask questions</div>
+        <div className="text-white/70 text-sm flex items-center gap-2 mt-1">
+          Paste context and build your questions
+          <img className="h-[18px] w-[18px]" src={stars} alt="stars" />
         </div>
-        <div className="text-3xl mt-3 mb-1 text-white ml-4 font-extrabold">
-          Ask Questions!
+
+        <div className="mt-4">
+          <Label>Context</Label>
+          <Card className="mt-2 relative">
+            <div className="absolute top-3 left-3 text-white/70">
+              <FaClipboard className="h-[18px] w-[18px]" />
+            </div>
+            <TextArea
+              className="min-h-[90px] pl-10 resize-none scrollbar-hide"
+              value={context}
+              onChange={(e) => setContext(e.target.value)}
+              placeholder="Paste text here..."
+            />
+          </Card>
         </div>
-        <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-20">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
-            <FaClipboard className="h-[20px] w-[20px]" />
-          </button>
-          <textarea
-            className="absolute inset-0 p-8 pt-2 bg-[#83b6cc40] text-lg rounded-xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            value={context}
-            onChange={(e) => setContext(e.target.value)}
-          />
-          <style>
-            {`
-          textarea::-webkit-scrollbar {
-            display: none;
-          }
-        `}
-          </style>
+
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-white/80 text-sm font-semibold">Questions</div>
+          <Button variant="secondary" onClick={addQuestion}>
+            Add question
+          </Button>
         </div>
-        <div className="mt-2 mx-3">
-          <button onClick={addQuestion} className="bg-[#518E8E] text-sm text-white rounded-xl border border-[#cbd0dc80] px-6 py-1">Add Question</button>
-        </div>
-        <div className="mt-4 mx-3 h-64 overflow-y-auto" style={{ scrollbarWidth: "thin", msOverflowStyle: "auto" }}>
+
+        <div className="mt-3 flex-1 overflow-y-auto scrollbar-hide space-y-3">
           {questions.map((q, index) => (
-            <div key={index} className="mb-2 p-1 border-dotted border-4 border-[#7600F2] rounded-xl">
-              <select
-                value={q.type}
-                onChange={(e) => updateQuestion(index, "type", e.target.value)}
-                className="bg-[#202838] text-white rounded-xl px-5 py-2 mr-2 mt-1 appearance-none"
-              >
-                <option value="boolean">Boolean</option>
-                <option value="mcq">MCQ</option>
-                <option value="single">Single Correct</option>
-              </select>
-              <input
-                type="text"
-                value={q.question}
-                onChange={(e) => updateQuestion(index, "question", e.target.value)}
-                placeholder="Enter question"
-                className="bg-[#202838] text-white rounded-xl px-5 py-2 mr-2 mt-2 w-64"
-              />
-              {q.type === "mcq" && (
-                <div className="mt-2">
-                  {q.options.map((option, oIndex) => (
-                    <div key={oIndex} className="flex mb-1">
-                      <input
-                        type="text"
-                        value={option}
-                        onChange={(e) => updateOption(index, oIndex, e.target.value)}
-                        placeholder={`Option ${oIndex + 1}`}
-                        className="bg-[#202838] text-white rounded-xl px-5 py-2 mr-2 w-56"
-                      />
-                      <button onClick={() => removeOption(index, oIndex)} className="bg-[#3e506380] text-sm text-white rounded-xl border border-[#cbd0dc80] px-2 py-1">Remove</button>
+            <Card key={index} className="border border-white/10">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <Label>Type</Label>
+                      <Select
+                        value={q.type}
+                        onChange={(e) => updateQuestion(index, "type", e.target.value)}
+                        className="mt-2"
+                      >
+                        <option value="boolean">Boolean</option>
+                        <option value="mcq">MCQ</option>
+                        <option value="single">Single Correct</option>
+                      </Select>
                     </div>
-                  ))}
-                  {q.options.length < 4 && (
-                    <button onClick={() => addOption(index)} className="bg-[#3e506380] text-sm text-white rounded-xl border border-[#cbd0dc80] px-4 py-1 mt-1">Add Option</button>
+                    <div className="col-span-2">
+                      <Label>Question</Label>
+                      <TextInput
+                        value={q.question}
+                        onChange={(e) => updateQuestion(index, "question", e.target.value)}
+                        placeholder="Enter question"
+                        className="mt-2"
+                      />
+                    </div>
+                  </div>
+
+                  {q.type === "mcq" && (
+                    <div className="mt-3">
+                      <Label>Options (max 4)</Label>
+                      <div className="mt-2 space-y-2">
+                        {q.options.map((option, oIndex) => (
+                          <div key={oIndex} className="flex items-center gap-2">
+                            <TextInput
+                              value={option}
+                              onChange={(e) => updateOption(index, oIndex, e.target.value)}
+                              placeholder={`Option ${oIndex + 1}`}
+                            />
+                            <Button
+                              variant="ghost"
+                              className="px-3"
+                              onClick={() => removeOption(index, oIndex)}
+                              title="Remove option"
+                            >
+                              ✕
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      {q.options.length < 4 && (
+                        <Button variant="secondary" className="mt-2" onClick={() => addOption(index)}>
+                          Add option
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-              <button onClick={() => removeQuestion(index)} className="bg-[#3e506380] text-sm text-white rounded-xl border border-[#cbd0dc80] px-4 py-1 mt-2 mb-1">Remove Question</button>
-            </div>
+
+                <Button
+                  variant="ghost"
+                  className="px-3"
+                  onClick={() => removeQuestion(index)}
+                  title="Remove question"
+                >
+                  ✕
+                </Button>
+              </div>
+            </Card>
           ))}
         </div>
-        <div className="flex my-2 justify-center gap-6 items-start">
-          <button onClick={handleApiCall} className="bg-black items-center text-sm text-white rounded-xl px-6 py-2 mx-auto border-gradient">Generate Answers</button>
+
+        <div className="mt-4">
+          <Button onClick={handleApiCall} variant="outline" className="w-full">
+            Generate answers
+          </Button>
         </div>
-        <div className="mt-4 mx-3 h-16 overflow-y-auto" style={{ scrollbarWidth: "thin", msOverflowStyle: "auto" }}>
-          {answers.map((answer, index) => (
-            <div key={index} className="bg-[#202838] text-white rounded-xl px-5 py-2 mb-2">
-              <div className="font-bold">Q: {answer.question}</div>
-              <div className="mt-1">A: {answer.answer}</div>
-            </div>
-          ))}
+
+        <div className="mt-4">
+          <div className="text-white/80 text-sm font-semibold">Answers</div>
+          <div className="mt-2 max-h-28 overflow-y-auto scrollbar-hide space-y-2">
+            {answers.length === 0 ? (
+              <Card className="text-white/60 text-sm">No answers yet.</Card>
+            ) : (
+              answers.map((answer, index) => (
+                <Card key={index} className="border border-white/10">
+                  <CardTitle>Q: {answer.question}</CardTitle>
+                  <div className="text-white/80 text-sm mt-2">A: {answer.answer}</div>
+                </Card>
+              ))
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </ExtensionShell>
   );
 };
 

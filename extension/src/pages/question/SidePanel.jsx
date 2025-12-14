@@ -2,7 +2,10 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { PDFDocument } from 'pdf-lib';
 import "../../index.css";
-import logo from "../../assets/aossie_logo.webp";
+import ExtensionShell from "../../components/layout/ExtensionShell";
+import BrandHeader from "../../components/layout/BrandHeader";
+import { Button } from "../../components/ui/Button";
+import { Card, CardTitle, CardSubTitle } from "../../components/ui/Card";
 
 function SidePanel() {
   const [qaPairs, setQaPairs] = useState([]);
@@ -204,94 +207,74 @@ function SidePanel() {
 };
 
   return (
-    <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center my-custom-root">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-        <div className="flex flex-col h-full">
-          <div className="flex items-end gap-[2px]">
-            <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
-            <div className="text-2xl mb-3 font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                Edu
-              </span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                Aid
-              </span>
-            </div>
-          </div>
-          <div className="font-bold text-xl text-white mt-3 mx-2">
-            Generated Questions
-          </div>
-          <div className="flex-1 overflow-y-auto scrollbar-hide">
-            {qaPairs &&
-              qaPairs.map((qaPair, index) => {
-                const combinedOptions = qaPair.options
-                  ? [...qaPair.options, qaPair.answer]
-                  : [qaPair.answer];
-                const shuffledOptions = shuffleArray(combinedOptions);
-                return (
-                  <div
-                    key={index}
-                    className="px-2 bg-[#d9d9d90d] border-dotted border-2 border-[#7600F2] my-2 mx-2 rounded-xl py-2"
-                  >
-                    <div className="text-white font-bold text-sm">
-                      Question {index + 1}
+    <ExtensionShell>
+      <BrandHeader compact />
+
+      <div className="px-4 pb-4 flex-1 flex flex-col">
+        <div className="text-white font-extrabold text-2xl">Generated questions</div>
+        <div className="text-white/60 text-xs mt-1">Fill answers here (side panel view).</div>
+
+        <div className="mt-4 flex-1 overflow-y-auto scrollbar-hide space-y-3">
+          {qaPairs &&
+            qaPairs.map((qaPair, index) => {
+              const combinedOptions = qaPair.options
+                ? [...qaPair.options, qaPair.answer]
+                : [qaPair.answer];
+              const shuffledOptions = shuffleArray(combinedOptions);
+
+              return (
+                <Card key={index} className="border border-white/10">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <CardSubTitle>Question {index + 1}</CardSubTitle>
+                      <CardTitle className="mt-1">{qaPair.question}</CardTitle>
                     </div>
-                    <div className="text-white text-[1rem] my-1">
-                      {qaPair.question}
+                    <div className="text-white/50 text-[11px] mt-1">
+                      {qaPair.question_type}
                     </div>
-                    {qaPair.options && (
-                      <div className="text-[#FFF4F4] text-[1rem] my-1">
-                        {shuffledOptions.map((option, idx) => (
-                          <div key={idx} className="flex items-center">
-                            <input
-                              type="radio"
-                              name={`question${index}`}
-                              value={option}
-                              className="mr-2"
-                            />
-                            <span>{option}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {!qaPair.options && (
-                      <div className="my-2">
-                        <input
-                          type="text"
-                          placeholder="Enter your answer"
-                          className="bg-[#161E1E] text-white p-2 rounded-lg w-full"
-                        />
-                      </div>
-                    )}
                   </div>
-                );
-              })}
-          </div>
-          <div className="items-center flex justify-center gap-6 mx-auto">
-          <button
-              className="bg-[#161E1E] my-2 text-white px-2 py-2 rounded-xl"
-              onClick={() => {
-                window.close();
-              }}
-            >
-              Close
-            </button>
-            <button
-              className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"
-              onClick={generateGoogleForm}
-            >
-              Generate Google form
-            </button>
-            <button
-              className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"
-              onClick={generatePDF}
-            >
-              Generate PDF
-            </button>
-          </div>
+
+                  {qaPair.options ? (
+                    <div className="mt-3 space-y-2">
+                      {shuffledOptions.map((option, idx) => (
+                        <label key={idx} className="flex items-center gap-2 text-white/85 text-sm">
+                          <input
+                            type="radio"
+                            name={`question${index}`}
+                            value={option}
+                            className="accent-[#7600F2]"
+                          />
+                          <span>{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-3">
+                      <input
+                        type="text"
+                        placeholder="Enter your answer"
+                        className="w-full rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/40 px-4 py-2 outline-none focus:ring-2 focus:ring-[#7600F2]/60"
+                      />
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+        </div>
+
+        <div className="mt-4 flex items-center gap-3">
+          <Button variant="secondary" className="w-1/3" onClick={() => window.close()}>
+            Close
+          </Button>
+          <Button className="w-1/3" onClick={generateGoogleForm}>
+            Google Form
+          </Button>
+          <Button className="w-1/3" onClick={generatePDF}>
+            PDF
+          </Button>
         </div>
       </div>
-    </div>
+    </ExtensionShell>
   );
 }
 

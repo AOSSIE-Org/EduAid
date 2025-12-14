@@ -1,10 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import "../../index.css";
-import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
-import { FaClipboard } from "react-icons/fa";
 import { FaArrowRight } from "react-icons/fa"; // Import the enter icon
+import ExtensionShell from "../../components/layout/ExtensionShell";
+import BrandHeader from "../../components/layout/BrandHeader";
+import { Button } from "../../components/ui/Button";
+import { Card, CardTitle, CardSubTitle } from "../../components/ui/Card";
 
 const Previous = () => {
   const getQuizzesFromLocalStorage = () => {
@@ -29,76 +31,50 @@ const Previous = () => {
   };
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex flex-col justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-        <div className="flex items-end gap-[2px]">
-          <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
-          <div className="text-2xl mb-3 font-extrabold">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-              Edu
-            </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Aid
-            </span>
-          </div>
-        </div>
-        <div className="text-right mt-[-8px] mx-1">
-          <div className="text-white text-sm font-bold">Quiz Dashboard</div>
-          <div className="text-white text-right justify-end flex gap-2 text-sm font-bold">
-            Your{" "}
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Generated Quizzes
-            </span>{" "}
-            <img className="h-[20px] w-[20px]" src={stars} alt="stars" />
-          </div>
-        </div>
-        <div className="text-center my-2 text-sm">
-        <span className="bg-gradient-to-r from-[#7600F2] text-center to-[#00CBE7] font-bold text-transparent bg-clip-text">
-              Your Quizzes
-            </span>{" "}
-        </div>
-        <div className="mx-3 my-4 p-2 bg-[#83b6cc40] rounded-xl h-68 overflow-y-auto ">
-          {quizzes.length === 0 ? (
-            <div className="text-center text-white text-sm">
-              No quizzes available
+    <ExtensionShell>
+      <BrandHeader compact />
+      <div className="px-4 pb-4 flex-1 flex flex-col">
+        <div className="flex items-end justify-between">
+          <div>
+            <div className="text-white font-extrabold text-2xl">Quiz dashboard</div>
+            <div className="text-white/70 text-sm flex items-center gap-2 mt-1">
+              Your <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text font-semibold">generated quizzes</span>
+              <img className="h-[18px] w-[18px]" src={stars} alt="stars" />
             </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex-1 overflow-y-auto scrollbar-hide">
+          {quizzes.length === 0 ? (
+            <Card className="text-center">
+              <div className="text-white/80 text-sm">No quizzes available</div>
+              <div className="text-white/50 text-xs mt-1">Generate a quiz to see it here.</div>
+            </Card>
           ) : (
-            <ul className="space-y-2 max-h-96 overflow-y-auto">
-                {quizzes.map((quiz, index) => (
-                    <li 
-                    key={index} 
-                    className="bg-[#202838] p-4 rounded-lg text-white cursor-pointer border-dotted border-2 border-[#7600F2] flex justify-between items-center"
-                    onClick={() => handleQuizClick(quiz)}
-                    >
-                    <div>
-                        <div className="font-bold">{quiz.difficulty} - {quiz.numQuestions} Questions</div>
-                        <div className="mt-2 text-sm">{quiz.date}</div>
-                    </div>
-                    <FaArrowRight className="text-[#7600F2]" size={20} />
-                    </li>
-                ))}
-                </ul>
+            <div className="space-y-3">
+              {quizzes.map((quiz, index) => (
+                <Card
+                  key={index}
+                  className="cursor-pointer hover:bg-white/10 transition flex items-center justify-between"
+                  onClick={() => handleQuizClick(quiz)}
+                >
+                  <div>
+                    <CardTitle>{quiz.difficulty} - {quiz.numQuestions} questions</CardTitle>
+                    <CardSubTitle className="mt-1">{quiz.date}</CardSubTitle>
+                  </div>
+                  <FaArrowRight className="text-white/60" size={18} />
+                </Card>
+              ))}
+            </div>
           )}
         </div>
-        <div className="flex my-2 justify-center gap-6 items-start">
-          <div>
-              <button
-                onClick={handleBack}
-               className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient">
-                Back
-              </button>
-          </div>
-          <div>
-            <button 
-              onClick={handleClearQuizzes} 
-              className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient"
-            >
-              Clear
-            </button>
-          </div>
+
+        <div className="mt-4 flex items-center gap-3">
+          <Button variant="outline" className="w-1/2" onClick={handleBack}>Back</Button>
+          <Button variant="outline" className="w-1/2" onClick={handleClearQuizzes}>Clear</Button>
         </div>
       </div>
-    </div>
+    </ExtensionShell>
   );
 };
 

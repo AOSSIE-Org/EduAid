@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import "../index.css";
-import logo from "../assets/aossie_logo.webp";
 import starsImg from "../assets/stars.png";
 import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
 import { FaGithub } from 'react-icons/fa';
+import ExtensionShell from "../components/layout/ExtensionShell";
+import BrandHeader from "../components/layout/BrandHeader";
+import { Button } from "../components/ui/Button";
+import { Card } from "../components/ui/Card";
 
 function Popup() {
   const [stars, setStars] = useState(null);
@@ -48,88 +51,76 @@ function Popup() {
     }
   }, []);
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-        <div>
-          <img src={logo} alt="logo" className="w-16 my-4 mx-4 block" />
-          <div className="text-5xl text-center font-extrabold">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-              Edu
-            </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Aid
-            </span>
+    <ExtensionShell>
+      <BrandHeader compact />
+      <div className="px-4 pb-4 flex-1 flex flex-col">
+        <div className="text-4xl font-extrabold text-center mt-2">
+          <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
+            Edu
+          </span>
+          <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
+            Aid
+          </span>
+        </div>
+        <div className="text-white/80 text-sm text-center mt-2">
+          Auto-generate short quizzes from your notes, docs, or audio.
+          <div className="flex items-center justify-center gap-2 mt-1">
+            <span className="text-white/70">Fast. Clean. Shareable.</span>
+            <img src={starsImg} width={18} height={18} alt="" />
           </div>
-          <div className="text-white text-[1rem] text-center my-2">
-            <div>A tool that can auto-generate short quizzes</div>
-            <div className="flex text-center justify-center gap-2">
-              based on user input{" "}
-              <img src={starsImg} width={22} height={6} alt="" />
-            </div>
-          </div>
-          <div className="flex flex-col items-end">
-            <div className="my-4">
-              <div className="flex items-center rounded-l-2xl w-fit px-4 py-2 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-2">
-                <img src={starsImg} width={24} height={12} alt="" />
-                <div className="text-white text-lg">Doc/Audio Input</div>
-              </div>
-            </div>
-            <div className="my-2">
-              <div className="flex items-center rounded-l-2xl w-fit px-4 py-2 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-2">
-                <img src={starsImg} width={24} height={12} alt="" />
-                <div className="text-white text-lg">In-depth questions gen</div>
-              </div>
-            </div>
-            <div className="my-2">
-              <div className="flex items-center rounded-l-2xl w-fit px-4 py-2 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] justify-center gap-2">
-                <img src={starsImg} width={24} height={12} alt="" />
-                <div className="text-white text-lg">
-                  Dynamic Google Form Integration
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="flex ml-2">
-            <div className="mt-6 rounded-2xl mr-4">
-              <a href="/src/pages/home/home.html">
-                <button className="bg-black items-center text-base flex justify-center gap-2 text-white px-4 py-2 mx-auto mt-4 border-gradient hover:wave-effect rounded-md">
-                  Let’s get Started{" "}
-                  <img src={arrow} width={20} height={18} alt="" />
-                </button>
-              </a>
-            </div>
-            <div className="mt-6 rounded-2xl mr-2">
-              <a href="/src/pages/previous/previous.html">
-                <button className="bg-black items-center text-base flex justify-center gap-2 text-white px-4 py-2 mx-auto mt-4 border-gradient hover:wave-effect rounded-md">
-                  Your previous Work!
-                  <img src={arrow} width={20} height={18} alt="" />
-                </button>
-              </a>
-            </div>
-          </div>
-          <a
-            href="https://github.com/AOSSIE-Org/EduAid"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group"
-          >
-            <div className="bg-[#45454599] mt-5 w-fit mx-auto px-2 py-2 rounded-xl flex gap-2 items-center group-hover:bg-[#5a5a5a99] transition-colors duration-300">
-              <img src={gitStar} className="" width={22} height={6} alt="" />
-              <div className="text-white font-semibold">
-                {stars !== null ? (
-                  <span className="flex text-xl">
-                    {stars}
-                    <FaGithub size={30} className="ml-4" />
-                  </span>
-                ) : (
-                  <span>{error}</span>
-                )}
-              </div>
-            </div>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          <Card className="flex items-center justify-between">
+            <div className="text-white font-semibold">Doc/Audio Input</div>
+            <img src={starsImg} width={20} height={20} alt="" />
+          </Card>
+          <Card className="flex items-center justify-between">
+            <div className="text-white font-semibold">In-depth question generation</div>
+            <img src={starsImg} width={20} height={20} alt="" />
+          </Card>
+          <Card className="flex items-center justify-between">
+            <div className="text-white font-semibold">Google Form export</div>
+            <img src={starsImg} width={20} height={20} alt="" />
+          </Card>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <a href="/src/pages/home/home.html" className="block">
+            <Button variant="outline" className="w-full">
+              Start <img src={arrow} width={18} height={18} alt="" />
+            </Button>
+          </a>
+          <a href="/src/pages/previous/previous.html" className="block">
+            <Button variant="outline" className="w-full">
+              Previous <img src={arrow} width={18} height={18} alt="" />
+            </Button>
           </a>
         </div>
+
+        <a
+          href="https://github.com/AOSSIE-Org/EduAid"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-auto pt-4"
+        >
+          <div className="glass rounded-2xl px-4 py-3 flex gap-3 items-center hover:bg-white/10 transition">
+            <img src={gitStar} width={22} height={22} alt="" />
+            <div className="text-white font-semibold flex items-center gap-2">
+              {stars !== null ? (
+                <>
+                  <span className="text-lg">{stars}</span>
+                  <FaGithub size={22} />
+                </>
+              ) : (
+                <span className="text-white/70 text-sm">{error || "Loading..."}</span>
+              )}
+            </div>
+            <div className="ml-auto text-white/60 text-xs">Open GitHub</div>
+          </div>
+        </a>
       </div>
-    </div>
+    </ExtensionShell>
   );
 }
 

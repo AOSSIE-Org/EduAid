@@ -6,23 +6,65 @@
   @apply border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin;
 }
 
-#root {
-  width: 25rem;
-  height: 33rem;
-  opacity: 0.95;
-  border-radius: 50%;
+/*
+  Extension UI base
+  - Popup uses a fixed canvas
+  - Side panel should fill available space
+*/
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
+body {
+  background: #02000f;
+}
+
+#root {
+  width: 25rem; /* 400px */
+  height: 33rem; /* 528px */
+  opacity: 0.98;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #02000f;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+}
+
+/* Sidepanel must not be constrained like popup */
+body.sidepanel,
+body.sidepanel #root {
+  width: 100%;
+  height: 100%;
+}
+
+body.sidepanel #root {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Keep legacy hooks used in SidePanel */
 .my-custom-root {
   height: 55rem;
 }
 
+/* Gradient outline that respects border-radius */
 .border-gradient {
-  border-width: 2px; 
-  border-style: solid;
-  border-image: linear-gradient(to right, #ff005c, #7600f2, #00cbe7);
-  border-image-slice: 1;
-  border-radius: 2rem;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background:
+    linear-gradient(#02000f, #02000f) padding-box,
+    linear-gradient(to right, #ff005c, #7600f2, #00cbe7) border-box;
+}
+
+/* Subtle glass card */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
 }
 
 /* index.css */

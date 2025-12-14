@@ -1,11 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom";
 import "../../index.css";
-import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
 import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
 import { FaClipboard , FaWikipediaW  } from "react-icons/fa";
+import ExtensionShell from "../../components/layout/ExtensionShell";
+import BrandHeader from "../../components/layout/BrandHeader";
+import { Button } from "../../components/ui/Button";
+import { Card, CardTitle, CardSubTitle } from "../../components/ui/Card";
+import { Label, Select, TextArea, TextInput } from "../../components/ui/Field";
 
 function Second() {
   const [text, setText] = useState("");
@@ -176,157 +180,116 @@ function Second() {
 
 
   return (
-    <div className="popup w-42rem h-35rem bg-[#02000F] flex justify-center items-center">
+    <ExtensionShell>
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
           <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
         </div>
       )}
+      {/*
+        Make the popup scrollable.
+        This wrapper used `h-full` but had no overflow handling, so long forms
+        could not scroll inside the fixed-size extension popup.
+      */}
       <div
-        className={`w-full h-full bg-cust bg-opacity-50 bg-custom-gradient ${loading ? "pointer-events-none" : ""
-          }`}
+        className={`w-full h-full overflow-y-auto ${
+          loading ? "pointer-events-none" : ""
+        }`}
       >
-        <div className="flex items-end gap-[2px]">
-          <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
-          <div className="text-2xl mb-3 font-extrabold">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-              Edu
-            </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Aid
-            </span>
-          </div>
-        </div>
-        <div className="text-right mt-[-8px] mx-1">
-          <div className="text-white text-sm font-bold">Enter the Content</div>
-          <div className="text-white text-right justify-end flex gap-2 text-sm font-bold">
-            to Generate{" "}
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Questionaries
-            </span>{" "}
-            <img className="h-[20px] w-[20px]" src={stars} alt="stars" />
-          </div>
-        </div>
-        <div className="text-left mx-2 mb-1 mt-1 text-sm text-white">
-          Enter Content Here
-        </div>
+        <BrandHeader compact />
 
-        <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-28">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
-            <FaClipboard className="h-[20px] w-[20px]" />
-          </button>
-          <textarea
-            className="absolute inset-0 p-8 pt-2 bg-[#83b6cc40] text-lg rounded-xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
-          <style>
-            {`
-          textarea::-webkit-scrollbar {
-            display: none;
-          }
-        `}
-          </style>
-        </div>
-        <div className="text-white text-center my-2 text-sm">or</div>
-        <div className="border-[3px] rounded-xl text-center mx-3 px-6 py-2 border-dotted border-[#3E5063] mt-4">
-          <img className="mx-auto" height={24} width={24} src={cloud} alt="cloud" />
-          <div className="text-center text-white text-sm">Choose a file</div>
-          <div className="text-center text-white text-sm">
-            PDF, MP3 supported
+        <div className="px-4 pb-4 flex flex-col">
+          <div className="text-white font-extrabold text-2xl">Enter content</div>
+          <div className="text-white/70 text-sm flex items-center gap-2 mt-1">
+            Generate <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text font-semibold">questionaries</span>
+            <img className="h-[18px] w-[18px]" src={stars} alt="stars" />
           </div>
-          <div>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              style={{ display: 'none' }}
-            />
-            <button
-              className="bg-[#3e506380] my-2 text-sm rounded-xl text-white border border-[#cbd0dc80] px-6 py-1"
-              onClick={handleClick}
-            >
-              Browse File
-            </button>
+
+          <div className="mt-4">
+            <Label>Paste or type text</Label>
+            <Card className="mt-2 relative">
+              <div className="absolute top-3 left-3 text-white/70">
+                <FaClipboard className="h-[18px] w-[18px]" />
+              </div>
+              <TextArea
+                className="min-h-[110px] pl-10 resize-none scrollbar-hide"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Paste your notes here..."
+              />
+            </Card>
           </div>
-          <input
-            type="text"
-            placeholder="Enter Google Doc URL"
-            className="bg-[#202838] text-white rounded-xl px-5 py-2"
-            value={docUrl}
-            onChange={(e) => setDocUrl(e.target.value)}
-          />
-        </div>
-        <div className="flex justify-center gap-1 p-2">
-          <div className="relative items-center">
-            <select
-              value={difficulty}
-              onChange={handleDifficultyChange}
-              className="bg-[#202838] text-white rounded-xl px-5 py-3 appearance-none"
-            >
-              <option>Easy Difficulty</option>
-              <option>Medium Difficulty</option>
-              <option>Hard Difficulty</option>
-            </select>
-            <div className="absolute inset-y-0 right-0 flex items-center py-2 px-2 pointer-events-none">
-              <svg
-                className="w-2 h-2 fill-current text-white"
-                viewBox="0 0 20 20"
-              >
-                <path d="M5.5 8l4.5 4.5L14.5 8H5.5z" />
-              </svg>
+
+          <div className="text-white/60 text-xs text-center my-3">or</div>
+
+          <Card className="border border-white/10">
+            <CardTitle>Import a file</CardTitle>
+            <CardSubTitle>PDF, MP3 supported</CardSubTitle>
+            <div className="mt-3 flex items-center gap-3">
+              <img height={22} width={22} src={cloud} alt="cloud" />
+              <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} />
+              <Button variant="secondary" onClick={handleClick}>
+                Browse file
+              </Button>
+            </div>
+
+            <div className="mt-4">
+              <Label>Google Doc URL</Label>
+              <TextInput
+                value={docUrl}
+                onChange={(e) => setDocUrl(e.target.value)}
+                placeholder="https://docs.google.com/document/d/..."
+                className="mt-2"
+              />
+            </div>
+          </Card>
+
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            <div>
+              <Label>Difficulty</Label>
+              <Select value={difficulty} onChange={handleDifficultyChange} className="mt-2">
+                <option>Easy Difficulty</option>
+                <option>Medium Difficulty</option>
+                <option>Hard Difficulty</option>
+              </Select>
+            </div>
+
+            <div className="col-span-2">
+              <Label>Number of questions</Label>
+              <div className="mt-2 flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-2">
+                <div className="text-white/80 text-sm">{numQuestions}</div>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" className="px-2 py-1" onClick={decrementQuestions}>
+                    -
+                  </Button>
+                  <Button variant="ghost" className="px-2 py-1" onClick={incrementQuestions}>
+                    +
+                  </Button>
+                  <button
+                    title={isToggleOn ? "Disable Wikipedia Context" : "Enable Wikipedia Context"}
+                    onClick={toggleSwitch}
+                    className={`ml-1 p-2 rounded-xl border border-white/10 transition ${isToggleOn ? "bg-green-500/90 text-white" : "bg-white/10 text-white/70"}`}
+                  >
+                    <FaWikipediaW className="text-lg" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex items-center bg-[#202838] text-white rounded-xl px-1 py-2">
-            <span className="">
-              No. of questions{" "}
-              <button
-                onClick={decrementQuestions}
-                className="mr-1 px-1 rounded-full bg-[#3C5063] hover:bg-[#2d3c4b]"
-              >
-                -
-              </button>{" "}
-              {numQuestions}{" "}
-            </span>
-            <button
-              onClick={incrementQuestions}
-              className="ml-1 px-1 rounded-full bg-[#3C5063] hover:bg-[#2d3c4b]"
-            >
-              +
-            </button>
-          </div>
-          <div className="items-center bg-[#202838] text-white rounded-xl px-2 py-2">
-           <button
-            title={isToggleOn ? "Disable Wikipedia Context" : "Enable Wikipedia Context"}
-            onClick={toggleSwitch}
-            className={`p-1 rounded-md transition 
-              ${isToggleOn ? "bg-green-500 text-white" : "bg-gray-400 text-gray-300"}
-            `}
-          >
-            <FaWikipediaW className="text-2xl" />
-          </button>
-          </div>
-        </div>
-        <div className="flex my-2 justify-center gap-6 items-start">
-          <div className="">
-            <a href="/src/popup/popup.html">
-              <button className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient">
+
+          <div className="mt-auto pt-4 flex items-center gap-3">
+            <a href="/src/popup/popup.html" className="block w-1/2">
+              <Button variant="outline" className="w-full">
                 Back
-              </button>
+              </Button>
             </a>
-          </div>
-          <div>
-            <button
-              onClick={handleSaveToLocalStorage}
-              className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient flex"
-            >
-              Next <img src={arrow} width={16} height={12} alt="arrow" className="ml-2" />
-            </button>
+            <Button onClick={handleSaveToLocalStorage} variant="outline" className="w-1/2">
+              Next <img src={arrow} width={16} height={12} alt="arrow" />
+            </Button>
           </div>
         </div>
       </div>
-    </div>
+    </ExtensionShell>
   );
 }
 
