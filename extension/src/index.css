@@ -2,8 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+
+:root {
+  --bg: #f6f8ff;                 /* soft periwinkle */
+  --surface: rgba(255, 255, 255, 0.86);
+  --text: #0b1220;               /* near-slate-950 */
+  --muted: #4b5563;              /* gray-600 */
+  --border: rgba(2, 6, 23, 0.10);
+  --shadow: rgba(2, 6, 23, 0.14);
+
+  /* accents */
+  --a1: #ff2d7a;                 /* pink */
+  --a2: #7c3aed;                 /* violet */
+  --a3: #22d3ee;                 /* cyan */
+}
+
+/* Spinner */
 .loader {
-  @apply border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin;
+  @apply border-4 border-t-4 border-slate-200 border-t-custom-blue rounded-full w-16 h-16 animate-spin;
 }
 
 /*
@@ -18,20 +34,37 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-}
-
-body {
-  background: #02000f;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+    "Segoe UI Emoji";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
-  width: 25rem; /* 400px */
-  height: 33rem; /* 528px */
-  opacity: 0.98;
+  width: 25rem;   /* 400px */
+  height: 33rem;  /* 528px */
+  opacity: 0.99;
   border-radius: 16px;
   overflow: hidden;
-  background: #02000f;
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+  background: transparent; /* the shell owns the background */
+  box-shadow: 0 18px 60px var(--shadow);
+}
+
+
+/* Ensure text selection stays visible on light/glassy surfaces */
+::selection {
+  background: rgba(124, 58, 237, 0.25);
+  color: var(--text);
+}
+::-moz-selection {
+  background: rgba(124, 58, 237, 0.25);
+  color: var(--text);
+}
+input::selection, textarea::selection {
+  background: rgba(34, 211, 238, 0.28);
+  color: var(--text);
 }
 
 /* Sidepanel must not be constrained like popup */
@@ -51,28 +84,50 @@ body.sidepanel #root {
   height: 55rem;
 }
 
+/* App background: visible but still soft */
+.app-bg {
+  background-image:
+    radial-gradient(circle at 12% 10%, rgba(255, 45, 122, 0.26) 0%, transparent 46%),
+    radial-gradient(circle at 92% 0%, rgba(124, 58, 237, 0.22) 0%, transparent 46%),
+    radial-gradient(circle at 55% 100%, rgba(34, 211, 238, 0.22) 0%, transparent 56%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(246, 248, 255, 0.96) 55%, rgba(244, 252, 255, 0.92) 100%);
+}
+
 /* Gradient outline that respects border-radius */
 .border-gradient {
   border: 2px solid transparent;
   border-radius: 14px;
   background:
-    linear-gradient(#02000f, #02000f) padding-box,
-    linear-gradient(to right, #ff005c, #7600f2, #00cbe7) border-box;
+    linear-gradient(rgba(255, 255, 255, 0.90), rgba(255, 255, 255, 0.90)) padding-box,
+    linear-gradient(90deg, var(--a1), var(--a2), var(--a3)) border-box;
 }
 
-/* Subtle glass card */
+/* Subtle card surface */
 .glass {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 255, 255, 0.84) 55%,
+    rgba(255, 255, 255, 0.76) 100%
+  );
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 34px rgba(2, 6, 23, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+/* Soft pill surface (for small rows) */
+.pill {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(2, 6, 23, 0.08);
+  box-shadow: 0 8px 20px rgba(2, 6, 23, 0.06);
   backdrop-filter: blur(10px);
 }
 
-/* index.css */
+/* Hide scrollbars but keep scrolling */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
-
 .scrollbar-hide {
-  -ms-overflow-style: none;  
+  -ms-overflow-style: none;
   scrollbar-width: none;
 }

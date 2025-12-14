@@ -43,8 +43,8 @@ function Home() {
       />
 
       <div className="px-4 pb-4 flex-1 flex flex-col">
-        <div className="text-2xl text-white font-extrabold">What’s on your mind?</div>
-        <div className="mt-1 text-white/70 text-sm">Choose a question style</div>
+        <div className="text-2xl text-slate-900 font-extrabold">What’s on your mind?</div>
+        <div className="mt-1 text-slate-600 text-sm">Choose a question style</div>
 
         <div className="mt-4 space-y-3">
           {[
@@ -57,7 +57,7 @@ function Home() {
               key={opt.id}
               onClick={() => handleOptionClick(opt.id)}
               className={`cursor-pointer flex items-center gap-3 ${
-                selectedOption === opt.id ? "ring-2 ring-[#405EED]/70" : "hover:bg-white/10"
+                selectedOption === opt.id ? "ring-2 ring-[#405EED]/70" : "hover:bg-slate-50"
               }`}
             >
               <div
@@ -67,7 +67,7 @@ function Home() {
                     : "bg-white/25"
                 }`}
               />
-              <div className="text-white font-semibold">{opt.label}</div>
+              <div className="text-slate-900 font-semibold">{opt.label}</div>
             </Card>
           ))}
         </div>

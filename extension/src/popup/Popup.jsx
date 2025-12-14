@@ -62,32 +62,32 @@ function Popup() {
             Aid
           </span>
         </div>
-        <div className="text-white/80 text-sm text-center mt-2">
+        <div className="text-slate-700 text-sm text-center mt-2">
           Auto-generate short quizzes from your notes, docs, or audio.
           <div className="flex items-center justify-center gap-2 mt-1">
-            <span className="text-white/70">Fast. Clean. Shareable.</span>
+            <span className="text-slate-600">Fast. Clean. Shareable.</span>
             <img src={starsImg} width={18} height={18} alt="" />
           </div>
         </div>
 
         <div className="mt-4 space-y-3">
-          <Card className="flex items-center justify-between">
-            <div className="text-white font-semibold">Doc/Audio Input</div>
+          <Card className="pill flex items-center justify-between hover:shadow-md cursor-default">
+            <div className="text-slate-900 font-semibold">Doc/Audio Input</div>
             <img src={starsImg} width={20} height={20} alt="" />
           </Card>
-          <Card className="flex items-center justify-between">
-            <div className="text-white font-semibold">In-depth question generation</div>
+          <Card className="pill flex items-center justify-between hover:shadow-md cursor-default">
+            <div className="text-slate-900 font-semibold">In-depth question generation</div>
             <img src={starsImg} width={20} height={20} alt="" />
           </Card>
-          <Card className="flex items-center justify-between">
-            <div className="text-white font-semibold">Google Form export</div>
+          <Card className="pill flex items-center justify-between hover:shadow-md cursor-default">
+            <div className="text-slate-900 font-semibold">Google Form export</div>
             <img src={starsImg} width={20} height={20} alt="" />
           </Card>
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3">
           <a href="/src/pages/home/home.html" className="block">
-            <Button variant="outline" className="w-full">
+            <Button variant="primary" className="w-full">
               Start <img src={arrow} width={18} height={18} alt="" />
             </Button>
           </a>
@@ -104,19 +104,19 @@ function Popup() {
           rel="noopener noreferrer"
           className="mt-auto pt-4"
         >
-          <div className="glass rounded-2xl px-4 py-3 flex gap-3 items-center hover:bg-white/10 transition">
+          <div className="glass rounded-2xl px-4 py-3 flex gap-3 items-center hover:bg-slate-50 transition">
             <img src={gitStar} width={22} height={22} alt="" />
-            <div className="text-white font-semibold flex items-center gap-2">
+            <div className="text-slate-900 font-semibold flex items-center gap-2">
               {stars !== null ? (
                 <>
                   <span className="text-lg">{stars}</span>
                   <FaGithub size={22} />
                 </>
               ) : (
-                <span className="text-white/70 text-sm">{error || "Loading..."}</span>
+                <span className="text-slate-600 text-sm">{error || "Loading..."}</span>
               )}
             </div>
-            <div className="ml-auto text-white/60 text-xs">Open GitHub</div>
+            <div className="ml-auto text-slate-500 text-xs">Open GitHub</div>
           </div>
         </a>
       </div>

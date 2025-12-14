@@ -164,8 +164,8 @@ function Question() {
       <BrandHeader compact />
 
       <div className="px-4 pb-4 flex-1 flex flex-col">
-        <div className="text-white font-extrabold text-2xl">Generated questions</div>
-        <div className="text-white/60 text-xs mt-1">
+        <div className="text-slate-900 font-extrabold text-2xl">Generated questions</div>
+        <div className="text-slate-500 text-xs mt-1">
           Tip: export to Google Forms or PDF from the action bar.
         </div>
 
@@ -178,29 +178,29 @@ function Question() {
               const shuffledOptions = shuffleArray(combinedOptions);
 
               return (
-                <Card key={index} className="border border-white/10">
+                <Card key={index} className="border border-slate-200">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <CardSubTitle>Question {index + 1}</CardSubTitle>
                       <CardTitle className="mt-1">{qaPair.question}</CardTitle>
                     </div>
-                    <div className="text-white/50 text-[11px] mt-1">
+                    <div className="text-slate-500 text-[11px] mt-1">
                       {qaPair.question_type}
                     </div>
                   </div>
 
                   {qaPair.question_type !== "Boolean" && (
                     <div className="mt-3">
-                      <div className="text-white/70 text-xs font-semibold">Answer</div>
-                      <div className="text-white mt-1">{qaPair.answer}</div>
+                      <div className="text-slate-600 text-xs font-semibold">Answer</div>
+                      <div className="text-slate-900 mt-1">{qaPair.answer}</div>
 
                       {qaPair.options && qaPair.options.length > 0 && (
                         <div className="mt-3">
-                          <div className="text-white/70 text-xs font-semibold">Options</div>
+                          <div className="text-slate-600 text-xs font-semibold">Options</div>
                           <div className="mt-1 space-y-1">
                             {shuffledOptions.map((option, idx) => (
-                              <div key={idx} className="text-white/85 text-sm">
-                                <span className="text-white/60">{idx + 1}. </span>
+                              <div key={idx} className="text-slate-700 text-sm">
+                                <span className="text-slate-500">{idx + 1}. </span>
                                 {option}
                               </div>
                             ))}
@@ -234,19 +234,19 @@ function Question() {
               className="hidden absolute bottom-full left-0 right-0 mb-2 glass rounded-xl overflow-hidden"
             >
               <button
-                className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10"
+                className="block w-full text-left px-4 py-2 text-sm text-slate-900 hover:bg-slate-50"
                 onClick={() => generatePDF("questions")}
               >
                 Questions only
               </button>
               <button
-                className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10"
+                className="block w-full text-left px-4 py-2 text-sm text-slate-900 hover:bg-slate-50"
                 onClick={() => generatePDF("questions_answers")}
               >
                 Questions + answers
               </button>
               <button
-                className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10"
+                className="block w-full text-left px-4 py-2 text-sm text-slate-900 hover:bg-slate-50"
                 onClick={() => generatePDF("answers")}
               >
                 Answers only

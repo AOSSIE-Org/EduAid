@@ -182,8 +182,8 @@ function Second() {
   return (
     <ExtensionShell>
       {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
-          <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30">
+          <div className="loader"></div>
         </div>
       )}
       {/*
@@ -199,8 +199,8 @@ function Second() {
         <BrandHeader compact />
 
         <div className="px-4 pb-4 flex flex-col">
-          <div className="text-white font-extrabold text-2xl">Enter content</div>
-          <div className="text-white/70 text-sm flex items-center gap-2 mt-1">
+          <div className="text-slate-900 font-extrabold text-2xl">Enter content</div>
+          <div className="text-slate-600 text-sm flex items-center gap-2 mt-1">
             Generate <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text font-semibold">questionaries</span>
             <img className="h-[18px] w-[18px]" src={stars} alt="stars" />
           </div>
@@ -208,7 +208,7 @@ function Second() {
           <div className="mt-4">
             <Label>Paste or type text</Label>
             <Card className="mt-2 relative">
-              <div className="absolute top-3 left-3 text-white/70">
+              <div className="absolute top-3 left-3 text-slate-600">
                 <FaClipboard className="h-[18px] w-[18px]" />
               </div>
               <TextArea
@@ -220,9 +220,9 @@ function Second() {
             </Card>
           </div>
 
-          <div className="text-white/60 text-xs text-center my-3">or</div>
+          <div className="text-slate-500 text-xs text-center my-3">or</div>
 
-          <Card className="border border-white/10">
+          <Card className="border border-slate-200">
             <CardTitle>Import a file</CardTitle>
             <CardSubTitle>PDF, MP3 supported</CardSubTitle>
             <div className="mt-3 flex items-center gap-3">
@@ -256,8 +256,8 @@ function Second() {
 
             <div className="col-span-2">
               <Label>Number of questions</Label>
-              <div className="mt-2 flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-2">
-                <div className="text-white/80 text-sm">{numQuestions}</div>
+              <div className="mt-2 flex items-center justify-between rounded-xl bg-white/5 border border-slate-200 px-3 py-2">
+                <div className="text-slate-700 text-sm">{numQuestions}</div>
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" className="px-2 py-1" onClick={decrementQuestions}>
                     -
@@ -268,7 +268,7 @@ function Second() {
                   <button
                     title={isToggleOn ? "Disable Wikipedia Context" : "Enable Wikipedia Context"}
                     onClick={toggleSwitch}
-                    className={`ml-1 p-2 rounded-xl border border-white/10 transition ${isToggleOn ? "bg-green-500/90 text-white" : "bg-white/10 text-white/70"}`}
+                    className={`ml-1 p-2 rounded-xl border border-slate-200 transition ${isToggleOn ? "bg-emerald-500 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
                   >
                     <FaWikipediaW className="text-lg" />
                   </button>

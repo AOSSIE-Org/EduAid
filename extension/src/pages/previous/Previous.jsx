@@ -36,8 +36,8 @@ const Previous = () => {
       <div className="px-4 pb-4 flex-1 flex flex-col">
         <div className="flex items-end justify-between">
           <div>
-            <div className="text-white font-extrabold text-2xl">Quiz dashboard</div>
-            <div className="text-white/70 text-sm flex items-center gap-2 mt-1">
+            <div className="text-slate-900 font-extrabold text-2xl">Quiz dashboard</div>
+            <div className="text-slate-600 text-sm flex items-center gap-2 mt-1">
               Your <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text font-semibold">generated quizzes</span>
               <img className="h-[18px] w-[18px]" src={stars} alt="stars" />
             </div>
@@ -47,22 +47,22 @@ const Previous = () => {
         <div className="mt-4 flex-1 overflow-y-auto scrollbar-hide">
           {quizzes.length === 0 ? (
             <Card className="text-center">
-              <div className="text-white/80 text-sm">No quizzes available</div>
-              <div className="text-white/50 text-xs mt-1">Generate a quiz to see it here.</div>
+              <div className="text-slate-700 text-sm">No quizzes available</div>
+              <div className="text-slate-500 text-xs mt-1">Generate a quiz to see it here.</div>
             </Card>
           ) : (
             <div className="space-y-3">
               {quizzes.map((quiz, index) => (
                 <Card
                   key={index}
-                  className="cursor-pointer hover:bg-white/10 transition flex items-center justify-between"
+                  className="cursor-pointer hover:bg-slate-50 transition flex items-center justify-between"
                   onClick={() => handleQuizClick(quiz)}
                 >
                   <div>
                     <CardTitle>{quiz.difficulty} - {quiz.numQuestions} questions</CardTitle>
                     <CardSubTitle className="mt-1">{quiz.date}</CardSubTitle>
                   </div>
-                  <FaArrowRight className="text-white/60" size={18} />
+                  <FaArrowRight className="text-slate-500" size={18} />
                 </Card>
               ))}
             </div>

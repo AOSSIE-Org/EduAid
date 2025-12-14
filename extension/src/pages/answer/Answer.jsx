@@ -133,8 +133,8 @@ const Answer = () => {
   return (
     <ExtensionShell>
       {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
-          <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30">
+          <div className="loader"></div>
         </div>
       )}
 
@@ -151,8 +151,8 @@ const Answer = () => {
       />
 
       <div className={`px-4 pb-4 flex-1 flex flex-col ${loading ? "pointer-events-none" : ""}`}>
-        <div className="text-white font-extrabold text-2xl">Ask questions</div>
-        <div className="text-white/70 text-sm flex items-center gap-2 mt-1">
+        <div className="text-slate-900 font-extrabold text-2xl">Ask questions</div>
+        <div className="text-slate-600 text-sm flex items-center gap-2 mt-1">
           Paste context and build your questions
           <img className="h-[18px] w-[18px]" src={stars} alt="stars" />
         </div>
@@ -160,7 +160,7 @@ const Answer = () => {
         <div className="mt-4">
           <Label>Context</Label>
           <Card className="mt-2 relative">
-            <div className="absolute top-3 left-3 text-white/70">
+            <div className="absolute top-3 left-3 text-slate-600">
               <FaClipboard className="h-[18px] w-[18px]" />
             </div>
             <TextArea
@@ -173,7 +173,7 @@ const Answer = () => {
         </div>
 
         <div className="mt-4 flex items-center justify-between">
-          <div className="text-white/80 text-sm font-semibold">Questions</div>
+          <div className="text-slate-700 text-sm font-semibold">Questions</div>
           <Button variant="secondary" onClick={addQuestion}>
             Add question
           </Button>
@@ -181,7 +181,7 @@ const Answer = () => {
 
         <div className="mt-3 flex-1 overflow-y-auto scrollbar-hide space-y-3">
           {questions.map((q, index) => (
-            <Card key={index} className="border border-white/10">
+            <Card key={index} className="border border-slate-200">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <div className="grid grid-cols-3 gap-2">
@@ -259,15 +259,15 @@ const Answer = () => {
         </div>
 
         <div className="mt-4">
-          <div className="text-white/80 text-sm font-semibold">Answers</div>
+          <div className="text-slate-700 text-sm font-semibold">Answers</div>
           <div className="mt-2 max-h-28 overflow-y-auto scrollbar-hide space-y-2">
             {answers.length === 0 ? (
-              <Card className="text-white/60 text-sm">No answers yet.</Card>
+              <Card className="text-slate-500 text-sm">No answers yet.</Card>
             ) : (
               answers.map((answer, index) => (
-                <Card key={index} className="border border-white/10">
+                <Card key={index} className="border border-slate-200">
                   <CardTitle>Q: {answer.question}</CardTitle>
-                  <div className="text-white/80 text-sm mt-2">A: {answer.answer}</div>
+                  <div className="text-slate-700 text-sm mt-2">A: {answer.answer}</div>
                 </Card>
               ))
             )}
