@@ -148,8 +148,8 @@ const Output = () => {
   };
 
   return (
-    <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
+    <div className="popup w-full h-full bg-light-bg flex justify-center items-center">
+      <div className="w-full h-full bg-custom-gradient">
         <div className="flex flex-col h-full">
           {/* Header - Responsive logo and title */}
           <Link to="/">
@@ -160,10 +160,10 @@ const Output = () => {
                 className="w-12 sm:w-16 my-4 block" 
               />
               <div className="text-xl sm:text-2xl mb-3 font-extrabold">
-                <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
+                <span className="bg-gradient-to-r from-[#FF6B9D] to-[#9B7EDE] text-transparent bg-clip-text">
                   Edu
                 </span>
-                <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
+                <span className="bg-gradient-to-r from-[#9B7EDE] to-[#4ECDC4] text-transparent bg-clip-text">
                   Aid
                 </span>
               </div>
@@ -171,7 +171,7 @@ const Output = () => {
           </Link>
 
           {/* Title */}
-          <div className="font-bold text-lg sm:text-xl text-white mt-3 mx-4 sm:mx-6">
+          <div className="font-bold text-lg sm:text-xl text-gray-800 mt-3 mx-4 sm:mx-6">
             Generated Questions
           </div>
 
@@ -186,30 +186,30 @@ const Output = () => {
                 return (
                   <div
                     key={index}
-                    className="px-3 sm:px-4 bg-[#d9d9d90d] border-black border my-2 sm:my-3 mx-1 sm:mx-2 rounded-xl py-3 sm:py-4"
+                    className="px-3 sm:px-4 bg-white border-2 border-light-border my-2 sm:my-3 mx-1 sm:mx-2 rounded-xl py-3 sm:py-4 shadow-md hover:shadow-lg transition-shadow"
                   >
-                    <div className="text-[#E4E4E4] text-xs sm:text-sm">
+                    <div className="text-gray-500 text-xs sm:text-sm font-semibold">
                       Question {index + 1}
                     </div>
-                    <div className="text-[#FFF4F4] text-sm sm:text-base my-1 sm:my-2 leading-relaxed">
+                    <div className="text-gray-800 text-sm sm:text-base my-1 sm:my-2 leading-relaxed font-medium">
                       {qaPair.question}
                     </div>
                     {qaPair.question_type !== "Boolean" && (
                       <>
-                        <div className="text-[#E4E4E4] text-xs sm:text-sm mt-3 sm:mt-4">
+                        <div className="text-gray-600 text-xs sm:text-sm mt-3 sm:mt-4 font-semibold">
                           Answer
                         </div>
-                        <div className="text-[#FFF4F4] text-sm sm:text-base leading-relaxed">
+                        <div className="text-gray-800 text-sm sm:text-base leading-relaxed">
                           {qaPair.answer}
                         </div>
                         {qaPair.options && qaPair.options.length > 0 && (
-                          <div className="text-[#FFF4F4] text-sm sm:text-base mt-2 sm:mt-3">
+                          <div className="text-gray-800 text-sm sm:text-base mt-2 sm:mt-3">
                             {shuffledOptions.map((option, idx) => (
                               <div key={idx} className="mb-1 sm:mb-2">
-                                <span className="text-[#E4E4E4] text-xs sm:text-sm">
+                                <span className="text-gray-600 text-xs sm:text-sm font-semibold">
                                   Option {idx + 1}:
                                 </span>{" "}
-                                <span className="text-[#FFF4F4] text-sm sm:text-base">
+                                <span className="text-gray-800 text-sm sm:text-base">
                                   {option}
                                 </span>
                               </div>
@@ -226,7 +226,7 @@ const Output = () => {
           {/* Action Buttons - Responsive layout */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mx-4 sm:mx-auto pb-4 sm:pb-6">
             <button
-              className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
+              className="bg-gradient-to-r from-[#FF6B9D] to-[#9B7EDE] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:shadow-lg hover:scale-105 transition-all duration-300 justify-center"
               onClick={generateGoogleForm}
             >
               Generate Google form
@@ -234,7 +234,7 @@ const Output = () => {
             
             <div className="relative w-full sm:w-auto">
               <button
-                className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
+                className="bg-gradient-to-r from-[#9B7EDE] to-[#4ECDC4] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:shadow-lg hover:scale-105 transition-all duration-300 justify-center"
                 onClick={() => document.getElementById('pdfDropdown').classList.toggle('hidden')}
               >
                 Generate PDF
@@ -242,22 +242,22 @@ const Output = () => {
               
               <div
                 id="pdfDropdown"
-                className="hidden absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48"
+                className="hidden absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-white shadow-lg text-gray-800 rounded-lg z-50 w-full sm:w-48 border border-light-border"
               >
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-t-lg text-sm sm:text-base"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded-t-lg text-sm sm:text-base transition-colors"
                   onClick={() => generatePDF('questions')}
                 >
                   Questions Only
                 </button>
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 text-sm sm:text-base"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm sm:text-base transition-colors"
                   onClick={() => generatePDF('questions_answers')}
                 >
                   Questions with Answers
                 </button>
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-b-lg text-sm sm:text-base"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded-b-lg text-sm sm:text-base transition-colors"
                   onClick={() => generatePDF('answers')}
                 >
                   Answers Only

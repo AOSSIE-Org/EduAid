@@ -41,23 +41,23 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient overflow-auto px-4 py-6 sm:px-8 md:px-16">
+    <div className="popup w-screen h-screen bg-light-bg flex justify-center items-center">
+      <div className="w-full h-full bg-custom-gradient overflow-auto px-4 py-6 sm:px-8 md:px-16">
         <div className="max-w-5xl mx-auto">
           <img src={logo_trans} alt="logo" className="w-24 my-4 sm:my-6" />
 
           {/* Heading */}
           <h1 className="text-5xl sm:text-6xl md:text-7xl text-center font-extrabold leading-tight">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
+            <span className="bg-gradient-to-r from-[#FF6B9D] to-[#9B7EDE] text-transparent bg-clip-text">
               Edu
             </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
+            <span className="bg-gradient-to-r from-[#9B7EDE] to-[#4ECDC4] text-transparent bg-clip-text">
               Aid
             </span>
           </h1>
 
           {/* Subtitle */}
-          <div className="text-white text-lg sm:text-xl text-center mt-4 mb-6">
+          <div className="text-gray-700 text-lg sm:text-xl text-center mt-4 mb-6">
             <p>A tool that can auto-generate short quizzes</p>
             <div className="flex items-center justify-center gap-2 mt-2">
               <p>based on user input</p>
@@ -74,10 +74,10 @@ const Home = () => {
             ].map((feature, i) => (
               <div
                 key={i}
-                className="flex items-center rounded-l-2xl sm:rounded-2xl px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] gap-4 w-fit"
+                className="flex items-center rounded-l-2xl sm:rounded-2xl px-6 py-3 bg-gradient-to-r from-[#FF6B9D] via-[#9B7EDE] to-[#4ECDC4] gap-4 w-fit shadow-lg hover:shadow-xl transition-shadow duration-300"
               >
                 <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-base sm:text-xl">{feature}</div>
+                <div className="text-white text-base sm:text-xl font-medium">{feature}</div>
               </div>
             ))}
           </div>
@@ -85,13 +85,13 @@ const Home = () => {
           {/* Buttons */}
           <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-10">
             <Link to="/question-type" className="w-full sm:w-auto">
-              <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
-                Let’s get Started
+              <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-gray-800 px-6 py-3 border-gradient hover:shadow-lg bg-white hover:bg-gray-50 rounded-md transition-all duration-300 font-semibold">
+                Let's get Started
                 <img src={arrow} width={24} height={24} alt="arrow" />
               </button>
             </Link>
             <Link to="/history" className="w-full sm:w-auto">
-              <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
+              <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-gray-800 px-6 py-3 border-gradient hover:shadow-lg bg-white hover:bg-gray-50 rounded-md transition-all duration-300 font-semibold">
                 Your previous Work!
                 <img src={arrow} width={24} height={24} alt="arrow" />
               </button>
@@ -105,16 +105,16 @@ const Home = () => {
             rel="noopener noreferrer"
             className="group block mt-10"
           >
-            <div className="bg-[#45454599] hover:bg-[#5a5a5a99] transition-colors duration-300 w-fit mx-auto px-4 py-3 rounded-xl flex gap-4 items-center">
+            <div className="bg-white hover:bg-gray-50 border border-light-border shadow-md hover:shadow-lg transition-all duration-300 w-fit mx-auto px-4 py-3 rounded-xl flex gap-4 items-center">
               <img src={gitStar} width={28} height={12} alt="GitHub Star" />
-              <div className="text-white font-semibold text-2xl flex items-center gap-4">
+              <div className="text-gray-800 font-semibold text-2xl flex items-center gap-4">
                 {stars !== null ? (
                   <>
                     {stars}
-                    <FaGithub size={32} />
+                    <FaGithub size={32} className="text-gray-800" />
                   </>
                 ) : (
-                  <span>{error}</span>
+                  <span className="text-red-500">{error}</span>
                 )}
               </div>
             </div>

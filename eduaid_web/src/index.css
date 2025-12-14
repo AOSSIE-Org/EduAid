@@ -19,7 +19,7 @@ code {
 .border-gradient {
   border-width: 2px; 
   border-style: solid;
-  border-image: linear-gradient(to right, #ff005c, #7600f2, #00cbe7);
+  border-image: linear-gradient(to right, #FF6B9D, #9B7EDE, #4ECDC4);
   border-image-slice: 1;
   border-radius: 2rem;
 }

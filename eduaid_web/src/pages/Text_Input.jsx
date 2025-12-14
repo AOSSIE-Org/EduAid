@@ -135,42 +135,42 @@ const Text_Input = () => {
   };
 
   return (
-    <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen">
+    <div className="popup bg-light-bg bg-custom-gradient min-h-screen">
       {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
-          <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-gray-900">
+          <div className="loader border-4 border-t-4 border-[#4ECDC4] rounded-full w-16 h-16 animate-spin"></div>
         </div>
       )}
 
-      <div className={`w-full h-full bg-cust bg-opacity-50 ${loading ? "pointer-events-none" : ""}`}>
+      <div className={`w-full h-full ${loading ? "pointer-events-none" : ""}`}>
         {/* Header */}
         <Link to="/" className="block">
           <div className="flex items-end gap-2 p-4">
             <img src={logo_trans} alt="logo" className="w-20 sm:w-24" />
             <div className="text-3xl sm:text-4xl font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">Edu</span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">Aid</span>
+              <span className="bg-gradient-to-r from-[#FF6B9D] to-[#9B7EDE] text-transparent bg-clip-text">Edu</span>
+              <span className="bg-gradient-to-r from-[#9B7EDE] to-[#4ECDC4] text-transparent bg-clip-text">Aid</span>
             </div>
           </div>
         </Link>
 
         {/* Headline */}
-        <div className="text-white text-center sm:text-right mx-4 sm:mx-8">
+        <div className="text-gray-800 text-center sm:text-right mx-4 sm:mx-8">
           <div className="text-xl sm:text-2xl font-bold">Enter the Content</div>
           <div className="flex flex-wrap justify-center sm:justify-end items-center gap-2 text-xl font-bold">
             to Generate{" "}
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">Questionaries</span>
+            <span className="bg-gradient-to-r from-[#9B7EDE] to-[#4ECDC4] text-transparent bg-clip-text">Questionaries</span>
             <img className="h-6 w-6" src={stars} alt="stars" />
           </div>
         </div>
 
         {/* Textarea */}
-        <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
+        <div className="relative bg-white mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4 shadow-md border border-light-border">
+          <button className="absolute top-0 left-0 p-2 text-gray-600 focus:outline-none">
             <FaClipboard className="h-[24px] w-[24px]" />
           </button>
           <textarea
-            className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
+            className="absolute inset-0 p-8 pt-6 bg-white text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-gray-800 caret-[#4ECDC4]"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -179,16 +179,16 @@ const Text_Input = () => {
         </div>
 
         {/* Separator */}
-        <div className="text-white text-center my-4 text-lg">or</div>
+        <div className="text-gray-600 text-center my-4 text-lg font-medium">or</div>
 
         {/* File Upload Section */}
-        <div className="w-full max-w-2xl mx-auto border-[3px] rounded-2xl text-center px-6 py-6 border-dotted border-[#3E5063] mt-6">
+        <div className="w-full max-w-2xl mx-auto border-[3px] rounded-2xl text-center px-6 py-6 border-dotted border-gray-300 bg-white shadow-md mt-6">
           <img className="mx-auto mb-2" height={32} width={32} src={cloud} alt="cloud" />
-          <p className="text-white text-lg">Choose a file (PDF, MP3 supported)</p>
+          <p className="text-gray-700 text-lg font-medium">Choose a file (PDF, MP3 supported)</p>
 
           <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} />
           <button
-            className="bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2"
+            className="bg-gradient-to-r from-[#FF6B9D] to-[#9B7EDE] my-4 text-lg rounded-2xl text-white border-none px-6 py-2 hover:shadow-lg transition-all duration-300 font-semibold"
             onClick={handleClick}
           >
             Browse File
@@ -197,7 +197,7 @@ const Text_Input = () => {
           <input
             type="text"
             placeholder="Enter Google Doc URL"
-            className="bg-transparent mt-4 border border-[#cbd0dc80] text-white text-lg sm:text-xl rounded-2xl px-4 py-2 w-full sm:w-2/3 outline-none"
+            className="bg-white mt-4 border-2 border-light-border text-gray-800 text-lg sm:text-xl rounded-2xl px-4 py-2 w-full sm:w-2/3 outline-none focus:border-[#4ECDC4] transition-colors"
             value={docUrl}
             onChange={(e) => setDocUrl(e.target.value)}
           />
@@ -206,11 +206,11 @@ const Text_Input = () => {
         {/* Controls Section */}
         <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-6 items-center mt-6 px-4 sm:px-8">
           {/* Question Count */}
-          <div className="flex gap-2 items-center">
-            <div className="text-white text-lg sm:text-xl font-bold">No. of Questions:</div>
-            <button onClick={decrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3">-</button>
-            <span className="text-white text-2xl">{numQuestions}</span>
-            <button onClick={incrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3">+</button>
+          <div className="flex gap-2 items-center bg-white px-4 py-2 rounded-xl shadow-md border border-light-border">
+            <div className="text-gray-800 text-lg sm:text-xl font-bold">No. of Questions:</div>
+            <button onClick={decrementQuestions} className="rounded-lg border-2 border-gray-300 text-gray-800 text-xl px-3 hover:bg-gray-100 transition-colors">-</button>
+            <span className="text-gray-800 text-2xl font-semibold">{numQuestions}</span>
+            <button onClick={incrementQuestions} className="rounded-lg border-2 border-gray-300 text-gray-800 text-xl px-3 hover:bg-gray-100 transition-colors">+</button>
           </div>
 
           {/* Difficulty Dropdown */}
@@ -218,7 +218,7 @@ const Text_Input = () => {
             <select
               value={difficulty}
               onChange={handleDifficultyChange}
-              className="bg-[#3e5063] text-white text-lg rounded-xl p-2 outline-none"
+              className="bg-white text-gray-800 text-lg rounded-xl p-2 outline-none border-2 border-light-border shadow-md focus:border-[#4ECDC4] transition-colors"
             >
               <option value="Easy Difficulty">Easy Difficulty</option>
               <option value="Hard Difficulty">Hard Difficulty</option>
@@ -226,13 +226,13 @@ const Text_Input = () => {
           </div>
 
           {/* Wikipedia Toggle */}
-          <div className="flex items-center gap-2">
-            <span className="text-white text-lg sm:text-xl font-bold">Use Wikipedia:</span>
+          <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-md border border-light-border">
+            <span className="text-gray-800 text-lg sm:text-xl font-bold">Use Wikipedia:</span>
             <Switch
               onChange={toggleSwitch}
               checked={isToggleOn === 1}
-              onColor="#008080"
-              offColor="#3e5063"
+              onColor="#4ECDC4"
+              offColor="#CBD5E0"
               checkedIcon={false}
               uncheckedIcon={false}
             />
@@ -242,11 +242,11 @@ const Text_Input = () => {
         {/* Navigation Buttons */}
         <div className="flex flex-col sm:flex-row justify-center gap-6 mt-6 pb-10 px-4 sm:px-8">
           <Link to="/question-type">
-            <button className="bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient rounded-xl w-full sm:w-auto">Back</button>
+            <button className="bg-white text-gray-800 text-lg sm:text-xl px-4 py-2 border-gradient rounded-xl w-full sm:w-auto hover:shadow-lg transition-all font-semibold">Back</button>
           </Link>
           <button
             onClick={handleSaveToLocalStorage}
-            className="bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient flex justify-center items-center rounded-xl w-full sm:w-auto"
+            className="bg-white text-gray-800 text-lg sm:text-xl px-4 py-2 border-gradient flex justify-center items-center rounded-xl w-full sm:w-auto hover:shadow-lg transition-all font-semibold"
           >
             Next
           </button>
