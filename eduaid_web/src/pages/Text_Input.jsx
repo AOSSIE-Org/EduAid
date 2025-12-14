@@ -3,7 +3,7 @@ import "../index.css";
 import logo_trans from "../assets/aossie_logo_transparent.png"
 import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
-import { FaClipboard } from "react-icons/fa";
+import { FaClipboard, FaTrash } from "react-icons/fa";
 import Switch from "react-switch";
 import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
@@ -17,6 +17,11 @@ const Text_Input = () => {
   const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
+
+  const handleClearText = () => {
+    const ok = window.confirm("Clear input?");
+    if (ok) setText("");
+  };
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
@@ -168,6 +173,14 @@ const Text_Input = () => {
         <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
           <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
             <FaClipboard className="h-[24px] w-[24px]" />
+          </button>
+          <button
+            type="button"
+            onClick={handleClearText}
+            className="absolute top-0 left-10 p-2 text-white focus:outline-none"
+            title="Clear input"
+          >
+            <FaTrash className="h-[22px] w-[22px]" />
           </button>
           <textarea
             className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
