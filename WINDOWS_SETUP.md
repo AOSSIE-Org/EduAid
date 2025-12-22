@@ -44,7 +44,7 @@ On **Windows**, the model must be set up **manually**.
 
 Download the following file from the official source:
 
-```
+```text
 https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz
 ```
 
@@ -59,7 +59,7 @@ Extract the archive using any of the following tools:
 ### Rename and Move
 
 1. Rename the extracted folder to:
-   ```
+   ```text
    s2v_old
    ```
 
@@ -89,7 +89,7 @@ python server.py
 
 The server should start at:
 
-```
+```text
 http://127.0.0.1:5000
 ```
 
@@ -123,4 +123,4 @@ app.run(port=5001)
 
 ---
 
-**Happy Coding! 🚀**
+## Happy Coding! 🚀
