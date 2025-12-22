@@ -45,7 +45,7 @@ On **Windows**, the model must be set up **manually**.
 Download the following file from the official source:
 
 ```
-s2v_reddit_2015_md.tar.gz
+https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz
 ```
 
 ### Extract the File
