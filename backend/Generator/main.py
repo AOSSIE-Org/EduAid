@@ -76,7 +76,7 @@ class MCQGenerator:
             final_output["questions"] = generated_questions["questions"]
             final_output["time_taken"] = end_time - start_time
             
-            if torch.device == 'cuda':
+            if self.device.type == 'cuda':
                 torch.cuda.empty_cache()
                 
             return final_output
@@ -127,7 +127,7 @@ class ShortQGenerator:
         final_output["statement"] = modified_text
         final_output["questions"] = generated_questions["questions"]
         
-        if torch.device == 'cuda':
+        if self.device.type == 'cuda':
             torch.cuda.empty_cache()
 
         return final_output
@@ -184,7 +184,7 @@ class ParaphraseGenerator:
         output['Count'] = num
         output['Paraphrased Questions'] = final_outputs
 
-        if torch.device == 'cuda':
+        if self.device.type == 'cuda':
             torch.cuda.empty_cache()
         
         return output
@@ -227,7 +227,7 @@ class BoolQGenerator:
         input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
 
         output = beam_search_decoding (input_ids, attention_masks, self.model, self.tokenizer,num)
-        if torch.device == 'cuda':
+        if self.device.type == 'cuda':
             torch.cuda.empty_cache()
         
         final= {}
