@@ -14,7 +14,6 @@ const Text_Input = () => {
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
-  const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
 
@@ -47,33 +46,37 @@ const Text_Input = () => {
   };
 
   const handleSaveToLocalStorage = async () => {
-    setLoading(true);
 
-    // Check if a Google Doc URL is provided
-    if (docUrl) {
-      try {
-        const data = await apiClient.post("/get_content", { document_url: docUrl });
-        setDocUrl("");
-        setText(data || "Error in retrieving");
-      } catch (error) {
-        console.error("Error:", error);
-        setText("Error retrieving Google Doc content");
-      } finally {
-        setLoading(false);
-      }
-    } else if (text) {
-      // Proceed with existing functionality for local storage
-      localStorage.setItem("textContent", text);
-      localStorage.setItem("difficulty", difficulty);
-      localStorage.setItem("numQuestions", numQuestions);
+  if (!text.trim() && !docUrl.trim()) {
+    return;
+  }
 
-      await sendToBackend(
-        text,
-        difficulty,
-        localStorage.getItem("selectedQuestionType")
-      );
+  setLoading(true);
+
+  if (docUrl) {
+    try {
+      const data = await apiClient.post("/get_content", {
+        document_url: docUrl,
+      });
+      setDocUrl("");
+      setText(data || "Error in retrieving");
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
     }
-  };
+  } else if (text) {
+    localStorage.setItem("textContent", text);
+    localStorage.setItem("difficulty", difficulty);
+    localStorage.setItem("numQuestions", numQuestions);
+
+    await sendToBackend(
+      text,
+      difficulty,
+      localStorage.getItem("selectedQuestionType")
+    );
+  }
+};
 
   const handleDifficultyChange = (e) => {
     setDifficulty(e.target.value);
