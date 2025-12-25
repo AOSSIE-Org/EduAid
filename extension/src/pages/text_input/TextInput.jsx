@@ -33,6 +33,14 @@ function Second() {
     }
   };
 
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setText((prev) => prev + text);
+    } catch (error) {
+      console.error("Failed to paste:", error);
+    }
+  };
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
@@ -219,7 +227,10 @@ function Second() {
 
         <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-28">
           <div className="absolute top-0 left-0 flex z-10">
-            <button className="p-2 text-white focus:outline-none cursor-pointer">
+            <button
+              className="p-2 text-white focus:outline-none cursor-pointer"
+              onClick={handlePaste}
+            >
               <FaClipboard className="h-[20px] w-[20px]" />
             </button>
             <button

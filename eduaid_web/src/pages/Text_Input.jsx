@@ -28,6 +28,15 @@ const Text_Input = () => {
     }
   };
 
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setText((prev) => prev + text);
+    } catch (error) {
+      console.error("Failed to paste:", error);
+    }
+  };
+
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -173,7 +182,10 @@ const Text_Input = () => {
         {/* Textarea */}
         <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
           <div className="absolute top-0 left-0 flex z-10">
-            <button className="p-2 text-white focus:outline-none cursor-pointer">
+            <button
+              className="p-2 text-white focus:outline-none cursor-pointer"
+              onClick={handlePaste}
+            >
               <FaClipboard className="h-[24px] w-[24px]" />
             </button>
             <button
