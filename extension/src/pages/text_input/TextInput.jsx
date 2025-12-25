@@ -5,7 +5,7 @@ import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
 import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
-import { FaClipboard , FaWikipediaW  } from "react-icons/fa";
+import { FaClipboard, FaWikipediaW, FaTrashAlt } from "react-icons/fa";
 
 function Second() {
   const [text, setText] = useState("");
@@ -117,6 +117,19 @@ function Second() {
     setNumQuestions((prev) => (prev > 0 ? prev - 1 : 0));
   };
 
+  const handleClearText = () => {
+  if (!text.trim()) return;
+
+  const confirmed = window.confirm(
+    "Are you sure you want to clear the input?"
+  );
+
+  if (confirmed) {
+    setText("");
+    chrome.storage?.local?.remove(["selectedText"]);
+  }
+};
+
   const getEndpoint = (difficulty, questionType) => {
     if (difficulty !== "Easy Difficulty") {
       if (questionType === "get_shortq") {
@@ -211,24 +224,40 @@ function Second() {
           Enter Content Here
         </div>
 
-        <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-28">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
-            <FaClipboard className="h-[20px] w-[20px]" />
-          </button>
-          <textarea
-            className="absolute inset-0 p-8 pt-2 bg-[#83b6cc40] text-lg rounded-xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
-          <style>
-            {`
-          textarea::-webkit-scrollbar {
-            display: none;
-          }
-        `}
-          </style>
-        </div>
+      <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-28">
+
+        {/* Clipboard */}
+         <button className="absolute top-0 left-0 p-2 text-white focus:outline-none z-10">
+           <FaClipboard className="h-[20px] w-[20px]" />
+        </button>
+
+        {/* Clear button */}
+        <button
+           onClick={handleClearText}
+           disabled={!text.trim()}
+           title="Clear input"
+          className={`absolute top-0 right-0 p-2 z-10
+            ${text.trim()
+            ? "text-red-400 hover:text-red-300"
+            : "text-gray-400 cursor-not-allowed"}`}
+         >
+          <FaTrashAlt className="h-[18px] w-[18px]" />
+        </button>
+
+      <textarea
+        className="absolute inset-0 p-8 pt-2 bg-[#83b6cc40] text-lg rounded-xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+     />
+
+    <style>{`
+       textarea::-webkit-scrollbar {
+         display: none;
+      }
+   `}</style>
+  </div>
+
         <div className="text-white text-center my-2 text-sm">or</div>
         <div className="border-[3px] rounded-xl text-center mx-3 px-6 py-2 border-dotted border-[#3E5063] mt-4">
           <img className="mx-auto" height={24} width={24} src={cloud} alt="cloud" />
