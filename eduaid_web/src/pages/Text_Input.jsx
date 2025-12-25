@@ -3,7 +3,7 @@ import "../index.css";
 import logo_trans from "../assets/aossie_logo_transparent.png"
 import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
-import { FaClipboard } from "react-icons/fa";
+import { FaClipboard, FaTrashAlt } from "react-icons/fa";
 import Switch from "react-switch";
 import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
@@ -14,7 +14,7 @@ const Text_Input = () => {
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
-  const [fileContent, setFileContent] = useState("");
+  //const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
 
@@ -86,6 +86,18 @@ const Text_Input = () => {
   const decrementQuestions = () => {
     setNumQuestions((prev) => (prev > 0 ? prev - 1 : 0));
   };
+
+const handleClearText = () => {
+  if (!text.trim()) return;
+
+  const confirmed = window.confirm(
+    "Are you sure you want to clear the input? "
+  );
+
+  if (confirmed) {
+    setText("");
+  }
+};
 
   const getEndpoint = (difficulty, questionType) => {
     if (difficulty !== "Easy Difficulty") {
@@ -164,19 +176,36 @@ const Text_Input = () => {
           </div>
         </div>
 
-        {/* Textarea */}
-        <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
-            <FaClipboard className="h-[24px] w-[24px]" />
-          </button>
-          <textarea
-            className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
-          <style>{`textarea::-webkit-scrollbar { display: none; }`}</style>
-        </div>
+{/* Textarea */}
+<div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
+
+  {/* Clipboard */}
+  <button className="absolute top-0 left-0 p-2 text-white focus:outline-none z-10">
+    <FaClipboard className="h-[24px] w-[24px]" />
+  </button>
+
+  {/* Clear Button */}
+  <button
+    onClick={handleClearText}
+    disabled={!text.trim()}
+    aria-label="Clear input text"
+    className={`absolute top-0 right-0 p-2 focus:outline-none z-10
+      ${text.trim()
+        ? "text-red-400 hover:text-red-300"
+        : "text-gray-400 cursor-not-allowed"}`}
+  >
+    <FaTrashAlt className="h-[22px] w-[22px]" />
+  </button>
+
+  <textarea
+    className="absolute inset-0 z-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
+    style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+    value={text}
+    onChange={(e) => setText(e.target.value)}
+  />
+
+  <style>{`textarea::-webkit-scrollbar { display: none; }`}</style>
+</div>
 
         {/* Separator */}
         <div className="text-white text-center my-4 text-lg">or</div>
