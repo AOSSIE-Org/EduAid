@@ -232,13 +232,19 @@ function Second() {
 
         <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-28">
           <div className="absolute top-0 left-0 flex z-10">
-₹            <button
+            <button
+              type="button"
+              aria-label="Paste from clipboard"
+              title="Paste from clipboard"
               className="p-2 text-white focus:outline-none cursor-pointer"
               onClick={handlePaste}
             >
               <FaClipboard className="h-[20px] w-[20px]" />
             </button>
             <button
+              type="button"
+              aria-label="Clear input"
+              title="Clear input"
               className="p-2 text-white focus:outline-none cursor-pointer"
               onClick={handleClear}
             >
