@@ -62,6 +62,11 @@ const Text_Input = () => {
   };
 
   const handleSaveToLocalStorage = async () => {
+    if (!text.trim() && !docUrl.trim()) {
+      alert("Please provide either input text or a Google Doc URL.");
+      return;
+    }
+
     setLoading(true);
 
     // Check if a Google Doc URL is provided
@@ -272,7 +277,8 @@ const Text_Input = () => {
           </Link>
           <button
             onClick={handleSaveToLocalStorage}
-            className="bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient flex justify-center items-center rounded-xl w-full sm:w-auto"
+            className="bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient flex justify-center items-center rounded-xl w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!text.trim() && !docUrl.trim()}
           >
             Next
           </button>

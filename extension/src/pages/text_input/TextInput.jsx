@@ -75,6 +75,11 @@ function Second() {
   };
 
   const handleSaveToLocalStorage = async () => {
+    if (!text.trim() && !docUrl.trim()) {
+      alert("Please provide either input text or a Google Doc URL.");
+      return;
+    }
+
     setLoading(true);
 
     // Check if a Google Doc URL is provided
@@ -227,7 +232,7 @@ function Second() {
 
         <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-28">
           <div className="absolute top-0 left-0 flex z-10">
-            <button
+₹            <button
               className="p-2 text-white focus:outline-none cursor-pointer"
               onClick={handlePaste}
             >
@@ -344,7 +349,8 @@ function Second() {
           <div>
             <button
               onClick={handleSaveToLocalStorage}
-              className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient flex"
+              className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient flex disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!text.trim() && !docUrl.trim()}
             >
               Next <img src={arrow} width={16} height={12} alt="arrow" className="ml-2" />
             </button>
