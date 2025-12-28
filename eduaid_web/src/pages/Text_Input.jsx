@@ -186,25 +186,28 @@ const Text_Input = () => {
 
         {/* File Upload Section */}
         <div className="w-full max-w-2xl mx-auto border-[3px] rounded-2xl text-center px-6 py-6 border-dotted border-[#3E5063] mt-6">
-          <img className="mx-auto mb-2" height={32} width={32} src={cloud} alt="cloud" />
-          <p className="text-white text-lg">Choose a file (PDF, MP3 supported)</p>
+        <img className="mx-auto mb-2" height={32} width={32} src={cloud} alt="cloud" />
+        <p className="text-white text-lg mb-4">Choose a file (PDF, MP3 supported)</p>
 
-          <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} />
-          <button
-            className="bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2"
+        <input type="file" ref={fileInputRef} onChange={handleFileUpload} hidden />
+      <div className="flex items-center justify-center gap-3">
+        <button
+            className="bg-[#3e506380] text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2 whitespace-nowrap"
             onClick={handleClick}
           >
-            Browse File
-          </button>
+          Browse File
+        </button>
 
-          <input
+        <input
             type="text"
             placeholder="Enter Google Doc URL"
-            className="bg-transparent mt-4 border border-[#cbd0dc80] text-white text-lg sm:text-xl rounded-2xl px-4 py-2 w-full sm:w-2/3 outline-none"
+            className="bg-transparent border border-[#cbd0dc80] text-white text-lg sm:text-xl rounded-2xl px-4 py-2 w-full sm:w-2/3 outline-none"
             value={docUrl}
             onChange={(e) => setDocUrl(e.target.value)}
-          />
-        </div>
+         />
+      </div>
+    </div>    
+
 
         {/* Controls Section */}
         <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-6 items-center mt-6 px-4 sm:px-8">
