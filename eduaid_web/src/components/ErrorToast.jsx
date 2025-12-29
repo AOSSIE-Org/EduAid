@@ -11,6 +11,8 @@ import { FiAlertCircle, FiX } from 'react-icons/fi';
  */
 const ErrorToast = ({ message, onClose, duration = 5000 }) => {
   useEffect(() => {
+    if (!message) return;
+
     // Auto-dismiss after specified duration
     const timer = setTimeout(() => {
       if (onClose) {
@@ -19,7 +21,7 @@ const ErrorToast = ({ message, onClose, duration = 5000 }) => {
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [message, onClose, duration]);
+  }, [message, duration]);
 
   if (!message) return null;
 
