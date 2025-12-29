@@ -50,12 +50,51 @@ def process_input_text(input_text, use_mediawiki):
     return input_text
 
 
+# Constants for input validation
+MIN_INPUT_CHARS = 50
+MIN_INPUT_WORDS = 10
+
+
+def validate_input_text(input_text, min_chars=MIN_INPUT_CHARS, min_words=MIN_INPUT_WORDS):
+    """Validate that input text meets minimum requirements for question generation.
+    
+    Args:
+        input_text: The text to validate
+        min_chars: Minimum number of characters required
+        min_words: Minimum number of words required
+        
+    Returns:
+        Tuple of (is_valid: bool, error_message: str or None)
+    """
+    if not input_text or not input_text.strip():
+        return False, "Input text is required. Please provide content for question generation."
+    
+    text = input_text.strip()
+    char_count = len(text)
+    word_count = len(text.split())
+    
+    if char_count < min_chars:
+        return False, f"Input text is too short. Minimum {min_chars} characters required (got {char_count})."
+    
+    if word_count < min_words:
+        return False, f"Input text must contain at least {min_words} words (got {word_count})."
+    
+    return True, None
+
+
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    
+    # Validate input text (skip if using MediaWiki as text will be fetched)
+    if use_mediawiki != 1:
+        is_valid, error_message = validate_input_text(input_text)
+        if not is_valid:
+            return jsonify({"error": error_message}), 400
+    
     input_text = process_input_text(input_text, use_mediawiki)
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
@@ -70,6 +109,13 @@ def get_boolq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    
+    # Validate input text (skip if using MediaWiki as text will be fetched)
+    if use_mediawiki != 1:
+        is_valid, error_message = validate_input_text(input_text)
+        if not is_valid:
+            return jsonify({"error": error_message}), 400
+    
     input_text = process_input_text(input_text, use_mediawiki)
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
@@ -84,6 +130,13 @@ def get_shortq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    
+    # Validate input text (skip if using MediaWiki as text will be fetched)
+    if use_mediawiki != 1:
+        is_valid, error_message = validate_input_text(input_text)
+        if not is_valid:
+            return jsonify({"error": error_message}), 400
+    
     input_text = process_input_text(input_text, use_mediawiki)
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
@@ -100,6 +153,13 @@ def get_problems():
     max_questions_mcq = data.get("max_questions_mcq", 4)
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
+    
+    # Validate input text (skip if using MediaWiki as text will be fetched)
+    if use_mediawiki != 1:
+        is_valid, error_message = validate_input_text(input_text)
+        if not is_valid:
+            return jsonify({"error": error_message}), 400
+    
     input_text = process_input_text(input_text, use_mediawiki)
     output1 = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions_mcq}
