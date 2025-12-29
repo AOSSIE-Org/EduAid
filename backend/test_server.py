@@ -172,6 +172,21 @@ def test_get_shortq_missing_input():
     assert 'error' in response.json()
 
 
+def test_get_boolq_mediawiki_empty_search():
+    """Test /get_boolq with use_mediawiki=1 but empty search term - should return 400 error."""
+    endpoint = '/get_boolq'
+    data = {
+        'input_text': '',
+        'use_mediawiki': 1,
+        'max_questions': 3
+    }
+    response = make_post_request(endpoint, data)
+    print(f'/get_boolq (mediawiki empty search) Status: {response.status_code}')
+    print(f'/get_boolq (mediawiki empty search) Response: {response.json()}')
+    assert response.status_code == 400
+    assert 'error' in response.json()
+
+
 if __name__ == '__main__':
     # Test input validation (Issue #336)
     print("=" * 50)
@@ -181,6 +196,7 @@ if __name__ == '__main__':
     test_get_boolq_short_input()
     test_get_mcq_missing_input()
     test_get_shortq_missing_input()
+    test_get_boolq_mediawiki_empty_search()
     print("\nAll validation tests passed!")
     
     # Test valid inputs
