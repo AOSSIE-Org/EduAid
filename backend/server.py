@@ -71,19 +71,16 @@ def get_boolq():
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
 
+    input_text = process_input_text(input_text, use_mediawiki)
     # input validation
     MIN_WORDS = 5
     if not input_text or len(input_text.split()) < MIN_WORDS:
         return jsonify(
             {
-               
                 "error": "input_text is missing or too short to generate a Boolean question",
                 "output": []
             }
         ),400
-    
-    
-    input_text = process_input_text(input_text, use_mediawiki)
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
     )
