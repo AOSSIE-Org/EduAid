@@ -187,6 +187,26 @@ def test_get_boolq_mediawiki_empty_search():
     assert 'error' in response.json()
 
 
+def test_get_mcq_mediawiki_skips_validation():
+    """Test that MediaWiki mode skips input length validation.
+    
+    When use_mediawiki=1, the input_text is treated as a search term,
+    so normal character/word count validation should be bypassed.
+    Only MediaWiki search term validation (min 3 chars) applies.
+    """
+    endpoint = '/get_mcq'
+    data = {
+        'input_text': 'Artificial Intelligence',  # Short but valid search term
+        'use_mediawiki': 1,
+        'max_questions': 2
+    }
+    response = make_post_request(endpoint, data)
+    print(f'/get_mcq (mediawiki mode) Status: {response.status_code}')
+    # Should NOT return 400 for short input - MediaWiki fetches content
+    # It should either succeed (200) or fail for a different reason (e.g., API error)
+    assert response.status_code != 400 or 'Search term' in response.json().get('error', '')
+
+
 if __name__ == '__main__':
     # Test input validation (Issue #336)
     print("=" * 50)
@@ -197,6 +217,7 @@ if __name__ == '__main__':
     test_get_mcq_missing_input()
     test_get_shortq_missing_input()
     test_get_boolq_mediawiki_empty_search()
+    test_get_mcq_mediawiki_skips_validation()
     print("\nAll validation tests passed!")
     
     # Test valid inputs

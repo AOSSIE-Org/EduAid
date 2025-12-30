@@ -50,10 +50,18 @@ def process_input_text(input_text, use_mediawiki):
     return input_text
 
 
-# Constants for input validation
-MIN_INPUT_CHARS = 50
-MIN_INPUT_WORDS = 10
-MIN_MEDIAWIKI_SEARCH_CHARS = 3  # Minimum characters for MediaWiki search term
+# ===== VALIDATION CONFIGURATION =====
+# Configurable via environment variables with sensible defaults
+MIN_INPUT_CHARS = int(os.getenv("MIN_INPUT_CHARS", 50))
+MIN_INPUT_WORDS = int(os.getenv("MIN_INPUT_WORDS", 10))
+MIN_MEDIAWIKI_SEARCH_CHARS = int(os.getenv("MIN_MEDIAWIKI_SEARCH_CHARS", 3))
+
+# Standardized error messages (reuse in tests for consistency)
+ERR_MISSING_INPUT = "Input text is required. Please provide content for question generation."
+ERR_SHORT_INPUT_CHARS = "Input text is too short. Minimum {min_chars} characters required (got {char_count})."
+ERR_SHORT_INPUT_WORDS = "Input text must contain at least {min_words} words (got {word_count})."
+ERR_MISSING_MEDIAWIKI_SEARCH = "Search term is required when using MediaWiki."
+ERR_SHORT_MEDIAWIKI_SEARCH = "Search term must be at least {min_chars} characters."
 
 
 def validate_input_text(input_text, min_chars=MIN_INPUT_CHARS, min_words=MIN_INPUT_WORDS):
@@ -68,17 +76,17 @@ def validate_input_text(input_text, min_chars=MIN_INPUT_CHARS, min_words=MIN_INP
         Tuple of (is_valid: bool, error_message: str or None)
     """
     if not input_text or not input_text.strip():
-        return False, "Input text is required. Please provide content for question generation."
+        return False, ERR_MISSING_INPUT
     
     text = input_text.strip()
     char_count = len(text)
     word_count = len(text.split())
     
     if char_count < min_chars:
-        return False, f"Input text is too short. Minimum {min_chars} characters required (got {char_count})."
+        return False, ERR_SHORT_INPUT_CHARS.format(min_chars=min_chars, char_count=char_count)
     
     if word_count < min_words:
-        return False, f"Input text must contain at least {min_words} words (got {word_count})."
+        return False, ERR_SHORT_INPUT_WORDS.format(min_words=min_words, word_count=word_count)
     
     return True, None
 
@@ -94,10 +102,10 @@ def validate_mediawiki_search(search_term, min_chars=MIN_MEDIAWIKI_SEARCH_CHARS)
         Tuple of (is_valid: bool, error_message: str or None)
     """
     if not search_term or not search_term.strip():
-        return False, "Search term is required when using MediaWiki."
+        return False, ERR_MISSING_MEDIAWIKI_SEARCH
     
     if len(search_term.strip()) < min_chars:
-        return False, f"Search term must be at least {min_chars} characters."
+        return False, ERR_SHORT_MEDIAWIKI_SEARCH.format(min_chars=min_chars)
     
     return True, None
 
