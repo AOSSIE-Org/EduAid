@@ -50,12 +50,105 @@ def process_input_text(input_text, use_mediawiki):
     return input_text
 
 
+# ===== VALIDATION CONFIGURATION =====
+# Configurable via environment variables with sensible defaults
+MIN_INPUT_CHARS = int(os.getenv("MIN_INPUT_CHARS", 50))
+MIN_INPUT_WORDS = int(os.getenv("MIN_INPUT_WORDS", 10))
+MIN_MEDIAWIKI_SEARCH_CHARS = int(os.getenv("MIN_MEDIAWIKI_SEARCH_CHARS", 3))
+
+# Standardized error messages (reuse in tests for consistency)
+ERR_MISSING_INPUT = "Input text is required. Please provide content for question generation."
+ERR_SHORT_INPUT_CHARS = "Input text is too short. Minimum {min_chars} characters required (got {char_count})."
+ERR_SHORT_INPUT_WORDS = "Input text must contain at least {min_words} words (got {word_count})."
+ERR_MISSING_MEDIAWIKI_SEARCH = "Search term is required when using MediaWiki."
+ERR_SHORT_MEDIAWIKI_SEARCH = "Search term must be at least {min_chars} characters."
+
+
+def validate_input_text(input_text, min_chars=MIN_INPUT_CHARS, min_words=MIN_INPUT_WORDS):
+    """Validate that input text meets minimum requirements for question generation.
+    
+    Args:
+        input_text: The text to validate
+        min_chars: Minimum number of characters required
+        min_words: Minimum number of words required
+        
+    Returns:
+        Tuple of (is_valid: bool, error_message: str or None)
+    """
+    if not input_text or not input_text.strip():
+        return False, ERR_MISSING_INPUT
+    
+    text = input_text.strip()
+    char_count = len(text)
+    word_count = len(text.split())
+    
+    if char_count < min_chars:
+        return False, ERR_SHORT_INPUT_CHARS.format(min_chars=min_chars, char_count=char_count)
+    
+    if word_count < min_words:
+        return False, ERR_SHORT_INPUT_WORDS.format(min_words=min_words, word_count=word_count)
+    
+    return True, None
+
+
+def validate_mediawiki_search(search_term, min_chars=MIN_MEDIAWIKI_SEARCH_CHARS):
+    """Validate MediaWiki search term.
+    
+    Args:
+        search_term: The search term to validate
+        min_chars: Minimum characters for a valid search term
+        
+    Returns:
+        Tuple of (is_valid: bool, error_message: str or None)
+    """
+    if not search_term or not search_term.strip():
+        return False, ERR_MISSING_MEDIAWIKI_SEARCH
+    
+    if len(search_term.strip()) < min_chars:
+        return False, ERR_SHORT_MEDIAWIKI_SEARCH.format(min_chars=min_chars)
+    
+    return True, None
+
+
+def require_input_validation(f):
+    """Decorator to validate input text before processing.
+    
+    Validates:
+    - Regular input_text: minimum characters and words
+    - MediaWiki mode: validates search term is not empty/too short
+    """
+    from functools import wraps
+    
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        data = request.get_json()
+        input_text = data.get("input_text", "")
+        use_mediawiki = data.get("use_mediawiki", 0)
+        
+        if use_mediawiki == 1:
+            # Validate MediaWiki search term
+            is_valid, error_message = validate_mediawiki_search(input_text)
+            if not is_valid:
+                return jsonify({"error": error_message}), 400
+        else:
+            # Validate regular input text
+            is_valid, error_message = validate_input_text(input_text)
+            if not is_valid:
+                return jsonify({"error": error_message}), 400
+        
+        return f(*args, **kwargs)
+    
+    return decorated_function
+
+
 @app.route("/get_mcq", methods=["POST"])
+@require_input_validation
 def get_mcq():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    
     input_text = process_input_text(input_text, use_mediawiki)
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
@@ -65,11 +158,13 @@ def get_mcq():
 
 
 @app.route("/get_boolq", methods=["POST"])
+@require_input_validation
 def get_boolq():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    
     input_text = process_input_text(input_text, use_mediawiki)
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
@@ -79,11 +174,13 @@ def get_boolq():
 
 
 @app.route("/get_shortq", methods=["POST"])
+@require_input_validation
 def get_shortq():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    
     input_text = process_input_text(input_text, use_mediawiki)
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
@@ -93,6 +190,7 @@ def get_shortq():
 
 
 @app.route("/get_problems", methods=["POST"])
+@require_input_validation
 def get_problems():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -100,6 +198,7 @@ def get_problems():
     max_questions_mcq = data.get("max_questions_mcq", 4)
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
+    
     input_text = process_input_text(input_text, use_mediawiki)
     output1 = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions_mcq}
