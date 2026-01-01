@@ -23,3 +23,7 @@ code {
   border-image-slice: 1;
   border-radius: 2rem;
 }
+
+body {
+  font-family: 'Outfit', sans-serif;
+}
