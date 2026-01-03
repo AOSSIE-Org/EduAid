@@ -1,5 +1,5 @@
 import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route, HashRouter } from "react-router-dom";
 import Home from "./pages/Home";
 import Question_Type from "./pages/Question_Type";
 import Text_Input from "./pages/Text_Input";
@@ -9,7 +9,7 @@ import NotFound from "./pages/PageNotFound";
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/question-type" element={<Question_Type />} />
@@ -18,7 +18,7 @@ function App() {
         <Route path="/history" element={<Previous />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
