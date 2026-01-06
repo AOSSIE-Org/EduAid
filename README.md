@@ -74,7 +74,7 @@ The backend service and its related files are located in the `backend/` director
   ```bash
   chmod +x script.sh
   ```
-### 3. Configure Google APIs
+## 3. Configure Google APIs
 
 Security note: Google API credential files contain sensitive secrets and must never be committed to version control. Place all credential files inside the `backend/` directory and ensure they remain untracked (add them to `.gitignore`).
 
@@ -90,7 +90,7 @@ Security note: Google API credential files contain sensitive secrets and must ne
 2. Open `backend/credentials.json` and enter the necessary credentials for the Google Forms API.
 3. Keep `backend/credentials.json` untracked in git (do not commit). Refer to the [Google Forms API quickstart guide](https://developers.google.com/forms/api/quickstart/python#set_up_your_environment) for setup instructions.
 
-### 4. Extension Setup
+## 4. Extension Setup
 
 #### Install Dependencies
 
@@ -122,7 +122,7 @@ In addition to the browser extension, EduAid also offers a web app that provides
 3. Start the Web App:
 `npm run start`
 
-### 5. Desktop App Setup
+## 5. Desktop App Setup
 
 EduAid now includes a cross-platform desktop application built with Electron, providing a native desktop experience for all EduAid features.
 
