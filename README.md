@@ -29,7 +29,7 @@ EduAid is a multi-component project consisting of:
 git clone https://github.com/AOSSIE-Org/EduAid.git
 cd EduAid
 ```
-## 2. Backend Setup
+### 2. Backend Setup
 
 The backend service and its related files are located in the `backend/` directory. Follow the steps below to set up the backend. Commands that operate on the backend should be run from inside `backend/`.
 
@@ -74,39 +74,39 @@ The backend service and its related files are located in the `backend/` director
   ```bash
   chmod +x script.sh
   ```
-## 3. Configure Google APIs
+### 3. Configure Google APIs
 
 Security note: Google API credential files contain sensitive secrets and must never be committed to version control. Place all credential files inside the `backend/` directory and ensure they remain untracked (add them to `.gitignore`).
 
-### Google Docs API
+#### Google Docs API
 
 1. Place your Google Docs service account file named `service_account_key.json` in the `backend/` directory.
 2. Open `backend/service_account_key.json` and enter the service account details required by the application.
 3. Keep `backend/service_account_key.json` untracked in git (do not commit). Refer to the [Google Docs API documentation](https://developers.google.com/docs/api/reference/rest) for more details.
 
-### Google Forms API
+#### Google Forms API
 
 1. Place your Google Forms credentials file named `credentials.json` in the `backend/` directory.
 2. Open `backend/credentials.json` and enter the necessary credentials for the Google Forms API.
 3. Keep `backend/credentials.json` untracked in git (do not commit). Refer to the [Google Forms API quickstart guide](https://developers.google.com/forms/api/quickstart/python#set_up_your_environment) for setup instructions.
 
-## 4. Extension Setup
+### 4. Extension Setup
 
-### Install Dependencies
+#### Install Dependencies
 
 Navigate to the `extension` folder and install the required dependencies:
 
 ```bash
 npm install
 ```
-### Build the Project
+#### Build the Project
 
 Build the extension:
 
 ```bash
 npm run build
 ```
-### Load the Extension in Chrome
+#### Load the Extension in Chrome
 
 1. Open Chrome and navigate to `chrome://extensions/`.
 2. Enable "Developer mode" (top-right corner).
@@ -122,16 +122,16 @@ In addition to the browser extension, EduAid also offers a web app that provides
 3. Start the Web App:
 `npm run start`
 
-## 5. Desktop App Setup
+### 5. Desktop App Setup
 
 EduAid now includes a cross-platform desktop application built with Electron, providing a native desktop experience for all EduAid features.
 
-### Prerequisites
+#### Prerequisites
 - Node.js (version 16 or higher)
 - Backend server running (follow steps 2-3 above)
 - Web app built (follow step 4 above)
 
-### Development Mode
+#### Development Mode
 
 1. **Navigate to Desktop App Directory**:
    ```bash
@@ -149,7 +149,7 @@ EduAid now includes a cross-platform desktop application built with Electron, pr
    ```
    This will start both the web app development server and launch the Electron desktop app.
 
-### Production Build
+#### Production Build
 
 1. **Build Web App** (if not already done):
    ```bash
@@ -170,7 +170,7 @@ EduAid now includes a cross-platform desktop application built with Electron, pr
 
 The built applications will be available in the `eduaid_desktop/dist/` directory with installers for Windows (.exe), macOS (.dmg), and Linux (.AppImage).
 
-### Desktop App Features
+#### Desktop App Features
 - **Native Desktop Experience**: Full desktop integration with native menus and keyboard shortcuts
 - **Cross-Platform**: Works on Windows, macOS, and Linux
 - **Security**: Secure communication with context isolation
