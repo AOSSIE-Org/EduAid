@@ -41,7 +41,7 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
+    <div className="popup min-h-screen w-screen bg-[#02000F] flex justify-center items-start">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient overflow-auto px-4 py-6 sm:px-8 md:px-16">
         <div className="max-w-5xl mx-auto">
           <img src={logo_trans} alt="logo" className="w-24 my-4 sm:my-6" />
@@ -66,7 +66,7 @@ const Home = () => {
           </div>
 
           {/* Features */}
-          <div className="flex flex-col items-end sm:items-center sm:flex-row sm:justify-between gap-4 mt-8">
+          <div className="flex flex-col items-center sm:flex-row sm:justify-between gap-4 mt-8">
             {[
               "Doc/Audio Input",
               "In-depth questions gen",
@@ -74,7 +74,7 @@ const Home = () => {
             ].map((feature, i) => (
               <div
                 key={i}
-                className="flex items-center rounded-l-2xl sm:rounded-2xl px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] gap-4 w-fit"
+                className="flex items-center rounded-l-2xl sm:rounded-2xl px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] gap-4 w-fit w-full"
               >
                 <img src={starsImg} width={32} height={16} alt="" />
                 <div className="text-white text-base sm:text-xl">{feature}</div>
@@ -83,7 +83,7 @@ const Home = () => {
           </div>
 
           {/* Buttons */}
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-10">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-10 px-2">
             <Link to="/question-type" className="w-full sm:w-auto">
               <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
                 Let’s get Started

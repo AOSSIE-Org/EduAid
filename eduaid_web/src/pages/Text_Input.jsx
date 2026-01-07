@@ -135,7 +135,7 @@ const Text_Input = () => {
   };
 
   return (
-    <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen">
+    <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen flex flex-col">
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
           <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
@@ -165,7 +165,7 @@ const Text_Input = () => {
         </div>
 
         {/* Textarea */}
-        <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
+        <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[220px] sm:min-h-[200px] mt-4">
           <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
             <FaClipboard className="h-[24px] w-[24px]" />
           </button>

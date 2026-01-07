@@ -31,7 +31,7 @@ const Previous = () => {
   };
 
   return (
-    <div className="w-screen h-screen bg-[#02000F] flex flex-col justify-center items-center">
+    <div className="w-screen min-h-screen bg-[#02000F] flex flex-col justify-start items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient p-4 md:p-6 overflow-y-auto">
         {/* Header */}
         <Link to="/" className="flex items-end gap-2">
@@ -66,7 +66,7 @@ const Previous = () => {
         </div>
 
         {/* Quiz List */}
-        <div className="mx-auto max-w-4xl bg-[#83b6cc40] rounded-xl p-4 mb-4 max-h-[60vh] overflow-y-auto">
+        <div className="mx-auto max-w-4xl bg-[#83b6cc40] rounded-xl p-4 mb-4 max-h-[60vh] sm:max-h-[60vh] overflow-y-auto">
           {quizzes.length === 0 ? (
             <div className="text-center text-white text-sm">No quizzes available</div>
           ) : (
