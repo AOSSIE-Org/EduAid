@@ -66,21 +66,28 @@ const Home = () => {
           </div>
 
           {/* Features */}
-          <div className="flex flex-col items-end sm:items-center sm:flex-row sm:justify-between gap-4 mt-8">
-            {[
-              "Doc/Audio Input",
-              "In-depth questions gen",
-              "Dynamic Google Form Integration",
-            ].map((feature, i) => (
-              <div
-                key={i}
-                className="flex items-center rounded-l-2xl sm:rounded-2xl px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] gap-4 w-fit"
-              >
-                <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-base sm:text-xl">{feature}</div>
-              </div>
-            ))}
-          </div>
+          <div className="flex flex-col items-center sm:flex-row sm:justify-between gap-4 mt-8">
+  {[
+    "Doc/Audio Input",
+    "In-depth questions gen",
+    "Dynamic Google Form Integration",
+  ].map((feature, i) => (
+    <div
+      key={i}
+      className="flex items-center justify-center sm:justify-start
+                 rounded-2xl px-4 sm:px-6 py-3
+                 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7]
+                 gap-3 sm:gap-4
+                 w-full sm:w-fit"
+    >
+      <img src={starsImg} width={32} height={16} alt="" />
+      <div className="text-white text-base sm:text-xl text-center sm:text-left">
+        {feature}
+      </div>
+    </div>
+  ))}
+</div>
+
 
           {/* Buttons */}
           <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-10">

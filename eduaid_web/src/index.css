@@ -27,3 +27,10 @@ code {
 body {
   font-family: 'Outfit', sans-serif;
 }
+
+@layer base {
+  body {
+    @apply font-outfit bg-white text-black dark:bg-black dark:text-white;
+  }
+}
+
