@@ -4,7 +4,7 @@ import logo_trans from "../assets/aossie_logo_transparent.png"
 import gitStar from "../assets/gitStar.png";
 import { FaGithub } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { FileText, Mic, Zap, CheckCircle } from "lucide-react";
+import { FileText, Mic, Zap, CheckCircle, CircleCheck } from "lucide-react";
 
 const Home = () => {
   const [stars, setStars] = useState(null);
@@ -56,9 +56,9 @@ const Home = () => {
       description: "Create in-depth, contextual questions instantly.",
     },
     {
-      icon: <FileText className="w-7 h-7" />,
+      icon: <CircleCheck className="w-7 h-7" />,
       title: "Google Form Integration",
-      description: "Dynamicly integrating google forms to generate quiz.",
+      description: "Dynamically integrating google forms to generate quiz.",
     },
   ]
 
@@ -117,7 +117,7 @@ const Home = () => {
             <img
               src={logo_trans}
               alt="AOSSIE Logo"
-              className="relative w-64 opacity-95 translate-x-32"
+              className="relative w-64 opacity-95 lg:translate-x-32 translate-x-0"
             />
         </div>
       </section>

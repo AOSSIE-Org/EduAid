@@ -6,7 +6,6 @@ from nltk.tokenize import sent_tokenize
 from flashtext import KeywordProcessor
 from nltk.corpus import stopwords
 from sense2vec import Sense2Vec
-import textdistance
 
 nltk.download('brown')
 nltk.download('stopwords')

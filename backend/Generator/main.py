@@ -9,7 +9,7 @@ from sense2vec import Sense2Vec
 from collections import OrderedDict
 from nltk import FreqDist
 from nltk.corpus import brown
-import textdistance
+
 from Generator.mcq import tokenize_into_sentences, identify_keywords, find_sentences_with_keywords, generate_multiple_choice_questions, generate_normal_questions
 from Generator.encoding import beam_search_decoding
 from google.oauth2 import service_account
@@ -22,8 +22,6 @@ import re
 import os
 import fitz 
 import mammoth
-from rapidfuzz.distance import Levenshtein
-NormalizedLevenshtein = Levenshtein
 
 class MCQGenerator:
     
@@ -35,7 +33,7 @@ class MCQGenerator:
         self.nlp = spacy.load('en_core_web_sm')
         self.s2v = Sense2Vec().from_disk('s2v_old')
         self.fdist = FreqDist(brown.words())
-        self.normalized_levenshtein = Levenshtein
+        self.normalized_levenshtein = NormalizedLevenshtein
         self.set_seed(42)
         
     def set_seed(self, seed):
@@ -93,7 +91,7 @@ class ShortQGenerator:
         self.nlp = spacy.load('en_core_web_sm')
         self.s2v = Sense2Vec().from_disk('s2v_old')
         self.fdist = FreqDist(brown.words())
-        self.normalized_levenshtein = Levenshtein
+        self.normalized_levenshtein = NormalizedLevenshtein
         self.set_seed(42)
         
     def set_seed(self, seed):
