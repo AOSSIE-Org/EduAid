@@ -47,8 +47,13 @@ const Text_Input = () => {
   };
 
   const handleSaveToLocalStorage = async () => {
+    //new validation
+    if (!text.trim() && !docUrl.trim()) {
+      alert("Please enter text or provide a Google Doc URL.");
+      return;
+    }
     setLoading(true);
-
+    
     // Check if a Google Doc URL is provided
     if (docUrl) {
       try {
