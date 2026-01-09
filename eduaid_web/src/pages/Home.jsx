@@ -58,7 +58,7 @@ const Home = () => {
     {
       icon: <CircleCheck className="w-7 h-7" />,
       title: "Google Form Integration",
-      description: "Dynamically integrating google forms to generate quiz.",
+      description: "Dynamically integrate Google Forms to generate quizzes.",
     },
   ]
 
