@@ -234,7 +234,7 @@ function Second() {
           <img className="mx-auto" height={24} width={24} src={cloud} alt="cloud" />
           <div className="text-center text-white text-sm">Choose a file</div>
           <div className="text-center text-white text-sm">
-            PDF, MP3, PPT supported
+            PDF, MP3, PPTX supported
           </div>
           <div>
             <input
