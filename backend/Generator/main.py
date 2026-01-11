@@ -23,6 +23,7 @@ import os
 import fitz 
 import mammoth
 from pptx import Presentation
+import logging
 
 class MCQGenerator:
     
@@ -367,7 +368,7 @@ class FileProcessor:
         try:
             prs = Presentation(file_path)
         except Exception as e:
-            print(f"Error opening presentation: {e}")
+            logging.error(f"Error opening PPTX file: {e}")
             return ""
 
         for slide in prs.slides:
@@ -395,14 +396,8 @@ class FileProcessor:
             content = self.extract_text_from_pptx(file_path)
             if not content:
                 content = ""
-        elif file.filename.endswith('.ppt'):
-            try:
-                content = self.extract_text_from_pptx(file_path)
-                if not content:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        content = f.read()
-            except Exception:
-                content = ""
+        else:
+            raise ValueError('Unsupported file format')
 
         os.remove(file_path)
         return content
