@@ -22,6 +22,7 @@ import re
 import os
 import fitz 
 import mammoth
+from pptx import Presentation
 
 class MCQGenerator:
     
