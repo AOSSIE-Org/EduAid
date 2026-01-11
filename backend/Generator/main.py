@@ -366,7 +366,8 @@ class FileProcessor:
         text_runs = []
         try:
             prs = Presentation(file_path)
-        except Exception:
+        except Exception as e:
+            print(f"Error opening presentation: {e}")
             return ""
 
         for slide in prs.slides:
@@ -390,14 +391,10 @@ class FileProcessor:
             content = self.extract_text_from_pdf(file_path)
         elif file.filename.endswith('.docx'):
             content = self.extract_text_from_docx(file_path)
-        elif file.filename.endswith('.pptx') or file.filename.endswith('.pt'):
+        elif file.filename.endswith('.pptx'):
             content = self.extract_text_from_pptx(file_path)
             if not content:
-                try:
-                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        content = f.read()
-                except Exception:
-                    content = ""
+                content = ""
         elif file.filename.endswith('.ppt'):
             try:
                 content = self.extract_text_from_pptx(file_path)
