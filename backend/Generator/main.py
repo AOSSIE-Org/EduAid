@@ -360,6 +360,22 @@ class FileProcessor:
         with open(file_path, "rb") as docx_file:
             result = mammoth.extract_raw_text(docx_file)
             return result.value
+        
+    def extract_text_from_pptx(self, file_path):
+        text_runs = []
+        try:
+            prs = Presentation(file_path)
+        except Exception:
+            return ""
+
+        for slide in prs.slides:
+            for shape in slide.shapes:
+                if hasattr(shape, "has_text_frame") and shape.has_text_frame:
+                    for paragraph in shape.text_frame.paragraphs:
+                        for run in paragraph.runs:
+                            text_runs.append(run.text)
+
+        return "\n".join(text_runs)
 
     def process_file(self, file):
         file_path = os.path.join(self.upload_folder, file.filename)
@@ -373,6 +389,22 @@ class FileProcessor:
             content = self.extract_text_from_pdf(file_path)
         elif file.filename.endswith('.docx'):
             content = self.extract_text_from_docx(file_path)
+        elif file.filename.endswith('.pptx') or file.filename.endswith('.pt'):
+            content = self.extract_text_from_pptx(file_path)
+            if not content:
+                try:
+                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        content = f.read()
+                except Exception:
+                    content = ""
+        elif file.filename.endswith('.ppt'):
+            try:
+                content = self.extract_text_from_pptx(file_path)
+                if not content:
+                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        content = f.read()
+            except Exception:
+                content = ""
 
         os.remove(file_path)
         return content
