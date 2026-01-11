@@ -72,6 +72,9 @@ const Text_Input = () => {
         difficulty,
         localStorage.getItem("selectedQuestionType")
       );
+    } else{
+      setLoading(false);
+      alert("Please provide text input, upload a file, or enter a Google Doc URL.");
     }
   };
 
