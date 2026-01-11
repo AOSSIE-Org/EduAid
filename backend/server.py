@@ -49,17 +49,34 @@ def process_input_text(input_text, use_mediawiki):
         input_text = mediawikiapi.summary(input_text,8)
     return input_text
 
+def validate_input_text_payload(data):
+    if data is None:
+        return "Invalid or missing JSON body"
+
+    input_text = data.get("input_text")
+    if not isinstance(input_text, str) or not input_text.strip():
+        return "'input_text' must be a non-empty string"
+
+    return None
 
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
     data = request.get_json()
-    input_text = data.get("input_text", "")
+
+    error = validate_input_text_payload(data)
+    if error:
+        return jsonify({"error": error}), 400
+
+    input_text = data.get("input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+
     input_text = process_input_text(input_text, use_mediawiki)
+
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
     )
+
     questions = output["questions"]
     return jsonify({"output": questions})
 
@@ -67,13 +84,21 @@ def get_mcq():
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
     data = request.get_json()
-    input_text = data.get("input_text", "")
+
+    error = validate_input_text_payload(data)
+    if error:
+        return jsonify({"error": error}), 400
+
+    input_text = data.get("input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+
     input_text = process_input_text(input_text, use_mediawiki)
+
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
     )
+
     boolean_questions = output["Boolean_Questions"]
     return jsonify({"output": boolean_questions})
 
@@ -81,13 +106,21 @@ def get_boolq():
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
     data = request.get_json()
-    input_text = data.get("input_text", "")
+
+    error = validate_input_text_payload(data)
+    if error:
+        return jsonify({"error": error}), 400
+
+    input_text = data.get("input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+
     input_text = process_input_text(input_text, use_mediawiki)
+
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
     )
+
     questions = output["questions"]
     return jsonify({"output": questions})
 
@@ -95,12 +128,19 @@ def get_shortq():
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
     data = request.get_json()
-    input_text = data.get("input_text", "")
+
+    error = validate_input_text_payload(data)
+    if error:
+        return jsonify({"error": error}), 400
+
+    input_text = data.get("input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions_mcq = data.get("max_questions_mcq", 4)
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
+
     input_text = process_input_text(input_text, use_mediawiki)
+
     output1 = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions_mcq}
     )
@@ -110,6 +150,7 @@ def get_problems():
     output3 = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions_shortq}
     )
+
     return jsonify(
         {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
     )
