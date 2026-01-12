@@ -23,6 +23,7 @@ import os
 import fitz 
 import mammoth
 from pptx import Presentation
+import ppt2txt
 import logging
 
 class MCQGenerator:
@@ -379,6 +380,21 @@ class FileProcessor:
                             text_runs.append(run.text)
 
         return "\n".join(text_runs)
+    
+    def extract_text_from_ppt(self, file_path):
+        try:
+            file = ppt2txt.process(file_path)
+            noise = ["Click to edit Master"]
+            text = ""
+            for line in file["content"].values():
+                line = line.replace(noise[0], "").strip()
+                text += line + "\n"
+                
+            return text
+                
+        except Exception as e:
+            logging.error(f"Error extracting text from PPT file: {e}")
+            return ""
 
     def process_file(self, file):
         file_path = os.path.join(self.upload_folder, file.filename)
@@ -394,6 +410,10 @@ class FileProcessor:
             content = self.extract_text_from_docx(file_path)
         elif file.filename.endswith('.pptx'):
             content = self.extract_text_from_pptx(file_path)
+            if not content:
+                content = ""
+        elif file.filename.endswith('.ppt'):
+            content = self.extract_text_from_ppt(file_path)
             if not content:
                 content = ""
         else:

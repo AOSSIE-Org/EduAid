@@ -33,3 +33,4 @@ mediawikiapi
 PyMuPDF
 textblob
 python-pptx
+ppt2txt
