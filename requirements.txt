@@ -1,5 +1,5 @@
-torch==2.5.1
-transformers==4.46.1
+torch==2.6.0
+transformers==4.57.5
 sense2vec==2.0.2
 strsim==0.0.3
 six==1.16.0
@@ -31,4 +31,5 @@ tokenizers
 mammoth
 mediawikiapi
 PyMuPDF
-textblob
+textblob==0.17.1
+flasgger==0.9.7.1

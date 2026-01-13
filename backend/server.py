@@ -477,8 +477,9 @@ def get_transcript():
                 "--sub-format", "vtt", "-o", f"subtitles/{video_id}.vtt", f"https://www.youtube.com/watch?v={video_id}"],
                check=True, capture_output=True, text=True)
 
-    # Find the latest .vtt file in the "subtitles" folder
-    subtitle_files = glob.glob("subtitles/*.vtt")
+    # Find the specific .vtt file for this video_id
+    search_pattern = f"subtitles/{video_id}*.vtt"
+    subtitle_files = glob.glob(search_pattern)
     if not subtitle_files:
         return jsonify({"error": "No subtitles found"}), 404
 
