@@ -31,9 +31,12 @@ def test_get_mcq():
     }
     response = make_post_request(endpoint, data)
 
-# If server rejects input, it must return JSON error
     assert isinstance(response, dict)
-    assert 'output' in response or 'error' in response
+    if 'output' in response:
+        assert isinstance(response['output'], list)
+        assert len(response['output']) > 0
+    else:
+        assert 'error' in response
 
 def test_get_boolq():
     endpoint = '/get_boolq'
@@ -44,7 +47,11 @@ def test_get_boolq():
     response = make_post_request(endpoint, data)
 
     assert isinstance(response, dict)
-    assert 'output' in response or 'error' in response
+    if 'output' in response:
+        assert isinstance(response['output'], list)
+        assert len(response['output']) > 0
+    else:
+        assert 'error' in response
 
 def test_get_shortq():
     endpoint = '/get_shortq'
@@ -54,7 +61,11 @@ def test_get_shortq():
     }
     response = make_post_request(endpoint, data)
     assert isinstance(response, dict)
-    assert 'output' in response or 'error' in response
+    if 'output' in response:
+        assert isinstance(response['output'], list)
+        assert len(response['output']) > 0
+    else:
+        assert 'error' in response
 
 def test_get_problems():
     endpoint = '/get_problems'
@@ -66,12 +77,15 @@ def test_get_problems():
     }
     response = make_post_request(endpoint, data)
     assert isinstance(response, dict)
-    assert (
-        'output_mcq' in response or
-        'output_boolq' in response or
-        'output_shortq' in response or
-        'error' in response
-    )
+    if 'error' in response:
+        assert isinstance(response['error'], str)
+    else:
+        if 'output_mcq' in response:
+            assert isinstance(response['output_mcq'], dict)
+        if 'output_boolq' in response:
+            assert isinstance(response['output_boolq'], dict)
+        if 'output_shortq' in response:
+            assert isinstance(response['output_shortq'], dict)
 
 def test_root():
     endpoint = '/'
