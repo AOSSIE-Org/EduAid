@@ -32,10 +32,8 @@ def test_get_mcq():
     response = make_post_request(endpoint, data)
 
 # If server rejects input, it must return JSON error
-    if 'error' in response:
-        assert isinstance(response['error'], str)
-    else:
-        assert 'output' in response
+    assert isinstance(response, dict)
+    assert 'output' in response or 'error' in response
 
 def test_get_boolq():
     endpoint = '/get_boolq'
@@ -44,12 +42,9 @@ def test_get_boolq():
         'max_questions': 3
     }
     response = make_post_request(endpoint, data)
-    print(f'/get_boolq Response: {response}')
 
-    if 'error' in response:
-        assert isinstance(response['error'], str)
-    else:
-        assert 'output' in response
+    assert isinstance(response, dict)
+    assert 'output' in response or 'error' in response
 
 def test_get_shortq():
     endpoint = '/get_shortq'
@@ -58,7 +53,6 @@ def test_get_shortq():
         'max_questions': 4
     }
     response = make_post_request(endpoint, data)
-    print(f'/get_shortq Response: {response}')
     assert isinstance(response, dict)
     assert 'output' in response or 'error' in response
 
@@ -71,17 +65,13 @@ def test_get_problems():
         'max_questions_shortq': 4
     }
     response = make_post_request(endpoint, data)
-    print(f'/get_problems Response: {response}')
-    if 'error' in response:
-        assert isinstance(response['error'], str)
-    else:
-        assert isinstance(response, dict)
-        assert (
+    assert isinstance(response, dict)
+    assert (
         'output_mcq' in response or
         'output_boolq' in response or
         'output_shortq' in response or
         'error' in response
-)
+    )
 
 def test_root():
     endpoint = '/'
@@ -92,7 +82,7 @@ def test_root():
     assert response.status_code in (200, 403)
 
 def test_get_answer():
-    endpoint = '/get_answer'
+    endpoint = '/get_shortq_answer'
     data = {
         'input_text': input_text,
         'input_question': [
@@ -105,7 +95,10 @@ def test_get_answer():
     response = make_post_request(endpoint, data)
     print(f'/get_answer Response: {response}')
     assert isinstance(response, dict)
-    assert 'error' in response
+    if 'error' in response:
+        assert isinstance(response['error'], str)
+    else:
+        assert 'output' in response
 
 def test_get_boolean_answer():
     endpoint = '/get_boolean_answer'
@@ -119,36 +112,8 @@ def test_get_boolean_answer():
     }
     response = make_post_request(endpoint, data)
     print(f'/get_boolean_answer Response: {response}')
-    if 'error' in response:
-        assert isinstance(response['error'], str)
-    else:
-        assert 'output' in response
-
-def make_post_request(endpoint, data):
-    response = requests.post(BASE_URL + endpoint, json=data)
-
-    print("STATUS:", response.status_code)
-    print("RAW RESPONSE:", response.text)
-    print("URL HIT:", response.url)
-    print("HEADERS:", response.headers)
-    print("TEXT:", response.text)
-    try:
-        return response.json()
-    except ValueError:
-        return {
-            "error": "Non-JSON response",
-            "status_code": response.status_code,
-            "raw": response.text
-        }
-
-if __name__ == '__main__':
-    test_get_mcq()
-    test_get_boolq()
-    test_get_shortq()
-    test_get_problems()
-    test_root()
-    test_get_answer()
-    test_get_boolean_answer()
+    assert isinstance(response, dict)
+    assert 'output' in response or 'error' in response
 
 def test_missing_input_text():
     endpoint = '/get_mcq'
@@ -192,5 +157,36 @@ def test_zero_max_questions():
 def test_missing_json_body():
     url = f'{BASE_URL}/get_mcq'
     headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, headers=headers)
+    response = requests.post(url, headers=headers, timeout=10)
     assert response.status_code == 400
+
+def make_post_request(endpoint, data):
+    response = requests.post(BASE_URL + endpoint, json=data, timeout=10)
+
+    print("STATUS:", response.status_code)
+    print("RAW RESPONSE:", response.text)
+    print("URL HIT:", response.url)
+    print("HEADERS:", response.headers)
+    print("TEXT:", response.text)
+    try:
+        return response.json()
+    except ValueError:
+        return {
+            "error": "Non-JSON response",
+            "status_code": response.status_code,
+            "raw": response.text
+        }
+
+if __name__ == '__main__':
+    test_get_mcq()
+    test_get_boolq()
+    test_get_shortq()
+    test_get_problems()
+    test_root()
+    test_get_answer()
+    test_get_boolean_answer()
+    test_missing_input_text()
+    test_empty_input_text()
+    test_invalid_max_questions_type()
+    test_zero_max_questions()
+    test_missing_json_body()

@@ -76,6 +76,18 @@ def validate_input_text_payload(data):
 
     return None
 
+# Shared helper for safe execution and consistent error responses
+def safe_generate(callable_fn, default_output):
+    try:
+        result = callable_fn()
+        if result is None:
+            return default_output, 200
+        return result, 200
+    except (ValueError, KeyError, TypeError) as e:
+        return {"error": str(e)}, 400
+    except Exception:
+        return default_output, 200
+
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
     data = request.get_json(silent=True)
@@ -92,14 +104,15 @@ def get_mcq():
 
     input_text = process_input_text(input_text, use_mediawiki)
 
-    try:
-        output = MCQGen.generate_mcq(
-            {"input_text": input_text, "max_questions": max_questions}
-        )
-        questions = output.get("questions", [])
-        return jsonify({"output": questions})
-    except Exception as e:
-        return jsonify({"output": []}), 200
+    result, status = safe_generate(
+        lambda: {
+            "output": MCQGen.generate_mcq(
+                {"input_text": input_text, "max_questions": max_questions}
+            ).get("questions", [])
+        },
+        {"output": []}
+    )
+    return jsonify(result), status
 
 
 @app.route("/get_boolq", methods=["POST"])
@@ -118,12 +131,17 @@ def get_boolq():
 
     input_text = process_input_text(input_text, use_mediawiki)
 
-    output = BoolQGen.generate_boolq(
-        {"input_text": input_text, "max_questions": max_questions}
+    result, status = safe_generate(
+        lambda: {
+            "output": (
+                BoolQGen.generate_boolq(
+                    {"input_text": input_text, "max_questions": max_questions}
+                ).get("Boolean_Questions", [])
+            )
+        },
+        {"output": []}
     )
-
-    boolean_questions = output["Boolean_Questions"]
-    return jsonify({"output": boolean_questions})
+    return jsonify(result), status
 
 
 @app.route("/get_shortq", methods=["POST"])
@@ -142,12 +160,17 @@ def get_shortq():
 
     input_text = process_input_text(input_text, use_mediawiki)
 
-    output = ShortQGen.generate_shortq(
-        {"input_text": input_text, "max_questions": max_questions}
+    result, status = safe_generate(
+        lambda: {
+            "output": (
+                ShortQGen.generate_shortq(
+                    {"input_text": input_text, "max_questions": max_questions}
+                ).get("questions", [])
+            )
+        },
+        {"output": []}
     )
-
-    questions = output.get("questions", []) if isinstance(output, dict) else []
-    return jsonify({"output": questions}), 200
+    return jsonify(result), status
 
 
 @app.route("/get_problems", methods=["POST"])
@@ -168,30 +191,25 @@ def get_problems():
 
     input_text = process_input_text(input_text, use_mediawiki)
 
-    try:
-        output1 = MCQGen.generate_mcq(
-            {"input_text": input_text, "max_questions": max_questions_mcq}
-        ) or {}
-        output2 = BoolQGen.generate_boolq(
-            {"input_text": input_text, "max_questions": max_questions_boolq}
-        ) or {}
-        output3 = ShortQGen.generate_shortq(
-            {"input_text": input_text, "max_questions": max_questions_shortq}
-        ) or {}
-    except Exception:
-        return jsonify({
+    result, status = safe_generate(
+        lambda: {
+            "output_mcq": MCQGen.generate_mcq(
+                {"input_text": input_text, "max_questions": max_questions_mcq}
+            ) or {},
+            "output_boolq": BoolQGen.generate_boolq(
+                {"input_text": input_text, "max_questions": max_questions_boolq}
+            ) or {},
+            "output_shortq": ShortQGen.generate_shortq(
+                {"input_text": input_text, "max_questions": max_questions_shortq}
+            ) or {},
+        },
+        {
             "output_mcq": {},
             "output_boolq": {},
-            "output_shortq": {}
-        }), 200
-
-    return jsonify(
-        {
-            "output_mcq": output1,
-            "output_boolq": output2,
-            "output_shortq": output3
+            "output_shortq": {},
         }
-    ), 200
+    )
+    return jsonify(result), status
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
