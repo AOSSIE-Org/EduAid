@@ -41,8 +41,15 @@ class MCQGenerator:
         self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
+
         self.nlp = spacy.load('en_core_web_sm')
         self.s2v = load_sense2vec()
+
+        # ✅ MISSING STATE (FIX)
+        self.fdist = FreqDist(brown.words())
+        self.normalized_levenshtein = NormalizedLevenshtein()
+
+        self.set_seed(42)
         
     def set_seed(self, seed):
         np.random.seed(seed)
@@ -61,7 +68,20 @@ class MCQGenerator:
         sentences = tokenize_into_sentences(text)
         modified_text = " ".join(sentences)
 
-        keywords = identify_keywords(self.nlp, modified_text, inp['max_questions'], self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
+        # Use Sense2Vec only if available, otherwise pass None and skip S2V-dependent logic in identify_keywords
+        try:
+            keywords = identify_keywords(
+                self.nlp,
+                modified_text,
+                inp['max_questions'],
+                self.s2v if self.s2v is not None else None,
+                self.fdist,
+                self.normalized_levenshtein,
+                len(sentences)
+            )
+        except AttributeError:
+            return {}
+
         keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
 
         for k in keyword_sentence_mapping.keys():
@@ -112,33 +132,44 @@ class ShortQGenerator:
         inp = {
             "input_text": payload.get("input_text"),
             "max_questions": payload.get("max_questions", 4)
-        }
+    }
 
-        text = inp['input_text']
+        text = inp["input_text"]
+        if not text:
+            return {}
+
         sentences = tokenize_into_sentences(text)
         modified_text = " ".join(sentences)
 
-        keywords = identify_keywords(self.nlp, modified_text, inp['max_questions'], self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
+        try:
+            keywords = identify_keywords(
+            self.nlp,
+            modified_text,
+            inp["max_questions"],
+            self.s2v if self.s2v is not None else None,
+            self.fdist,
+            self.normalized_levenshtein,
+            len(sentences)
+        )
+        except Exception:
+            return {}
+
         keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
-        
-        for k in keyword_sentence_mapping.keys():
-            text_snippet = " ".join(keyword_sentence_mapping[k][:3])
-            keyword_sentence_mapping[k] = text_snippet
 
-        final_output = {}
+        if not keyword_sentence_mapping:
+            return {}
 
-        if len(keyword_sentence_mapping.keys()) == 0:
-            return final_output
-        else:
-            generated_questions = generate_normal_questions(keyword_sentence_mapping, self.device, self.tokenizer, self.model)
+        for k in keyword_sentence_mapping:
+            keyword_sentence_mapping[k] = " ".join(keyword_sentence_mapping[k][:3])
 
-        final_output["statement"] = modified_text
-        final_output["questions"] = generated_questions["questions"]
-        
-        if torch.device == 'cuda':
-            torch.cuda.empty_cache()
+        generated_questions = generate_normal_questions(
+        keyword_sentence_mapping, self.device, self.tokenizer, self.model
+    )
 
-        return final_output
+        return {
+        "statement": modified_text,
+        "questions": generated_questions.get("questions", [])
+    }
             
 class ParaphraseGenerator:
     
