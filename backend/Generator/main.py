@@ -23,6 +23,17 @@ import os
 import fitz 
 import mammoth
 
+def load_sense2vec(path: str = "s2v_old"):
+    if os.path.exists(path):
+        try:
+            return Sense2Vec().from_disk(path)
+        except Exception as e:
+            print(f"[ERROR] Failed to load Sense2Vec from '{path}': {e}")
+            return None
+    else:
+        print(f"[WARN] Sense2Vec model not found at '{path}'. Running without it.")
+        return None
+
 class MCQGenerator:
     
     def __init__(self):
@@ -31,10 +42,7 @@ class MCQGenerator:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
-        self.s2v = Sense2Vec().from_disk('s2v_old')
-        self.fdist = FreqDist(brown.words())
-        self.normalized_levenshtein = NormalizedLevenshtein()
-        self.set_seed(42)
+        self.s2v = load_sense2vec()
         
     def set_seed(self, seed):
         np.random.seed(seed)
@@ -89,7 +97,7 @@ class ShortQGenerator:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
-        self.s2v = Sense2Vec().from_disk('s2v_old')
+        self.s2v = load_sense2vec()
         self.fdist = FreqDist(brown.words())
         self.normalized_levenshtein = NormalizedLevenshtein()
         self.set_seed(42)

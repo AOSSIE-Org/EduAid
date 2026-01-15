@@ -38,7 +38,16 @@ answer = main.AnswerPredictor()
 BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+docs_service = None
+
+try:
+    if os.path.exists(SERVICE_ACCOUNT_FILE):
+        docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+    else:
+        print("[WARN] Google Docs service account file not found. Docs features disabled.")
+except Exception as e:
+    print(f"[WARN] Failed to initialize Google Docs service: {e}")
+    docs_service = None
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
@@ -222,14 +231,21 @@ def get_boolean_answer():
 
 @app.route('/get_content', methods=['POST'])
 def get_content():
+    if docs_service is None:
+        return jsonify({
+            "error": "Google Docs integration is not configured on this server"
+        }), 503
+
     try:
         data = request.get_json()
         document_url = data.get('document_url')
+
         if not document_url:
             return jsonify({'error': 'Document URL is required'}), 400
 
         text = docs_service.get_document_content(document_url)
         return jsonify(text)
+
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
     except Exception as e:

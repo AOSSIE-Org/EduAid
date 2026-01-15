@@ -116,3 +116,48 @@ if __name__ == '__main__':
     test_root()
     test_get_answer()
     test_get_boolean_answer()
+
+def test_missing_input_text():
+    endpoint = '/get_mcq'
+    data = {
+        'max_questions': 5
+    }
+    response = make_post_request(endpoint, data)
+    assert 'error' in response
+
+
+def test_empty_input_text():
+    endpoint = '/get_mcq'
+    data = {
+        'input_text': '   ',
+        'max_questions': 5
+    }
+    response = make_post_request(endpoint, data)
+    assert 'error' in response
+
+
+def test_invalid_max_questions_type():
+    endpoint = '/get_mcq'
+    data = {
+        'input_text': input_text,
+        'max_questions': 'five'
+    }
+    response = make_post_request(endpoint, data)
+    assert 'error' in response
+
+
+def test_zero_max_questions():
+    endpoint = '/get_mcq'
+    data = {
+        'input_text': input_text,
+        'max_questions': 0
+    }
+    response = make_post_request(endpoint, data)
+    assert 'error' in response
+
+
+def test_missing_json_body():
+    url = f'{BASE_URL}/get_mcq'
+    headers = {'Content-Type': 'application/json'}
+    response = requests.post(url, headers=headers)
+    assert response.status_code == 400
