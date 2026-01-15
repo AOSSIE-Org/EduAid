@@ -66,11 +66,21 @@ def validate_input_text_payload(data):
     if not isinstance(input_text, str) or not input_text.strip():
         return "'input_text' must be a non-empty string"
 
+    max_questions = data.get("max_questions", 4)
+
+    if not isinstance(max_questions, int):
+        return "'max_questions' must be an integer"
+
+    if max_questions <= 0:
+        return "'max_questions' must be greater than 0"
+
     return None
 
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Request body must be valid JSON"}), 403
 
     error = validate_input_text_payload(data)
     if error:
@@ -82,12 +92,14 @@ def get_mcq():
 
     input_text = process_input_text(input_text, use_mediawiki)
 
-    output = MCQGen.generate_mcq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-
-    questions = output["questions"]
-    return jsonify({"output": questions})
+    try:
+        output = MCQGen.generate_mcq(
+            {"input_text": input_text, "max_questions": max_questions}
+        )
+        questions = output.get("questions", [])
+        return jsonify({"output": questions})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/get_boolq", methods=["POST"])
