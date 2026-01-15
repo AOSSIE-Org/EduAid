@@ -76,6 +76,20 @@ def validate_input_text_payload(data):
 
     return None
 
+# New helper for /get_problems
+def validate_get_problems_payload(data):
+    error = validate_input_text_payload(data)
+    if error:
+        return error
+
+    for key in ("max_questions_mcq", "max_questions_boolq", "max_questions_shortq"):
+        if key in data:
+            if not isinstance(data[key], int):
+                return f"'{key}' must be an integer"
+            if data[key] <= 0:
+                return f"'{key}' must be greater than 0"
+    return None
+
 def safe_generate(callable_fn):
     try:
         return callable_fn()
@@ -181,7 +195,7 @@ def get_problems():
     if data is None:
         return jsonify({"error": "Request body must be valid JSON"}), 400
 
-    error = validate_input_text_payload(data)
+    error = validate_get_problems_payload(data)
     if error:
         return jsonify({"error": error}), 400
 
@@ -203,7 +217,7 @@ def get_problems():
         output_shortq = ShortQGen.generate_shortq(
             {"input_text": input_text, "max_questions": max_questions_shortq}
         ) or {}
-    except Exception as e:
+    except (ValueError, KeyError, TypeError) as e:
         return jsonify({"error": str(e)}), 500
 
     if not output_mcq and not output_boolq and not output_shortq:
