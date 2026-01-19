@@ -19,7 +19,7 @@ const Question_Type = () => {
   return (
     <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient p-6">
-        <a href="/">
+        <Link href="/">
           <div className="flex items-end gap-4">
             <img src="aossie_transparent.png" alt="logo" className="w-24 my-4 block" />
             <div className="text-5xl mb-5 font-extrabold">
@@ -31,7 +31,7 @@ const Question_Type = () => {
               </span>
             </div>
           </div>
-        </a>
+        </Link>
         <div className="text-4xl  text-white text-center font-extrabold">
           What’s on your Mind?
         </div>
