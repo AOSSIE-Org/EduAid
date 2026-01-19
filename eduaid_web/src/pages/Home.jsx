@@ -81,21 +81,23 @@ const Home = () => {
               </div>
             ))}
           </div>
-
-          {/* Buttons */}
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-10">
-            <Link to="/question-type" className="w-full sm:w-auto">
-              <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
-                Let’s get Started
-                <img src={arrow} width={24} height={24} alt="arrow" />
-              </button>
-            </Link>
-            <Link to="/history" className="w-full sm:w-auto">
-              <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
-                Your previous Work!
-                <img src={arrow} width={24} height={24} alt="arrow" />
-              </button>
-            </Link>
+          <div className="flex justify-center gap-6">
+            <div className="mt-8 rounded-2xl">
+              <a href="question-type">
+                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mt-6 border-2px border-gradient hover-effect hover:bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:rounded-none transition-all ease-in-out duration-500">
+                  Let’s get Started{" "}
+                  <img src={arrow} width={28} height={24} alt="" />
+                </button>
+              </a>
+            </div>
+            <div className="mt-8 rounded-2xl">
+              <a href="history">
+                <button className="items-center text-lg flex justify-center gap-4 text-white px-6 py-3 mx-auto mt-6 border-gradient hover-effect hover:bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:rounded-none transition-all ease-in-out duration-500 rounded-none">
+                  Your previous Work!
+                  <img src={arrow} width={28} height={24} alt="" />
+                </button>
+              </a>
+            </div>
           </div>
 
           {/* GitHub Stars */}
