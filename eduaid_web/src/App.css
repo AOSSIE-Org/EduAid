@@ -28,6 +28,20 @@
   color: #61dafb;
 }
 
+.word-count {
+  margin-top: 8px;
+  text-align: right;
+  position: absolute;
+  right: 16px;
+  font-size: 13px;
+  color: #e5e7eb;
+  opacity: 0.85;
+  bottom: 8px;
+  pointer-events: none; 
+}
+
+
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);

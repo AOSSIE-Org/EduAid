@@ -8,6 +8,8 @@ import Switch from "react-switch";
 import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 
+
+
 const Text_Input = () => {
   const [text, setText] = useState("");
   const [difficulty, setDifficulty] = useState("Easy Difficulty");
@@ -17,6 +19,17 @@ const Text_Input = () => {
   const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
+
+  const handleChange = (e) => {
+  setText(e.target.value);
+};
+
+const wordCount = text
+  .trim()
+  .split(/\s+/)
+  .filter(word => word.length > 0).length;
+
+
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
@@ -165,18 +178,34 @@ const Text_Input = () => {
         </div>
 
         {/* Textarea */}
-        <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
-            <FaClipboard className="h-[24px] w-[24px]" />
-          </button>
+      <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
+
+  {/* ICON */}
+  <button className="absolute top-6 left-6 text-white opacity-80 focus:outline-none translate-y-[1.5px]">
+    <FaClipboard className="h-[20px] w-[20px]" />
+  </button>
           <textarea
-            className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
+            className="absolute inset-0 bg-transparent
+               pl-14 pr-6 pt-6 pb-6
+               text-lg sm:text-xl
+               rounded-2xl
+               outline-none resize-none
+               overflow-y-auto
+               text-white caret-white
+               leading-[1.35]
+               translate-y-[-1.5px]"
+
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={handleChange}
           />
           <style>{`textarea::-webkit-scrollbar { display: none; }`}</style>
+           <div className="word-count">
+  Word Count: <strong>{wordCount}</strong>
+</div>
         </div>
+
+       
 
         {/* Separator */}
         <div className="text-white text-center my-4 text-lg">or</div>
