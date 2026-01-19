@@ -97,6 +97,60 @@ In addition to the browser extension, EduAid also offers a web app that provides
 3. Start the Web App:
 `npm run start`
 
+### 5. Desktop App Setup
+
+EduAid now includes a cross-platform desktop application built with Electron, providing a native desktop experience for all EduAid features.
+
+#### Prerequisites
+- Node.js (version 16 or higher)
+- Backend server running (follow steps 2-3 above)
+- Web app built (follow step 4 above)
+
+#### Development Mode
+
+1. **Navigate to Desktop App Directory**:
+   ```bash
+   cd eduaid_desktop
+   ```
+
+2. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Start Development Mode**:
+   ```bash
+   npm run dev
+   ```
+   This will start both the web app development server and launch the Electron desktop app.
+
+#### Production Build
+
+1. **Build Web App** (if not already done):
+   ```bash
+   cd eduaid_web
+   npm run build
+   ```
+
+2. **Build Desktop App**:
+   ```bash
+   cd eduaid_desktop
+   npm run build:electron
+   ```
+
+3. **Build for All Platforms**:
+   ```bash
+   npm run build:all
+   ```
+
+The built applications will be available in the `eduaid_desktop/dist/` directory with installers for Windows (.exe), macOS (.dmg), and Linux (.AppImage).
+
+#### Desktop App Features
+- **Native Desktop Experience**: Full desktop integration with native menus and keyboard shortcuts
+- **Cross-Platform**: Works on Windows, macOS, and Linux
+- **Security**: Secure communication with context isolation
+- **Auto-Updates**: Built-in support for automatic updates
+
 ## Features
 
 1. **Dynamic Question Generation**:
@@ -133,5 +187,3 @@ This is the second year of the project. While some may have their own ideas on h
 1. First get to know the organization and the project by visiting the [Official Website](https://github.com/AOSSIE-Org)
 
 2. Visit the [Discord Channel](https://discord.com/channels/1022871757289422898/1073262393670504589) for interacting with the community!
-
-

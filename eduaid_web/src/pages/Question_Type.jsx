@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../index.css";
-import logo from "../assets/aossie_logo.png";
+import logo_trans from "../assets/aossie_logo_transparent.png"
+import { Link } from "react-router-dom";
 
 const Question_Type = () => {
   const [selectedOption, setSelectedOption] = useState(null);
@@ -37,83 +38,59 @@ const Question_Type = () => {
         <div className="mt-2 text-white text-xl text-center font-medium">
           Choose one
         </div>
-        <div className="flex flex-col items-center mt-8">
-          <div
-            onClick={() => handleOptionClick("get_shortq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
-          >
+
+        {/* Options */}
+        <div className="flex flex-col items-center mt-8 gap-4 w-full">
+          {[
+            { id: "get_shortq", label: "Short-Answer Type Questions" },
+            { id: "get_mcq", label: "Multiple Choice Questions" },
+            { id: "get_boolq", label: "True/False Questions" },
+            { id: "get_problems", label: "All Questions" },
+          ].map((option) => (
             <div
-              className={`w-10 h-10 rounded-full ${
-                selectedOption === "get_shortq"
-                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                  : "bg-[#999C9D]"
-              } `}
-            ></div>
-            <div className="text-white text-2xl font-medium">
-              Short-Answer Type Questions
+              key={option.id}
+              onClick={() => handleOptionClick(option.id)}
+              className={`w-full max-w-xl flex items-center gap-6 px-6 py-5 rounded-xl cursor-pointer bg-[#202838] bg-opacity-50 hover:bg-opacity-70 transition-all duration-200 ${
+                selectedOption === option.id ? "ring-2 ring-[#00CBE7]" : ""
+              }`}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleOptionClick(option.id);
+              }}
+            >
+              <div
+                className={`w-10 h-10 rounded-full flex-shrink-0 ${
+                  selectedOption === option.id
+                    ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
+                    : "bg-[#999C9D]"
+                }`}
+              ></div>
+              <div className="text-white text-xl sm:text-2xl font-medium">
+                {option.label}
+              </div>
             </div>
-          </div>
-          <div
-            onClick={() => handleOptionClick("get_mcq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
-          >
-            <div
-              className={`w-10 h-10 rounded-full ${
-                selectedOption === "get_mcq"
-                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                  : "bg-[#999C9D]"
-              } `}
-            ></div>
-            <div className="text-white text-2xl font-medium">
-              Multiple Choice Questions
-            </div>
-          </div>
-          <div
-            onClick={() => handleOptionClick("get_boolq")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
-          >
-            <div
-              className={`w-10 h-10 rounded-full ${
-                selectedOption === "get_boolq"
-                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                  : "bg-[#999C9D]"
-              } `}
-            ></div>
-            <div className="text-white text-2xl font-medium">
-              True/False Questions
-            </div>
-          </div>
-          <div
-            onClick={() => handleOptionClick("get_problems")}
-            className="flex my-3 items-center w-full max-w-lg cursor-pointer rounded-xl gap-6 px-6 py-6 bg-opacity-50 bg-[#202838]"
-          >
-            <div
-              className={`w-10 h-10 rounded-full ${
-                selectedOption === "get_problems"
-                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                  : "bg-[#999C9D]"
-              } `}
-            ></div>
-            <div className="text-white text-2xl font-medium">All Questions</div>
-          </div>
+          ))}
         </div>
-        <div className="mx-auto text-center mt-10">
+
+        {/* Action Button */}
+        <div className="text-center mt-10">
           {selectedOption ? (
-            <a href="input">
+            <Link to="/input">
               <button
                 onClick={handleSaveToLocalStorage}
-                className="rounded-2xl text-2xl text-white w-fit px-8 font-bold py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7]"
+                className="rounded-2xl text-xl sm:text-2xl text-white px-6 sm:px-8 font-bold py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:brightness-110 transition-all"
               >
-                Fire Up{"  "}🚀
+                Fire Up 🚀
               </button>
-            </a>
+            </Link>
           ) : (
             <button
               onClick={() => alert("Please select a question type.")}
-              className="rounded-2xl text-2xl text-white w-fit px-8 font-bold py-3 bg-gray-500 cursor-not-allowed"
+              className="rounded-2xl text-xl sm:text-2xl text-white px-6 sm:px-8 font-bold py-3 bg-gray-500 cursor-not-allowed"
               disabled
             >
-              Fire Up{"  "}🚀
+              Fire Up 🚀
             </button>
           )}
         </div>
