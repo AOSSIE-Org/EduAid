@@ -374,27 +374,34 @@ class FileProcessor:
         audio = AudioSegment.from_wav(wav_path)
         
         chunk_length_ms = 60 * 1000
-        chuks = [
+        chunks = [
             audio[i: i + chunk_length_ms] for i in range(0, len(audio), chunk_length_ms)
         ]
         
         full_text = []
+        chunk_files = []
         
-        for i, chunk in enumerate(chuks):
-            chunk_filename = f"chunk{i}.wav"
-            chunk.export(chunk_filename, format="wav")
-            
-            with sr.AudioFile(chunk_filename) as source:
-                audio_data = r.record(source)
-                try:
-                    text = r.recognize_google(audio_data)
-                    full_text.append(text)
-                except sr.UnknownValueError:
-                    full_text.append("[Unintelligible]")
-                except sr.RequestError as e:
-                    raise RuntimeError(f"Could not request results; {e}")
+        try:
+            for i, chunk in enumerate(chunks):
+                chunk_filename = os.path.join(self.upload_folder, f"chunk_{i}.wav")
+                chunk_files.append(chunk_filename)
+                chunk.export(chunk_filename, format='wav')
                 
-            os.remove(chunk_filename)
+                with sr.AudioFile(chunk_filename) as source:
+                    audio_data = r.record(source)
+                    try:
+                        text = r.recognize_google(audio_data)
+                        full_text.append(text)
+                    except sr.UnknownValueError:
+                        full_text.append("[Unintelligible]")
+                    except sr.RequestError as e:
+                        raise RuntimeError(f"Could not request results; {e}")
+        finally:
+            for chunk_file in chunk_files:
+                if os.path.exists(chunk_file):
+                    os.remove(chunk_file)
+            if wav_path != file_path and os.path.exists(wav_path):
+                os.remove(wav_path)
             
         return "\n".join(full_text)
         
