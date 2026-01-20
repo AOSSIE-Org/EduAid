@@ -24,6 +24,7 @@ import fitz
 import mammoth
 import speech_recognition as sr
 from pydub import AudioSegment
+import uuid
 
 class MCQGenerator:
     
@@ -365,9 +366,10 @@ class FileProcessor:
         
     def extract_text_from_audio(self, file_path):
         wav_path = file_path
+        request_id = uuid.uuid4().hex
         if file_path.endswith('.mp3'):
             audio = AudioSegment.from_file(file_path, format='mp3')
-            wav_path = file_path.replace('.mp3', '.wav')
+            wav_path = os.path.join(self.upload_folder, f"{request_id}.wav")
             audio.export(wav_path, format='wav')
             
         r = sr.Recognizer()
@@ -383,7 +385,8 @@ class FileProcessor:
         
         try:
             for i, chunk in enumerate(chunks):
-                chunk_filename = os.path.join(self.upload_folder, f"chunk_{i}.wav")
+                chunk_filename = os.path.join(self.upload_folder, f"{request_id}_chunk_{i}.wav")
+                
                 chunk_files.append(chunk_filename)
                 chunk.export(chunk_filename, format='wav')
                 
