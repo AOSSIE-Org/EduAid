@@ -22,6 +22,8 @@ import re
 import os
 import fitz 
 import mammoth
+import speech_recognition as sr
+from pydub import AudioSegment
 
 class MCQGenerator:
     
@@ -360,6 +362,42 @@ class FileProcessor:
         with open(file_path, "rb") as docx_file:
             result = mammoth.extract_raw_text(docx_file)
             return result.value
+        
+    def extract_text_from_audio(self, file_path):
+        wav_path = file_path
+        if file_path.endswith('.mp3'):
+            audio = AudioSegment.from_file(file_path, format='mp3')
+            wav_path = file_path.replace('.mp3', '.wav')
+            audio.export(wav_path, format='wav')
+            
+        r = sr.Recognizer()
+        audio = AudioSegment.from_wav(wav_path)
+        
+        chunk_length_ms = 60 * 1000
+        chuks = [
+            audio[i: i + chunk_length_ms] for i in range(0, len(audio), chunk_length_ms)
+        ]
+        
+        full_text = []
+        
+        for i, chunk in enumerate(chuks):
+            chunk_filename = f"chunk{i}.wav"
+            chunk.export(chunk_filename, format="wav")
+            
+            with sr.AudioFile(chunk_filename) as source:
+                audio_data = r.record(source)
+                try:
+                    text = r.recognize_google(audio_data)
+                    full_text.append(text)
+                except sr.UnknownValueError:
+                    full_text.append("[Unintelligible]")
+                except sr.RequestError as e:
+                    raise RuntimeError(f"Could not request results; {e}")
+                
+            os.remove(chunk_filename)
+            
+        return "\n".join(full_text)
+        
 
     def process_file(self, file):
         file_path = os.path.join(self.upload_folder, file.filename)
@@ -373,6 +411,10 @@ class FileProcessor:
             content = self.extract_text_from_pdf(file_path)
         elif file.filename.endswith('.docx'):
             content = self.extract_text_from_docx(file_path)
+        elif file.filename.endswith('.wav') or file.filename.endswith('.mp3'):
+            content = self.extract_text_from_audio(file_path)
+        else:
+            raise ValueError('Unsupported file format')
 
         os.remove(file_path)
         return content

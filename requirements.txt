@@ -32,3 +32,5 @@ mammoth
 mediawikiapi
 PyMuPDF
 textblob
+SpeechRecognition
+pydub
