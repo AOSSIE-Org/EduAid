@@ -31,7 +31,31 @@ class MCQGenerator:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
-        self.s2v = Sense2Vec().from_disk('s2v_old')
+        # Sense2Vec model is optional (repo may not ship the large model directory).
+        self.s2v = None
+        try:
+            generator_dir = os.path.dirname(os.path.abspath(__file__))
+            backend_dir = os.path.abspath(os.path.join(generator_dir, os.pardir))
+            candidates = [
+                os.path.join(generator_dir, "s2v_old"),
+                os.path.join(backend_dir, "s2v_old"),
+                "s2v_old",  # fallback to CWD for backwards compatibility
+            ]
+            for path in candidates:
+                if os.path.isdir(path):
+                    self.s2v = Sense2Vec().from_disk(path)
+                    break
+            if self.s2v is None:
+                print(
+                    "Warning: Sense2Vec model directory `s2v_old` not found. "
+                    "MCQ distractor generation quality may be reduced."
+                )
+        except Exception as e:
+            self.s2v = None
+            print(
+                "Warning: Failed to load Sense2Vec model. "
+                f"MCQ distractor generation quality may be reduced. Details: {e}"
+            )
         self.fdist = FreqDist(brown.words())
         self.normalized_levenshtein = NormalizedLevenshtein()
         self.set_seed(42)
@@ -89,7 +113,31 @@ class ShortQGenerator:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
-        self.s2v = Sense2Vec().from_disk('s2v_old')
+        # Sense2Vec model is optional (repo may not ship the large model directory).
+        self.s2v = None
+        try:
+            generator_dir = os.path.dirname(os.path.abspath(__file__))
+            backend_dir = os.path.abspath(os.path.join(generator_dir, os.pardir))
+            candidates = [
+                os.path.join(generator_dir, "s2v_old"),
+                os.path.join(backend_dir, "s2v_old"),
+                "s2v_old",  # fallback to CWD for backwards compatibility
+            ]
+            for path in candidates:
+                if os.path.isdir(path):
+                    self.s2v = Sense2Vec().from_disk(path)
+                    break
+            if self.s2v is None:
+                print(
+                    "Warning: Sense2Vec model directory `s2v_old` not found. "
+                    "Keyword filtering/distractors may be reduced."
+                )
+        except Exception as e:
+            self.s2v = None
+            print(
+                "Warning: Failed to load Sense2Vec model. "
+                f"Keyword filtering/distractors may be reduced. Details: {e}"
+            )
         self.fdist = FreqDist(brown.words())
         self.normalized_levenshtein = NormalizedLevenshtein()
         self.set_seed(42)

@@ -165,12 +165,16 @@ const Text_Input = () => {
         </div>
 
         {/* Textarea */}
-        <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
+        <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-0 min-h-[160px] sm:min-h-[200px] mt-4">
+          <button
+            type="button"
+            aria-label="Clipboard"
+            className="absolute left-4 top-4 z-10 text-white focus:outline-none"
+          >
             <FaClipboard className="h-[24px] w-[24px]" />
           </button>
           <textarea
-            className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
+            className="w-full min-h-[160px] sm:min-h-[200px] bg-transparent text-lg sm:text-xl rounded-2xl outline-none resize-none overflow-y-auto text-white caret-white pl-14 pr-4 pt-4 pb-4"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
             onChange={(e) => setText(e.target.value)}
