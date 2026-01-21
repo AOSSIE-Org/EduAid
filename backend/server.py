@@ -5,7 +5,8 @@ import nltk
 import subprocess
 import os
 import glob
-
+import requests
+from bs4 import BeautifulSoup
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
@@ -362,6 +363,38 @@ def generate_gform():
         "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
     )
     return edit_url
+
+@app.route("/extract_content",methods=["POST"])
+def extract_content_from_html(url):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    body_content = soup.find('body').get_text(separator="\n", strip=True)
+    return body_content
+
+def extract_content_from_json(url):
+    response = requests.get(url)
+    data = response.json()
+    content = ""
+    
+    if 'text' in data:
+        content = data['text']
+    elif 'content' in data:
+        content = data['content']
+    else:
+        content = json.dumps(data, indent=2) 
+    return content
+
+def extract_content(url):
+    try:
+        response = requests.get(url)
+        if 'html' in response.headers.get('Content-Type', ''):
+            return extract_content_from_html(url)
+        elif 'json' in response.headers.get('Content-Type', ''):
+            return extract_content_from_json(url)
+        else:
+            return "Unsupported content type. The URL doesn't return HTML or JSON."  
+    except requests.exceptions.RequestException as e:
+        return f"Error: {e}"
 
 
 @app.route("/get_shortq_hard", methods=["POST"])
