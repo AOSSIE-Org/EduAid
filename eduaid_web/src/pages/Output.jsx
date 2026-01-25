@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import "../index.css";
 import logoPNG from "../assets/aossie_logo_transparent.png";
 import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
+import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
@@ -10,6 +11,10 @@ const Output = () => {
     localStorage.getItem("selectedQuestionType")
   );
   const [pdfMode, setPdfMode] = useState("questions");
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [editedQuestion, setEditedQuestion] = useState("");
+  const [editedAnswer, setEditedAnswer] = useState("");
+  const [editedOptions, setEditedOptions] = useState([]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -25,12 +30,65 @@ const Output = () => {
 }, []);
 
   function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
     }
-    return array;
+    return newArray;
   }
+
+  const shuffledOptionsMap = useMemo(() => {
+    return qaPairs.map((qaPair) => {
+      const combinedOptions = qaPair.options
+        ? [...qaPair.options, qaPair.answer]
+        : [qaPair.answer];
+      return shuffleArray(combinedOptions);
+    });
+  }, [qaPairs]);
+
+  const handleShuffleQuestions = () => {
+    if (editingIndex !== null) {
+      handleCancelEdit();
+    }
+    const shuffled = shuffleArray(qaPairs);
+    setQaPairs(shuffled);
+  };
+
+  const handleEditQuestion = (index) => {
+    setEditingIndex(index);
+    setEditedQuestion(qaPairs[index].question);
+    setEditedAnswer(qaPairs[index].answer || "");
+    setEditedOptions(qaPairs[index].options || []);
+  };
+
+  const handleSaveQuestion = (index) => {
+    const updatedQaPairs = [...qaPairs];
+    updatedQaPairs[index] = {
+      ...updatedQaPairs[index],
+      question: editedQuestion,
+      answer: editedAnswer,
+      options: editedOptions,
+    };
+    setQaPairs(updatedQaPairs);
+    setEditingIndex(null);
+    setEditedQuestion("");
+    setEditedAnswer("");
+    setEditedOptions([]);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingIndex(null);
+    setEditedQuestion("");
+    setEditedAnswer("");
+    setEditedOptions([]);
+  };
+
+  const handleOptionChange = (optionIndex, value) => {
+    const updatedOptions = [...editedOptions];
+    updatedOptions[optionIndex] = value;
+    setEditedOptions(updatedOptions);
+  };
 
   useEffect(() => {
     const qaPairsFromStorage =
@@ -170,51 +228,144 @@ const Output = () => {
             </div>
           </Link>
 
-          {/* Title */}
-          <div className="font-bold text-lg sm:text-xl text-white mt-3 mx-4 sm:mx-6">
-            Generated Questions
+          {/* Title and Shuffle Button */}
+          <div className="flex justify-between items-center mt-3 mx-4 sm:mx-6">
+            <div className="font-bold text-lg sm:text-xl text-white">
+              Generated Questions
+            </div>
+            <button
+              className={`${
+                editingIndex !== null
+                  ? 'bg-gray-500 cursor-not-allowed'
+                  : 'bg-[#7600F2] hover:bg-[#5a00b8]'
+              } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
+              onClick={handleShuffleQuestions}
+              disabled={editingIndex !== null}
+            >
+              <FiShuffle className="text-sm sm:text-base" />
+              Shuffle
+            </button>
           </div>
 
           {/* Questions Container - Responsive padding and margins */}
           <div className="flex-1 overflow-y-auto scrollbar-hide px-2 sm:px-4">
             {qaPairs &&
               qaPairs.map((qaPair, index) => {
-                const combinedOptions = qaPair.options
-                  ? [...qaPair.options, qaPair.answer]
-                  : [qaPair.answer];
-                const shuffledOptions = shuffleArray(combinedOptions);
+                const shuffledOptions = shuffledOptionsMap[index];
+                const isEditing = editingIndex === index;
+                
                 return (
                   <div
                     key={index}
                     className="px-3 sm:px-4 bg-[#d9d9d90d] border-black border my-2 sm:my-3 mx-1 sm:mx-2 rounded-xl py-3 sm:py-4"
                   >
-                    <div className="text-[#E4E4E4] text-xs sm:text-sm">
-                      Question {index + 1}
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="text-[#E4E4E4] text-xs sm:text-sm">
+                        Question {index + 1}
+                      </div>
+                      {!isEditing ? (
+                        <button
+                          className="bg-[#518E8E] hover:bg-[#3a6b6b] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors shadow-sm flex items-center gap-2"
+                          onClick={() => handleEditQuestion(index)}
+                        >
+                          <FiEdit2 className="text-sm sm:text-base" />
+                          Edit
+                        </button>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button
+                            className="bg-green-700 hover:bg-green-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors shadow-sm flex items-center gap-2"
+                            onClick={() => handleSaveQuestion(index)}
+                          >
+                            <FiCheck className="text-sm sm:text-base" />
+                            Save
+                          </button>
+                          <button
+                            className="bg-gray-600 hover:bg-gray-700 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors shadow-sm flex items-center gap-2"
+                            onClick={handleCancelEdit}
+                          >
+                            <FiX className="text-sm sm:text-base" />
+                            Cancel
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <div className="text-[#FFF4F4] text-sm sm:text-base my-1 sm:my-2 leading-relaxed">
-                      {qaPair.question}
-                    </div>
-                    {qaPair.question_type !== "Boolean" && (
+
+                    {!isEditing ? (
                       <>
-                        <div className="text-[#E4E4E4] text-xs sm:text-sm mt-3 sm:mt-4">
-                          Answer
+                        <div className="text-[#FFF4F4] text-sm sm:text-base my-1 sm:my-2 leading-relaxed">
+                          {qaPair.question}
                         </div>
-                        <div className="text-[#FFF4F4] text-sm sm:text-base leading-relaxed">
-                          {qaPair.answer}
-                        </div>
-                        {qaPair.options && qaPair.options.length > 0 && (
-                          <div className="text-[#FFF4F4] text-sm sm:text-base mt-2 sm:mt-3">
-                            {shuffledOptions.map((option, idx) => (
-                              <div key={idx} className="mb-1 sm:mb-2">
-                                <span className="text-[#E4E4E4] text-xs sm:text-sm">
-                                  Option {idx + 1}:
-                                </span>{" "}
-                                <span className="text-[#FFF4F4] text-sm sm:text-base">
-                                  {option}
-                                </span>
+                        {qaPair.question_type !== "Boolean" && (
+                          <>
+                            <div className="text-[#E4E4E4] text-xs sm:text-sm mt-3 sm:mt-4">
+                              Answer
+                            </div>
+                            <div className="text-[#FFF4F4] text-sm sm:text-base leading-relaxed">
+                              {qaPair.answer}
+                            </div>
+                            {qaPair.options && qaPair.options.length > 0 && (
+                              <div className="text-[#FFF4F4] text-sm sm:text-base mt-2 sm:mt-3">
+                                {shuffledOptions.map((option, idx) => (
+                                  <div key={idx} className="mb-1 sm:mb-2">
+                                    <span className="text-[#E4E4E4] text-xs sm:text-sm">
+                                      Option {idx + 1}:
+                                    </span>{" "}
+                                    <span className="text-[#FFF4F4] text-sm sm:text-base">
+                                      {option}
+                                    </span>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
+                            )}
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-[#E4E4E4] text-xs sm:text-sm mb-1">
+                          Edit Question
+                        </div>
+                        <textarea
+                          className="w-full bg-[#1a1a2e] text-[#FFF4F4] text-sm sm:text-base p-2 rounded border border-gray-600 focus:border-[#7600F2] focus:outline-none resize-none"
+                          rows="3"
+                          value={editedQuestion}
+                          onChange={(e) => setEditedQuestion(e.target.value)}
+                        />
+                        
+                        {qaPair.question_type !== "Boolean" && (
+                          <>
+                            <div className="text-[#E4E4E4] text-xs sm:text-sm mt-3 mb-1">
+                              Edit Answer
+                            </div>
+                            <textarea
+                              className="w-full bg-[#1a1a2e] text-[#FFF4F4] text-sm sm:text-base p-2 rounded border border-gray-600 focus:border-[#7600F2] focus:outline-none resize-none"
+                              rows="2"
+                              value={editedAnswer}
+                              onChange={(e) => setEditedAnswer(e.target.value)}
+                            />
+                            
+                            {editedOptions && editedOptions.length > 0 && (
+                              <div className="mt-3">
+                                <div className="text-[#E4E4E4] text-xs sm:text-sm mb-2">
+                                  Edit Options
+                                </div>
+                                {editedOptions.map((option, optIdx) => (
+                                  <div key={optIdx} className="mb-2">
+                                    <div className="text-[#E4E4E4] text-xs mb-1">
+                                      Option {optIdx + 1}
+                                    </div>
+                                    <input
+                                      type="text"
+                                      className="w-full bg-[#1a1a2e] text-[#FFF4F4] text-sm sm:text-base p-2 rounded border border-gray-600 focus:border-[#7600F2] focus:outline-none"
+                                      value={option}
+                                      onChange={(e) => handleOptionChange(optIdx, e.target.value)}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
                         )}
                       </>
                     )}
