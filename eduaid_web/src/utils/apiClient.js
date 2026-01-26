@@ -1,4 +1,8 @@
 // API client that works both in web and Electron environments
+import { getMockResponse } from './mockApi';
+
+const USE_MOCK = process.env.REACT_APP_USE_MOCK_API === 'true';
+
 class ApiClient {
   constructor() {
     this.isElectron = typeof window !== 'undefined' && window.electronAPI;
@@ -8,6 +12,11 @@ class ApiClient {
   }
 
   async makeRequest(endpoint, options = {}) {
+      if (USE_MOCK) {
+    console.warn(`[MOCK API] ${endpoint}`);
+    return getMockResponse(endpoint);
+  }
+
     if (this.isElectron) {
       // Use Electron's IPC for API requests
       try {
