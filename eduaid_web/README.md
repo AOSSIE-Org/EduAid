@@ -2,6 +2,22 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Local Development (Frontend Only)
+
+The web app supports a mock API mode for local development.
+
+By default, the app can be started without running the backend
+or configuring Google APIs.
+
+Steps:
+- git clone repo
+- cd EduAid
+- cd eduaid-web
+- npm install
+- npm start
+
+To enable full functionality, disable mock mode and configure the backend.
+
 ## Available Scripts
 
 In the project directory, you can run:
