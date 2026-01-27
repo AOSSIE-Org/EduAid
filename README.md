@@ -34,6 +34,16 @@ You can choose to set up the backend manually or use an automated shell script.
      ```
    - This will activate the backend for the application.
 
+#### 🖥️ Windows Manual Setup
+
+If you are using Windows, follow these specific steps to avoid permission errors:
+
+1. **Create a Virtual Environment (Recommended):**
+   Open your terminal (Command Prompt or PowerShell) in the root directory and run:
+   ```bash
+   python -m venv venv
+   .\venv\Scripts\activate
+
 ### Option 2: Automated Setup with Shell Script
 
 1. **Run the Setup Script**:
