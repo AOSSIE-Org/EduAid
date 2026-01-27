@@ -166,7 +166,7 @@ const Text_Input = () => {
 
         {/* Textarea */}
         <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
+          <button className="absolute top-0 left-1 text-white focus:outline-none">
             <FaClipboard className="h-[24px] w-[24px]" />
           </button>
           <textarea
