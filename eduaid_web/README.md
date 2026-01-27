@@ -12,7 +12,9 @@ or configuring Google APIs.
 Steps:
 - git clone repo
 - cd EduAid
-- cd eduaid-web
+- cd eduaid_web
+- cp .env.example .env
+- echo "REACT_APP_USE_MOCK_API=true" >> .env
 - npm install
 - npm start
 
