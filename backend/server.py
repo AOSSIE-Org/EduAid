@@ -38,7 +38,16 @@ answer = main.AnswerPredictor()
 BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+docs_service = None
+
+try:
+    if os.path.exists(SERVICE_ACCOUNT_FILE):
+        docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+    else:
+        print("[WARN] Google Docs service account file not found. Docs features disabled.")
+except Exception as e:
+    print(f"[WARN] Failed to initialize Google Docs service: {e}")
+    docs_service = None
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
@@ -49,74 +58,184 @@ def process_input_text(input_text, use_mediawiki):
         input_text = mediawikiapi.summary(input_text,8)
     return input_text
 
+def validate_input_text_payload(data):
+    if data is None:
+        return "Invalid or missing JSON body"
+
+    input_text = data.get("input_text")
+    if not isinstance(input_text, str) or not input_text.strip():
+        return "'input_text' must be a non-empty string"
+
+    max_questions = data.get("max_questions", 4)
+
+    if not isinstance(max_questions, int):
+        return "'max_questions' must be an integer"
+
+    if max_questions <= 0:
+        return "'max_questions' must be greater than 0"
+
+    return None
+
+# New helper for /get_problems
+def validate_get_problems_payload(data):
+    error = validate_input_text_payload(data)
+    if error:
+        return error
+
+    for key in ("max_questions_mcq", "max_questions_boolq", "max_questions_shortq"):
+        if key in data:
+            if not isinstance(data[key], int):
+                return f"'{key}' must be an integer"
+            if data[key] <= 0:
+                return f"'{key}' must be greater than 0"
+    return None
+
+def safe_generate(callable_fn):
+    try:
+        return callable_fn()
+    except (ValueError, KeyError, TypeError) as e:
+        raise ValueError(str(e))
 
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Request body must be valid JSON"}), 400
+
+    error = validate_input_text_payload(data)
+    if error:
+        return jsonify({"error": error}), 400
+
+    input_text = data.get("input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+
     input_text = process_input_text(input_text, use_mediawiki)
-    output = MCQGen.generate_mcq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    questions = output["questions"]
-    return jsonify({"output": questions})
+
+    try:
+        questions = MCQGen.generate_mcq(
+            {"input_text": input_text, "max_questions": max_questions}
+        ).get("questions", [])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    if not questions:
+        return jsonify({
+            "error": "Failed to generate MCQ questions from the provided input"
+        }), 422
+
+    return jsonify({"output": questions}), 200
 
 
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Request body must be valid JSON"}), 400
+
+    error = validate_input_text_payload(data)
+    if error:
+        return jsonify({"error": error}), 400
+
+    input_text = data.get("input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+
     input_text = process_input_text(input_text, use_mediawiki)
-    output = BoolQGen.generate_boolq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    boolean_questions = output["Boolean_Questions"]
-    return jsonify({"output": boolean_questions})
+
+    try:
+        questions = BoolQGen.generate_boolq(
+            {"input_text": input_text, "max_questions": max_questions}
+        ).get("Boolean_Questions", [])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    if not questions:
+        return jsonify({
+            "error": "Failed to generate boolean questions from the provided input"
+        }), 422
+
+    return jsonify({"output": questions}), 200
 
 
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Request body must be valid JSON"}), 400
+
+    error = validate_input_text_payload(data)
+    if error:
+        return jsonify({"error": error}), 400
+
+    input_text = data.get("input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+
     input_text = process_input_text(input_text, use_mediawiki)
-    output = ShortQGen.generate_shortq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    questions = output["questions"]
-    return jsonify({"output": questions})
+
+    try:
+        questions = ShortQGen.generate_shortq(
+            {"input_text": input_text, "max_questions": max_questions}
+        ).get("questions", [])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    if not questions:
+        return jsonify({
+            "error": "Failed to generate short questions from the provided input"
+        }), 422
+
+    return jsonify({"output": questions}), 200
 
 
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Request body must be valid JSON"}), 400
+
+    error = validate_get_problems_payload(data)
+    if error:
+        return jsonify({"error": error}), 400
+
+    input_text = data.get("input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions_mcq = data.get("max_questions_mcq", 4)
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
+
     input_text = process_input_text(input_text, use_mediawiki)
-    output1 = MCQGen.generate_mcq(
-        {"input_text": input_text, "max_questions": max_questions_mcq}
-    )
-    output2 = BoolQGen.generate_boolq(
-        {"input_text": input_text, "max_questions": max_questions_boolq}
-    )
-    output3 = ShortQGen.generate_shortq(
-        {"input_text": input_text, "max_questions": max_questions_shortq}
-    )
-    return jsonify(
-        {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
-    )
+
+    try:
+        output_mcq = MCQGen.generate_mcq(
+            {"input_text": input_text, "max_questions": max_questions_mcq}
+        ) or {}
+        output_boolq = BoolQGen.generate_boolq(
+            {"input_text": input_text, "max_questions": max_questions_boolq}
+        ) or {}
+        output_shortq = ShortQGen.generate_shortq(
+            {"input_text": input_text, "max_questions": max_questions_shortq}
+        ) or {}
+    except (ValueError, KeyError, TypeError) as e:
+        return jsonify({"error": str(e)}), 500
+
+    if not output_mcq and not output_boolq and not output_shortq:
+        return jsonify({
+            "error": "Failed to generate any problems from the provided input"
+        }), 422
+
+    return jsonify({
+        "output_mcq": output_mcq,
+        "output_boolq": output_boolq,
+        "output_shortq": output_shortq,
+    }), 200
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Request body must be valid JSON"}), 400
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     input_options = data.get("input_options", [])
@@ -149,7 +268,9 @@ def get_mcq_answer():
 
 @app.route("/get_shortq_answer", methods=["POST"])
 def get_answer():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Request body must be valid JSON"}), 400
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     answers = []
@@ -162,7 +283,9 @@ def get_answer():
 
 @app.route("/get_boolean_answer", methods=["POST"])
 def get_boolean_answer():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Request body must be valid JSON"}), 400
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     output = []
@@ -181,14 +304,23 @@ def get_boolean_answer():
 
 @app.route('/get_content', methods=['POST'])
 def get_content():
+    if docs_service is None:
+        return jsonify({
+            "error": "Google Docs integration is not configured on this server"
+        }), 503
+
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True)
+        if data is None:
+            return jsonify({"error": "Request body must be valid JSON"}), 400
         document_url = data.get('document_url')
+
         if not document_url:
             return jsonify({'error': 'Document URL is required'}), 400
 
         text = docs_service.get_document_content(document_url)
         return jsonify(text)
+
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
     except Exception as e:
@@ -197,7 +329,9 @@ def get_content():
 
 @app.route("/generate_gform", methods=["POST"])
 def generate_gform():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Request body must be valid JSON"}), 400
     qa_pairs = data.get("qa_pairs", "")
     question_type = data.get("question_type", "")
     SCOPES = "https://www.googleapis.com/auth/forms.body"
@@ -366,7 +500,9 @@ def generate_gform():
 
 @app.route("/get_shortq_hard", methods=["POST"])
 def get_shortq_hard():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Request body must be valid JSON"}), 400
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
@@ -384,7 +520,9 @@ def get_shortq_hard():
 
 @app.route("/get_mcq_hard", methods=["POST"])
 def get_mcq_hard():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Request body must be valid JSON"}), 400
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
@@ -400,7 +538,9 @@ def get_mcq_hard():
 
 @app.route("/get_boolq_hard", methods=["POST"])
 def get_boolq_hard():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Request body must be valid JSON"}), 400
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
