@@ -2,23 +2,26 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Local Development (Frontend Only)
+## Local Development and API Mocking (Optional)
 
-The web app supports a mock API mode for local development.
+EduAid is designed to be developed and tested with the backend running to
+ensure strong end-to-end integration and code quality.
 
-By default, the app can be started without running the backend
-or configuring Google APIs.
+However, for frontend debugging, UI development, or testing edge cases,
+developers may locally mock API responses when required.
 
-Steps:
-- git clone repo
-- cd EduAid
-- cd eduaid_web
-- cp .env.example .env
-- echo "REACT_APP_USE_MOCK_API=true" >> .env
-- npm install
-- npm start
+### Recommended approaches
 
-To enable full functionality, disable mock mode and configure the backend.
+- Use browser-based request mocking tools such as Mock Service Worker (MSW)
+- Use browser devtools request overrides
+- Use lightweight local API stubs (e.g. json-server)
+
+These approaches allow local API mocking without modifying the application
+code or affecting the default development workflow.
+
+⚠️ All features should be tested against the real backend before submitting
+a pull request.
+
 
 ## Available Scripts
 
