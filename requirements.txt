@@ -1,5 +1,5 @@
 torch>=2.8.0,<3
-transformers==4.46.1
+transformers>=4.53.0
 sense2vec==2.0.2
 strsim==0.0.3
 six==1.16.0
