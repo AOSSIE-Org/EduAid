@@ -197,9 +197,9 @@ function Second() {
             </span>
           </div>
         </div>
-        <div className="text-right mt-[-8px] mx-1">
+        <div className="text-left mt-[-8px] mx-3">
           <div className="text-white text-sm font-bold">Enter the Content</div>
-          <div className="text-white text-right justify-end flex gap-2 text-sm font-bold">
+          <div className="text-white text-left flex gap-2 text-sm font-bold">
             to Generate{" "}
             <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
               Questionaries
@@ -212,11 +212,11 @@ function Second() {
         </div>
 
         <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-28">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
+          <button className="absolute top-0 right-0 p-2 text-white focus:outline-none">
             <FaClipboard className="h-[20px] w-[20px]" />
           </button>
           <textarea
-            className="absolute inset-0 p-8 pt-2 bg-[#83b6cc40] text-lg rounded-xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
+            className="absolute inset-0 pl-2 pr-10 pt-2 pb-2 bg-[#83b6cc40] text-lg rounded-xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
             onChange={(e) => setText(e.target.value)}

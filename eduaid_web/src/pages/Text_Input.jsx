@@ -145,7 +145,7 @@ const Text_Input = () => {
       <div className={`w-full h-full bg-cust bg-opacity-50 ${loading ? "pointer-events-none" : ""}`}>
         {/* Header */}
         <Link to="/" className="block">
-          <div className="flex items-end gap-2 p-4">
+          <div className="flex items-end gap-2 p-4 ml-8">
             <img src={logo_trans} alt="logo" className="w-20 sm:w-24" />
             <div className="text-3xl sm:text-4xl font-extrabold">
               <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">Edu</span>
@@ -155,22 +155,22 @@ const Text_Input = () => {
         </Link>
 
         {/* Headline */}
-        <div className="text-white text-center sm:text-right mx-4 sm:mx-8">
-          <div className="text-xl sm:text-2xl font-bold">Enter the Content</div>
-          <div className="flex flex-wrap justify-center sm:justify-end items-center gap-2 text-xl font-bold">
-            to Generate{" "}
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">Questionaries</span>
+        <div className="text-white text-left mx-auto max-w-4xl mt-6 px-4">
+          <div className="flex flex-wrap items-center gap-2 text-xl sm:text-2xl font-bold">
+            <span>Enter the Content to Generate{" "}</span>
+            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">Questionnaires</span>
             <img className="h-6 w-6" src={stars} alt="stars" />
           </div>
         </div>
 
         {/* Textarea */}
-        <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
-            <FaClipboard className="h-[24px] w-[24px]" />
+        <div className="relative bg-[#83b6cc40] mx-auto max-w-4xl rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-6">
+          <button className="absolute top-2 right-2 p-2 text-white focus:outline-none z-10">
+            <FaClipboard className="h-[20px] w-[20px]" />
           </button>
           <textarea
-            className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
+            placeholder="Enter your text content here..."
+            className="w-full h-full pl-4 pr-12 pt-2 pb-2 bg-transparent text-lg rounded-2xl outline-none resize-none overflow-y-auto text-white caret-white placeholder-gray-500"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -182,25 +182,27 @@ const Text_Input = () => {
         <div className="text-white text-center my-4 text-lg">or</div>
 
         {/* File Upload Section */}
-        <div className="w-full max-w-2xl mx-auto border-[3px] rounded-2xl text-center px-6 py-6 border-dotted border-[#3E5063] mt-6">
-          <img className="mx-auto mb-2" height={32} width={32} src={cloud} alt="cloud" />
-          <p className="text-white text-lg">Choose a file (PDF, MP3 supported)</p>
+        <div className="w-full max-w-4xl mx-auto border-[3px] rounded-2xl text-center px-6 py-8 border-dotted border-[#3E5063] mt-6">
+          <img className="mx-auto mb-3" height={40} width={40} src={cloud} alt="cloud" />
+          <p className="text-white text-base mb-4">Choose a file (PDF, MP3 supported)</p>
 
           <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} />
-          <button
-            className="bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2"
-            onClick={handleClick}
-          >
-            Browse File
-          </button>
 
-          <input
-            type="text"
-            placeholder="Enter Google Doc URL"
-            className="bg-transparent mt-4 border border-[#cbd0dc80] text-white text-lg sm:text-xl rounded-2xl px-4 py-2 w-full sm:w-2/3 outline-none"
-            value={docUrl}
-            onChange={(e) => setDocUrl(e.target.value)}
-          />
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+            <button
+              className="bg-[#3e506380] text-base rounded-xl text-white border border-[#cbd0dc80] px-8 py-2"
+              onClick={handleClick}
+            >
+              Browse File
+            </button>
+            <input
+              type="text"
+              placeholder="Enter Google Doc URL"
+              className="bg-[#202838] border border-[#3e5063] text-white text-base rounded-xl px-6 py-2 w-full sm:w-80 outline-none placeholder-gray-500"
+              value={docUrl}
+              onChange={(e) => setDocUrl(e.target.value)}
+            />
+          </div>
         </div>
 
         {/* Controls Section */}
