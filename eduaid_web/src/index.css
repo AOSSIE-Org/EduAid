@@ -23,3 +23,14 @@ code {
   border-image-slice: 1;
   border-radius: 2rem;
 }
+
+body {
+  font-family: 'Outfit', sans-serif;
+}
+
+@layer base {
+  body {
+    @apply font-outfit bg-white text-black dark:bg-black dark:text-white;
+  }
+}
+
