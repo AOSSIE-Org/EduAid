@@ -48,6 +48,11 @@ const Text_Input = () => {
   };
 
   const handleSaveToLocalStorage = async () => {
+  if ((!text || text.trim().length === 0) && !docUrl) {
+    alert("Please enter some text, upload a file, or provide a Google Doc URL before generating questions.");
+    return;
+  }
+    
     setLoading(true);
 
     // Check if a Google Doc URL is provided
