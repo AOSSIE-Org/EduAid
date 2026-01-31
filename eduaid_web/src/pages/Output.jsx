@@ -30,12 +30,12 @@ const Output = () => {
 }, []);
 
   function shuffleArray(array) {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
+    const shuffledArray = [...array];
+    for (let i = shuffledArray.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+      [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
     }
-    return newArray;
+    return shuffledArray;
   }
 
   const shuffledOptionsMap = useMemo(() => {
@@ -237,7 +237,7 @@ const Output = () => {
               className={`${
                 editingIndex !== null
                   ? 'bg-gray-500 cursor-not-allowed'
-                  : 'bg-[#7600F2] hover:bg-[#5a00b8]'
+                  : 'bg-[#7C3AED] hover:bg-[#5A2AD9]'
               } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
               onClick={handleShuffleQuestions}
               disabled={editingIndex !== null}
