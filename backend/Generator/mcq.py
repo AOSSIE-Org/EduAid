@@ -1,23 +1,26 @@
 import string
 import nltk
-import pke
 import torch
+import re
 from nltk.tokenize import sent_tokenize
-from flashtext import KeywordProcessor
 from nltk.corpus import stopwords
-from sense2vec import Sense2Vec
-from similarity.normalized_levenshtein import NormalizedLevenshtein
+from rapidfuzz import fuzz
+from keybert import KeyBERT
+from sentence_transformers import SentenceTransformer
 
 nltk.download('brown')
 nltk.download('stopwords')
 nltk.download('popular')
 
-def is_word_available(word, s2v_model):
-    word = word.replace(" ", "_")
-    sense = s2v_model.get_best_sense(word)
-    if sense is not None:
-        return True
-    else:
+def is_word_available(word, embedding_model):
+    # Replaced sense2vec with sentence-transformers
+    # Check if word can be encoded (basic validation)
+    try:
+        # Simple check: if word has meaningful content
+        if len(word.strip()) > 0 and word.strip().isalnum():
+            return True
+        return False
+    except:
         return False
 
 def generate_word_variations(word):
@@ -29,39 +32,57 @@ def generate_word_variations(word):
     inserts = [L + c + R for L, R in splits for c in letters]
     return set(deletes + transposes + replaces + inserts)
 
-def find_similar_words(word, s2v_model):
+def find_similar_words(word, embedding_model, candidate_words=None):
+    # Replaced sense2vec with sentence-transformers for word similarity
     output = []
     word_preprocessed = word.translate(word.maketrans("", "", string.punctuation))
     word_preprocessed = word_preprocessed.lower()
 
     word_variations = generate_word_variations(word_preprocessed)
 
-    word = word.replace(" ", "_")
-
-    sense = s2v_model.get_best_sense(word)
-    most_similar = s2v_model.most_similar(sense, n=15)
-
-    compare_list = [word_preprocessed]
-    for each_word in most_similar:
-        append_word = each_word[0].split("|")[0].replace("_", " ")
-        append_word = append_word.strip()
-        append_word_processed = append_word.lower()
-        append_word_processed = append_word_processed.translate(word.maketrans("", "", string.punctuation))
-        if append_word_processed not in compare_list and word_preprocessed not in append_word_processed and append_word_processed not in word_variations:
-            output.append(append_word.title())
-            compare_list.append(append_word_processed)
+    try:
+        # Use embedding model to find similar words
+        # If candidate_words provided, use them; otherwise generate from context
+        if candidate_words is None:
+            # Fallback: return empty list if no candidates
+            return output
+        
+        # Encode the target word
+        word_embedding = embedding_model.encode([word], convert_to_numpy=True)
+        
+        # Encode candidate words
+        candidate_embeddings = embedding_model.encode(candidate_words, convert_to_numpy=True)
+        
+        # Calculate cosine similarity (using dot product for normalized embeddings)
+        from sklearn.metrics.pairwise import cosine_similarity
+        similarities = cosine_similarity(word_embedding, candidate_embeddings)[0]
+        
+        # Get top 15 most similar
+        top_indices = similarities.argsort()[-15:][::-1]
+        
+        compare_list = [word_preprocessed]
+        for idx in top_indices:
+            append_word = candidate_words[idx]
+            append_word_processed = append_word.lower().translate(str.maketrans("", "", string.punctuation))
+            if append_word_processed not in compare_list and word_preprocessed not in append_word_processed and append_word_processed not in word_variations:
+                output.append(append_word.title())
+                compare_list.append(append_word_processed)
+    except Exception as e:
+        print(f"Error finding similar words: {e}")
+        return output
 
     out = list(dict.fromkeys(output))
     return out
 
-def get_answer_choices(answer, s2v_model):
+def get_answer_choices(answer, embedding_model, candidate_words=None):
+    # Replaced sense2vec with sentence-transformers
     choices = []
 
     try:
-        choices = find_similar_words(answer, s2v_model)
+        choices = find_similar_words(answer, embedding_model, candidate_words)
         if len(choices) > 0:
             print("Generated choices successfully for word:", answer)
-            return choices, "sense2vec"
+            return choices, "sentence-transformers"
     except Exception as e:
         print(f"Failed to generate choices for word: {answer}. Error: {e}")
 
@@ -74,16 +95,16 @@ def tokenize_into_sentences(text):
     return sentences
 
 def find_sentences_with_keywords(keywords, sentences):
-    keyword_processor = KeywordProcessor()
+    # Replaced flashtext with regex-based keyword matching
     keyword_sentences = {}
     for word in keywords:
         word = word.strip()
         keyword_sentences[word] = []
-        keyword_processor.add_keyword(word)
-    for sentence in sentences:
-        keywords_found = keyword_processor.extract_keywords(sentence)
-        for key in keywords_found:
-            keyword_sentences[key].append(sentence)
+        # Create regex pattern for case-insensitive matching
+        pattern = re.compile(r'\b' + re.escape(word) + r'\b', re.IGNORECASE)
+        for sentence in sentences:
+            if pattern.search(sentence):
+                keyword_sentences[word].append(sentence)
 
     for key in keyword_sentences.keys():
         values = keyword_sentences[key]
@@ -96,37 +117,38 @@ def find_sentences_with_keywords(keywords, sentences):
 
     return keyword_sentences
 
-def are_words_distant(words_list, current_word, threshold, normalized_levenshtein):
-    score_list = [normalized_levenshtein.distance(word.lower(), current_word.lower()) for word in words_list]
-    return min(score_list) >= threshold
+def are_words_distant(words_list, current_word, threshold):
+    # Replaced similarity.normalized_levenshtein with rapidfuzz
+    # rapidfuzz returns similarity (0-100), so we convert distance threshold
+    # threshold 0.7 means similarity should be <= 30 (100 * (1 - 0.7))
+    similarity_threshold = 100 * (1 - threshold)
+    score_list = [fuzz.ratio(word.lower(), current_word.lower()) for word in words_list]
+    return min(score_list) <= similarity_threshold
 
-def filter_useful_phrases(phrase_keys, max_count, normalized_levenshtein):
+def filter_useful_phrases(phrase_keys, max_count):
+    # Updated to use rapidfuzz instead of normalized_levenshtein
     filtered_phrases = []
     if phrase_keys:
         filtered_phrases.append(phrase_keys[0])
         for ph in phrase_keys[1:]:
-            if are_words_distant(filtered_phrases, ph, 0.7, normalized_levenshtein):
+            if are_words_distant(filtered_phrases, ph, 0.7):
                 filtered_phrases.append(ph)
             if len(filtered_phrases) >= max_count:
                 break
     return filtered_phrases
 
-def extract_noun_phrases(text):
+def extract_noun_phrases(text, kw_model=None):
+    # Replaced pke with keybert for keyphrase extraction
     out = []
-    extractor = pke.unsupervised.MultipartiteRank()
-    extractor.load_document(input=text, language='en')
-    pos = {'PROPN', 'NOUN'}
-    stoplist = list(string.punctuation)
-    stoplist += stopwords.words('english')
-    extractor.candidate_selection(pos=pos)
     try:
-        extractor.candidate_weighting(alpha=1.1, threshold=0.75, method='average')
+        if kw_model is None:
+            # Initialize KeyBERT model if not provided
+            kw_model = KeyBERT()
+        keyphrases = kw_model.extract_keywords(text, keyphrase_ngram_range=(1, 2), stop_words='english', top_n=10)
+        out = [key[0] for key in keyphrases]
     except Exception as e:
-        print(f"Error in candidate weighting: {e}")
+        print(f"Error in keyphrase extraction: {e}")
         return out
-
-    keyphrases = extractor.get_n_best(n=10)
-    out = [key[0] for key in keyphrases]
     return out
 
 def extract_phrases_from_doc(doc):
@@ -145,30 +167,32 @@ def extract_phrases_from_doc(doc):
     phrase_keys = phrase_keys[:50]
     return phrase_keys
 
-def identify_keywords(nlp_model, text, max_keywords, s2v_model, fdist, normalized_levenshtein, num_sentences):
+def identify_keywords(nlp_model, text, max_keywords, embedding_model, fdist, num_sentences, kw_model=None):
+    # Updated to use new dependencies: embedding_model instead of s2v_model, removed normalized_levenshtein
     doc = nlp_model(text)
     max_keywords = int(max_keywords)
 
-    keywords = extract_noun_phrases(text)
-    keywords = sorted(keywords, key=lambda x: fdist[x])
-    keywords = filter_useful_phrases(keywords, max_keywords, normalized_levenshtein)
+    keywords = extract_noun_phrases(text, kw_model)
+    keywords = sorted(keywords, key=lambda x: fdist.get(x, 0))
+    keywords = filter_useful_phrases(keywords, max_keywords)
 
     phrase_keys = extract_phrases_from_doc(doc)
-    filtered_phrases = filter_useful_phrases(phrase_keys, max_keywords, normalized_levenshtein)
+    filtered_phrases = filter_useful_phrases(phrase_keys, max_keywords)
 
     total_phrases = keywords + filtered_phrases
 
-    total_phrases_filtered = filter_useful_phrases(total_phrases, min(max_keywords, 2 * num_sentences), normalized_levenshtein)
+    total_phrases_filtered = filter_useful_phrases(total_phrases, min(max_keywords, 2 * num_sentences))
 
     answers = []
     for answer in total_phrases_filtered:
-        if answer not in answers and is_word_available(answer, s2v_model):
+        if answer not in answers and is_word_available(answer, embedding_model):
             answers.append(answer)
 
     answers = answers[:max_keywords]
     return answers
 
-def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, model, sense2vec_model, normalized_levenshtein):
+def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, model, embedding_model):
+    # Updated to use embedding_model instead of sense2vec_model, removed normalized_levenshtein
     batch_text = []
     answers = keyword_sent_mapping.keys()
     for answer in answers:
@@ -177,7 +201,7 @@ def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, 
         text = context + " " + "answer: " + answer + " </s>"
         batch_text.append(text)
 
-    encoding = tokenizer.batch_encode_plus(batch_text, pad_to_max_length=True, return_tensors="pt")
+    encoding = tokenizer.batch_encode_plus(batch_text, padding=True, return_tensors="pt")
 
     print("Generating questions using the model...")
     input_ids, attention_masks = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)
@@ -193,8 +217,10 @@ def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, 
         decoded_question = tokenizer.decode(out, skip_special_tokens=True, clean_up_tokenization_spaces=True)
 
         question_statement = decoded_question.replace("question:", "").strip()
-        options, options_algorithm = get_answer_choices(answer, sense2vec_model)
-        options = filter_useful_phrases(options, 10, normalized_levenshtein)
+        # Generate candidate words from context for similarity search
+        candidate_words = list(keyword_sent_mapping.keys())
+        options, options_algorithm = get_answer_choices(answer, embedding_model, candidate_words)
+        options = filter_useful_phrases(options, 10)
         extra_options = options[3:]
         options = options[:3]
 
@@ -223,7 +249,7 @@ def generate_normal_questions(keyword_sent_mapping, device, tokenizer, model):
         text = context + " " + "answer: " + answer + " </s>"
         batch_text.append(text)
 
-    encoding = tokenizer.batch_encode_plus(batch_text, pad_to_max_length=True, return_tensors="pt")
+    encoding = tokenizer.batch_encode_plus(batch_text, padding=True, return_tensors="pt")
 
     print("Running model for generation...")
     input_ids, attention_masks = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)
