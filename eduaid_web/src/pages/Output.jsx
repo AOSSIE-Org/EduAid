@@ -148,7 +148,10 @@ const Output = () => {
       link.click();
       document.body.removeChild(link);
 
-      document.getElementById("pdfDropdown").classList.add("hidden");
+       const dropdown = document.getElementById("pdfDropdown");
+          if (dropdown) {
+            dropdown.classList.add("hidden");
+          }
       worker.terminate();
     };
 
@@ -245,11 +248,13 @@ const Output = () => {
             <div className="relative w-full sm:w-auto">
               <button
                 className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
-                onClick={() =>
-                  document
-                    .getElementById("pdfDropdown")
-                    .classList.toggle("hidden")
-                }
+               onClick={() => {
+                  const dropdown = document.getElementById("pdfDropdown");
+                     if (dropdown) {
+                          dropdown.classList.toggle("hidden");
+                     }
+                  }}
+
               >
                 Generate PDF
               </button>
