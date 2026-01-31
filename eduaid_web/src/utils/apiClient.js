@@ -9,7 +9,6 @@ class ApiClient {
 
   async makeRequest(endpoint, options = {}) {
     if (this.isElectron) {
-      // Use Electron's IPC for API requests
       try {
         const response = await window.electronAPI.makeApiRequest(endpoint, options);
         if (response.ok) {
@@ -22,7 +21,6 @@ class ApiClient {
         throw error;
       }
     } else {
-      // Use regular fetch for web environment
       const url = `${this.baseUrl}${endpoint}`;
       const response = await fetch(url, options);
       
@@ -34,7 +32,6 @@ class ApiClient {
     }
   }
 
-  // Convenience methods for common HTTP verbs
   async get(endpoint, options = {}) {
     return this.makeRequest(endpoint, { ...options, method: 'GET' });
   }
@@ -52,38 +49,20 @@ class ApiClient {
   }
 
   async postFormData(endpoint, formData, options = {}) {
-    if (this.isElectron) {
-      // For Electron, we need to handle file uploads differently
-      // Since we can't easily pass files through IPC, we'll fall back to fetch
-      const url = `${this.baseUrl}${endpoint}`;
-      const response = await fetch(url, {
-        ...options,
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.json();
-    } else {
-      // For web, use FormData directly
-      const url = `${this.baseUrl}${endpoint}`;
-      const response = await fetch(url, {
-        ...options,
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.json();
+    const url = `${this.baseUrl}${endpoint}`;
+    const response = await fetch(url, {
+      ...options,
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+
+    return await response.json();
   }
 }
 
-// Export a singleton instance
-export default new ApiClient();
+const apiClient = new ApiClient();
+export default apiClient;
