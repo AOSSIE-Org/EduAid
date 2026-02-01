@@ -145,7 +145,7 @@ const Text_Input = () => {
       <div className={`w-full h-full bg-cust bg-opacity-50 ${loading ? "pointer-events-none" : ""}`}>
         {/* Header */}
         <Link to="/" className="block">
-          <div className="flex items-end gap-2 p-4">
+          <div className="flex items-end gap-2 p-4 mx-4 sm:mx-8">
             <img src={logo_trans} alt="logo" className="w-20 sm:w-24" />
             <div className="text-3xl sm:text-4xl font-extrabold">
               <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">Edu</span>
@@ -155,9 +155,9 @@ const Text_Input = () => {
         </Link>
 
         {/* Headline */}
-        <div className="text-white text-center sm:text-right mx-4 sm:mx-8">
+        <div className="text-white text-right mx-4 sm:mx-8 mt-4 mb-3">
           <div className="text-xl sm:text-2xl font-bold">Enter the Content</div>
-          <div className="flex flex-wrap justify-center sm:justify-end items-center gap-2 text-xl font-bold">
+          <div className="flex flex-wrap text-right justify-end items-center gap-2 text-xl font-bold">
             to Generate{" "}
             <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">Questionaries</span>
             <img className="h-6 w-6" src={stars} alt="stars" />
@@ -165,12 +165,13 @@ const Text_Input = () => {
         </div>
 
         {/* Textarea */}
-        <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
-            <FaClipboard className="h-[24px] w-[24px]" />
+        <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[180px] sm:min-h-[220px] mt-4 backdrop-blur-sm">
+          <button className="absolute top-3 right-3 p-2 text-white/70 hover:text-white focus:outline-none transition-colors" title="Paste from clipboard">
+            <FaClipboard className="h-[20px] w-[20px]" />
           </button>
           <textarea
-            className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
+            placeholder="Enter your text content here..."
+            className="w-full h-full pl-4 pr-14 pt-3 pb-3 bg-transparent text-lg sm:text-xl rounded-2xl outline-none resize-none overflow-y-auto text-white caret-white placeholder-gray-400/60"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -182,22 +183,23 @@ const Text_Input = () => {
         <div className="text-white text-center my-4 text-lg">or</div>
 
         {/* File Upload Section */}
-        <div className="w-full max-w-2xl mx-auto border-[3px] rounded-2xl text-center px-6 py-6 border-dotted border-[#3E5063] mt-6">
+        <div className="w-full max-w-2xl mx-auto border-[3px] rounded-xl text-center px-6 py-6 border-dotted border-[#3E5063] mt-6">
           <img className="mx-auto mb-2" height={32} width={32} src={cloud} alt="cloud" />
           <p className="text-white text-lg">Choose a file (PDF, MP3 supported)</p>
 
-          <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} />
-          <button
-            className="bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2"
-            onClick={handleClick}
-          >
-            Browse File
-          </button>
-
+          <div>
+            <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} />
+            <button
+              className="bg-[#3e506380] my-4 text-lg rounded-xl text-white border border-[#cbd0dc80] px-6 py-2"
+              onClick={handleClick}
+            >
+              Browse File
+            </button>
+          </div>
           <input
             type="text"
             placeholder="Enter Google Doc URL"
-            className="bg-transparent mt-4 border border-[#cbd0dc80] text-white text-lg sm:text-xl rounded-2xl px-4 py-2 w-full sm:w-2/3 outline-none"
+            className="bg-transparent border border-[#cbd0dc80] text-white text-lg sm:text-xl rounded-xl px-4 py-2 w-full outline-none"
             value={docUrl}
             onChange={(e) => setDocUrl(e.target.value)}
           />

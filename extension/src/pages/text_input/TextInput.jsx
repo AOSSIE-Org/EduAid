@@ -5,7 +5,7 @@ import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
 import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
-import { FaClipboard , FaWikipediaW  } from "react-icons/fa";
+import { FaClipboard, FaWikipediaW } from "react-icons/fa";
 
 function Second() {
   const [text, setText] = useState("");
@@ -212,11 +212,12 @@ function Second() {
         </div>
 
         <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-28">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
+          <button className="absolute top-3 right-3 p-2 text-white/70 hover:text-white focus:outline-none transition-colors" title="Paste from clipboard">
             <FaClipboard className="h-[20px] w-[20px]" />
           </button>
           <textarea
-            className="absolute inset-0 p-8 pt-2 bg-[#83b6cc40] text-lg rounded-xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
+            placeholder="Enter your text content here..."
+            className="w-full h-full pl-4 pr-14 pt-3 pb-3 bg-transparent text-lg sm:text-xl rounded-2xl outline-none resize-none overflow-y-auto text-white caret-white placeholder-gray-400/60"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -297,15 +298,15 @@ function Second() {
             </button>
           </div>
           <div className="items-center bg-[#202838] text-white rounded-xl px-2 py-2">
-           <button
-            title={isToggleOn ? "Disable Wikipedia Context" : "Enable Wikipedia Context"}
-            onClick={toggleSwitch}
-            className={`p-1 rounded-md transition 
+            <button
+              title={isToggleOn ? "Disable Wikipedia Context" : "Enable Wikipedia Context"}
+              onClick={toggleSwitch}
+              className={`p-1 rounded-md transition 
               ${isToggleOn ? "bg-green-500 text-white" : "bg-gray-400 text-gray-300"}
             `}
-          >
-            <FaWikipediaW className="text-2xl" />
-          </button>
+            >
+              <FaWikipediaW className="text-2xl" />
+            </button>
           </div>
         </div>
         <div className="flex my-2 justify-center gap-6 items-start">
