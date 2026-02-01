@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef} from "react";
 import "../index.css";
 import logoPNG from "../assets/aossie_logo_transparent.png";
 import { Link } from "react-router-dom";
@@ -6,10 +6,9 @@ import apiClient from "../utils/apiClient";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
-  const [questionType, setQuestionType] = useState(
-    localStorage.getItem("selectedQuestionType")
-  );
-  const [pdfMode, setPdfMode] = useState("questions");
+  const questionType = localStorage.getItem("selectedQuestionType");
+  const [pdfMode, setPdfMode] = useState(false);
+  const pdfRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -74,7 +73,7 @@ const Output = () => {
         });
       }
 
-      if (questionType == "get_boolq") {
+      if (questionType === "get_boolq") {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair,
@@ -96,7 +95,7 @@ const Output = () => {
 
       setQaPairs(combinedQaPairs);
     }
-  }, []);
+  }, [questionType]);
 
   const generateGoogleForm = async () => {
     try {
@@ -114,6 +113,7 @@ const Output = () => {
   const loadLogoAsBytes = async () => {
     try {
       const response = await fetch(logoPNG);
+      if (!response.ok) throw new Error(`Failed to load logo: ${response.status}`);
       const arrayBuffer = await response.arrayBuffer();
       return new Uint8Array(arrayBuffer);
     } catch (error) {
@@ -146,6 +146,22 @@ const Output = () => {
       worker.terminate();
     };
   };
+
+  useEffect(() => {
+    function handleOutsideClick(e) {
+      if (!pdfMode) return;
+      if (pdfRef.current && !pdfRef.current.contains(e.target)) setPdfMode(false);
+    }
+    function handleEscape(e) {
+      if (e.key === 'Escape' && pdfMode) setPdfMode(false);
+    }
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [pdfMode]);
 
   return (
     <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
@@ -235,14 +251,17 @@ const Output = () => {
             <div className="relative w-full sm:w-auto">
               <button
                 className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
-                onClick={() => document.getElementById('pdfDropdown').classList.toggle('hidden')}
+                onClick={() => setPdfMode(prev => !prev)} aria-expanded = {pdfMode} aria-controls="pdfDropdown"
               >
                 Generate PDF
               </button>
               
               <div
+                className={`${pdfMode ? '' : 'hidden'} absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48`}
                 id="pdfDropdown"
-                className="hidden absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48"
+                ref={pdfRef}
+                role="menu"
+                aria-hidden={!pdfMode}
               >
                 <button
                   className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-t-lg text-sm sm:text-base"

@@ -1,3 +1,4 @@
+/* eslint-env worker */
 import { PDFDocument, rgb } from 'pdf-lib';
 
 function shuffleArray(array) {
@@ -100,39 +101,40 @@ self.onmessage = async (e) => {
     createNewPageIfNeeded(requiredHeight);
 
     if (mode !== 'answers') {
-      questionLines.forEach((line, i) => {
+      for (let i = 0; i < questionLines.length; i++) {
+        const line = questionLines[i];
         const prefix = i === 0 ? `Q${questionIndex}) ` : '    ';
         page.drawText(`${prefix}${line}`, { x: margin, y: y - i * 20, size: 12 });
-      });
+      }
       y -= questionLines.length * 20 + 20;
 
       if (mode === 'questions') {
         if (qaPair.question_type === "Boolean") {
           const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
-          ['True', 'False'].forEach(option => {
+          for (let k = 0; k < 2; k++) {
+            const option = k === 0 ? 'True' : 'False';
             radioGroup.addOptionToPage(option, page, {
               x: margin + 20, y, width: 15, height: 15
             });
             page.drawText(option, { x: margin + 40, y: y + 2, size: 12 });
             y -= 20;
-          });
+          }
         } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
           const allOptions = [...(qaPair.options || [])];
           if (qaPair.answer && !allOptions.includes(qaPair.answer)) allOptions.push(qaPair.answer);
           const shuffled = shuffleArray([...allOptions]);
 
           const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
-          shuffled.forEach((option, idx) => {
-            radioGroup.addOptionToPage(`option${idx}`, page, {
-              x: margin + 20, y, width: 15, height: 15
-            });
-
+          for (let idx = 0; idx < shuffled.length; idx++) {
+            const option = shuffled[idx];
+            radioGroup.addOptionToPage(`option${idx}`, page, { x: margin + 20, y, width: 15, height: 15});
             const optionLines = wrapText(option, maxContentWidth - 60);
-            optionLines.forEach((line, i) => {
-              page.drawText(line, { x: margin + 40, y: y + 2 - i * 15, size: 12 });
-            });
+            for (let j = 0; j < optionLines.length; j++) {
+              const line = optionLines[j];
+              page.drawText(line, { x: margin + 40, y: y + 2 - j * 15, size: 12 });
+            }
             y -= Math.max(25, optionLines.length * 20);
-          });
+          }
         } else if (qaPair.question_type === "Short") {
           const field = form.createTextField(`question${questionIndex}_answer`);
           field.setText('');
@@ -146,14 +148,12 @@ self.onmessage = async (e) => {
 
     if (mode === 'answers' || mode === 'questions_answers') {
       const answerLines = wrapText(`Answer ${questionIndex}: ${qaPair.answer}`, maxContentWidth);
-      answerLines.forEach((line, i) => {
-        page.drawText(line, {
-          x: margin, y: y - i * 15, size: 12, color: rgb(0, 0.5, 0)
-        });
-      });
+      for (let i = 0; i < answerLines.length; i++) {
+        const line = answerLines[i];
+        page.drawText(line, { x: margin, y: y - i * 15, size: 12, color: rgb(0,0.5,0) });
+      }
       y -= answerLines.length * 20;
     }
-
     y -= 20;
     questionIndex++;
   }
