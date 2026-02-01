@@ -147,6 +147,22 @@ const Output = () => {
     };
   };
 
+  useEffect(() => {
+    function handleOutsideClick(e) {
+      if (!pdfMode) return;
+      if (pdfRef.current && !pdfRef.current.contains(e.target)) setPdfMode(false);
+    }
+    function handleEscape(e) {
+      if (e.key === 'Escape' && pdfMode) setPdfMode(false);
+    }
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [pdfMode]);
+
   return (
     <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
@@ -235,15 +251,17 @@ const Output = () => {
             <div className="relative w-full sm:w-auto">
               <button
                 className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
-                onClick={() => setPdfMode(prev => !prev)} aria-expanded = {pdfMode}
+                onClick={() => setPdfMode(prev => !prev)} aria-expanded = {pdfMode} aria-controls="pdfDropdown"
               >
                 Generate PDF
               </button>
               
               <div
+                className={`${pdfMode ? '' : 'hidden'} absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48`}
                 id="pdfDropdown"
                 ref={pdfRef}
-                className="hidden absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48"
+                role="menu"
+                aria-hidden={!pdfMode}
               >
                 <button
                   className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-t-lg text-sm sm:text-base"
