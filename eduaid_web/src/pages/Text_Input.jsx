@@ -60,9 +60,6 @@ const Text_Input = () => {
 
     const mimeType = file.type;
     if (mimeType && !Object.keys(ALLOWED_MIME_TYPES).includes(mimeType)) {
-      if (!mimeType) {
-        return { valid: true, error: null };
-      }
       return {
         valid: false,
         error: 'Invalid file type. Please upload a PDF, TXT, or DOCX file.'
