@@ -1,18 +1,25 @@
 import React, { useState } from "react";
 import "../index.css";
-import logo_trans from "../assets/aossie_logo_transparent.png"
-import { Link } from "react-router-dom";
-
+import logo_trans from "../assets/aossie_logo_transparent.png";
+import { div, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 const Question_Type = () => {
   const [selectedOption, setSelectedOption] = useState(null);
-
+  const navigate = useNavigate();
   const handleOptionClick = (option) => {
     setSelectedOption(option);
+    handleSaveToLocalStorage();
   };
 
   const handleSaveToLocalStorage = () => {
     if (selectedOption) {
       localStorage.setItem("selectedQuestionType", selectedOption);
+      if(selectedOption === "dynamic_form"){
+        navigate("/google-form");
+        return;
+      }else{
+        navigate("/input");
+      }
     }
   };
 
@@ -20,7 +27,10 @@ const Question_Type = () => {
     <div className="popup w-full min-h-screen bg-[#02000F] flex justify-center items-center ">
       <div className="w-full bg-cust bg-opacity-50 bg-custom-gradient shadow-lg p-6 sm:p-10">
         {/* Header */}
-        <Link to="/" className="flex flex-col sm:flex-row items-center gap-4 mb-6">
+        <Link
+          to="/"
+          className="flex flex-col sm:flex-row items-center gap-4 mb-6"
+        >
           <img
             src={logo_trans}
             alt="logo"
@@ -52,18 +62,25 @@ const Question_Type = () => {
             { id: "get_shortq", label: "Short-Answer Type Questions" },
             { id: "get_mcq", label: "Multiple Choice Questions" },
             { id: "get_boolq", label: "True/False Questions" },
+            { id: "dynamic_form", label: "Dynamic Google Form" }, // <-- new button
             { id: "get_problems", label: "All Questions" },
           ].map((option) => (
             <div
               key={option.id}
-              onClick={() => handleOptionClick(option.id)}
+              onClick={() => {
+                    handleOptionClick(option.id);
+
+              }}
               className={`w-full max-w-xl flex items-center gap-6 px-6 py-5 rounded-xl cursor-pointer bg-[#202838] bg-opacity-50 hover:bg-opacity-70 transition-all duration-200 ${
                 selectedOption === option.id ? "ring-2 ring-[#00CBE7]" : ""
               }`}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleOptionClick(option.id);
+                if (e.key === "Enter") {
+                    console.log("Wev")
+                    handleOptionClick(option.id);
+                }
               }}
             >
               <div
@@ -79,18 +96,17 @@ const Question_Type = () => {
             </div>
           ))}
         </div>
-
         {/* Action Button */}
         <div className="text-center mt-10">
           {selectedOption ? (
-            <Link to="/input">
+            <div >
               <button
                 onClick={handleSaveToLocalStorage}
                 className="rounded-2xl text-xl sm:text-2xl text-white px-6 sm:px-8 font-bold py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:brightness-110 transition-all"
               >
                 Fire Up 🚀
               </button>
-            </Link>
+            </div>
           ) : (
             <button
               onClick={() => alert("Please select a question type.")}
