@@ -76,7 +76,7 @@ class MCQGenerator:
             final_output["questions"] = generated_questions["questions"]
             final_output["time_taken"] = end_time - start_time
             
-            if torch.device == 'cuda':
+            if self.device.type == 'cuda':
                 torch.cuda.empty_cache()
                 
             return final_output
@@ -127,7 +127,7 @@ class ShortQGenerator:
         final_output["statement"] = modified_text
         final_output["questions"] = generated_questions["questions"]
         
-        if torch.device == 'cuda':
+        if self.device.type == 'cuda':
             torch.cuda.empty_cache()
 
         return final_output
@@ -184,7 +184,7 @@ class ParaphraseGenerator:
         output['Count'] = num
         output['Paraphrased Questions'] = final_outputs
 
-        if torch.device == 'cuda':
+        if self.device.type == 'cuda':
             torch.cuda.empty_cache()
         
         return output
@@ -227,7 +227,7 @@ class BoolQGenerator:
         input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
 
         output = beam_search_decoding (input_ids, attention_masks, self.model, self.tokenizer,num)
-        if torch.device == 'cuda':
+        if self.device.type == 'cuda':
             torch.cuda.empty_cache()
         
         final= {}
@@ -282,6 +282,9 @@ class AnswerPredictor:
             Question = self.tokenizer.decode(greedy_output[0], skip_special_tokens=True, clean_up_tokenization_spaces=True)
             answers.append(Question.strip().capitalize())
 
+        if self.device.type == 'cuda':
+            torch.cuda.empty_cache()
+
         return answers
 
     def predict_boolean_answer(self, payload):
@@ -303,6 +306,9 @@ class AnswerPredictor:
                 answers.append(True)
             else:
                 answers.append(False)
+
+        if self.device.type == 'cuda':
+            torch.cuda.empty_cache()
 
         return answers
 
@@ -444,6 +450,9 @@ class QuestionGenerator:
         else:
             print("Skipping evaluation step.\n")
             qa_list = self._get_all_qa_pairs(generated_questions, qg_answers)
+
+        if self.device.type == 'cuda':
+            torch.cuda.empty_cache()
 
         return qa_list
 
@@ -724,6 +733,9 @@ class QAEvaluator:
 
         for i in range(len(encoded_qa_pairs)):
             scores[i] = self._evaluate_qa(encoded_qa_pairs[i])
+
+        if self.device.type == 'cuda':
+            torch.cuda.empty_cache()
 
         return [
             k for k, v in sorted(scores.items(), key=lambda item: item[1], reverse=True)
