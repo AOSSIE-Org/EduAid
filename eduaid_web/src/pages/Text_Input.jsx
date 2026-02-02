@@ -296,7 +296,6 @@ const Text_Input = () => {
             type="file"
             ref={fileInputRef}
             onChange={handleFileUpload}
-            accept=".pdf,.txt,.docx,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             style={{ display: "none" }}
             aria-describedby="file-error"
           />
