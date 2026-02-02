@@ -8,6 +8,16 @@ import Switch from "react-switch";
 import { Link,useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 
+// File validation constants
+const ALLOWED_EXTENSIONS = ['.pdf', '.txt', '.docx'];
+const ALLOWED_MIME_TYPES = {
+  'application/pdf': '.pdf',
+  'text/plain': '.txt',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx'
+};
+const MAX_FILE_SIZE_MB = 10;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 const Text_Input = () => {
   const navigate = useNavigate();
   const [text, setText] = useState("");
@@ -18,23 +28,94 @@ const Text_Input = () => {
   const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
+  const [fileError, setFileError] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
   };
 
+  const validateFile = (file) => {
+    if (!file) {
+      return { valid: false, error: 'No file selected.' };
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return {
+        valid: false,
+        error: `File size exceeds ${MAX_FILE_SIZE_MB}MB limit. Please select a smaller file.`
+      };
+    }
+
+    const fileName = file.name.toLowerCase();
+    const extension = '.' + fileName.split('.').pop();
+
+    if (!ALLOWED_EXTENSIONS.includes(extension)) {
+      return {
+        valid: false,
+        error: `File type "${extension}" is not supported. Please upload a PDF, TXT, or DOCX file.`
+      };
+    }
+
+    const mimeType = file.type;
+    if (mimeType && !Object.keys(ALLOWED_MIME_TYPES).includes(mimeType)) {
+      if (!mimeType) {
+        return { valid: true, error: null };
+      }
+      return {
+        valid: false,
+        error: 'Invalid file type. Please upload a PDF, TXT, or DOCX file.'
+      };
+    }
+
+    return { valid: true, error: null };
+  };
+
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
-    if (file) {
-      const formData = new FormData();
-      formData.append("file", file);
+    setFileError(null);
+    setSelectedFile(null);
 
-      try {
-        const data = await apiClient.postFormData("/upload", formData);
-        setText(data.content || data.error);
-      } catch (error) {
-        console.error("Error uploading file:", error);
-        setText("Error uploading file");
+    if (!file) return;
+
+    const validation = validateFile(file);
+    if (!validation.valid) {
+      setFileError(validation.error);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+
+    setSelectedFile(file);
+    setIsUploading(true);
+    setFileError(null);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const data = await apiClient.postFormData("/upload", formData);
+
+      if (data.error) {
+        setFileError(data.error);
+        setSelectedFile(null);
+      } else if (data.content) {
+        setText(data.content);
+        setFileError(null);
+      } else {
+        setFileError('Unable to extract content from the file.');
+        setSelectedFile(null);
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      setFileError('Failed to upload file. Please check your connection and try again.');
+      setSelectedFile(null);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
     }
   };
@@ -185,14 +266,51 @@ const Text_Input = () => {
         {/* File Upload Section */}
         <div className="w-full max-w-2xl mx-auto border-[3px] rounded-2xl text-center px-6 py-6 border-dotted border-[#3E5063] mt-6">
           <img className="mx-auto mb-2" height={32} width={32} src={cloud} alt="cloud" />
-          <p className="text-white text-lg">Choose a file (PDF, MP3 supported)</p>
+          <p className="text-white text-lg">Choose a file (PDF, TXT, DOCX supported)</p>
+          <p className="text-gray-400 text-sm mt-1">Maximum file size: {MAX_FILE_SIZE_MB}MB</p>
 
-          <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} />
+          {fileError && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded-lg mt-4 text-sm"
+            >
+              <span className="font-semibold">Error: </span>{fileError}
+            </div>
+          )}
+
+          {selectedFile && !fileError && (
+            <div className="bg-green-900/30 border border-green-500 text-green-200 px-4 py-3 rounded-lg mt-4 text-sm">
+              <span className="font-semibold">Selected: </span>{selectedFile.name}
+            </div>
+          )}
+
+          {isUploading && (
+            <div className="mt-4 flex items-center justify-center gap-2 text-white">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <span>Processing file...</span>
+            </div>
+          )}
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            accept=".pdf,.txt,.docx,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            style={{ display: "none" }}
+            aria-describedby="file-error"
+          />
           <button
-            className="bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2"
+            className={`my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2 transition-colors ${
+              isUploading
+                ? 'bg-gray-600 cursor-not-allowed'
+                : 'bg-[#3e506380] hover:bg-[#4e607390]'
+            }`}
             onClick={handleClick}
+            disabled={isUploading}
+            aria-busy={isUploading}
           >
-            Browse File
+            {isUploading ? 'Processing...' : 'Browse File'}
           </button>
 
           <input
@@ -201,6 +319,7 @@ const Text_Input = () => {
             className="bg-transparent mt-4 border border-[#cbd0dc80] text-white text-lg sm:text-xl rounded-2xl px-4 py-2 w-full sm:w-2/3 outline-none"
             value={docUrl}
             onChange={(e) => setDocUrl(e.target.value)}
+            disabled={isUploading}
           />
         </div>
 
