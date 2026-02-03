@@ -2,26 +2,33 @@ import React, { useEffect, useState } from "react";
 
 function DynamicForm() {
   const [questions, setQuestions] = useState([]);
-  const [responses, setResponses] = useState({});
+  const [answers, setAnswers] = useState({});
 
-  // Fetch form questions from Google Apps Script
+  // 👉 Replace this with your deployed Google Apps Script URL
+  const GOOGLE_SCRIPT_URL =
+    "https://script.google.com/macros/s/AKfycbxRamNfuS1b9yBXapdCs9gB3ScRhpxiRPbjTO0qrzeYel0BJEq4VyTGX3GnZ_-KIsZXkw/exec";
+
+  // Fetch questions from Google Script
   useEffect(() => {
-    fetch(
-      "https://script.google.com/macros/s/AKfycbxRamNfuS1b9yBXapdCs9gB3ScRhpxiRPbjTO0qrzeYel0BJEq4VyTGX3GnZ_-KIsZXkw/exec"
-    )
+    fetch(GOOGLE_SCRIPT_URL)
       .then((res) => res.json())
-      .then((data) => setQuestions(data))
-      .catch((err) => console.error("Error fetching form:", err));
+      .then((data) => {
+        console.log("Fetched form data:", data);
+        setQuestions(data);
+      })
+      .catch((err) => console.error("Error fetching form data:", err));
   }, []);
 
+  // Handle input change
   const handleChange = (id, value) => {
-    setResponses((prev) => ({ ...prev, [id]: value }));
+    setAnswers((prev) => ({ ...prev, [id]: value }));
   };
 
+  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("User Responses:", responses);
-    alert("Form submitted! Check console for responses.");
+    console.log("Submitted answers:", answers);
+    alert("Form submitted! Check console for answers.");
   };
 
   return (
@@ -35,6 +42,7 @@ function DynamicForm() {
             </label>
             <br />
 
+            {/* Render inputs based on question type */}
             {q.type === "TEXT" && (
               <input
                 type="text"
@@ -44,32 +52,43 @@ function DynamicForm() {
 
             {q.type === "PARAGRAPH_TEXT" && (
               <textarea
-                rows="4"
-                cols="40"
                 onChange={(e) => handleChange(q.id, e.target.value)}
-              />
+              ></textarea>
             )}
+
+            {q.type === "MULTIPLE_CHOICE" &&
+              q.choices?.map((choice, i) => (
+                <div key={i}>
+                  <input
+                    type="radio"
+                    name={q.id}
+                    value={choice}
+                    onChange={(e) => handleChange(q.id, e.target.value)}
+                  />
+                  {choice}
+                </div>
+              ))}
 
             {q.type === "CHECKBOX" &&
               q.choices?.map((choice, i) => (
-                <label key={i} style={{ display: "block" }}>
+                <div key={i}>
                   <input
                     type="checkbox"
                     value={choice}
                     onChange={(e) => {
-                      const prev = responses[q.id] || [];
+                      const selected = answers[q.id] || [];
                       if (e.target.checked) {
-                        handleChange(q.id, [...prev, choice]);
+                        handleChange(q.id, [...selected, choice]);
                       } else {
                         handleChange(
                           q.id,
-                          prev.filter((c) => c !== choice)
+                          selected.filter((c) => c !== choice)
                         );
                       }
                     }}
                   />
                   {choice}
-                </label>
+                </div>
               ))}
 
             {q.type === "LIST" && (
@@ -82,19 +101,6 @@ function DynamicForm() {
                 ))}
               </select>
             )}
-
-            {q.type === "MULTIPLE_CHOICE" &&
-              q.choices?.map((choice, i) => (
-                <label key={i} style={{ display: "block" }}>
-                  <input
-                    type="radio"
-                    name={q.id}
-                    value={choice}
-                    onChange={(e) => handleChange(q.id, e.target.value)}
-                  />
-                  {choice}
-                </label>
-              ))}
           </div>
         ))}
 
