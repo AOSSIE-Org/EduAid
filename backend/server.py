@@ -30,7 +30,7 @@ app = Flask(__name__)
 CORS(app)
 print("Starting Flask App...")
 
-SERVICE_ACCOUNT_FILE = './service_account_key.json'
+SERVICE_ACCOUNT_FILE = os.path.join(os.path.dirname(__file__), 'service_account_key.json')
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
 
 MCQGen = main.MCQGenerator()
@@ -38,10 +38,36 @@ answer = main.AnswerPredictor()
 BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+try:
+    if os.path.exists(SERVICE_ACCOUNT_FILE):
+        docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+    else:
+        docs_service = None
+except Exception:
+    docs_service = None
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
+
+def _dedup_strings(strings):
+    seen = set()
+    out = []
+    for s in strings:
+        k = (s or "").strip().lower()
+        if k and k not in seen:
+            seen.add(k)
+            out.append(s)
+    return out
+
+def _dedup_questions(items, get_question):
+    seen = set()
+    out = []
+    for it in items:
+        q = (get_question(it) or "").strip().lower()
+        if q and q not in seen:
+            seen.add(q)
+            out.append(it)
+    return out
 
 
 def process_input_text(input_text, use_mediawiki):
@@ -56,11 +82,21 @@ def get_mcq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    difficulty = data.get("difficulty", "Easy Difficulty")
     input_text = process_input_text(input_text, use_mediawiki)
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    questions = output["questions"]
+    questions = output.get("questions", [])
+    questions = _dedup_questions(questions, lambda x: x.get("question_statement"))
+    if difficulty != "Easy Difficulty":
+        for q in questions:
+            q["question_statement"] = make_question_harder(q.get("question_statement", ""))
+    for q in questions:
+        if "context" in q:
+            q["explanation"] = q.get("context")
+        else:
+            q["explanation"] = input_text
     return jsonify({"output": questions})
 
 
@@ -84,11 +120,22 @@ def get_shortq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    difficulty = data.get("difficulty", "Easy Difficulty")
     input_text = process_input_text(input_text, use_mediawiki)
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    questions = output["questions"]
+    questions = output.get("questions", [])
+    questions = _dedup_questions(questions, lambda x: x.get("question") or x.get("question_statement") or x.get("Question"))
+    if difficulty != "Easy Difficulty":
+        for q in questions:
+            if "question" in q:
+                q["question"] = make_question_harder(q.get("question", ""))
+            elif "question_statement" in q:
+                q["question_statement"] = make_question_harder(q.get("question_statement", ""))
+    for q in questions:
+        q["context"] = q.get("context") or input_text
+        q["explanation"] = q.get("context")
     return jsonify({"output": questions})
 
 
@@ -100,6 +147,7 @@ def get_problems():
     max_questions_mcq = data.get("max_questions_mcq", 4)
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
+    difficulty = data.get("difficulty", "Easy Difficulty")
     input_text = process_input_text(input_text, use_mediawiki)
     output1 = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions_mcq}
@@ -110,6 +158,29 @@ def get_problems():
     output3 = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions_shortq}
     )
+    mcq_qs = _dedup_questions(output1.get("questions", []), lambda x: x.get("question_statement"))
+    short_qs = _dedup_questions(output3.get("questions", []), lambda x: x.get("question") or x.get("question_statement") or x.get("Question"))
+    bool_qs = _dedup_strings(output2.get("Boolean_Questions", []))
+    if difficulty != "Easy Difficulty":
+        for q in mcq_qs:
+            q["question_statement"] = make_question_harder(q.get("question_statement", ""))
+        for q in short_qs:
+            if "question" in q:
+                q["question"] = make_question_harder(q.get("question", ""))
+            elif "question_statement" in q:
+                q["question_statement"] = make_question_harder(q.get("question_statement", ""))
+        bool_qs = [make_question_harder(q) for q in bool_qs]
+    for q in mcq_qs:
+        if "context" in q:
+            q["explanation"] = q.get("context")
+        else:
+            q["explanation"] = input_text
+    for q in short_qs:
+        q["context"] = q.get("context") or input_text
+        q["explanation"] = q.get("context")
+    output1["questions"] = mcq_qs
+    output2["Boolean_Questions"] = bool_qs
+    output3["questions"] = short_qs
     return jsonify(
         {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
     )
@@ -186,7 +257,8 @@ def get_content():
         document_url = data.get('document_url')
         if not document_url:
             return jsonify({'error': 'Document URL is required'}), 400
-
+        if not docs_service:
+            return jsonify({'error': 'Google Docs service unavailable'}), 503
         text = docs_service.get_document_content(document_url)
         return jsonify(text)
     except ValueError as e:
@@ -357,11 +429,11 @@ def generate_gform():
         formId=result["formId"], body=NEW_QUESTION
     ).execute()
 
-    edit_url = jsonify(result["responderUri"])
+    edit_url = result.get("responderUri")
     webbrowser.open_new_tab(
         "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
     )
-    return edit_url
+    return jsonify({"form_link": edit_url})
 
 
 @app.route("/get_shortq_hard", methods=["POST"])
@@ -369,17 +441,19 @@ def get_shortq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
-
-    output = qg.generate(
-        article=input_text, num_questions=input_questions, answer_style="sentences"
-    )
-
-    for item in output:
-        item["question"] = make_question_harder(item["question"])
-
-    return jsonify({"output": output})
+    max_questions = data.get("max_questions", 4)
+    input_text = process_input_text(input_text, use_mediawiki)
+    qa_list = qg.generate(article=input_text, use_evaluator=True, num_questions=max_questions, answer_style="sentences")
+    out = []
+    for qa in qa_list:
+        q_text = make_question_harder(qa.get("question"))
+        out.append({
+            "question": q_text,
+            "answer": qa.get("answer"),
+            "question_type": "Short_Hard",
+            "explanation": input_text
+        })
+    return jsonify({"output": out})
 
 
 @app.route("/get_mcq_hard", methods=["POST"])
@@ -387,37 +461,45 @@ def get_mcq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
-    output = qg.generate(
-        article=input_text, num_questions=input_questions, answer_style="multiple_choice"
-    )
-    
-    for q in output:
-        q["question"] = make_question_harder(q["question"])
-        
-    return jsonify({"output": output})
+    max_questions = data.get("max_questions", 4)
+    input_text = process_input_text(input_text, use_mediawiki)
+    qa_list = qg.generate(article=input_text, use_evaluator=True, num_questions=max_questions, answer_style="multiple_choice")
+    out = []
+    for qa in qa_list:
+        q_text = make_question_harder(qa.get("question"))
+        ans = qa.get("answer")
+        if isinstance(ans, list):
+            opts = [o.get("answer") for o in ans if o.get("answer")]
+            correct = next((o.get("answer") for o in ans if o.get("correct")), None)
+            out.append({
+                "question_statement": q_text,
+                "question_type": "MCQ_Hard",
+                "options": opts,
+                "answer": correct,
+                "explanation": input_text
+            })
+        else:
+            out.append({
+                "question_statement": q_text,
+                "question_type": "MCQ_Hard",
+                "options": [],
+                "answer": ans,
+                "explanation": input_text
+            })
+    return jsonify({"output": out})
 
 @app.route("/get_boolq_hard", methods=["POST"])
 def get_boolq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_questions = data.get("input_question", [])
-
+    max_questions = data.get("max_questions", 4)
     input_text = process_input_text(input_text, use_mediawiki)
-
-    # Generate questions using the same QG model
-    generated = qg.generate(
-        article=input_text,
-        num_questions=input_questions,
-        answer_style="true_false"
-    )
-
-    # Apply transformation to make each question harder
-    harder_questions = [make_question_harder(q) for q in generated]
-
-    return jsonify({"output": harder_questions})
+    payload = {"input_text": input_text, "max_questions": max_questions}
+    final = BoolQGen.generate_boolq(payload)
+    questions = final.get("Boolean_Questions", [])
+    harder = [make_question_harder(q) for q in questions]
+    return jsonify({"output": harder})
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
