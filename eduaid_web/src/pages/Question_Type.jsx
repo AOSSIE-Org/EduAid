@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import "../index.css";
 import logo_trans from "../assets/aossie_logo_transparent.png"
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Question_Type = () => {
+  const navigate = useNavigate();
   const [selectedOption, setSelectedOption] = useState(null);
 
   const handleOptionClick = (option) => {
@@ -53,13 +54,13 @@ const Question_Type = () => {
             { id: "get_mcq", label: "Multiple Choice Questions" },
             { id: "get_boolq", label: "True/False Questions" },
             { id: "get_problems", label: "All Questions" },
+            { id: "google_form", label: "Dynamic Google Form" },
           ].map((option) => (
             <div
               key={option.id}
               onClick={() => handleOptionClick(option.id)}
-              className={`w-full max-w-xl flex items-center gap-6 px-6 py-5 rounded-xl cursor-pointer bg-[#202838] bg-opacity-50 hover:bg-opacity-70 transition-all duration-200 ${
-                selectedOption === option.id ? "ring-2 ring-[#00CBE7]" : ""
-              }`}
+              className={`w-full max-w-xl flex items-center gap-6 px-6 py-5 rounded-xl cursor-pointer bg-[#202838] bg-opacity-50 hover:bg-opacity-70 transition-all duration-200 ${selectedOption === option.id ? "ring-2 ring-[#00CBE7]" : ""
+                }`}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
@@ -67,11 +68,10 @@ const Question_Type = () => {
               }}
             >
               <div
-                className={`w-10 h-10 rounded-full flex-shrink-0 ${
-                  selectedOption === option.id
-                    ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                    : "bg-[#999C9D]"
-                }`}
+                className={`w-10 h-10 rounded-full flex-shrink-0 ${selectedOption === option.id
+                  ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
+                  : "bg-[#999C9D]"
+                  }`}
               ></div>
               <div className="text-white text-xl sm:text-2xl font-medium">
                 {option.label}
@@ -82,24 +82,27 @@ const Question_Type = () => {
 
         {/* Action Button */}
         <div className="text-center mt-10">
-          {selectedOption ? (
-            <Link to="/input">
-              <button
-                onClick={handleSaveToLocalStorage}
-                className="rounded-2xl text-xl sm:text-2xl text-white px-6 sm:px-8 font-bold py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:brightness-110 transition-all"
-              >
-                Fire Up 🚀
-              </button>
-            </Link>
-          ) : (
-            <button
-              onClick={() => alert("Please select a question type.")}
-              className="rounded-2xl text-xl sm:text-2xl text-white px-6 sm:px-8 font-bold py-3 bg-gray-500 cursor-not-allowed"
-              disabled
-            >
-              Fire Up 🚀
-            </button>
-          )}
+          <button
+            onClick={() => {
+              if (selectedOption) {
+                if (selectedOption === "google_form") {
+                  navigate("/google-form");
+                } else {
+                  handleSaveToLocalStorage();
+                  navigate("/input");
+                }
+              } else {
+                alert("Please select a question type.");
+              }
+            }}
+            className={`rounded-2xl text-xl sm:text-2xl text-white px-6 sm:px-8 font-bold py-3 transition-all ${selectedOption
+              ? "bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:brightness-110"
+              : "bg-gray-500 cursor-not-allowed"
+              }`}
+            disabled={!selectedOption}
+          >
+            Fire Up 🚀
+          </button>
         </div>
       </div>
     </div>
