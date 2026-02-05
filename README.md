@@ -44,10 +44,7 @@ You can choose to set up the backend manually or use an automated shell script.
    - This script will automatically download and extract the Sense2Vec model, install Python dependencies, and start the Flask app.
 
 ### Troubleshooting
-
-- If the script fails to run, ensure that you have execution permissions:
-  ```bash
-  chmod +x script.sh
+- If you face dependency installation issues on Windows, ensure you are using Python 3.10 or 3.11 as mentioned below.
 
 
 ### 3. Configure Google APIs
@@ -187,3 +184,13 @@ This is the second year of the project. While some may have their own ideas on h
 1. First get to know the organization and the project by visiting the [Official Website](https://github.com/AOSSIE-Org)
 
 2. Visit the [Discord Channel](https://discord.com/channels/1022871757289422898/1073262393670504589) for interacting with the community!
+  
+## Backend requirements
+
+- Python >= 3.9 and <= 3.11 (recommended: Python 3.10)
+
+Python 3.12+ / 3.13 is currently not supported due to
+third-party dependencies (e.g. sentencepiece, pke, spacy).
+
+Backend is supported on Python 3.10 (recommended).
+Python 3.12+ / 3.13 is currently not supported on Windows due to native dependencies.
