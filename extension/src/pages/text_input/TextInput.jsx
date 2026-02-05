@@ -211,12 +211,16 @@ function Second() {
           Enter Content Here
         </div>
 
-        <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-28">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
+        <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-0 h-28">
+          <button
+            type="button"
+            aria-label="Clipboard"
+            className="absolute left-3 top-3 z-10 text-white focus:outline-none"
+          >
             <FaClipboard className="h-[20px] w-[20px]" />
           </button>
           <textarea
-            className="absolute inset-0 p-8 pt-2 bg-[#83b6cc40] text-lg rounded-xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
+            className="w-full h-full bg-transparent text-lg rounded-xl outline-none resize-none overflow-y-auto text-white caret-white pl-12 pr-3 pt-3 pb-3"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
             onChange={(e) => setText(e.target.value)}
