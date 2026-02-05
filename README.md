@@ -4,6 +4,10 @@ Online learning has taken the front seat in the post-pandemic age. With the adve
 
 EduAid is one such project currently available in the form of a browser extension.
 
+## System Requirements
+
+- ffmpeg or libav installed and available on your system `PATH`. The backend's `extract_text_from_audio()` method (in `backend/Generator/main.py`) uses pydub to convert MP3 to WAV, and pydub depends on these tools for audio transcoding.
+
 ## Installation and Setup
 
 ### 1. Clone the Repository
