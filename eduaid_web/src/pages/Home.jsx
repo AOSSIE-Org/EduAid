@@ -122,6 +122,7 @@ const Home = () => {
                 ) : (
                   <span>{error}</span>
                 )}
+
               </div>
             </div>
           </a>
