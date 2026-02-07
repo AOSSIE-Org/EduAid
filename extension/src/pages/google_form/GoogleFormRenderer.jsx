@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "../../index.css";
+import { API_BASE_URL } from "../../config";
 
 function GoogleFormRenderer({ formData, onSubmit, onBack }) {
     const [responses, setResponses] = useState({});
@@ -33,6 +34,15 @@ function GoogleFormRenderer({ formData, onSubmit, onBack }) {
                 };
             }
         });
+
+        // Clear error when user changes checkbox
+        if (errors[questionId]) {
+            setErrors((prev) => {
+                const newErrors = { ...prev };
+                delete newErrors[questionId];
+                return newErrors;
+            });
+        }
     };
 
     const validateForm = () => {
@@ -66,7 +76,7 @@ function GoogleFormRenderer({ formData, onSubmit, onBack }) {
 
         try {
             const response = await fetch(
-                "http://localhost:5000/submit_to_google_form",
+                `${API_BASE_URL}/submit_to_google_form`,
                 {
                     method: "POST",
                     headers: {

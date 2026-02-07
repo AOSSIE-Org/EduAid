@@ -544,7 +544,7 @@ def fetch_google_form():
 @app.route('/submit_to_google_form', methods=['POST'])
 def submit_to_google_form():
     """
-    Build submission URL for Google Form
+    Submit responses to Google Form programmatically
     
     Request body:
     {
@@ -558,8 +558,7 @@ def submit_to_google_form():
     Response:
     {
         "success": true,
-        "submission_url": "https://docs.google.com/forms/d/e/.../viewform",
-        "message": "Please complete your submission by clicking the submit button on the form"
+        "message": "Form submitted successfully"
     }
     """
     try:
@@ -570,18 +569,13 @@ def submit_to_google_form():
         if not form_id:
             return jsonify({'success': False, 'error': 'Form ID is required'}), 400
         
-        # Build the form URL (users will need to submit manually)
-        submission_url = f"https://docs.google.com/forms/d/e/{form_id}/viewform"
+        # Submit the form using the service
+        result = google_forms_service.submit_response(form_id, responses)
         
-        return jsonify({
-            'success': True,
-            'submission_url': submission_url,
-            'message': 'Please complete your submission by clicking the submit button on the form',
-            'note': 'Due to Google Forms API limitations, responses must be submitted through the Google Forms interface'
-        })
+        return jsonify(result)
         
     except Exception as e:
-        return jsonify({'success': False, 'error': f'Error preparing submission: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': f'Error processing submission: {str(e)}'}), 500
 
 
 @app.route('/extract_form_id', methods=['GET'])

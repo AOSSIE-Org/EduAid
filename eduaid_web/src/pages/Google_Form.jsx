@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "../index.css";
+import ApiClient from "../utils/apiClient";
 
 function GoogleFormIntegration() {
     const [currentStep, setCurrentStep] = useState("input"); // 'input', 'form', 'success'
@@ -23,15 +24,7 @@ function GoogleFormIntegration() {
         setError("");
 
         try {
-            const response = await fetch("http://localhost:5000/fetch_google_form", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ form_url: formUrl }),
-            });
-
-            const data = await response.json();
+            const data = await ApiClient.post("/fetch_google_form", { form_url: formUrl });
 
             if (data.success) {
                 setFormData(data);
@@ -105,21 +98,10 @@ function GoogleFormIntegration() {
         );
 
         try {
-            const response = await fetch(
-                "http://localhost:5000/submit_to_google_form",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        form_id: formData.form_id,
-                        responses: responsesArray,
-                    }),
-                }
-            );
-
-            const data = await response.json();
+            const data = await ApiClient.post("/submit_to_google_form", {
+                form_id: formData.form_id,
+                responses: responsesArray,
+            });
 
             if (data.success) {
                 setSubmissionData(data);

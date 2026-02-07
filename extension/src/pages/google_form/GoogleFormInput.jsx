@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "../../index.css";
 import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
+import { API_BASE_URL } from "../../config";
 
 function GoogleFormInput({ onFormFetched }) {
     const [formUrl, setFormUrl] = useState("");
@@ -18,7 +19,7 @@ function GoogleFormInput({ onFormFetched }) {
         setError("");
 
         try {
-            const response = await fetch("http://localhost:5000/fetch_google_form", {
+            const response = await fetch(`${API_BASE_URL}/fetch_google_form`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

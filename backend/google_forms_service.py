@@ -58,7 +58,7 @@ class GoogleFormsService:
         url = f"https://docs.google.com/forms/d/e/{form_id}/viewform"
         
         try:
-            response = requests.get(url)
+            response = requests.get(url, timeout=15)
             if response.status_code != 200:
                 raise ValueError(f"Failed to access form. Status code: {response.status_code}")
                 
@@ -174,7 +174,7 @@ class GoogleFormsService:
                 
         try:
             # Send POST request
-            response = requests.post(submit_url, data=form_data)
+            response = requests.post(submit_url, data=form_data, timeout=15)
             
             # Print for debugging
             print(f"Submission Status: {response.status_code}")
@@ -195,7 +195,7 @@ class GoogleFormsService:
         try:
             import requests
             url = f"https://docs.google.com/forms/d/e/{form_id}/viewform"
-            response = requests.get(url)
+            response = requests.get(url, timeout=15)
             return response.status_code == 200, ""
         except Exception as e:
             return False, str(e)

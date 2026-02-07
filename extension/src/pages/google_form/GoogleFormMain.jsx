@@ -21,7 +21,7 @@ function GoogleFormMain() {
 
         // Open the form in a new tab for final submission
         if (data.submission_url) {
-            window.open(data.submission_url, '_blank');
+            window.open(data.submission_url, '_blank', 'noopener,noreferrer');
         }
     };
 
