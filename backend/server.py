@@ -5,6 +5,7 @@ import nltk
 import subprocess
 import os
 import glob
+import re
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -470,25 +471,51 @@ def clean_transcript(file_path):
 @app.route('/getTranscript', methods=['GET'])
 def get_transcript():
     video_id = request.args.get('videoId')
+    
+    # 1. Validation
     if not video_id:
         return jsonify({"error": "No video ID provided"}), 400
+    
+    # Sanitize ID to prevent path traversal attacks (e.g. "../../../etc/passwd")
+    video_id = str(video_id).strip()
+    if not re.match(r'^[a-zA-Z0-9_-]+$', video_id):
+         return jsonify({"error": "Invalid video ID format"}), 400
 
-    subprocess.run(["yt-dlp", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
-                "--sub-format", "vtt", "-o", f"subtitles/{video_id}.vtt", f"https://www.youtube.com/watch?v={video_id}"],
-               check=True, capture_output=True, text=True)
+    # 2. Deterministic Filename (The Fix)
+    # We use os.path.join for cross-platform safety (Windows/Linux)
+    output_filename = os.path.join("subtitles", f"{video_id}.vtt")
 
-    # Find the latest .vtt file in the "subtitles" folder
-    subtitle_files = glob.glob("subtitles/*.vtt")
-    if not subtitle_files:
-        return jsonify({"error": "No subtitles found"}), 404
+    try:
+        # 3. Download specific file
+        # We explicitly tell yt-dlp to write to output_filename
+        subprocess.run(
+            ["yt-dlp", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
+             "--sub-format", "vtt", "-o", output_filename, 
+             f"https://www.youtube.com/watch?v={video_id}"],
+            check=True, capture_output=True, text=True
+        )
 
-    latest_subtitle = max(subtitle_files, key=os.path.getctime)
-    transcript_text = clean_transcript(latest_subtitle)
+        # 4. Check if THAT file exists (No guessing with glob!)
+        if not os.path.exists(output_filename):
+            return jsonify({"error": "Failed to download subtitles"}), 404
 
-    # Optional: Clean up the file after reading
-    os.remove(latest_subtitle)
+        # 5. Read & Return
+        transcript_text = clean_transcript(output_filename)
+        return jsonify({"transcript": transcript_text})
 
-    return jsonify({"transcript": transcript_text})
+    except subprocess.CalledProcessError as e:
+        return jsonify({"error": f"Download failed: {str(e)}"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
+    finally:
+        # 6. Cleanup (The Safe Way)
+        # Only delete the specific file we created
+        if os.path.exists(output_filename):
+            try:
+                os.remove(output_filename)
+            except OSError:
+                pass # Ignore errors during cleanup to avoid crashing
 
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
