@@ -49,6 +49,24 @@ You can choose to set up the backend manually or use an automated shell script.
   ```bash
   chmod +x script.sh
 
+### Windows Installation Troubleshooting
+
+**Issue:** Installation fails on Windows with **Python 3.13** (errors regarding `sense2vec`, `spacy`, or `subprocess-exited-with-error`).
+
+**Cause:** Strict version pinning in `requirements.txt` is currently incompatible with Python 3.13 on Windows due to missing pre-built binary wheels.
+
+**Fix:** We recommend using **Python 3.12** or lower. You can set up a compatible virtual environment using the following commands:
+
+```bash
+# 1. Create a Python 3.12 virtual environment (requires Python 3.12 installed)
+py -3.12 -m venv venv
+
+# 2. Activate the environment
+.\venv\Scripts\activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+```
 
 ### 3. Configure Google APIs
 
