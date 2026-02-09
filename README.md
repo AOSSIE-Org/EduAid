@@ -66,6 +66,7 @@ py -3.12 -m venv venv
 
 # 3. Install dependencies
 pip install -r requirements.txt
+```
 
 ### 3. Configure Google APIs
 

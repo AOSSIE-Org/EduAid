@@ -38,7 +38,7 @@ answer = main.AnswerPredictor()
 BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
-#docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
@@ -55,7 +55,7 @@ def get_mcq():
     data = request.get_json()
 
     # Validate input: Reject if both text and URL are missing
-    if not data or (not data.get('text') and not data.get('url')):
+    if not data or (not data.get('input_text') and not data.get('url')):
         return jsonify({"error": "No text or URL provided"}), 400
     
     input_text = data.get("input_text", "")
