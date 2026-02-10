@@ -251,7 +251,7 @@ def get_mcq_answer():
 
     try:
         outputs = []
-        for question, options in zip(input_questions, input_options, strict=True):
+        for question, options in zip(input_questions, input_options):
             if not options:
                 outputs.append("")
                 continue
