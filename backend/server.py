@@ -52,6 +52,7 @@ VIDEO_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_-]{11}$")
 # ---------------------------------------------------------------------------
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_SIZE_MB * 1024 * 1024  # 10 MB
+os.makedirs("subtitles", exist_ok=True)
 
 CORS(app)
 logger.info("Starting Flask App...")
@@ -318,9 +319,9 @@ def get_boolean_answer():
         output = []
         for question in input_questions:
             qa_response = answer.predict_boolean_answer(
-                {"input_text": input_text, "input_question": question}
+                {"input_text": input_text, "input_question": [question]}
             )
-            output.append("True" if qa_response else "False")
+            output.append("True" if qa_response[0] else "False")
         logger.info("Generated answers for %d boolean questions", len(output))
         return jsonify({"output": output})
     except Exception:
@@ -545,6 +546,7 @@ def get_shortq_hard():
             article=input_text,
             num_questions=len(input_questions) if input_questions else 5,
             answer_style="sentences",
+            use_evaluator=True,
         )
         for item in output:
             item["question"] = make_question_harder(item["question"])
@@ -572,6 +574,7 @@ def get_mcq_hard():
             article=input_text,
             num_questions=len(input_questions) if input_questions else 5,
             answer_style="multiple_choice",
+            use_evaluator=True,
         )
         for q in output:
             q["question"] = make_question_harder(q["question"])
@@ -598,11 +601,13 @@ def get_boolq_hard():
         generated = qg.generate(
             article=input_text,
             num_questions=len(input_questions) if input_questions else 5,
-            answer_style="true_false",
+            answer_style="sentences",
+            use_evaluator=True,
         )
-        harder_questions = [make_question_harder(q) for q in generated]
-        logger.info("Generated %d hard boolean questions", len(harder_questions))
-        return jsonify({"output": harder_questions})
+        for item in generated:
+            item["question"] = make_question_harder(item["question"])
+        logger.info("Generated %d hard boolean questions", len(generated))
+        return jsonify({"output": generated})
     except Exception:
         logger.exception("Error generating hard boolean questions")
         return jsonify({"error": "Failed to generate hard boolean questions"}), 500
@@ -742,5 +747,4 @@ def request_entity_too_large(error):
 
 
 if __name__ == "__main__":
-    os.makedirs("subtitles", exist_ok=True)
     app.run()
