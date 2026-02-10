@@ -8,8 +8,6 @@ import logging
 import re
 import json
 import random
-import webbrowser
-
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -147,7 +145,7 @@ def get_mcq():
         questions = output.get("questions", [])
         logger.info("Generated %d MCQs", len(questions))
         return jsonify({"output": questions})
-    except Exception as e:
+    except Exception:
         logger.exception("Error generating MCQs")
         return jsonify({"error": "Failed to generate MCQ questions"}), 500
 
@@ -171,7 +169,7 @@ def get_boolq():
         boolean_questions = output.get("Boolean_Questions", [])
         logger.info("Generated %d boolean questions", len(boolean_questions))
         return jsonify({"output": boolean_questions})
-    except Exception as e:
+    except Exception:
         logger.exception("Error generating boolean questions")
         return jsonify({"error": "Failed to generate boolean questions"}), 500
 
@@ -195,7 +193,7 @@ def get_shortq():
         questions = output.get("questions", [])
         logger.info("Generated %d short questions", len(questions))
         return jsonify({"output": questions})
-    except Exception as e:
+    except Exception:
         logger.exception("Error generating short questions")
         return jsonify({"error": "Failed to generate short questions"}), 500
 
@@ -228,7 +226,7 @@ def get_problems():
         return jsonify(
             {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
         )
-    except Exception as e:
+    except Exception:
         logger.exception("Error generating combined problems")
         return jsonify({"error": "Failed to generate problems"}), 500
 
@@ -252,7 +250,7 @@ def get_mcq_answer():
 
     try:
         outputs = []
-        for question, options in zip(input_questions, input_options):
+        for question, options in zip(input_questions, input_options, strict=True):
             if not options:
                 outputs.append("")
                 continue
@@ -273,7 +271,7 @@ def get_mcq_answer():
 
         logger.info("Generated answers for %d MCQ questions", len(outputs))
         return jsonify({"output": outputs})
-    except Exception as e:
+    except Exception:
         logger.exception("Error generating MCQ answers")
         return jsonify({"error": "Failed to generate MCQ answers"}), 500
 
@@ -298,7 +296,7 @@ def get_answer():
             answers.append(qa_response["answer"])
         logger.info("Generated answers for %d short questions", len(answers))
         return jsonify({"output": answers})
-    except Exception as e:
+    except Exception:
         logger.exception("Error generating short-question answers")
         return jsonify({"error": "Failed to generate answers"}), 500
 
@@ -325,7 +323,7 @@ def get_boolean_answer():
             output.append("True" if qa_response else "False")
         logger.info("Generated answers for %d boolean questions", len(output))
         return jsonify({"output": output})
-    except Exception as e:
+    except Exception:
         logger.exception("Error generating boolean answers")
         return jsonify({"error": "Failed to generate boolean answers"}), 500
 
@@ -347,7 +345,7 @@ def get_content():
     except ValueError as e:
         logger.warning("Invalid document URL: %s", e)
         return jsonify({"error": str(e)}), 400
-    except Exception as e:
+    except Exception:
         logger.exception("Error fetching Google Doc content")
         return jsonify({"error": "Failed to fetch document content"}), 500
 
@@ -515,16 +513,19 @@ def generate_gform():
 
     NEW_QUESTION = {"requests": requests_list}
 
-    result = form_service.forms().create(body=NEW_FORM).execute()
-    form_service.forms().batchUpdate(
-        formId=result["formId"], body=NEW_QUESTION
-    ).execute()
+    try:
+        result = form_service.forms().create(body=NEW_FORM).execute()
+        form_service.forms().batchUpdate(
+            formId=result["formId"], body=NEW_QUESTION
+        ).execute()
 
-    edit_url = jsonify(result["responderUri"])
-    webbrowser.open_new_tab(
-        "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
-    )
-    return edit_url
+        edit_url = "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
+        responder_url = result["responderUri"]
+        logger.info("Created Google Form: %s", result["formId"])
+        return jsonify({"responder_url": responder_url, "edit_url": edit_url})
+    except Exception:
+        logger.exception("Error creating Google Form")
+        return jsonify({"error": "Failed to create Google Form"}), 500
 
 
 @app.route("/get_shortq_hard", methods=["POST"])
@@ -542,14 +543,14 @@ def get_shortq_hard():
         input_text = process_input_text(input_text, use_mediawiki)
         output = qg.generate(
             article=input_text,
-            num_questions=input_questions,
+            num_questions=len(input_questions) if input_questions else 5,
             answer_style="sentences",
         )
         for item in output:
             item["question"] = make_question_harder(item["question"])
         logger.info("Generated %d hard short questions", len(output))
         return jsonify({"output": output})
-    except Exception as e:
+    except Exception:
         logger.exception("Error generating hard short questions")
         return jsonify({"error": "Failed to generate hard short questions"}), 500
 
@@ -569,14 +570,14 @@ def get_mcq_hard():
         input_text = process_input_text(input_text, use_mediawiki)
         output = qg.generate(
             article=input_text,
-            num_questions=input_questions,
+            num_questions=len(input_questions) if input_questions else 5,
             answer_style="multiple_choice",
         )
         for q in output:
             q["question"] = make_question_harder(q["question"])
         logger.info("Generated %d hard MCQs", len(output))
         return jsonify({"output": output})
-    except Exception as e:
+    except Exception:
         logger.exception("Error generating hard MCQs")
         return jsonify({"error": "Failed to generate hard MCQ questions"}), 500
 
@@ -596,13 +597,13 @@ def get_boolq_hard():
         input_text = process_input_text(input_text, use_mediawiki)
         generated = qg.generate(
             article=input_text,
-            num_questions=input_questions,
+            num_questions=len(input_questions) if input_questions else 5,
             answer_style="true_false",
         )
         harder_questions = [make_question_harder(q) for q in generated]
         logger.info("Generated %d hard boolean questions", len(harder_questions))
         return jsonify({"output": harder_questions})
-    except Exception as e:
+    except Exception:
         logger.exception("Error generating hard boolean questions")
         return jsonify({"error": "Failed to generate hard boolean questions"}), 500
 
@@ -631,7 +632,7 @@ def upload_file():
             return jsonify({"content": content})
         else:
             return jsonify({"error": "Could not extract content from the file"}), 400
-    except Exception as e:
+    except Exception:
         logger.exception("Error processing uploaded file")
         return jsonify({"error": "Failed to process the uploaded file"}), 500
 
@@ -680,7 +681,6 @@ def get_transcript():
     # Use video_id-scoped file path to avoid race conditions between
     # concurrent requests for different videos.
     subtitle_path = os.path.join("subtitles", f"{video_id}")
-    expected_vtt = f"{subtitle_path}.en.vtt"
 
     try:
         subprocess.run(
@@ -706,15 +706,18 @@ def get_transcript():
         return jsonify({"error": "Failed to download subtitles"}), 500
 
     # Look for the VTT file specific to this video_id
-    matching_files = glob.glob(f"subtitles/{video_id}*.vtt")
+    matching_files = glob.glob(f"subtitles/{video_id}.*.vtt")
     if not matching_files:
         return jsonify({"error": "No subtitles found for this video"}), 404
 
     subtitle_file = matching_files[0]
     try:
         transcript_text = clean_transcript(subtitle_file)
+    except Exception:
+        logger.exception("Error cleaning transcript for video %s", video_id)
+        return jsonify({"error": "Failed to process transcript"}), 500
     finally:
-        # Always clean up the subtitle file
+        # Always clean up the subtitle files
         for f in matching_files:
             try:
                 os.remove(f)
