@@ -34,3 +34,21 @@
   -ms-overflow-style: none;  
   scrollbar-width: none;
 }
+
+/* --- FIX FOR ISSUE #316 (Popup Sizing) --- */
+/* These rules apply ONLY when <html class="is-popup"> is present */
+
+html.is-popup,
+html.is-popup body {
+  width: 420px;
+  height: 600px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevent scrollbars on the window itself */
+}
+
+html.is-popup #root {
+  width: 100%;      /* Force root to fill the 420px container */
+  height: 100%;     /* Force root to fill the 600px container */
+  border-radius: 0; /* Reset the 50% radius so corners aren't cut off */
+}
