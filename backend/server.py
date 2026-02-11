@@ -1,4 +1,7 @@
 from flask import Flask, request, jsonify
+from collections.abc import Mapping
+from werkzeug.exceptions import HTTPException, BadRequest, NotFound
+from werkzeug.utils import secure_filename
 from flask_cors import CORS
 from pprint import pprint
 import nltk
@@ -49,58 +52,134 @@ def process_input_text(input_text, use_mediawiki):
         input_text = mediawikiapi.summary(input_text,8)
     return input_text
 
+@app.errorhandler(HTTPException)
+def handle_http_exception(e):
+    """Return standardized JSON for HTTP exceptions."""
+    return jsonify({
+        "error": e.description,
+        "type": e.__class__.__name__,
+    }), e.code
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_exception(e):
+    """Handle unexpected exceptions with a generic JSON response."""
+    return jsonify({
+        "error": "Internal server error",
+        "type": "InternalServerError",
+    }), 500
+
+
+def require_json_field(data, field_name):
+    """Validate JSON payload and return a required field."""
+    if not isinstance(data, Mapping):
+        raise BadRequest("JSON body must be an object")
+    if field_name not in data:
+        raise BadRequest(f"{field_name} is required")
+    value = data[field_name]
+    if value in (None, "", [], {}):
+        raise BadRequest(f"{field_name} cannot be empty")
+    return value
+
 
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    """Generate multiple-choice questions from input text."""
+    data = request.get_json(silent=True)
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     input_text = process_input_text(input_text, use_mediawiki)
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    questions = output["questions"]
-    return jsonify({"output": questions})
+    questions = output.get("questions", [])
+    generated = len(questions)
+    if generated == 0:
+        status = "insufficient"
+    elif generated < max_questions:
+        status = "partial"
+    else:
+        status = "success"
+    return jsonify({
+        "output": questions,
+        "meta": {
+            "requested": max_questions,
+            "generated": generated,
+            "status": status
+        }
+    })
 
 
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    """Generate True/False questions from input text."""
+    data = request.get_json(silent=True)
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     input_text = process_input_text(input_text, use_mediawiki)
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    boolean_questions = output["Boolean_Questions"]
-    return jsonify({"output": boolean_questions})
+    questions = output.get("Boolean_Questions", [])
+    generated = len(questions)
+    if generated == 0:
+        status = "insufficient"
+    elif generated < max_questions:
+        status = "partial"
+    else:
+        status = "success"
+    return jsonify({
+        "output": questions,
+        "meta": {
+            "requested": max_questions,
+            "generated": generated,
+            "status": status
+        }
+    })
 
 
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    """Generate short-answer questions from input text."""
+    data = request.get_json(silent=True)
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     input_text = process_input_text(input_text, use_mediawiki)
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    questions = output["questions"]
-    return jsonify({"output": questions})
+    questions = output.get("questions", [])
+    generated = len(questions)
+    if generated == 0:
+        status = "insufficient"
+    elif generated < max_questions:
+        status = "partial"
+    else:
+        status = "success"
+    return jsonify({
+        "output": questions,
+        "meta": {
+            "requested": max_questions,
+            "generated": generated,
+            "status": status
+        }
+    })
 
 
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    """Generate MCQ, boolean, and short questions in a single request."""
+    data = request.get_json(silent=True)
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions_mcq = data.get("max_questions_mcq", 4)
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
     input_text = process_input_text(input_text, use_mediawiki)
+
     output1 = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions_mcq}
     )
@@ -110,9 +189,31 @@ def get_problems():
     output3 = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions_shortq}
     )
-    return jsonify(
-        {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
-    )
+
+    def build_meta(questions, requested):
+        generated = len(questions)
+        if generated == 0:
+            status = "insufficient"
+        elif generated < requested:
+            status = "partial"
+        else:
+            status = "success"
+        return {"requested": requested, "generated": generated, "status": status}
+
+    mcq_questions = output1.get("questions", [])
+    boolq_questions = output2.get("Boolean_Questions", [])
+    shortq_questions = output3.get("questions", [])
+
+    return jsonify({
+        "output_mcq": mcq_questions,
+        "output_boolq": boolq_questions,
+        "output_shortq": shortq_questions,
+        "meta": {
+            "mcq": build_meta(mcq_questions, max_questions_mcq),
+            "boolq": build_meta(boolq_questions, max_questions_boolq),
+            "shortq": build_meta(shortq_questions, max_questions_shortq)
+        }
+    })
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
