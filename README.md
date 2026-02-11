@@ -30,9 +30,21 @@ You can choose to set up the backend manually or use an automated shell script.
 3. **Run Flask App**:
    - Navigate to the `backend` folder and start the Flask app:
      ```bash
+     cd backend
      python server.py
      ```
-   - This will activate the backend for the application.
+   - This will start the backend server for the application.
+
+### Backend Notes
+
+- **Python version:** Python **3.10 or 3.11** is recommended.  
+  Python 3.12+ is not fully supported by some NLP and ML dependencies.
+
+- **Working directory:**  
+  Always run the backend from the `backend/` directory:
+  ```bash
+  cd backend
+  python server.py
 
 ### Option 2: Automated Setup with Shell Script
 
