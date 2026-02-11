@@ -4,6 +4,23 @@ Online learning has taken the front seat in the post-pandemic age. With the adve
 
 EduAid is one such project currently available in the form of a browser extension.
 
+## Project Structure
+
+EduAid is a multi-component project consisting of:
+
+- `backend/` – Flask backend API and NLP models (Sense2Vec-based)
+- `extension/` – Browser extension frontend
+- `eduaid_web/` – Web application frontend
+- `eduaid_desktop/` – Electron-based desktop application
+- `scripts/` – Helper shell scripts for setup and automation
+
+## Prerequisites
+
+- Python 3.8 or higher
+- Node.js 16 or higher
+- npm
+- Git
+
 ## Installation and Setup
 
 ### 1. Clone the Repository
@@ -12,23 +29,30 @@ EduAid is one such project currently available in the form of a browser extensio
 git clone https://github.com/AOSSIE-Org/EduAid.git
 cd EduAid
 ```
-## 2. Backend Setup
+### 2. Backend Setup
 
-You can choose to set up the backend manually or use an automated shell script.
+The backend service and its related files are located in the `backend/` directory. Follow the steps below to set up the backend. Commands that operate on the backend should be run from inside `backend/`.
 
 ### Option 1: Manual Setup
 
 1. **Download the Sense2Vec Model**:
    - Download the Sense2Vec model from [this link](https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz) and extract the contents into the `backend` folder.
 
-2. **Install Python Dependencies**:
-   - Navigate to the root repository folder and run the following command to install the required Python dependencies:
+2. **Create and activate a Python virtual environment (recommended)**:
+   ```bash
+   cd backend
+   python -m venv .venv
+   source .venv/bin/activate
+   ```
+
+3. **Install Python dependencies**:
+   - With the virtual environment activated and while in `backend/`, install dependencies from `backend/requirements.txt`:
      ```bash
      pip install -r requirements.txt
      ```
 
-3. **Run Flask App**:
-   - Navigate to the `backend` folder and start the Flask app:
+4. **Run Flask app**:
+   - Start the backend while in the `backend/` directory:
      ```bash
      python server.py
      ```
@@ -37,33 +61,34 @@ You can choose to set up the backend manually or use an automated shell script.
 ### Option 2: Automated Setup with Shell Script
 
 1. **Run the Setup Script**:
-   - Navigate to the `backend` folder and run the following shell script:
+   - The setup script performs the same steps listed in "Option 1: Manual Setup" (download and extract the Sense2Vec model, install Python dependencies, and start the Flask app).
+   - You must run the script from the `backend/` directory. Navigate to `backend/` and run:
      ```bash
      ./script.sh
      ```
-   - This script will automatically download and extract the Sense2Vec model, install Python dependencies, and start the Flask app.
+   - The script will automatically download and extract the Sense2Vec model, install Python dependencies, and start the Flask app.
 
 ### Troubleshooting
 
 - If the script fails to run, ensure that you have execution permissions:
   ```bash
   chmod +x script.sh
-
-
+  ```
 ### 3. Configure Google APIs
+
+Security note: Google API credential files contain sensitive secrets and must never be committed to version control. Place all credential files inside the `backend/` directory and ensure they remain untracked (add them to `.gitignore`).
 
 #### Google Docs API
 
-1. Navigate to the `backend` folder.
-2. Open the `service_account_key.json` file.
-3. Enter the service account details for the Google Docs API.
-4. Refer to the [Google Docs API documentation](https://developers.google.com/docs/api/reference/rest) for more details.
+1. Place your Google Docs service account file named `service_account_key.json` in the `backend/` directory.
+2. Open `backend/service_account_key.json` and enter the service account details required by the application.
+3. Keep `backend/service_account_key.json` untracked in git (do not commit). Refer to the [Google Docs API documentation](https://developers.google.com/docs/api/reference/rest) for more details.
 
 #### Google Forms API
 
-1. Open the `credentials.json` file in the `backend` folder.
-2. Enter the necessary credentials for the Google Forms API.
-3. Refer to the [Google Forms API quickstart guide](https://developers.google.com/forms/api/quickstart/python#set_up_your_environment) for setup instructions.
+1. Place your Google Forms credentials file named `credentials.json` in the `backend/` directory.
+2. Open `backend/credentials.json` and enter the necessary credentials for the Google Forms API.
+3. Keep `backend/credentials.json` untracked in git (do not commit). Refer to the [Google Forms API quickstart guide](https://developers.google.com/forms/api/quickstart/python#set_up_your_environment) for setup instructions.
 
 ### 4. Extension Setup
 
@@ -87,7 +112,7 @@ npm run build
 2. Enable "Developer mode" (top-right corner).
 3. Click on "Load Unpacked" and select the `dist` folder created in the previous step.
 
-#### EduAid Web App
+### EduAid Web App
 In addition to the browser extension, EduAid also offers a web app that provides the same powerful features for quiz generation. The web app allows you to access EduAid's capabilities directly from your browser without needing to install any extensions. Just start the backend server locally and:
 
 1. Navigate to the Web App Directory:
