@@ -5,7 +5,7 @@ import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
 import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
-import { FaClipboard , FaWikipediaW  } from "react-icons/fa";
+import { FaClipboard, FaTrash, FaWikipediaW } from "react-icons/fa";
 
 function Second() {
   const [text, setText] = useState("");
@@ -16,6 +16,11 @@ function Second() {
   const [fileContent, setFileContent] = useState('');
   const [docUrl, setDocUrl] = useState('');
   const [isToggleOn, setIsToggleOn] = useState(0);
+
+  const handleClearText = () => {
+    const ok = window.confirm("Clear input?");
+    if (ok) setText("");
+  };
 
   useEffect(() => {
     chrome.storage.local.get(["selectedText"], (result) => {
@@ -214,6 +219,14 @@ function Second() {
         <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-28">
           <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
             <FaClipboard className="h-[20px] w-[20px]" />
+          </button>
+          <button
+            type="button"
+            onClick={handleClearText}
+            className="absolute top-0 left-8 p-2 text-white focus:outline-none"
+            title="Clear input"
+          >
+            <FaTrash className="h-[18px] w-[18px]" />
           </button>
           <textarea
             className="absolute inset-0 p-8 pt-2 bg-[#83b6cc40] text-lg rounded-xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
