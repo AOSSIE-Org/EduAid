@@ -13,6 +13,9 @@ nltk.download('stopwords')
 nltk.download('popular')
 
 def is_word_available(word, s2v_model):
+    # Allow running without the (large) Sense2Vec model directory.
+    if s2v_model is None:
+        return True
     word = word.replace(" ", "_")
     sense = s2v_model.get_best_sense(word)
     if sense is not None:
