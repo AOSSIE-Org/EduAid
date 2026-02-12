@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from werkzeug.utils import secure_filename
 import nltk
 import subprocess
 import os
@@ -375,7 +376,7 @@ def generate_gform():
     DISCOVERY_DOC = "https://forms.googleapis.com/$discovery/rest?version=v1"
 
     store = file.Storage("token.json")
-    creds = None
+    creds = store.get()
     if not creds or creds.invalid:
         flow = client.flow_from_clientsecrets("credentials.json", SCOPES)
         creds = tools.run_flow(flow, store)
@@ -643,6 +644,9 @@ def upload_file():
             400,
         )
 
+    # Sanitize filename to prevent path-traversal attacks
+    uploaded_file.filename = secure_filename(uploaded_file.filename)
+
     try:
         content = file_processor.process_file(uploaded_file)
         if content:
@@ -700,6 +704,8 @@ def get_transcript():
 
     # Use video_id-scoped file path to avoid race conditions between
     # concurrent requests for different videos.
+    # Safety: subtitle_path is safe because VIDEO_ID_PATTERN (above) restricts
+    # video_id to [a-zA-Z0-9_-]{11}, preventing path traversal and injection.
     subtitle_path = os.path.join("subtitles", f"{video_id}")
 
     try:
@@ -719,10 +725,10 @@ def get_transcript():
             timeout=30,
         )
     except subprocess.TimeoutExpired:
-        logger.error("yt-dlp timed out for video %s", video_id)
+        logger.exception("yt-dlp timed out for video %s", video_id)
         return jsonify({"error": "Transcript download timed out"}), 504
     except subprocess.CalledProcessError as e:
-        logger.error("yt-dlp failed for video %s: %s", video_id, e.stderr)
+        logger.exception("yt-dlp failed for video %s: %s", video_id, e.stderr)
         return jsonify({"error": "Failed to download subtitles"}), 500
 
     # Look for the VTT file specific to this video_id

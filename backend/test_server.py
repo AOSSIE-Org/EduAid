@@ -13,6 +13,9 @@ Coverage:
 """
 
 import io
+import subprocess
+from typing import ClassVar
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -573,7 +576,7 @@ class TestGetBooleanAnswer:
 class TestHardQuestionEndpoints:
     """POST /get_shortq_hard, /get_mcq_hard, /get_boolq_hard"""
 
-    HARD_ENDPOINTS = ["/get_shortq_hard", "/get_mcq_hard", "/get_boolq_hard"]
+    HARD_ENDPOINTS: ClassVar[list[str]] = ["/get_shortq_hard", "/get_mcq_hard", "/get_boolq_hard"]
 
     @pytest.mark.parametrize("endpoint", HARD_ENDPOINTS)
     def test_valid_request(self, client, endpoint):
@@ -758,6 +761,45 @@ class TestGetTranscript:
         resp = client.post("/getTranscript")
         assert resp.status_code == 405
 
+    @patch("server.glob.glob", return_value=["subtitles/dQw4w9WgXcQ.en.vtt"])
+    @patch("server.clean_transcript", return_value="Hello world transcript text")
+    @patch("server.subprocess.run")
+    def test_happy_path_returns_transcript(
+        self, mock_run, mock_clean, mock_glob, client
+    ):
+        """Verify a valid video ID returns the cleaned transcript."""
+        resp = client.get("/getTranscript?videoId=dQw4w9WgXcQ")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert "transcript" in data
+        assert data["transcript"] == "Hello world transcript text"
+        mock_run.assert_called_once()
+
+    @patch("server.subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="yt-dlp", timeout=30))
+    def test_subprocess_timeout_returns_504(self, mock_run, client):
+        """Verify a subprocess timeout returns a 504 error."""
+        resp = client.get("/getTranscript?videoId=dQw4w9WgXcQ")
+        assert resp.status_code == 504
+        assert "timed out" in resp.get_json()["error"]
+
+    @patch(
+        "server.subprocess.run",
+        side_effect=subprocess.CalledProcessError(1, "yt-dlp", stderr="error"),
+    )
+    def test_subprocess_error_returns_500(self, mock_run, client):
+        """Verify a subprocess CalledProcessError returns a 500 error."""
+        resp = client.get("/getTranscript?videoId=dQw4w9WgXcQ")
+        assert resp.status_code == 500
+        assert "Failed to download" in resp.get_json()["error"]
+
+    @patch("server.glob.glob", return_value=[])
+    @patch("server.subprocess.run")
+    def test_no_subtitles_found_returns_404(self, mock_run, mock_glob, client):
+        """Verify a 404 is returned when no subtitle files are found."""
+        resp = client.get("/getTranscript?videoId=dQw4w9WgXcQ")
+        assert resp.status_code == 404
+        assert "No subtitles found" in resp.get_json()["error"]
+
 
 # ===========================================================================
 # Google Docs Content Endpoint
@@ -768,8 +810,8 @@ class TestGetContent:
     """POST /get_content
 
     Note: In tests ``docs_service`` is a MagicMock (not ``None``), so the
-    service-unavailable branch (503) is never reached.  All invalid-URL
-    scenarios hit the validation logic and return 400.
+    service-unavailable branch (503) is never reached by default.  All
+    invalid-URL scenarios hit the validation logic and return 400.
     """
 
     def test_missing_document_url(self, client):
@@ -796,6 +838,29 @@ class TestGetContent:
         """Verify GET is rejected on the POST-only content endpoint."""
         resp = client.get("/get_content")
         assert resp.status_code == 405
+
+    def test_happy_path_returns_content(self, client):
+        """Verify a valid document_url returns the fetched content."""
+        with patch("server.docs_service") as mock_docs:
+            mock_docs.get_document_content.return_value = {
+                "content": "Document text here"
+            }
+            resp = client.post(
+                "/get_content",
+                json={"document_url": "https://docs.google.com/document/d/abc123"},
+            )
+            assert resp.status_code == 200
+            mock_docs.get_document_content.assert_called_once()
+
+    def test_service_unavailable_returns_503(self, client):
+        """Verify a 503 is returned when docs_service is None."""
+        with patch("server.docs_service", None):
+            resp = client.post(
+                "/get_content",
+                json={"document_url": "https://docs.google.com/document/d/abc123"},
+            )
+            assert resp.status_code == 503
+            assert "not configured" in resp.get_json()["error"]
 
 
 # ===========================================================================
@@ -864,7 +929,7 @@ class TestGenerateGForm:
 class TestInputValidation:
     """Cross-cutting validation tests for question-generation endpoints."""
 
-    QUESTION_ENDPOINTS = ["/get_mcq", "/get_boolq", "/get_shortq", "/get_problems"]
+    QUESTION_ENDPOINTS: ClassVar[list[str]] = ["/get_mcq", "/get_boolq", "/get_shortq", "/get_problems"]
 
     @pytest.mark.parametrize("endpoint", QUESTION_ENDPOINTS)
     def test_empty_text_rejected(self, client, endpoint):
@@ -917,7 +982,7 @@ class TestInputValidation:
 class TestEdgeCases:
     """Unicode, special characters, boundary values, and unusual payloads."""
 
-    QUESTION_ENDPOINTS = ["/get_mcq", "/get_boolq", "/get_shortq"]
+    QUESTION_ENDPOINTS: ClassVar[list[str]] = ["/get_mcq", "/get_boolq", "/get_shortq"]
 
     @pytest.mark.parametrize("endpoint", QUESTION_ENDPOINTS)
     def test_unicode_text(self, client, endpoint):
@@ -989,7 +1054,7 @@ class TestEdgeCases:
         assert resp.status_code == 200
         assert mock_mcq_gen.generate_mcq.call_args[0][0]["max_questions"] == 20
 
-    def test_max_questions_float(self, client, mock_mcq_gen):
+    def test_max_questions_float(self, client):
         """Float max_questions should be truncated to int."""
         resp = client.post(
             "/get_mcq", json={"input_text": SAMPLE_TEXT, "max_questions": 3.7}
@@ -1026,7 +1091,7 @@ class TestEdgeCases:
 class TestHTTPMethods:
     """Ensure every endpoint rejects the wrong HTTP method."""
 
-    POST_ONLY_ENDPOINTS = [
+    POST_ONLY_ENDPOINTS: ClassVar[list[str]] = [
         "/get_mcq",
         "/get_boolq",
         "/get_shortq",
