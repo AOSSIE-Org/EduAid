@@ -5,7 +5,7 @@ import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
 import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
-import { FaClipboard , FaWikipediaW  } from "react-icons/fa";
+import { FaClipboard, FaWikipediaW } from "react-icons/fa";
 
 function Second() {
   const [text, setText] = useState("");
@@ -39,7 +39,7 @@ function Second() {
       formData.append('file', file);
 
       try {
-        const response = await fetch('http://localhost:5000/upload', {
+        const response = await fetch(`${API_BASE_URL}/upload`, {
           method: 'POST',
           body: formData,
         });
@@ -66,7 +66,7 @@ function Second() {
     // Check if a Google Doc URL is provided
     if (docUrl) {
       try {
-        const response = await fetch('http://localhost:5000/get_content', {
+        const response = await fetch(`${API_BASE_URL}/get_content`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -136,7 +136,7 @@ function Second() {
         max_questions: numQuestions,
         use_mediawiki: isToggleOn
       });
-      const response = await fetch(`http://localhost:5000/${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
         method: "POST",
         body: formData,
         headers: {
@@ -297,15 +297,15 @@ function Second() {
             </button>
           </div>
           <div className="items-center bg-[#202838] text-white rounded-xl px-2 py-2">
-           <button
-            title={isToggleOn ? "Disable Wikipedia Context" : "Enable Wikipedia Context"}
-            onClick={toggleSwitch}
-            className={`p-1 rounded-md transition 
+            <button
+              title={isToggleOn ? "Disable Wikipedia Context" : "Enable Wikipedia Context"}
+              onClick={toggleSwitch}
+              className={`p-1 rounded-md transition 
               ${isToggleOn ? "bg-green-500 text-white" : "bg-gray-400 text-gray-300"}
             `}
-          >
-            <FaWikipediaW className="text-2xl" />
-          </button>
+            >
+              <FaWikipediaW className="text-2xl" />
+            </button>
           </div>
         </div>
         <div className="flex my-2 justify-center gap-6 items-start">

@@ -25,6 +25,7 @@ from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
+from google_forms_service import GoogleFormsService
 
 app = Flask(__name__)
 CORS(app)
@@ -42,6 +43,7 @@ docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
+google_forms_service = GoogleFormsService()
 
 
 def process_input_text(input_text, use_mediawiki):
@@ -489,6 +491,119 @@ def get_transcript():
     os.remove(latest_subtitle)
 
     return jsonify({"transcript": transcript_text})
+
+
+@app.route('/fetch_google_form', methods=['POST'])
+def fetch_google_form():
+    """
+    Fetch Google Form structure and questions
+    
+    Request body:
+    {
+        "form_url": "Google Form URL or ID"
+    }
+    
+    Response:
+    {
+        "success": true,
+        "form_id": "...",
+        "title": "Form Title",
+        "description": "Form description",
+        "questions": [...]
+    }
+    """
+    try:
+        data = request.get_json()
+        form_url = data.get('form_url', '').strip()
+        
+        if not form_url:
+            return jsonify({'success': False, 'error': 'Form URL is required'}), 400
+        
+        # Extract form ID
+        form_id = google_forms_service.extract_form_id(form_url)
+        if not form_id:
+            return jsonify({'success': False, 'error': 'Invalid Google Form URL or ID'}), 400
+        
+        # Validate form access
+        is_valid, error_msg = google_forms_service.validate_form_access(form_id)
+        if not is_valid:
+            return jsonify({'success': False, 'error': error_msg}), 403
+        
+        # Get form structure
+        form_data = google_forms_service.get_form_structure(form_id)
+        form_data['success'] = True
+        
+        return jsonify(form_data)
+        
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error fetching form: {str(e)}'}), 500
+
+
+@app.route('/submit_to_google_form', methods=['POST'])
+def submit_to_google_form():
+    """
+    Submit responses to Google Form programmatically
+    
+    Request body:
+    {
+        "form_id": "Google Form ID",
+        "responses": [
+            {"question_id": "...", "answer": "..."},
+            ...
+        ]
+    }
+    
+    Response:
+    {
+        "success": true,
+        "message": "Form submitted successfully"
+    }
+    """
+    try:
+        data = request.get_json()
+        form_id = data.get('form_id', '')
+        responses = data.get('responses', [])
+        
+        if not form_id:
+            return jsonify({'success': False, 'error': 'Form ID is required'}), 400
+        
+        # Submit the form using the service
+        result = google_forms_service.submit_response(form_id, responses)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error processing submission: {str(e)}'}), 500
+
+
+@app.route('/extract_form_id', methods=['GET'])
+def extract_form_id_endpoint():
+    """
+    Extract and validate form ID from URL
+    
+    Query params:
+    ?url=<form_url>
+    
+    Response:
+    {
+        "valid": true,
+        "form_id": "..."
+    }
+    """
+    form_url = request.args.get('url', '').strip()
+    
+    if not form_url:
+        return jsonify({'valid': False, 'error': 'URL parameter is required'}), 400
+    
+    form_id = google_forms_service.extract_form_id(form_url)
+    
+    if form_id:
+        return jsonify({'valid': True, 'form_id': form_id})
+    else:
+        return jsonify({'valid': False, 'error': 'Invalid Google Form URL'})
+
 
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
