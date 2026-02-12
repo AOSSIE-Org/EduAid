@@ -1,6 +1,6 @@
 import React from "react";
 import "../index.css";
-import logoPNG from "../assets/aossie_logo_transparent.png";
+import Header from "../components/Header";
 import stars from "../assets/stars.png";
 import { FaArrowRight } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -33,18 +33,7 @@ const Previous = () => {
   return (
     <div className="w-screen h-screen bg-[#02000F] flex flex-col justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient p-4 md:p-6 overflow-y-auto">
-        {/* Header */}
-        <Link to="/" className="flex items-end gap-2">
-          <img src={logoPNG} alt="logo" className="w-14 md:w-16" />
-          <div className="text-xl md:text-2xl font-extrabold">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-              Edu
-            </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Aid
-            </span>
-          </div>
-        </Link>
+        <Header imgClass="w-14 md:w-16" titleClass="text-xl md:text-2xl font-extrabold" linkClass="flex items-end gap-2" />
 
         {/* Titles */}
         <div className="mt-3 text-right">
