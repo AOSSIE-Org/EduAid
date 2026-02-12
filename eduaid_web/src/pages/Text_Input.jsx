@@ -167,11 +167,11 @@ const Text_Input = () => {
 
         {/* Textarea */}
         <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
+          <button className="absolute top-4 left-4 p-2 text-white focus:outline-none z=10">
             <FaClipboard className="h-[24px] w-[24px]" />
           </button>
           <textarea
-            className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
+            className="absolute inset-0 pl-16 pr-8 pt-8 pb-8 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -183,26 +183,31 @@ const Text_Input = () => {
         <div className="text-white text-center my-4 text-lg">or</div>
 
         {/* File Upload Section */}
-        <div className="w-full max-w-2xl mx-auto border-[3px] rounded-2xl text-center px-6 py-6 border-dotted border-[#3E5063] mt-6">
-          <img className="mx-auto mb-2" height={32} width={32} src={cloud} alt="cloud" />
-          <p className="text-white text-lg">Choose a file (PDF, MP3 supported)</p>
+        <div className="w-full max-w-2xl mx-auto border-[3px] rounded-2xl text-center px-6 py-6 border-dotted border-[#3E5063] mt-8">
+          <img className="mx-auto mb-3" height={32} width={32} src={cloud} alt="cloud" />
+          <p className="text-white text-lg mb-4">Choose a file (PDF, MP3 supported)</p>
 
           <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} />
-          <button
-            className="bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2"
-            onClick={handleClick}
-          >
-            Browse File
-          </button>
 
-          <input
-            type="text"
-            placeholder="Enter Google Doc URL"
-            className="bg-transparent mt-4 border border-[#cbd0dc80] text-white text-lg sm:text-xl rounded-2xl px-4 py-2 w-full sm:w-2/3 outline-none"
-            value={docUrl}
-            onChange={(e) => setDocUrl(e.target.value)}
-          />
-        </div>
+          {/* Flex container for button + input */}
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <button
+              className="bg-[#3e506380] text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2"
+              onClick={handleClick}
+            >
+              Browse File
+            </button>
+
+            <input
+              type="text"
+              placeholder="Enter Google Doc URL"
+              className="bg-transparent border border-[#cbd0dc80] text-white text-lg sm:text-xl rounded-2xl px-4 py-2 w-64 outline-none"
+              value={docUrl}
+              onChange={(e) => setDocUrl(e.target.value)}
+           />
+         </div>
+       </div>
+
 
         {/* Controls Section */}
         <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-6 items-center mt-6 px-4 sm:px-8">
@@ -241,7 +246,7 @@ const Text_Input = () => {
         </div>
 
         {/* Navigation Buttons */}
-        <div className="flex flex-col sm:flex-row justify-center gap-6 mt-6 pb-10 px-4 sm:px-8">
+        <div className="flex flex-col sm:flex-row justify-center gap-8 mt-8 pb-12 px-4 sm:px-8">
           <Link to="/question-type">
             <button className="bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient rounded-xl w-full sm:w-auto">Back</button>
           </Link>
