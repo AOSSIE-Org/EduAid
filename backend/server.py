@@ -129,6 +129,7 @@ def process_input_text(input_text, use_mediawiki):
 
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
+    """Generate multiple-choice questions from the provided input text."""
     data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -153,6 +154,7 @@ def get_mcq():
 
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
+    """Generate boolean (true/false) questions from the provided input text."""
     data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -177,6 +179,7 @@ def get_boolq():
 
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
+    """Generate short-answer questions from the provided input text."""
     data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -201,6 +204,7 @@ def get_shortq():
 
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
+    """Generate a combined set of MCQ, boolean, and short-answer questions."""
     data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -233,6 +237,7 @@ def get_problems():
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
+    """Find the best matching option for each MCQ question using QA and cosine similarity."""
     data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
@@ -279,6 +284,7 @@ def get_mcq_answer():
 
 @app.route("/get_shortq_answer", methods=["POST"])
 def get_answer():
+    """Generate short answers to the provided questions using the QA pipeline."""
     data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
@@ -304,6 +310,7 @@ def get_answer():
 
 @app.route("/get_boolean_answer", methods=["POST"])
 def get_boolean_answer():
+    """Predict boolean (true/false) answers for the provided questions."""
     data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
@@ -331,6 +338,7 @@ def get_boolean_answer():
 
 @app.route("/get_content", methods=["POST"])
 def get_content():
+    """Fetch content from a Google Doc via the document URL."""
     try:
         if docs_service is None:
             return jsonify({"error": "Google Docs service is not configured"}), 503
@@ -353,6 +361,7 @@ def get_content():
 
 @app.route("/generate_gform", methods=["POST"])
 def generate_gform():
+    """Create a Google Form from the provided question-answer pairs."""
     data = request.get_json(silent=True) or {}
     qa_pairs = data.get("qa_pairs", [])
     question_type = data.get("question_type", "")
@@ -531,6 +540,7 @@ def generate_gform():
 
 @app.route("/get_shortq_hard", methods=["POST"])
 def get_shortq_hard():
+    """Generate harder short-answer questions using the question generator and evaluator."""
     data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -559,6 +569,7 @@ def get_shortq_hard():
 
 @app.route("/get_mcq_hard", methods=["POST"])
 def get_mcq_hard():
+    """Generate harder multiple-choice questions using the question generator and evaluator."""
     data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -587,6 +598,7 @@ def get_mcq_hard():
 
 @app.route("/get_boolq_hard", methods=["POST"])
 def get_boolq_hard():
+    """Generate harder boolean questions using the question generator and evaluator."""
     data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -614,6 +626,7 @@ def get_boolq_hard():
 
 @app.route("/upload", methods=["POST"])
 def upload_file():
+    """Handle file uploads and extract text content from the uploaded document."""
     if "file" not in request.files:
         return jsonify({"error": "No file part in the request"}), 400
 
@@ -643,6 +656,7 @@ def upload_file():
 
 @app.route("/", methods=["GET"])
 def hello():
+    """Return a simple health-check message confirming the server is running."""
     return "The server is working fine"
 
 def clean_transcript(file_path):
@@ -674,6 +688,7 @@ def clean_transcript(file_path):
 
 @app.route("/getTranscript", methods=["GET"])
 def get_transcript():
+    """Download and return the cleaned transcript for a YouTube video."""
     video_id = request.args.get("videoId", "").strip()
 
     if not video_id:
@@ -738,6 +753,7 @@ def get_transcript():
 # ---------------------------------------------------------------------------
 @app.errorhandler(413)
 def request_entity_too_large(error):
+    """Handle 413 errors when an uploaded file exceeds the size limit."""
     return (
         jsonify({
             "error": f"File too large. Maximum upload size is {MAX_UPLOAD_SIZE_MB} MB"

@@ -52,14 +52,17 @@ class TestRootEndpoint:
     """GET /"""
 
     def test_returns_200(self, client):
+        """Verify the root endpoint returns HTTP 200."""
         resp = client.get("/")
         assert resp.status_code == 200
 
     def test_returns_expected_message(self, client):
+        """Verify the root endpoint returns the health-check message."""
         resp = client.get("/")
         assert b"The server is working fine" in resp.data
 
     def test_post_not_allowed(self, client):
+        """Verify POST is rejected on the GET-only root endpoint."""
         resp = client.post("/")
         assert resp.status_code == 405
 
@@ -73,6 +76,7 @@ class TestGetMCQ:
     """POST /get_mcq"""
 
     def test_valid_request(self, client, mock_mcq_gen):
+        """Verify MCQ generation with valid input text and max_questions."""
         resp = client.post(
             "/get_mcq", json={"input_text": SAMPLE_TEXT, "max_questions": 3}
         )
@@ -89,28 +93,34 @@ class TestGetMCQ:
         assert call_args["max_questions"] == 4
 
     def test_empty_input_text(self, client):
+        """Verify empty input_text is rejected with 400."""
         resp = client.post("/get_mcq", json={"input_text": ""})
         assert resp.status_code == 400
         assert "error" in resp.get_json()
 
     def test_missing_input_text(self, client):
+        """Verify missing input_text field is rejected with 400."""
         resp = client.post("/get_mcq", json={})
         assert resp.status_code == 400
 
     def test_whitespace_only_input(self, client):
+        """Verify whitespace-only input_text is rejected with 400."""
         resp = client.post("/get_mcq", json={"input_text": "   \n\t  "})
         assert resp.status_code == 400
 
     def test_input_text_too_long(self, client):
+        """Verify input_text exceeding the maximum length is rejected."""
         resp = client.post("/get_mcq", json={"input_text": "A" * 50_001})
         assert resp.status_code == 400
         assert "exceeds maximum length" in resp.get_json()["error"]
 
     def test_input_text_at_max_length(self, client):
+        """Verify input_text at exactly the maximum length is accepted."""
         resp = client.post("/get_mcq", json={"input_text": "A" * 50_000})
         assert resp.status_code == 200
 
     def test_max_questions_clamped_high(self, client, mock_mcq_gen):
+        """Verify max_questions above the limit is clamped to the maximum."""
         resp = client.post(
             "/get_mcq", json={"input_text": SAMPLE_TEXT, "max_questions": 100}
         )
@@ -118,6 +128,7 @@ class TestGetMCQ:
         assert mock_mcq_gen.generate_mcq.call_args[0][0]["max_questions"] <= 20
 
     def test_max_questions_clamped_low(self, client, mock_mcq_gen):
+        """Verify negative max_questions is clamped to the minimum."""
         resp = client.post(
             "/get_mcq", json={"input_text": SAMPLE_TEXT, "max_questions": -5}
         )
@@ -125,6 +136,7 @@ class TestGetMCQ:
         assert mock_mcq_gen.generate_mcq.call_args[0][0]["max_questions"] >= 1
 
     def test_max_questions_zero(self, client, mock_mcq_gen):
+        """Verify max_questions of zero is clamped to the minimum."""
         resp = client.post(
             "/get_mcq", json={"input_text": SAMPLE_TEXT, "max_questions": 0}
         )
@@ -132,28 +144,34 @@ class TestGetMCQ:
         assert mock_mcq_gen.generate_mcq.call_args[0][0]["max_questions"] >= 1
 
     def test_max_questions_non_integer_string(self, client):
+        """Verify non-integer string max_questions falls back to default."""
         resp = client.post(
             "/get_mcq", json={"input_text": SAMPLE_TEXT, "max_questions": "abc"}
         )
         assert resp.status_code == 200  # falls back to default
 
     def test_input_text_not_string(self, client):
+        """Verify non-string input_text is rejected with 400."""
         resp = client.post("/get_mcq", json={"input_text": 12345})
         assert resp.status_code == 400
 
     def test_input_text_is_null(self, client):
+        """Verify null input_text is rejected with 400."""
         resp = client.post("/get_mcq", json={"input_text": None})
         assert resp.status_code == 400
 
     def test_unicode_input(self, client):
+        """Verify unicode input text is accepted."""
         resp = client.post("/get_mcq", json={"input_text": UNICODE_TEXT})
         assert resp.status_code == 200
 
     def test_special_characters(self, client):
+        """Verify input with special characters is accepted."""
         resp = client.post("/get_mcq", json={"input_text": SPECIAL_CHARS_TEXT})
         assert resp.status_code == 200
 
     def test_with_mediawiki_flag(self, client, mock_mediawiki):
+        """Verify mediawiki expansion is triggered when use_mediawiki is set."""
         resp = client.post(
             "/get_mcq", json={"input_text": SAMPLE_TEXT, "use_mediawiki": 1}
         )
@@ -161,16 +179,19 @@ class TestGetMCQ:
         mock_mediawiki.summary.assert_called()
 
     def test_generator_exception_returns_500(self, client, mock_mcq_gen):
+        """Verify a generator exception returns a 500 error response."""
         mock_mcq_gen.generate_mcq.side_effect = RuntimeError("Model crash")
         resp = client.post("/get_mcq", json={"input_text": SAMPLE_TEXT})
         assert resp.status_code == 500
         assert "error" in resp.get_json()
 
     def test_no_json_body(self, client):
+        """Verify sending a non-JSON body returns 400."""
         resp = client.post("/get_mcq", data="raw text", content_type="text/plain")
         assert resp.status_code == 400
 
     def test_get_method_not_allowed(self, client):
+        """Verify GET is rejected on the POST-only MCQ endpoint."""
         resp = client.get("/get_mcq")
         assert resp.status_code == 405
 
@@ -184,6 +205,7 @@ class TestGetBoolQ:
     """POST /get_boolq"""
 
     def test_valid_request(self, client):
+        """Verify boolean question generation with valid input."""
         resp = client.post(
             "/get_boolq", json={"input_text": SAMPLE_TEXT, "max_questions": 3}
         )
@@ -191,22 +213,27 @@ class TestGetBoolQ:
         assert "output" in resp.get_json()
 
     def test_empty_input_text(self, client):
+        """Verify empty input_text is rejected with 400."""
         resp = client.post("/get_boolq", json={"input_text": ""})
         assert resp.status_code == 400
 
     def test_missing_input_text(self, client):
+        """Verify missing input_text field is rejected with 400."""
         resp = client.post("/get_boolq", json={})
         assert resp.status_code == 400
 
     def test_input_text_too_long(self, client):
+        """Verify input_text exceeding the maximum length is rejected."""
         resp = client.post("/get_boolq", json={"input_text": "B" * 50_001})
         assert resp.status_code == 400
 
     def test_unicode_input(self, client):
+        """Verify unicode input text is accepted."""
         resp = client.post("/get_boolq", json={"input_text": UNICODE_TEXT})
         assert resp.status_code == 200
 
     def test_generator_exception_returns_500(self, client, mock_boolq_gen):
+        """Verify a generator exception returns a 500 error response."""
         mock_boolq_gen.generate_boolq.side_effect = RuntimeError("Model crash")
         resp = client.post("/get_boolq", json={"input_text": SAMPLE_TEXT})
         assert resp.status_code == 500
@@ -222,6 +249,7 @@ class TestGetShortQ:
     """POST /get_shortq"""
 
     def test_valid_request(self, client):
+        """Verify short question generation with valid input."""
         resp = client.post(
             "/get_shortq", json={"input_text": SAMPLE_TEXT, "max_questions": 4}
         )
@@ -229,18 +257,22 @@ class TestGetShortQ:
         assert "output" in resp.get_json()
 
     def test_empty_input_text(self, client):
+        """Verify empty input_text is rejected with 400."""
         resp = client.post("/get_shortq", json={"input_text": ""})
         assert resp.status_code == 400
 
     def test_missing_input_text(self, client):
+        """Verify missing input_text field is rejected with 400."""
         resp = client.post("/get_shortq", json={})
         assert resp.status_code == 400
 
     def test_input_text_too_long(self, client):
+        """Verify input_text exceeding the maximum length is rejected."""
         resp = client.post("/get_shortq", json={"input_text": "C" * 50_001})
         assert resp.status_code == 400
 
     def test_generator_exception_returns_500(self, client, mock_shortq_gen):
+        """Verify a generator exception returns a 500 error response."""
         mock_shortq_gen.generate_shortq.side_effect = RuntimeError("Model crash")
         resp = client.post("/get_shortq", json={"input_text": SAMPLE_TEXT})
         assert resp.status_code == 500
@@ -256,6 +288,7 @@ class TestGetProblems:
     """POST /get_problems"""
 
     def test_valid_request(self, client):
+        """Verify combined problem generation returns all three question types."""
         resp = client.post(
             "/get_problems",
             json={
@@ -272,18 +305,22 @@ class TestGetProblems:
         assert "output_shortq" in data
 
     def test_empty_input_text(self, client):
+        """Verify empty input_text is rejected with 400."""
         resp = client.post("/get_problems", json={"input_text": ""})
         assert resp.status_code == 400
 
     def test_missing_input_text(self, client):
+        """Verify missing input_text field is rejected with 400."""
         resp = client.post("/get_problems", json={})
         assert resp.status_code == 400
 
     def test_defaults_for_missing_max_questions(self, client):
+        """Verify defaults are applied when max_questions fields are omitted."""
         resp = client.post("/get_problems", json={"input_text": SAMPLE_TEXT})
         assert resp.status_code == 200
 
     def test_generator_exception_returns_500(self, client, mock_mcq_gen):
+        """Verify a generator exception returns a 500 error response."""
         mock_mcq_gen.generate_mcq.side_effect = RuntimeError("Model crash")
         resp = client.post("/get_problems", json={"input_text": SAMPLE_TEXT})
         assert resp.status_code == 500
@@ -299,6 +336,7 @@ class TestGetMCQAnswer:
     """POST /get_mcq_answer"""
 
     def test_valid_request(self, client):
+        """Verify MCQ answer selection with valid questions and options."""
         resp = client.post(
             "/get_mcq_answer",
             json={
@@ -315,6 +353,7 @@ class TestGetMCQAnswer:
         assert len(data["output"]) == 1
 
     def test_empty_questions_returns_empty(self, client):
+        """Verify empty question list returns an empty output."""
         resp = client.post(
             "/get_mcq_answer",
             json={
@@ -327,6 +366,7 @@ class TestGetMCQAnswer:
         assert resp.get_json()["output"] == []
 
     def test_mismatched_questions_and_options_count(self, client):
+        """Verify mismatched question/option counts return an empty output."""
         resp = client.post(
             "/get_mcq_answer",
             json={
@@ -339,6 +379,7 @@ class TestGetMCQAnswer:
         assert resp.get_json()["output"] == []
 
     def test_missing_questions_key(self, client):
+        """Verify missing input_question key returns an empty output."""
         resp = client.post(
             "/get_mcq_answer",
             json={"input_text": SAMPLE_TEXT, "input_options": [["A", "B"]]},
@@ -347,6 +388,7 @@ class TestGetMCQAnswer:
         assert resp.get_json()["output"] == []
 
     def test_missing_options_key(self, client):
+        """Verify missing input_options key returns an empty output."""
         resp = client.post(
             "/get_mcq_answer",
             json={"input_text": SAMPLE_TEXT, "input_question": ["Q?"]},
@@ -355,6 +397,7 @@ class TestGetMCQAnswer:
         assert resp.get_json()["output"] == []
 
     def test_empty_input_text(self, client):
+        """Verify empty input_text is rejected with 400."""
         resp = client.post(
             "/get_mcq_answer",
             json={
@@ -389,6 +432,7 @@ class TestGetShortQAnswer:
     """POST /get_shortq_answer"""
 
     def test_valid_request(self, client):
+        """Verify short-answer generation with a valid question."""
         resp = client.post(
             "/get_shortq_answer",
             json={
@@ -402,6 +446,7 @@ class TestGetShortQAnswer:
         assert len(data["output"]) == 1
 
     def test_multiple_questions(self, client):
+        """Verify answers are generated for multiple questions at once."""
         resp = client.post(
             "/get_shortq_answer",
             json={
@@ -417,6 +462,7 @@ class TestGetShortQAnswer:
         assert len(resp.get_json()["output"]) == 3
 
     def test_empty_questions_returns_empty(self, client):
+        """Verify empty question list returns an empty output."""
         resp = client.post(
             "/get_shortq_answer",
             json={"input_text": SAMPLE_TEXT, "input_question": []},
@@ -425,6 +471,7 @@ class TestGetShortQAnswer:
         assert resp.get_json()["output"] == []
 
     def test_missing_questions_returns_empty(self, client):
+        """Verify missing input_question key returns an empty output."""
         resp = client.post(
             "/get_shortq_answer", json={"input_text": SAMPLE_TEXT}
         )
@@ -432,6 +479,7 @@ class TestGetShortQAnswer:
         assert resp.get_json()["output"] == []
 
     def test_empty_input_text(self, client):
+        """Verify empty input_text is rejected with 400."""
         resp = client.post(
             "/get_shortq_answer",
             json={"input_text": "", "input_question": ["Q?"]},
@@ -439,6 +487,7 @@ class TestGetShortQAnswer:
         assert resp.status_code == 400
 
     def test_pipeline_exception_returns_500(self, client, mock_qa_pipeline):
+        """Verify a QA pipeline exception returns a 500 error response."""
         mock_qa_pipeline.side_effect = RuntimeError("Pipeline crash")
         resp = client.post(
             "/get_shortq_answer",
@@ -457,6 +506,7 @@ class TestGetBooleanAnswer:
     """POST /get_boolean_answer"""
 
     def test_valid_request_true(self, client, mock_answer_predictor):
+        """Verify a true boolean prediction is returned as 'True'."""
         mock_answer_predictor.predict_boolean_answer.return_value = [True]
         resp = client.post(
             "/get_boolean_answer",
@@ -470,6 +520,7 @@ class TestGetBooleanAnswer:
         assert data["output"] == ["True"]
 
     def test_valid_request_false(self, client, mock_answer_predictor):
+        """Verify a false boolean prediction is returned as 'False'."""
         mock_answer_predictor.predict_boolean_answer.return_value = [False]
         resp = client.post(
             "/get_boolean_answer",
@@ -482,6 +533,7 @@ class TestGetBooleanAnswer:
         assert resp.get_json()["output"] == ["False"]
 
     def test_empty_questions_returns_empty(self, client):
+        """Verify empty question list returns an empty output."""
         resp = client.post(
             "/get_boolean_answer",
             json={"input_text": SAMPLE_TEXT, "input_question": []},
@@ -490,6 +542,7 @@ class TestGetBooleanAnswer:
         assert resp.get_json()["output"] == []
 
     def test_empty_input_text(self, client):
+        """Verify empty input_text is rejected with 400."""
         resp = client.post(
             "/get_boolean_answer",
             json={"input_text": "", "input_question": ["Statement"]},
@@ -497,6 +550,7 @@ class TestGetBooleanAnswer:
         assert resp.status_code == 400
 
     def test_predictor_exception_returns_500(self, client, mock_answer_predictor):
+        """Verify a predictor exception returns a 500 error response."""
         mock_answer_predictor.predict_boolean_answer.side_effect = RuntimeError(
             "Crash"
         )
@@ -523,27 +577,32 @@ class TestHardQuestionEndpoints:
 
     @pytest.mark.parametrize("endpoint", HARD_ENDPOINTS)
     def test_valid_request(self, client, endpoint):
+        """Verify hard question generation succeeds for each hard endpoint."""
         resp = client.post(endpoint, json={"input_text": SAMPLE_TEXT})
         assert resp.status_code == 200
         assert "output" in resp.get_json()
 
     @pytest.mark.parametrize("endpoint", HARD_ENDPOINTS)
     def test_empty_input_text(self, client, endpoint):
+        """Verify empty input_text is rejected with 400 for hard endpoints."""
         resp = client.post(endpoint, json={"input_text": ""})
         assert resp.status_code == 400
 
     @pytest.mark.parametrize("endpoint", HARD_ENDPOINTS)
     def test_missing_input_text(self, client, endpoint):
+        """Verify missing input_text is rejected with 400 for hard endpoints."""
         resp = client.post(endpoint, json={})
         assert resp.status_code == 400
 
     @pytest.mark.parametrize("endpoint", HARD_ENDPOINTS)
     def test_input_text_too_long(self, client, endpoint):
+        """Verify input_text exceeding max length is rejected for hard endpoints."""
         resp = client.post(endpoint, json={"input_text": "X" * 50_001})
         assert resp.status_code == 400
 
     @pytest.mark.parametrize("endpoint", HARD_ENDPOINTS)
     def test_with_mediawiki(self, client, endpoint, mock_mediawiki):
+        """Verify mediawiki expansion is triggered for hard endpoints."""
         resp = client.post(
             endpoint, json={"input_text": SAMPLE_TEXT, "use_mediawiki": 1}
         )
@@ -552,6 +611,7 @@ class TestHardQuestionEndpoints:
 
     @pytest.mark.parametrize("endpoint", HARD_ENDPOINTS)
     def test_with_input_questions(self, client, endpoint, mock_question_generator):
+        """Verify num_questions matches the length of input_question list."""
         resp = client.post(
             endpoint,
             json={
@@ -568,6 +628,7 @@ class TestHardQuestionEndpoints:
     def test_generator_exception_returns_500(
         self, client, endpoint, mock_question_generator
     ):
+        """Verify a generator exception returns a 500 error for hard endpoints."""
         mock_question_generator.generate.side_effect = RuntimeError("Crash")
         resp = client.post(endpoint, json={"input_text": SAMPLE_TEXT})
         assert resp.status_code == 500
@@ -583,49 +644,58 @@ class TestFileUpload:
     """POST /upload"""
 
     def test_upload_txt_file(self, client):
+        """Verify a .txt file upload is accepted and content is extracted."""
         data = {"file": (io.BytesIO(b"Hello world content"), "test.txt")}
         resp = client.post("/upload", data=data, content_type="multipart/form-data")
         assert resp.status_code == 200
         assert "content" in resp.get_json()
 
     def test_upload_pdf_file(self, client):
+        """Verify a .pdf file upload is accepted."""
         data = {"file": (io.BytesIO(b"%PDF-1.4 fake pdf"), "document.pdf")}
         resp = client.post("/upload", data=data, content_type="multipart/form-data")
         assert resp.status_code == 200
 
     def test_upload_docx_file(self, client):
+        """Verify a .docx file upload is accepted."""
         data = {"file": (io.BytesIO(b"PK\x03\x04 fake docx"), "report.docx")}
         resp = client.post("/upload", data=data, content_type="multipart/form-data")
         assert resp.status_code == 200
 
     def test_upload_unsupported_html(self, client):
+        """Verify a .html file upload is rejected with 400."""
         data = {"file": (io.BytesIO(b"<html>hi</html>"), "page.html")}
         resp = client.post("/upload", data=data, content_type="multipart/form-data")
         assert resp.status_code == 400
         assert "Unsupported file type" in resp.get_json()["error"]
 
     def test_upload_unsupported_exe(self, client):
+        """Verify a .exe file upload is rejected with 400."""
         data = {"file": (io.BytesIO(b"\x00\x00"), "malware.exe")}
         resp = client.post("/upload", data=data, content_type="multipart/form-data")
         assert resp.status_code == 400
 
     def test_upload_unsupported_py(self, client):
+        """Verify a .py file upload is rejected with 400."""
         data = {"file": (io.BytesIO(b"print('hi')"), "script.py")}
         resp = client.post("/upload", data=data, content_type="multipart/form-data")
         assert resp.status_code == 400
 
     def test_no_file_part(self, client):
+        """Verify missing file part returns a 400 error."""
         resp = client.post("/upload", data={}, content_type="multipart/form-data")
         assert resp.status_code == 400
         assert "No file part" in resp.get_json()["error"]
 
     def test_empty_filename(self, client):
+        """Verify an empty filename returns a 400 error."""
         data = {"file": (io.BytesIO(b"content"), "")}
         resp = client.post("/upload", data=data, content_type="multipart/form-data")
         assert resp.status_code == 400
         assert "No file selected" in resp.get_json()["error"]
 
     def test_processor_returns_empty_content(self, client, mock_file_processor):
+        """Verify empty content from processor returns a 400 error."""
         mock_file_processor.process_file.return_value = ""
         data = {"file": (io.BytesIO(b"content"), "empty.txt")}
         resp = client.post("/upload", data=data, content_type="multipart/form-data")
@@ -633,12 +703,14 @@ class TestFileUpload:
         assert "Could not extract content" in resp.get_json()["error"]
 
     def test_processor_returns_none(self, client, mock_file_processor):
+        """Verify None content from processor returns a 400 error."""
         mock_file_processor.process_file.return_value = None
         data = {"file": (io.BytesIO(b"content"), "empty.txt")}
         resp = client.post("/upload", data=data, content_type="multipart/form-data")
         assert resp.status_code == 400
 
     def test_processor_raises_exception(self, client, mock_file_processor):
+        """Verify a processor exception returns a 500 error."""
         mock_file_processor.process_file.side_effect = RuntimeError("Parse error")
         data = {"file": (io.BytesIO(b"content"), "test.txt")}
         resp = client.post("/upload", data=data, content_type="multipart/form-data")
@@ -655,28 +727,34 @@ class TestGetTranscript:
     """GET /getTranscript"""
 
     def test_missing_video_id(self, client):
+        """Verify missing video ID returns a 400 error."""
         resp = client.get("/getTranscript")
         assert resp.status_code == 400
         assert "No video ID" in resp.get_json()["error"]
 
     def test_empty_video_id(self, client):
+        """Verify empty video ID returns a 400 error."""
         resp = client.get("/getTranscript?videoId=")
         assert resp.status_code == 400
 
     def test_invalid_video_id_special_chars(self, client):
+        """Verify video ID with special characters is rejected."""
         resp = client.get("/getTranscript?videoId=invalid!@#$")
         assert resp.status_code == 400
         assert "Invalid video ID" in resp.get_json()["error"]
 
     def test_video_id_too_short(self, client):
+        """Verify a video ID shorter than 11 characters is rejected."""
         resp = client.get("/getTranscript?videoId=abc")
         assert resp.status_code == 400
 
     def test_video_id_too_long(self, client):
+        """Verify a video ID longer than 11 characters is rejected."""
         resp = client.get("/getTranscript?videoId=abcdefghijklmno")
         assert resp.status_code == 400
 
     def test_post_method_not_allowed(self, client):
+        """Verify POST is rejected on the GET-only transcript endpoint."""
         resp = client.post("/getTranscript")
         assert resp.status_code == 405
 
@@ -695,22 +773,27 @@ class TestGetContent:
     """
 
     def test_missing_document_url(self, client):
+        """Verify missing document_url returns a 400 error."""
         resp = client.post("/get_content", json={})
         assert resp.status_code == 400
 
     def test_empty_document_url(self, client):
+        """Verify empty document_url returns a 400 error."""
         resp = client.post("/get_content", json={"document_url": ""})
         assert resp.status_code == 400
 
     def test_null_document_url(self, client):
+        """Verify null document_url returns a 400 error."""
         resp = client.post("/get_content", json={"document_url": None})
         assert resp.status_code == 400
 
     def test_non_string_document_url(self, client):
+        """Verify non-string document_url returns a 400 error."""
         resp = client.post("/get_content", json={"document_url": 12345})
         assert resp.status_code == 400
 
     def test_get_method_not_allowed(self, client):
+        """Verify GET is rejected on the POST-only content endpoint."""
         resp = client.get("/get_content")
         assert resp.status_code == 405
 
@@ -724,6 +807,7 @@ class TestGenerateGForm:
     """POST /generate_gform"""
 
     def test_missing_qa_pairs(self, client):
+        """Verify missing qa_pairs returns a 400 error."""
         resp = client.post(
             "/generate_gform", json={"question_type": "get_mcq"}
         )
@@ -731,6 +815,7 @@ class TestGenerateGForm:
         assert "qa_pairs" in resp.get_json()["error"]
 
     def test_empty_qa_pairs(self, client):
+        """Verify empty qa_pairs returns a 400 error."""
         resp = client.post(
             "/generate_gform",
             json={"qa_pairs": [], "question_type": "get_mcq"},
@@ -738,6 +823,7 @@ class TestGenerateGForm:
         assert resp.status_code == 400
 
     def test_missing_question_type(self, client):
+        """Verify missing question_type returns a 400 error."""
         resp = client.post(
             "/generate_gform",
             json={"qa_pairs": [{"question": "Q?", "answer": "A"}]},
@@ -746,6 +832,7 @@ class TestGenerateGForm:
         assert "question_type" in resp.get_json()["error"]
 
     def test_empty_question_type(self, client):
+        """Verify empty question_type returns a 400 error."""
         resp = client.post(
             "/generate_gform",
             json={
@@ -756,6 +843,7 @@ class TestGenerateGForm:
         assert resp.status_code == 400
 
     def test_qa_pairs_not_list(self, client):
+        """Verify non-list qa_pairs returns a 400 error."""
         resp = client.post(
             "/generate_gform",
             json={"qa_pairs": "not a list", "question_type": "get_mcq"},
@@ -763,6 +851,7 @@ class TestGenerateGForm:
         assert resp.status_code == 400
 
     def test_get_method_not_allowed(self, client):
+        """Verify GET is rejected on the POST-only gform endpoint."""
         resp = client.get("/generate_gform")
         assert resp.status_code == 405
 
@@ -779,36 +868,43 @@ class TestInputValidation:
 
     @pytest.mark.parametrize("endpoint", QUESTION_ENDPOINTS)
     def test_empty_text_rejected(self, client, endpoint):
+        """Verify empty text is rejected across question endpoints."""
         resp = client.post(endpoint, json={"input_text": ""})
         assert resp.status_code == 400
 
     @pytest.mark.parametrize("endpoint", QUESTION_ENDPOINTS)
     def test_null_text_rejected(self, client, endpoint):
+        """Verify null text is rejected across question endpoints."""
         resp = client.post(endpoint, json={"input_text": None})
         assert resp.status_code == 400
 
     @pytest.mark.parametrize("endpoint", QUESTION_ENDPOINTS)
     def test_numeric_text_rejected(self, client, endpoint):
+        """Verify numeric text is rejected across question endpoints."""
         resp = client.post(endpoint, json={"input_text": 42})
         assert resp.status_code == 400
 
     @pytest.mark.parametrize("endpoint", QUESTION_ENDPOINTS)
     def test_list_text_rejected(self, client, endpoint):
+        """Verify list input is rejected across question endpoints."""
         resp = client.post(endpoint, json={"input_text": ["not", "a", "string"]})
         assert resp.status_code == 400
 
     @pytest.mark.parametrize("endpoint", QUESTION_ENDPOINTS)
     def test_boolean_text_rejected(self, client, endpoint):
+        """Verify boolean input is rejected across question endpoints."""
         resp = client.post(endpoint, json={"input_text": True})
         assert resp.status_code == 400
 
     @pytest.mark.parametrize("endpoint", QUESTION_ENDPOINTS)
     def test_text_exceeding_max_length(self, client, endpoint):
+        """Verify oversized text is rejected across question endpoints."""
         resp = client.post(endpoint, json={"input_text": "X" * 50_001})
         assert resp.status_code == 400
 
     @pytest.mark.parametrize("endpoint", QUESTION_ENDPOINTS)
     def test_no_body_at_all(self, client, endpoint):
+        """Verify missing request body is rejected across question endpoints."""
         resp = client.post(endpoint)
         assert resp.status_code == 400
 
@@ -825,50 +921,60 @@ class TestEdgeCases:
 
     @pytest.mark.parametrize("endpoint", QUESTION_ENDPOINTS)
     def test_unicode_text(self, client, endpoint):
+        """Verify unicode text is accepted across question endpoints."""
         resp = client.post(endpoint, json={"input_text": UNICODE_TEXT})
         assert resp.status_code == 200
 
     @pytest.mark.parametrize("endpoint", QUESTION_ENDPOINTS)
     def test_special_characters(self, client, endpoint):
+        """Verify special characters are accepted across endpoints."""
         resp = client.post(endpoint, json={"input_text": SPECIAL_CHARS_TEXT})
         assert resp.status_code == 200
 
     @pytest.mark.parametrize("endpoint", QUESTION_ENDPOINTS)
     def test_text_exactly_at_max_length(self, client, endpoint):
+        """Verify text at exactly max length is accepted."""
         resp = client.post(endpoint, json={"input_text": "A" * 50_000})
         assert resp.status_code == 200
 
     @pytest.mark.parametrize("endpoint", QUESTION_ENDPOINTS)
     def test_single_character_text(self, client, endpoint):
+        """Verify a single character text is accepted."""
         resp = client.post(endpoint, json={"input_text": "A"})
         assert resp.status_code == 200
 
     def test_emoji_text(self, client):
+        """Verify emoji-containing text is accepted."""
         text = "AI is powerful 🤖🧠💡 and processes data 📊 for insights 🔍"
         resp = client.post("/get_mcq", json={"input_text": text})
         assert resp.status_code == 200
 
     def test_newlines_and_tabs(self, client):
+        """Verify text with newlines and tabs is accepted."""
         text = "AI is important.\n\nIt uses algorithms.\n\tML is a subset of AI."
         resp = client.post("/get_mcq", json={"input_text": text})
         assert resp.status_code == 200
 
     def test_html_in_text(self, client):
+        """Verify HTML markup in text is accepted."""
         text = "<p>AI is the simulation of <b>human intelligence</b></p>"
         resp = client.post("/get_mcq", json={"input_text": text})
         assert resp.status_code == 200
 
     def test_json_in_text(self, client):
+        """Verify JSON content in text is accepted."""
         text = '{"key": "AI is intelligence simulation", "nested": {"v": true}}'
         resp = client.post("/get_mcq", json={"input_text": text})
         assert resp.status_code == 200
 
     def test_repeated_text(self, client):
+        """Verify highly repeated text is accepted."""
         text = "AI is intelligence. " * 500
         resp = client.post("/get_mcq", json={"input_text": text})
         assert resp.status_code == 200
 
     def test_max_questions_exact_lower_bound(self, client, mock_mcq_gen):
+        """Verify max_questions at the lower boundary is passed through."""
         resp = client.post(
             "/get_mcq", json={"input_text": SAMPLE_TEXT, "max_questions": 1}
         )
@@ -876,6 +982,7 @@ class TestEdgeCases:
         assert mock_mcq_gen.generate_mcq.call_args[0][0]["max_questions"] == 1
 
     def test_max_questions_exact_upper_bound(self, client, mock_mcq_gen):
+        """Verify max_questions at the upper boundary is passed through."""
         resp = client.post(
             "/get_mcq", json={"input_text": SAMPLE_TEXT, "max_questions": 20}
         )
@@ -890,6 +997,7 @@ class TestEdgeCases:
         assert resp.status_code == 200
 
     def test_form_urlencoded_rejected(self, client):
+        """Verify form-urlencoded content type is rejected."""
         resp = client.post(
             "/get_mcq",
             data="input_text=hello",
@@ -936,21 +1044,26 @@ class TestHTTPMethods:
 
     @pytest.mark.parametrize("endpoint", POST_ONLY_ENDPOINTS)
     def test_get_not_allowed_on_post_endpoints(self, client, endpoint):
+        """Verify GET requests are rejected on POST-only endpoints."""
         resp = client.get(endpoint)
         assert resp.status_code == 405
 
     def test_post_not_allowed_on_root(self, client):
+        """Verify POST is rejected on the root endpoint."""
         resp = client.post("/")
         assert resp.status_code == 405
 
     def test_post_not_allowed_on_transcript(self, client):
+        """Verify POST is rejected on the transcript endpoint."""
         resp = client.post("/getTranscript")
         assert resp.status_code == 405
 
     def test_put_not_allowed(self, client):
+        """Verify PUT requests are rejected."""
         resp = client.put("/get_mcq", json={"input_text": SAMPLE_TEXT})
         assert resp.status_code == 405
 
     def test_delete_not_allowed(self, client):
+        """Verify DELETE requests are rejected."""
         resp = client.delete("/get_mcq")
         assert resp.status_code == 405
