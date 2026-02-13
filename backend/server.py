@@ -89,7 +89,7 @@ def get_mcq():
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    questions = output["questions"]
+    questions = output.get("questions", [])
     result = {"output": questions}
     if wiki_warning:
         result["warning"] = wiki_warning
@@ -106,7 +106,7 @@ def get_boolq():
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    boolean_questions = output["Boolean_Questions"]
+    boolean_questions = output.get("Boolean_Questions", [])
     result = {"output": boolean_questions}
     if wiki_warning:
         result["warning"] = wiki_warning
@@ -123,7 +123,7 @@ def get_shortq():
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    questions = output["questions"]
+    questions = output.get("questions", [])
     result = {"output": questions}
     if wiki_warning:
         result["warning"] = wiki_warning

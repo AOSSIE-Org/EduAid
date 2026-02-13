@@ -95,8 +95,8 @@ class TestWikipediaFallbackHardEndpoints:
     @pytest.mark.parametrize("endpoint", [
         "/get_shortq_hard", "/get_mcq_hard", "/get_boolq_hard",
     ])
-    def test_ssl_error_hard_endpoints_returns_200_with_warning(self, client, endpoint):
-        """SSL failure should NOT crash hard-question endpoints."""
+    def test_connection_error_hard_endpoints_returns_200_with_warning(self, client, endpoint):
+        """Connection failure should NOT crash hard-question endpoints."""
         with patch("server.mediawikiapi") as wiki_mock:
             wiki_mock.summary.side_effect = ConnectionError("Network unreachable")
             resp = client.post(
