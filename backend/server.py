@@ -5,6 +5,7 @@ import nltk
 import subprocess
 import os
 import glob
+import logging
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -28,7 +29,15 @@ from mediawikiapi import MediaWikiAPI
 
 app = Flask(__name__)
 CORS(app)
-print("Starting Flask App...")
+
+# Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler()],
+)
+logger = logging.getLogger(__name__)
+logger.info("Starting Flask App...")
 
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
@@ -45,9 +54,29 @@ qa_model = pipeline("question-answering")
 
 
 def process_input_text(input_text, use_mediawiki):
+    """Optionally expand *input_text* via MediaWiki if the flag is set.
+
+    Returns ``(processed_text, warning)`` where *warning* is ``None`` when
+    Wikipedia enrichment succeeded (or was not requested), and a human-readable
+    string when enrichment was skipped due to a network / SSL / API error.
+
+    This ensures quiz generation continues even when the external MediaWiki
+    service is unreachable (see issue #428).
+    """
     if use_mediawiki == 1:
-        input_text = mediawikiapi.summary(input_text,8)
-    return input_text
+        try:
+            input_text = mediawikiapi.summary(input_text, 8)
+        except Exception:
+            logger.warning(
+                "Wikipedia enrichment failed – continuing without it.",
+                exc_info=True,
+            )
+            return input_text, (
+                "Wikipedia enrichment was requested but could not be completed "
+                "due to a network error. Results were generated from the "
+                "original input text only."
+            )
+    return input_text, None
 
 
 @app.route("/get_mcq", methods=["POST"])
@@ -56,12 +85,15 @@ def get_mcq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
+    input_text, wiki_warning = process_input_text(input_text, use_mediawiki)
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    questions = output["questions"]
-    return jsonify({"output": questions})
+    questions = output.get("questions", [])
+    result = {"output": questions}
+    if wiki_warning:
+        result["warning"] = wiki_warning
+    return jsonify(result)
 
 
 @app.route("/get_boolq", methods=["POST"])
@@ -70,12 +102,15 @@ def get_boolq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
+    input_text, wiki_warning = process_input_text(input_text, use_mediawiki)
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    boolean_questions = output["Boolean_Questions"]
-    return jsonify({"output": boolean_questions})
+    boolean_questions = output.get("Boolean_Questions", [])
+    result = {"output": boolean_questions}
+    if wiki_warning:
+        result["warning"] = wiki_warning
+    return jsonify(result)
 
 
 @app.route("/get_shortq", methods=["POST"])
@@ -84,12 +119,15 @@ def get_shortq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
+    input_text, wiki_warning = process_input_text(input_text, use_mediawiki)
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    questions = output["questions"]
-    return jsonify({"output": questions})
+    questions = output.get("questions", [])
+    result = {"output": questions}
+    if wiki_warning:
+        result["warning"] = wiki_warning
+    return jsonify(result)
 
 
 @app.route("/get_problems", methods=["POST"])
@@ -100,7 +138,7 @@ def get_problems():
     max_questions_mcq = data.get("max_questions_mcq", 4)
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
+    input_text, wiki_warning = process_input_text(input_text, use_mediawiki)
     output1 = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions_mcq}
     )
@@ -110,9 +148,10 @@ def get_problems():
     output3 = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions_shortq}
     )
-    return jsonify(
-        {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
-    )
+    result = {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
+    if wiki_warning:
+        result["warning"] = wiki_warning
+    return jsonify(result)
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
@@ -369,7 +408,7 @@ def get_shortq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
+    input_text, wiki_warning = process_input_text(input_text, use_mediawiki)
     input_questions = data.get("input_question", [])
 
     output = qg.generate(
@@ -379,7 +418,10 @@ def get_shortq_hard():
     for item in output:
         item["question"] = make_question_harder(item["question"])
 
-    return jsonify({"output": output})
+    result = {"output": output}
+    if wiki_warning:
+        result["warning"] = wiki_warning
+    return jsonify(result)
 
 
 @app.route("/get_mcq_hard", methods=["POST"])
@@ -387,16 +429,19 @@ def get_mcq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
+    input_text, wiki_warning = process_input_text(input_text, use_mediawiki)
     input_questions = data.get("input_question", [])
     output = qg.generate(
         article=input_text, num_questions=input_questions, answer_style="multiple_choice"
     )
-    
+
     for q in output:
         q["question"] = make_question_harder(q["question"])
-        
-    return jsonify({"output": output})
+
+    result = {"output": output}
+    if wiki_warning:
+        result["warning"] = wiki_warning
+    return jsonify(result)
 
 @app.route("/get_boolq_hard", methods=["POST"])
 def get_boolq_hard():
@@ -405,7 +450,7 @@ def get_boolq_hard():
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
 
-    input_text = process_input_text(input_text, use_mediawiki)
+    input_text, wiki_warning = process_input_text(input_text, use_mediawiki)
 
     # Generate questions using the same QG model
     generated = qg.generate(
@@ -417,7 +462,10 @@ def get_boolq_hard():
     # Apply transformation to make each question harder
     harder_questions = [make_question_harder(q) for q in generated]
 
-    return jsonify({"output": harder_questions})
+    result = {"output": harder_questions}
+    if wiki_warning:
+        result["warning"] = wiki_warning
+    return jsonify(result)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
