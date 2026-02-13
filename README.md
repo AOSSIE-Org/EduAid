@@ -34,6 +34,30 @@ You can choose to set up the backend manually or use an automated shell script.
      ```
    - This will activate the backend for the application.
 
+#### 🖥️ Windows Manual Setup
+
+If you are using Windows, follow these specific steps to avoid permission errors:
+
+1. **Create a Virtual Environment (Recommended):**
+   Open your terminal (Command Prompt or PowerShell) in the root directory and run:
+   ```bash
+   python -m venv venv
+   .\venv\Scripts\activate
+   ```
+
+   **Note for PowerShell users:** If you encounter an execution policy error, run:
+
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   ```
+   Then retry the activation command.
+
+2. **Continue with Manual Setup:**
+   Once your virtual environment is activated, follow steps 1-3 from the general **Manual Setup** section above:
+   - Download the Sense2Vec Model.
+   - Install Python Dependencies: `pip install -r requirements.txt`
+   - Run the Flask App: Navigate to `backend` and start `python server.py`
+   
 ### Option 2: Automated Setup with Shell Script
 
 1. **Run the Setup Script**:
