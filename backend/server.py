@@ -43,6 +43,19 @@ file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
 
+# File upload validation constants
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx'}
+ALLOWED_MIME_TYPES = {
+    'application/pdf': 'pdf',
+    'text/plain': 'txt',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx'
+}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+def allowed_file(filename):
+    """Check if file has an allowed extension."""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 def process_input_text(input_text, use_mediawiki):
     if use_mediawiki == 1:
@@ -422,19 +435,50 @@ def get_boolq_hard():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
+        return jsonify({"error": "No file was uploaded. Please select a file."}), 400
 
     file = request.files['file']
 
     if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
+        return jsonify({"error": "No file selected. Please choose a file to upload."}), 400
 
-    content = file_processor.process_file(file)
-    
-    if content:
-        return jsonify({"content": content})
-    else:
-        return jsonify({"error": "Unsupported file type or error processing file"}), 400
+    # Validate file extension
+    if not allowed_file(file.filename):
+        ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'unknown'
+        return jsonify({
+            "error": f"File type '.{ext}' is not supported. Please upload a PDF, TXT, or DOCX file."
+        }), 400
+
+    # Validate file size
+    file.seek(0, 2)  # Seek to end
+    file_size = file.tell()
+    file.seek(0)  # Reset to beginning
+
+    if file_size > MAX_FILE_SIZE:
+        return jsonify({
+            "error": "File size exceeds 10MB limit. Please select a smaller file."
+        }), 400
+
+    # Validate MIME type (optional additional check)
+    mime_type = file.content_type
+    if mime_type and mime_type not in ALLOWED_MIME_TYPES:
+        return jsonify({
+            "error": "Invalid file format. Please upload a PDF, TXT, or DOCX file."
+        }), 400
+
+    try:
+        content = file_processor.process_file(file)
+
+        if content:
+            return jsonify({"content": content})
+        else:
+            return jsonify({
+                "error": "Could not extract text from the file. The file may be empty, corrupted, or password-protected."
+            }), 400
+    except Exception as e:
+        return jsonify({
+            "error": "An error occurred while processing the file. Please try again."
+        }), 500
 
 @app.route("/", methods=["GET"])
 def hello():
