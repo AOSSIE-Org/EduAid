@@ -2,6 +2,11 @@
 
 All heavy ML models, NLP pipelines, and external services are mocked so that
 tests run instantly without a GPU or network access.
+
+The session-scoped ``_prevent_model_initialization`` fixture patches the heavy
+constructors **before** ``server.py`` is first imported, preventing module-level
+instantiations (``MCQGenerator()``, ``pipeline("question-answering")``, etc.)
+from triggering real model downloads or GPU usage.
 """
 
 import sys
@@ -80,14 +85,61 @@ def _make_answer_predictor_mock():
 
 
 # ---------------------------------------------------------------------------
-# Fixtures
+# Session-scoped fixture: prevent heavy model loading at import time
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="session", autouse=True)
+def _prevent_model_initialization():
+    """Patch heavy constructors *before* ``server.py`` is imported.
+
+    ``server.py`` instantiates heavy objects at module level::
+
+        MCQGen   = main.MCQGenerator()      # loads T5-large, spacy, sense2vec
+        answer   = main.AnswerPredictor()    # loads T5-large, NLI model
+        BoolQGen = main.BoolQGenerator()     # loads T5-base
+        ShortQGen = main.ShortQGenerator()   # loads T5-large, spacy
+        qg       = main.QuestionGenerator()  # loads t5-base-question-generator
+        qa_model = pipeline("question-answering")  # loads QA model
+
+    Without these patches, importing ``server.py`` would download several
+    gigabytes of model weights and require a GPU or significant RAM.
+    """
+    import nltk                         # noqa: E402 – must import before patching
+    import transformers                  # noqa: E402
+    import mediawikiapi as mwapi        # noqa: E402
+    import Generator.main as gen_main   # noqa: E402
+
+    patches = [
+        # Prevent NLTK data downloads
+        patch.object(nltk, "download", lambda *_a, **_kw: None),
+        # Prevent transformers QA pipeline loading
+        patch.object(transformers, "pipeline", return_value=MagicMock()),
+        # Prevent MediaWikiAPI instantiation
+        patch.object(mwapi, "MediaWikiAPI", return_value=MagicMock()),
+        # Prevent Generator class instantiation (each __init__ loads models)
+        patch.object(gen_main, "MCQGenerator", MagicMock),
+        patch.object(gen_main, "BoolQGenerator", MagicMock),
+        patch.object(gen_main, "ShortQGenerator", MagicMock),
+        patch.object(gen_main, "QuestionGenerator", MagicMock),
+        patch.object(gen_main, "AnswerPredictor", MagicMock),
+        patch.object(gen_main, "GoogleDocsService", MagicMock),
+        patch.object(gen_main, "FileProcessor", MagicMock),
+    ]
+    for p in patches:
+        p.start()
+    yield
+    for p in patches:
+        p.stop()
+
+
+# ---------------------------------------------------------------------------
+# Per-test fixtures: override module-level mocks with specific behaviour
 # ---------------------------------------------------------------------------
 
 @pytest.fixture(autouse=True)
 def _patch_heavy_imports(monkeypatch):
-    """Monkey-patch heavy third-party imports before server.py is loaded."""
-    # Prevent real NLTK downloads
-    monkeypatch.setattr("nltk.download", lambda *a, **kw: None)
+    """Per-test NLTK download suppression (belt-and-suspenders)."""
+    monkeypatch.setattr("nltk.download", lambda *_a, **_kw: None)
 
 
 @pytest.fixture()
@@ -159,7 +211,6 @@ def mock_docs_service():
 @pytest.fixture()
 def app():
     """Create the Flask app for testing."""
-    # Import here so patches are applied first
     sys.path.insert(0, ".")
     from server import app as flask_app
     flask_app.config["TESTING"] = True
