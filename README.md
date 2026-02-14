@@ -1,3 +1,4 @@
+```markdown
 # EduAid: AI Quiz Generation 🚀
 
 Online learning has taken the front seat in the post-pandemic age. With the advent of sophisticated AI architectures like Transformers, it is only natural that AI would find its way into education. Learning online via platforms like YouTube or MOOCs is often a method of self-learning. The biggest obstacle faced by students in self-learning is the lack of attention span. An online tool that can generate short quizzes from input educational content can be a great resource for both teachers and students. It helps retain important information, frame questions, and quickly revise large chunks of content.
@@ -12,6 +13,7 @@ EduAid is one such project currently available in the form of a browser extensio
 git clone https://github.com/AOSSIE-Org/EduAid.git
 cd EduAid
 ```
+
 ## 2. Backend Setup
 
 You can choose to set up the backend manually or use an automated shell script.
@@ -30,9 +32,22 @@ You can choose to set up the backend manually or use an automated shell script.
 3. **Run Flask App**:
    - Navigate to the `backend` folder and start the Flask app:
      ```bash
+     cd backend
      python server.py
      ```
-   - This will activate the backend for the application.
+   - This will start the backend server for the application.
+
+### Backend Notes
+
+- **Python version:** Python **3.10 or 3.11** is recommended.  
+  Python 3.12+ is not fully supported by some NLP and ML dependencies.
+
+- **Working directory:**  
+  Always run the backend from the `backend/` directory:
+  ```bash
+  cd backend
+  python server.py
+  ```
 
 ### Option 2: Automated Setup with Shell Script
 
@@ -48,7 +63,7 @@ You can choose to set up the backend manually or use an automated shell script.
 - If the script fails to run, ensure that you have execution permissions:
   ```bash
   chmod +x script.sh
-
+  ```
 
 ### 3. Configure Google APIs
 
@@ -74,6 +89,7 @@ Navigate to the `extension` folder and install the required dependencies:
 ```bash
 npm install
 ```
+
 #### Build the Project
 
 Build the extension:
@@ -81,6 +97,7 @@ Build the extension:
 ```bash
 npm run build
 ```
+
 #### Load the Extension in Chrome
 
 1. Open Chrome and navigate to `chrome://extensions/`.
@@ -187,3 +204,4 @@ This is the second year of the project. While some may have their own ideas on h
 1. First get to know the organization and the project by visiting the [Official Website](https://github.com/AOSSIE-Org)
 
 2. Visit the [Discord Channel](https://discord.com/channels/1022871757289422898/1073262393670504589) for interacting with the community!
+```
