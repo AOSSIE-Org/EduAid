@@ -17,7 +17,7 @@ const Question_Type = () => {
   };
 
   return (
-    <div className="popup w-full min-h-screen bg-[#02000F] flex justify-center items-center ">
+    <div className="popup w-full min-h-screen bg-[#02000F] flex justify-center items-start ">
       <div className="w-full bg-cust bg-opacity-50 bg-custom-gradient shadow-lg p-6 sm:p-10">
         {/* Header */}
         <Link to="/" className="flex flex-col sm:flex-row items-center gap-4 mb-6">
