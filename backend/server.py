@@ -419,6 +419,24 @@ def get_boolq_hard():
 
     return jsonify({"output": harder_questions})
 
+@app.route("/get_fillintheblank", methods=["POST"])
+def get_fillintheblank():
+    data = request.get_json()
+    input_text = data.get("input_text", "")
+    use_mediawiki = data.get("use_mediawiki", 0)
+    max_questions = data.get("max_questions", 4)
+
+    input_text = process_input_text(input_text, use_mediawiki)
+
+    output = qg.generate(
+        article=input_text,
+        num_questions=max_questions,
+        answer_style="fill_in_the_blank"
+    )
+
+    return jsonify({"output": output})
+
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
