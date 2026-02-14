@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import "../../index.css";
 import logo from "../../assets/aossie_logo.webp";
+import arrow from "../../assets/leftArrow.png";
 import logoPNG from "../../assets/aossie_logo.png";
 
 function Question() {
@@ -171,7 +172,14 @@ function Question() {
               </span>
             </div>
           </div>
-          <div className="font-bold text-xl text-white mt-3 mx-2">
+          <div className="ml-2 rounded-2xl mr-4">
+              <a href="/src/popup/popup.html">
+                <button className="bg-black items-center text-base flex justify-center gap-2 text-white p-2 border-gradient hover:wave-effect">
+                  <img src={arrow} width={20} height={18} alt="" />
+                </button>
+              </a>
+          </div>
+          <div className="font-bold text-xl text-white mt-2 mx-2">
             Generated Questions
           </div>
           <div className="flex-1 overflow-y-auto scrollbar-hide">
