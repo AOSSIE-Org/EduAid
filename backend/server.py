@@ -27,6 +27,9 @@ from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
 
 app = Flask(__name__)
+if os.environ.get("FLASK_ENV") == "development":
+    from flasgger import Swagger
+    Swagger(app)
 CORS(app)
 print("Starting Flask App...")
 
@@ -52,6 +55,48 @@ def process_input_text(input_text, use_mediawiki):
 
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
+    """
+    Generate Multiple Choice Questions (MCQs)
+    ---
+    tags:
+      - Question Generation
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            input_text:
+              type: string
+              example: "Python is a high-level, interpreted programming language."
+            max_questions:
+              type: integer
+              example: 4
+            use_mediawiki:
+              type: integer
+              example: 0
+              description: "Set to 1 to use MediaWiki for content summary, 0 otherwise."
+    responses:
+      200:
+        description: A list of generated MCQs
+        schema:
+          type: object
+          properties:
+            output:
+              type: array
+              items:
+                type: object
+                properties:
+                  question:
+                    type: string
+                  answer:
+                    type: string
+                  options:
+                    type: array
+                    items:
+                      type: string
+    """
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -66,6 +111,37 @@ def get_mcq():
 
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
+    """
+    Generate Boolean (True/False) Questions
+    ---
+    tags:
+      - Question Generation
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            input_text:
+              type: string
+              example: "The Earth revolves around the Sun."
+            max_questions:
+              type: integer
+              example: 4
+            use_mediawiki:
+              type: integer
+              example: 0
+    responses:
+      200:
+        description: A list of generated Boolean questions
+        schema:
+          type: object
+          properties:
+            output:
+              type: map
+              description: Map containing question details (structure may vary)
+    """
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -80,6 +156,43 @@ def get_boolq():
 
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
+    """
+    Generate Short Answer Questions
+    ---
+    tags:
+      - Question Generation
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            input_text:
+              type: string
+              example: "Artificial Intelligence is the simulation of human intelligence by machines."
+            max_questions:
+              type: integer
+              example: 4
+            use_mediawiki:
+              type: integer
+              example: 0
+    responses:
+      200:
+        description: A list of generated short answer questions
+        schema:
+          type: object
+          properties:
+            output:
+              type: array
+              items:
+                type: object
+                properties:
+                  question:
+                    type: string
+                  answer:
+                    type: string
+    """
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -94,6 +207,46 @@ def get_shortq():
 
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
+    """
+    Generate a Mix of Questions (MCQ, Boolean, Short Answer)
+    ---
+    tags:
+      - Question Generation
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            input_text:
+              type: string
+              example: "Photosynthesis is the process used by plants to convert light energy into chemical energy."
+            max_questions_mcq:
+              type: integer
+              example: 2
+            max_questions_boolq:
+              type: integer
+              example: 2
+            max_questions_shortq:
+              type: integer
+              example: 2
+            use_mediawiki:
+              type: integer
+              example: 0
+    responses:
+      200:
+        description: A structured object containing lists of all question types
+        schema:
+          type: object
+          properties:
+            output_mcq:
+              type: object
+            output_boolq:
+              type: object
+            output_shortq:
+              type: object
+    """
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
