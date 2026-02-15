@@ -99,6 +99,30 @@ const Text_Input = () => {
     return questionType;
   };
 
+  // Paste button issue
+  const handlePaste = async () => {
+    try {
+      const clipText = await navigator.clipboard.readText();
+  
+      setText((prev) => {
+        const needsSpace = prev && !prev.endsWith(" ");
+        return prev + (needsSpace ? " " : "") + clipText;
+      });
+  
+    } catch (err) {
+      console.error("Failed to paste:", err);
+      alert("Failed to paste from clipboard. Please allow clipboard permissions.");
+    }
+  };
+  
+  // Word count fix below
+  const countWords = () => {
+    if (!text.trim()) return 0;
+    return text.trim().split(/\s+/).length;
+  };
+  
+  
+
   const sendToBackend = async (data, difficulty, questionType) => {
     const endpoint = getEndpoint(difficulty, questionType);
     try {
@@ -167,9 +191,17 @@ const Text_Input = () => {
 
         {/* Textarea */}
         <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
-            <FaClipboard className="h-[24px] w-[24px]" />
-          </button>
+        <button
+          className="absolute top-2 left-2 p-2 text-white hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-white rounded"
+          onClick={handlePaste}
+          aria-label="Paste from clipboard"
+          title="Paste from clipboard"
+        >
+          <FaClipboard className="h-[24px] w-[24px]" />
+        </button>
+
+        {/* paste Button issue fixed ^ */}
+
           <textarea
             className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -178,6 +210,13 @@ const Text_Input = () => {
           />
           <style>{`textarea::-webkit-scrollbar { display: none; }`}</style>
         </div>
+        <div className="flex justify-end mx-4 sm:mx-8 mt-2">
+          <span className="text-white text-sm sm:text-base bg-[#3e506380] px-3 py-1 rounded-xl border border-[#cbd0dc80]">
+            Word Count: {countWords()}
+         </span>
+        </div>
+        {/* Word count issue ^ */}
+
 
         {/* Separator */}
         <div className="text-white text-center my-4 text-lg">or</div>
