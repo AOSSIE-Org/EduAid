@@ -13,9 +13,12 @@ function Second() {
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
+  const textAreaRef = useRef(null);
   const [fileContent, setFileContent] = useState('');
   const [docUrl, setDocUrl] = useState('');
   const [isToggleOn, setIsToggleOn] = useState(0);
+
+  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
 
   useEffect(() => {
     chrome.storage.local.get(["selectedText"], (result) => {
@@ -30,6 +33,36 @@ function Second() {
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
+  };
+
+  const handlePaste = async () => {
+    try {
+      const el = textAreaRef.current;
+      el?.focus();
+      const clipboardText = await navigator.clipboard.readText();
+      if (!clipboardText) return;
+
+      if (!el) {
+        setText((prev) => `${prev}${clipboardText}`);
+        return;
+      }
+
+      const start = el.selectionStart ?? text.length;
+      const end = el.selectionEnd ?? text.length;
+      setText((prev) => `${prev.slice(0, start)}${clipboardText}${prev.slice(end)}`);
+
+      const newPos = start + clipboardText.length;
+      setTimeout(() => {
+        try {
+          el.focus();
+          el.setSelectionRange(newPos, newPos);
+        } catch (e) {
+          // no-op
+        }
+      }, 0);
+    } catch (error) {
+      console.error("Error reading clipboard:", error);
+    }
   };
 
   const handleFileUpload = async (event) => {
@@ -212,14 +245,23 @@ function Second() {
         </div>
 
         <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-28">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
+          <button
+            type="button"
+            onClick={handlePaste}
+            title="Paste from clipboard"
+            className="absolute top-0 left-0 p-2 text-white focus:outline-none z-10"
+          >
             <FaClipboard className="h-[20px] w-[20px]" />
           </button>
+          <div className="absolute bottom-1 right-2 text-xs text-white/70 z-10 pointer-events-none select-none">
+            Words: {wordCount}
+          </div>
           <textarea
             className="absolute inset-0 p-8 pt-2 bg-[#83b6cc40] text-lg rounded-xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
             onChange={(e) => setText(e.target.value)}
+            ref={textAreaRef}
           />
           <style>
             {`
