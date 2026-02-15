@@ -42,12 +42,12 @@ const Home = () => {
 
   return (
     <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient overflow-auto px-4 py-6 sm:px-8 md:px-16">
+      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient overflow-auto px-3 py-4 sm:px-6 sm:py-6 md:px-12 md:py-8 lg:px-16">
         <div className="max-w-5xl mx-auto">
-          <img src={logo_trans} alt="logo" className="w-24 my-4 sm:my-6" />
+          <img src={logo_trans} alt="logo" className="w-16 sm:w-20 md:w-24 my-3 sm:my-4 md:my-6 mx-auto sm:mx-0" />
 
           {/* Heading */}
-          <h1 className="text-5xl sm:text-6xl md:text-7xl text-center font-extrabold leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-center font-extrabold leading-tight px-2">
             <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
               Edu
             </span>
@@ -57,16 +57,16 @@ const Home = () => {
           </h1>
 
           {/* Subtitle */}
-          <div className="text-white text-lg sm:text-xl text-center mt-4 mb-6">
-            <p>A tool that can auto-generate short quizzes</p>
-            <div className="flex items-center justify-center gap-2 mt-2">
-              <p>based on user input</p>
-              <img src={starsImg} width={24} height={12} alt="stars" />
+          <div className="text-white text-base sm:text-lg md:text-xl text-center mt-3 sm:mt-4 mb-4 sm:mb-6 px-2">
+            <p className="break-words">A tool that can auto-generate short quizzes</p>
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+              <p className="break-words">based on user input</p>
+              <img src={starsImg} width={24} height={12} alt="stars" className="flex-shrink-0" />
             </div>
           </div>
 
           {/* Features */}
-          <div className="flex flex-col items-end sm:items-center sm:flex-row sm:justify-between gap-4 mt-8">
+          <div className="flex flex-col items-center sm:items-stretch md:flex-row md:justify-between gap-3 sm:gap-4 mt-6 sm:mt-8 px-2">
             {[
               "Doc/Audio Input",
               "In-depth questions gen",
@@ -74,26 +74,26 @@ const Home = () => {
             ].map((feature, i) => (
               <div
                 key={i}
-                className="flex items-center rounded-l-2xl sm:rounded-2xl px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] gap-4 w-fit"
+                className="flex items-center rounded-2xl px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] gap-3 sm:gap-4 w-full sm:w-auto sm:flex-shrink-0 max-w-full"
               >
-                <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-base sm:text-xl">{feature}</div>
+                <img src={starsImg} width={32} height={16} alt="" className="flex-shrink-0" />
+                <div className="text-white text-sm sm:text-base md:text-xl break-words min-w-0">{feature}</div>
               </div>
             ))}
           </div>
 
           {/* Buttons */}
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-10">
-            <Link to="/question-type" className="w-full sm:w-auto">
-              <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
-                Let’s get Started
-                <img src={arrow} width={24} height={24} alt="arrow" />
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mt-8 sm:mt-10 px-2">
+            <Link to="/question-type" className="w-full sm:w-auto max-w-xs sm:max-w-none">
+              <button className="w-full items-center text-base sm:text-lg flex justify-center gap-3 text-white px-5 py-2.5 sm:px-6 sm:py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
+                Let's get Started
+                <img src={arrow} width={24} height={24} alt="arrow" className="flex-shrink-0" />
               </button>
             </Link>
-            <Link to="/history" className="w-full sm:w-auto">
-              <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
+            <Link to="/history" className="w-full sm:w-auto max-w-xs sm:max-w-none">
+              <button className="w-full items-center text-base sm:text-lg flex justify-center gap-3 text-white px-5 py-2.5 sm:px-6 sm:py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
                 Your previous Work!
-                <img src={arrow} width={24} height={24} alt="arrow" />
+                <img src={arrow} width={24} height={24} alt="arrow" className="flex-shrink-0" />
               </button>
             </Link>
           </div>
@@ -103,18 +103,18 @@ const Home = () => {
             href="https://github.com/AOSSIE-Org/EduAid"
             target="_blank"
             rel="noopener noreferrer"
-            className="group block mt-10"
+            className="group block mt-8 sm:mt-10"
           >
-            <div className="bg-[#45454599] hover:bg-[#5a5a5a99] transition-colors duration-300 w-fit mx-auto px-4 py-3 rounded-xl flex gap-4 items-center">
-              <img src={gitStar} width={28} height={12} alt="GitHub Star" />
-              <div className="text-white font-semibold text-2xl flex items-center gap-4">
+            <div className="bg-[#45454599] hover:bg-[#5a5a5a99] transition-colors duration-300 w-fit max-w-full mx-auto px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl flex gap-2 sm:gap-4 items-center">
+              <img src={gitStar} width={28} height={12} alt="GitHub Star" className="flex-shrink-0" />
+              <div className="text-white font-semibold text-lg sm:text-xl md:text-2xl flex items-center gap-2 sm:gap-4">
                 {stars !== null ? (
                   <>
-                    {stars}
-                    <FaGithub size={32} />
+                    <span className="whitespace-nowrap">{stars}</span>
+                    <FaGithub size={24} className="sm:w-8 sm:h-8 flex-shrink-0" />
                   </>
                 ) : (
-                  <span>{error}</span>
+                  <span className="text-sm sm:text-base">{error}</span>
                 )}
               </div>
             </div>
