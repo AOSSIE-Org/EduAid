@@ -6,6 +6,62 @@ EduAid is one such project currently available in the form of a browser extensio
 
 ## Installation and Setup
 
+### Quick Start with Docker (Recommended)
+
+EduAid now supports Docker for easy setup and development. This is the recommended way to get started.
+
+#### Prerequisites
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+
+#### Development Setup
+
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/AOSSIE-Org/EduAid.git
+   cd EduAid
+   ```
+
+2. **Create Environment File**:
+   ```bash
+   cp .env.example .env
+   ```
+   Edit `.env` with your preferred settings.
+
+3. **Run with Docker Compose**:
+   ```bash
+   docker-compose up --build
+   ```
+
+4. **Access the Application**:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:5000
+
+#### Production Setup
+
+For production deployment:
+
+```bash
+docker-compose -f docker-compose.prod.yml up --build
+```
+
+#### Docker Development Features
+- **Hot Reload**: Code changes automatically reload in development mode
+- **Isolated Environment**: No need to install Python or Node.js locally
+- **Cross-Platform**: Works on Windows, macOS, and Linux
+- **Easy Cleanup**: `docker-compose down` to stop and remove containers
+
+#### Troubleshooting Docker Setup
+
+- **Port Conflicts**: Ensure ports 3000 and 5000 are available
+- **Build Failures**: Clear Docker cache with `docker system prune`
+- **Permission Issues**: On Linux, you may need to run with `sudo`
+- **Slow Builds**: Docker layer caching helps, but first builds may take time due to model downloads
+
+### Manual Setup (Alternative)
+
+If you prefer manual setup or need to contribute to core development:
+
 ### 1. Clone the Repository
 
 ```bash
@@ -13,6 +69,91 @@ git clone https://github.com/AOSSIE-Org/EduAid.git
 cd EduAid
 ```
 ## 2. Backend Setup
+
+You can choose to set up the backend manually or use an automated shell script.
+
+### Option 1: Manual Setup
+
+1. **Download the Sense2Vec Model**:
+   - Download the Sense2Vec model from [this link](https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz) and extract the contents into the `backend` folder.
+
+2. **Install Python Dependencies**:
+   - Navigate to the root repository folder and run the following command to install the required Python dependencies:
+     ```bash
+     pip install -r requirements.txt
+     ```
+
+3. **Run Flask App**:
+   - Navigate to the `backend` folder and start the Flask app:
+     ```bash
+     python server.py
+     ```
+   - This will activate the backend for the application.
+
+### Option 2: Automated Setup with Shell Script
+
+1. **Run the Setup Script**:
+   - Navigate to the `backend` folder and run the following shell script:
+     ```bash
+     ./script.sh
+     ```
+   - This script will automatically download and extract the Sense2Vec model, install Python dependencies, and start the Flask app.
+
+### Troubleshooting
+
+- If the script fails to run, ensure that you have execution permissions:
+  ```bash
+  chmod +x script.sh
+
+
+### 3. Configure Google APIs
+
+#### Google Docs API
+
+1. Navigate to the `backend` folder.
+2. Open the `service_account_key.json` file.
+3. Enter the service account details for the Google Docs API.
+4. Refer to the [Google Docs API documentation](https://developers.google.com/docs/api/reference/rest) for more details.
+
+#### Google Forms API
+
+1. Open the `credentials.json` file in the `backend` folder.
+2. Enter the necessary credentials for the Google Forms API.
+3. Refer to the [Google Forms API quickstart guide](https://developers.google.com/forms/api/quickstart/python#set_up_your_environment) for setup instructions.
+
+### 4. Extension Setup
+
+#### Install Dependencies
+
+Navigate to the `extension` folder and install the required dependencies:
+
+```bash
+npm install
+```
+#### Build the Project
+
+Build the extension:
+
+```bash
+npm run build
+```
+#### Load the Extension in Chrome
+
+1. Open Chrome and navigate to `chrome://extensions/`.
+2. Enable "Developer mode" (top-right corner).
+3. Click on "Load Unpacked" and select the `dist` folder created in the previous step.
+
+#### EduAid Web App
+In addition to the browser extension, EduAid also offers a web app that provides the same powerful features for quiz generation. The web app allows you to access EduAid's capabilities directly from your browser without needing to install any extensions. Just start the backend server locally and:
+
+1. Navigate to the Web App Directory:
+`cd eduaid_web`
+2. Install Dependencies:
+`npm install`
+3. Start the Web App:
+`npm run start`
+
+### 5. Desktop App Setup
 
 You can choose to set up the backend manually or use an automated shell script.
 
