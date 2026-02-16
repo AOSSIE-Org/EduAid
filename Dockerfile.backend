@@ -1,0 +1,12 @@
+FROM python:3.11-slim
+ENV S2V_ARCHIVE=s2v_reddit_2015_md.tar.gz
+RUN apt-get update && apt-get install -y tar git && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY ./requirements.txt .
+RUN python -m pip install --upgrade pip \
+ && pip install --no-cache-dir -r requirements.txt
+COPY ./backend ./backend
+WORKDIR /app/backend
+RUN tar -xvzf ${S2V_ARCHIVE} && rm ${S2V_ARCHIVE}
+EXPOSE 5000
+CMD [ "python","server.py" ]

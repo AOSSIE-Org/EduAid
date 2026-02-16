@@ -1,0 +1,32 @@
+FROM node:20-alpine as base
+
+FROM base as web_app
+WORKDIR /app/eduaid_web
+COPY ./eduaid_web/package*.json ./
+RUN npm install
+COPY ./eduaid_web ./
+EXPOSE 3000
+CMD [ "npm", "run", "start" ]
+
+FROM base as eduaid_extension
+WORKDIR /app/extension
+COPY ./extension/package*.json ./
+RUN npm install
+COPY ./extension ./
+RUN npm run build
+
+
+FROM base as eduaid_desktop
+WORKDIR /app
+COPY ./eduaid_web/package*.json ./eduaid_web/
+COPY ./eduaid_desktop/package*.json ./eduaid_desktop/
+WORKDIR /app/eduaid_web
+RUN npm install
+WORKDIR /app/eduaid_desktop
+RUN npm install
+WORKDIR /app/eduaid_web
+COPY ./eduaid_web .
+WORKDIR /app/eduaid_desktop
+COPY ./eduaid_desktop .
+EXPOSE 3000
+CMD [ "npm", "run", "dev"]
