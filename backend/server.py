@@ -53,6 +53,11 @@ def process_input_text(input_text, use_mediawiki):
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
     data = request.get_json()
+
+    # Validate input: Reject if both text and URL are missing
+    if not data or (not data.get('input_text') and not data.get('url')):
+        return jsonify({"error": "No text or URL provided"}), 400
+    
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
