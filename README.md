@@ -74,6 +74,15 @@ Navigate to the `extension` folder and install the required dependencies:
 ```bash
 npm install
 ```
+
+> **Note for Linux (Pop!_OS/Ubuntu) users:** > To ensure a clean environment and avoid system-wide package conflicts, it is highly recommended to use a virtual environment:
+> ```bash
+> python3 -m venv venv
+> source venv/bin/activate
+> pip install --upgrade pip
+> ```
+
+
 #### Build the Project
 
 Build the extension:
