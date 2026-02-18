@@ -5,7 +5,7 @@ import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
-import { Link,useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 
 const Text_Input = () => {
@@ -14,6 +14,7 @@ const Text_Input = () => {
   const [difficulty, setDifficulty] = useState("Easy Difficulty");
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const fileInputRef = useRef(null);
   const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
@@ -47,34 +48,52 @@ const Text_Input = () => {
     fileInputRef.current.click();
   };
 
-  const handleSaveToLocalStorage = async () => {
-    setLoading(true);
+const handleSaveToLocalStorage = async () => {
+  setLoading(true);
+  setError("");
 
-    // Check if a Google Doc URL is provided
+  const questionType = localStorage.getItem("selectedQuestionType");
+
+  if (!questionType) {
+    setError("Please select a question type first.");
+    setLoading(false);
+    return;
+  }
+
+  // 🔴 VALIDATION
+  if (!docUrl && !text) {
+    setError("Please upload a file, enter a Google Doc URL, or provide text before proceeding.");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    let finalText = text;
+
+    // If Google Doc URL is provided → fetch content first
     if (docUrl) {
-      try {
-        const data = await apiClient.post("/get_content", { document_url: docUrl });
-        setDocUrl("");
-        setText(data || "Error in retrieving");
-      } catch (error) {
-        console.error("Error:", error);
-        setText("Error retrieving Google Doc content");
-      } finally {
-        setLoading(false);
-      }
-    } else if (text) {
-      // Proceed with existing functionality for local storage
-      localStorage.setItem("textContent", text);
-      localStorage.setItem("difficulty", difficulty);
-      localStorage.setItem("numQuestions", numQuestions);
-
-      await sendToBackend(
-        text,
-        difficulty,
-        localStorage.getItem("selectedQuestionType")
-      );
+      const data = await apiClient.post("/get_content", { document_url: docUrl });
+      finalText = data;
+      setDocUrl("");
+      setText(finalText);
     }
-  };
+
+    // Save basic info
+    localStorage.setItem("textContent", finalText);
+    localStorage.setItem("difficulty", difficulty);
+    localStorage.setItem("numQuestions", numQuestions);
+
+    // 🔥 Now ALWAYS send to backend
+    await sendToBackend(finalText, difficulty, questionType);
+
+  } catch (error) {
+    console.error("Error:", error);
+    setError("Something went wrong while generating questions.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleDifficultyChange = (e) => {
     setDifficulty(e.target.value);
@@ -239,6 +258,13 @@ const Text_Input = () => {
             />
           </div>
         </div>
+
+        {error && (
+          <div className="text-red-500 text-center font-semibold mt-4">
+            {error}
+          </div>
+        )}
+
 
         {/* Navigation Buttons */}
         <div className="flex flex-col sm:flex-row justify-center gap-6 mt-6 pb-10 px-4 sm:px-8">
