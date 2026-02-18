@@ -88,7 +88,9 @@ const handleSaveToLocalStorage = async () => {
 
   } catch (error) {
     console.error("Error:", error);
-    throw error;
+    setError("Something went wrong while generating questions.");
+  } finally {
+    setLoading(false);
   }
 };
 
@@ -147,9 +149,8 @@ const handleSaveToLocalStorage = async () => {
       navigate("/output");
     } catch (error) {
       console.error("Error:", error);
-    } finally {
-      setLoading(false);
-    }
+      throw error;
+    } 
   };
 
   return (
