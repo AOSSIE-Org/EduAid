@@ -47,7 +47,7 @@ const Home = () => {
           <img src={logo_trans} alt="logo" className="w-24 my-4 sm:my-6" />
 
           {/* Heading */}
-          <h1 className="text-5xl sm:text-6xl md:text-7xl text-center font-extrabold leading-tight">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl text-center font-extrabold leading-tight cursor-default">
             <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
               Edu
             </span>
@@ -57,7 +57,7 @@ const Home = () => {
           </h1>
 
           {/* Subtitle */}
-          <div className="text-white text-lg sm:text-xl text-center mt-4 mb-6">
+          <div className="text-white text-lg sm:text-xl text-center mt-4 mb-6 cursor-default">
             <p>A tool that can auto-generate short quizzes</p>
             <div className="flex items-center justify-center gap-2 mt-2">
               <p>based on user input</p>
@@ -74,7 +74,7 @@ const Home = () => {
             ].map((feature, i) => (
               <div
                 key={i}
-                className="flex items-center rounded-l-2xl sm:rounded-2xl px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] gap-4 w-fit"
+                className="flex items-center rounded-l-2xl sm:rounded-2xl px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] gap-4 w-fit cursor-default"
               >
                 <img src={starsImg} width={32} height={16} alt="" />
                 <div className="text-white text-base sm:text-xl">{feature}</div>

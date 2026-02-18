@@ -1,11 +1,10 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from pprint import pprint
+from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 import nltk
 import subprocess
 import os
 import glob
-
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
@@ -13,12 +12,7 @@ nltk.download('punkt_tab')
 from Generator import main
 from Generator.question_filters import make_question_harder
 import re
-import json
-import spacy
 from transformers import pipeline
-from spacy.lang.en.stop_words import STOP_WORDS
-from string import punctuation
-from heapq import nlargest
 import random
 import webbrowser
 from apiclient import discovery
@@ -28,7 +22,6 @@ from mediawikiapi import MediaWikiAPI
 
 app = Flask(__name__)
 CORS(app)
-print("Starting Flask App...")
 
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
@@ -42,6 +35,31 @@ docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
+
+# Error handlers 
+
+@app.errorhandler(Exception)
+def handle_generic_exception(e):
+    """Handle generic exceptions."""
+    # For production, send generic error message without details
+    return jsonify({"error": "Internal Server Error", "details": str(e)}), 500
+
+@app.errorhandler(BadRequest)
+def handle_bad_request(e):
+    return jsonify({
+            "error": "Bad request",
+            "details": e.description
+        }), 400
+
+@app.errorhandler(UnsupportedMediaType)
+# This handles cases where Content-Type is not application/json
+# This error is raised by the get_json() method of the request object
+def handle_unsupported_media(e):
+    return jsonify({
+        "error": "Content-Type must be application/json"
+    }), 415
+
+
 
 
 def process_input_text(input_text, use_mediawiki):
@@ -60,6 +78,8 @@ def get_mcq():
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
     )
+    if not output or "questions" not in output:
+        return jsonify({"output": []})
     questions = output["questions"]
     return jsonify({"output": questions})
 
@@ -74,6 +94,8 @@ def get_boolq():
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
     )
+    if not output or "Boolean_Questions" not in output:
+        return jsonify({"output": []})
     boolean_questions = output["Boolean_Questions"]
     return jsonify({"output": boolean_questions})
 
@@ -88,6 +110,8 @@ def get_shortq():
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
     )
+    if not output or "questions" not in output:
+        return jsonify({"output": []})
     questions = output["questions"]
     return jsonify({"output": questions})
 
@@ -110,6 +134,8 @@ def get_problems():
     output3 = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions_shortq}
     )
+    if not output1 or not output2 or not output3:
+        return jsonify({"output_mcq": [], "output_boolq": [], "output_shortq": []})
     return jsonify(
         {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
     )
@@ -155,7 +181,8 @@ def get_answer():
     answers = []
     for question in input_questions:
         qa_response = qa_model(question=question, context=input_text)
-        answers.append(qa_response["answer"])
+        if  qa_response and "answer" in qa_response:
+            answers.append(qa_response["answer"])
 
     return jsonify({"output": answers})
 
@@ -492,4 +519,5 @@ def get_transcript():
 
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
-    app.run()
+    print("Starting Flask App...")
+    app.run() # For production, set debug to False

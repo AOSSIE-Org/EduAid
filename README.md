@@ -7,11 +7,11 @@ EduAid is one such project currently available in the form of a browser extensio
 ## Installation and Setup
 
 ### 1. Clone the Repository
-
 ```bash
 git clone https://github.com/AOSSIE-Org/EduAid.git
 cd EduAid
 ```
+
 ## 2. Backend Setup
 
 You can choose to set up the backend manually or use an automated shell script.
@@ -23,64 +23,96 @@ You can choose to set up the backend manually or use an automated shell script.
 
 2. **Install Python Dependencies**:
    - Navigate to the root repository folder and run the following command to install the required Python dependencies:
-     ```bash
+```bash
      pip install -r requirements.txt
-     ```
+```
 
 3. **Run Flask App**:
    - Navigate to the `backend` folder and start the Flask app:
-     ```bash
+```bash
      python server.py
-     ```
+```
    - This will activate the backend for the application.
 
 ### Option 2: Automated Setup with Shell Script
 
 1. **Run the Setup Script**:
    - Navigate to the `backend` folder and run the following shell script:
-     ```bash
+```bash
      ./script.sh
-     ```
+```
    - This script will automatically download and extract the Sense2Vec model, install Python dependencies, and start the Flask app.
 
 ### Troubleshooting
 
 - If the script fails to run, ensure that you have execution permissions:
-  ```bash
+```bash
   chmod +x script.sh
-
+```
 
 ### 3. Configure Google APIs
 
 #### Google Docs API
 
 1. Navigate to the `backend` folder.
-2. Open the `service_account_key.json` file.
+2. Create a `service_account_key.json` file.
 3. Enter the service account details for the Google Docs API.
-4. Refer to the [Google Docs API documentation](https://developers.google.com/docs/api/reference/rest) for more details.
+4. The format of this file will be as follows:
+```json
+   {
+     "type": "service_account",
+     "project_id": "your-project-id",
+     "private_key_id": "your-private-key-id",
+     "private_key": "-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY_HERE\n-----END PRIVATE KEY-----\n",
+     "client_email": "your-client-email@your-project-id.iam.gserviceaccount.com",
+     "client_id": "your-client-id",
+     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+     "token_uri": "https://oauth2.googleapis.com/token",
+     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+     "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/your-client-email%40your-project-id.iam.gserviceaccount.com",
+     "universe_domain": "googleapis.com"
+   }
+```
+5. Refer to the [Google Docs API documentation](https://developers.google.com/docs/api/reference/rest) for more details.
 
 #### Google Forms API
 
-1. Open the `credentials.json` file in the `backend` folder.
+1. Create a `credentials.json` file in the `backend` folder.
 2. Enter the necessary credentials for the Google Forms API.
-3. Refer to the [Google Forms API quickstart guide](https://developers.google.com/forms/api/quickstart/python#set_up_your_environment) for setup instructions.
+3. The format of this file will be as follows:
+```json
+   {
+     "installed": {
+       "client_id": "your-client-id",
+       "project_id": "your-project-id",
+       "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+       "token_uri": "https://oauth2.googleapis.com/token",
+       "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+       "client_secret": "your-client-secret",
+       "redirect_uris": [
+         "http://localhost"
+       ]
+     }
+   }
+```
+4. Refer to the [Google Forms API quickstart guide](https://developers.google.com/forms/api/quickstart/python#set_up_your_environment) for setup instructions.
 
 ### 4. Extension Setup
 
 #### Install Dependencies
 
 Navigate to the `extension` folder and install the required dependencies:
-
 ```bash
 npm install
 ```
+
 #### Build the Project
 
 Build the extension:
-
 ```bash
 npm run build
 ```
+
 #### Load the Extension in Chrome
 
 1. Open Chrome and navigate to `chrome://extensions/`.
@@ -88,20 +120,28 @@ npm run build
 3. Click on "Load Unpacked" and select the `dist` folder created in the previous step.
 
 #### EduAid Web App
+
 In addition to the browser extension, EduAid also offers a web app that provides the same powerful features for quiz generation. The web app allows you to access EduAid's capabilities directly from your browser without needing to install any extensions. Just start the backend server locally and:
 
 1. Navigate to the Web App Directory:
-`cd eduaid_web`
+```bash
+   cd eduaid_web
+```
 2. Install Dependencies:
-`npm install`
+```bash
+   npm install
+```
 3. Start the Web App:
-`npm run start`
+```bash
+   npm run start
+```
 
 ### 5. Desktop App Setup
 
 EduAid now includes a cross-platform desktop application built with Electron, providing a native desktop experience for all EduAid features.
 
 #### Prerequisites
+
 - Node.js (version 16 or higher)
 - Backend server running (follow steps 2-3 above)
 - Web app built (follow step 4 above)
@@ -109,43 +149,44 @@ EduAid now includes a cross-platform desktop application built with Electron, pr
 #### Development Mode
 
 1. **Navigate to Desktop App Directory**:
-   ```bash
+```bash
    cd eduaid_desktop
-   ```
+```
 
 2. **Install Dependencies**:
-   ```bash
+```bash
    npm install
-   ```
+```
 
 3. **Start Development Mode**:
-   ```bash
+```bash
    npm run dev
-   ```
+```
    This will start both the web app development server and launch the Electron desktop app.
 
 #### Production Build
 
 1. **Build Web App** (if not already done):
-   ```bash
+```bash
    cd eduaid_web
    npm run build
-   ```
+```
 
 2. **Build Desktop App**:
-   ```bash
+```bash
    cd eduaid_desktop
    npm run build:electron
-   ```
+```
 
 3. **Build for All Platforms**:
-   ```bash
+```bash
    npm run build:all
-   ```
+```
 
 The built applications will be available in the `eduaid_desktop/dist/` directory with installers for Windows (.exe), macOS (.dmg), and Linux (.AppImage).
 
 #### Desktop App Features
+
 - **Native Desktop Experience**: Full desktop integration with native menus and keyboard shortcuts
 - **Cross-Platform**: Works on Windows, macOS, and Linux
 - **Security**: Secure communication with context isolation
@@ -180,10 +221,9 @@ The built applications will be available in the `eduaid_desktop/dist/` directory
    - **PDF Forms**: Generate editable PDF forms based on your quizzes.
    - **Google Forms**: Create Google Forms for your quizzes, perfect for easy distribution and response collection.
 
-## How to contribute
+## How to Contribute
 
-This is the second year of the project. While some may have their own ideas on how to contribute, for the newcomers to the repository, you may follow the following steps: 
+This is the second year of the project. While some may have their own ideas on how to contribute, for the newcomers to the repository, you may follow the following steps:
 
-1. First get to know the organization and the project by visiting the [Official Website](https://github.com/AOSSIE-Org)
-
+1. First get to know the organization and the project by visiting the [Official Website](https://github.com/AOSSIE-Org).
 2. Visit the [Discord Channel](https://discord.com/channels/1022871757289422898/1073262393670504589) for interacting with the community!

@@ -10,7 +10,6 @@ const Output = () => {
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
-  const [pdfMode, setPdfMode] = useState("questions");
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedQuestion, setEditedQuestion] = useState("");
   const [editedAnswer, setEditedAnswer] = useState("");
