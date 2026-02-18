@@ -88,9 +88,7 @@ const handleSaveToLocalStorage = async () => {
 
   } catch (error) {
     console.error("Error:", error);
-    setError("Something went wrong while generating questions.");
-  } finally {
-    setLoading(false);
+    throw error;
   }
 };
 
