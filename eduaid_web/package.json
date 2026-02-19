@@ -15,6 +15,7 @@
     "react-router-dom": "^6.26.0",
     "react-scripts": "5.0.1",
     "react-switch": "^7.0.0",
+    "react-toastify": "^11.0.5",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

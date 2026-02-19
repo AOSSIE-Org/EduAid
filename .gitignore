@@ -18,6 +18,7 @@ backend/tokenizers
 backend/sample_input.py
 extension/pdfjs-3.9.179-dist
 backend/s2v_old
+backend/._s2v_old
 __pycache__/
 *.pyc
 extension/dist
