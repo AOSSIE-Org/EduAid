@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from werkzeug.exceptions import BadRequest, UnsupportedMediaType
+from werkzeug.exceptions import BadRequest, UnsupportedMediaType, HTTPException
 import nltk
 import subprocess
 import os
@@ -38,11 +38,17 @@ qa_model = pipeline("question-answering")
 
 # Error handlers 
 
+@app.errorhandler(HTTPException)
+def handle_http_exception(e):
+    """Handle HTTP exceptions."""
+    return jsonify({"error": e.name, "details": e.description}), e.code
+
 @app.errorhandler(Exception)
 def handle_generic_exception(e):
     """Handle generic exceptions."""
     # For production, send generic error message without details
-    return jsonify({"error": "Internal Server Error", "details": str(e)}), 500
+    app.logger.error(e)
+    return jsonify({"error": "Internal Server Error"}), 500
 
 @app.errorhandler(BadRequest)
 def handle_bad_request(e):
@@ -134,10 +140,9 @@ def get_problems():
     output3 = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions_shortq}
     )
-    if not output1 or not output2 or not output3:
-        return jsonify({"output_mcq": [], "output_boolq": [], "output_shortq": []})
+
     return jsonify(
-        {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
+        {"output_mcq": output1.get("questions", {}), "output_boolq": output2.get("Boolean_Questions", {}), "output_shortq": output3.get("questions", {})}
     )
 
 @app.route("/get_mcq_answer", methods=["POST"])

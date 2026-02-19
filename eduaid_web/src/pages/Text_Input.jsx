@@ -7,7 +7,7 @@ import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
 import { Link, useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
-import { ToastContainer, Bounce } from "react-toastify";
+import { ToastContainer, Bounce, toast } from "react-toastify";
 import { handleToastNotifs } from "../helpers";
 
 const Text_Input = () => {
@@ -76,9 +76,18 @@ const Text_Input = () => {
         reset,
         {
           pending: "Generating quiz...",
-          success: "Quiz generated successfully!",
+          success:
+            "Quiz generated successfully! Taking you to the output page...",
           error: "Error generating quiz. Please try again.",
         },
+      );
+      setTimeout(() => {
+        navigate("/output");
+      }, 3000);
+    } else {
+      setLoading(false);
+      toast.error(
+        "Please enter text or provide a valid file before proceeding.",
       );
     }
   };
@@ -132,8 +141,6 @@ const Text_Input = () => {
       last5Quizzes.shift(); // Keep only the last 5 quizzes
     }
     localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
-
-    navigate("/output");
   };
 
   return (
@@ -174,7 +181,7 @@ const Text_Input = () => {
           <div className="flex flex-wrap justify-center sm:justify-end items-center gap-2 text-xl font-bold">
             to Generate{" "}
             <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Questionaries
+              Questionnaires
             </span>
             <img className="h-6 w-6" src={stars} alt="stars" />
           </div>
