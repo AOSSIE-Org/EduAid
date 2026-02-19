@@ -23,6 +23,9 @@ import os
 import fitz 
 import mammoth
 
+
+
+
 class MCQGenerator:
     
     def __init__(self):
@@ -251,6 +254,9 @@ class AnswerPredictor:
         self.nli_tokenizer = AutoTokenizer.from_pretrained(self.nli_model_name)
         self.nli_model = AutoModelForSequenceClassification.from_pretrained(self.nli_model_name)
         
+        # Explicitly push the NLI model to the detected hardware (GPU or CPU)
+        self.nli_model.to(self.device)
+        
         self.set_seed(42)
         
     def set_seed(self, seed):
@@ -296,6 +302,10 @@ class AnswerPredictor:
         for question in input_questions:
             hypothesis = question
             inputs = self.nli_tokenizer.encode_plus(input_text, hypothesis, return_tensors="pt")
+
+            # Push the input tensors to the same device as the model
+            inputs = {key: value.to(self.device) for key, value in inputs.items()}
+
             outputs = self.nli_model(**inputs)
             logits = outputs.logits
             probabilities = torch.softmax(logits, dim=1)
