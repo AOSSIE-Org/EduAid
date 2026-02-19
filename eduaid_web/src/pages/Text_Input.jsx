@@ -218,14 +218,15 @@ const Text_Input = () => {
           <input
             type="file"
             ref={fileInputRef}
-            onChange={(e) =>
+            onChange={(e) => {
+              setLoading(true);
               handleToastNotifs(handleFileUpload(e), reset, {
                 pending: "Uploading file...",
                 success: "File uploaded successfully!",
                 error:
                   "Error uploading file. Please ensure it's a valid format (PDF, MP3) and try again.",
-              })
-            }
+              });
+            }}
             style={{ display: "none" }}
           />
           <button
