@@ -21,6 +21,7 @@ Before running the desktop app, make sure you have:
 ## Installation
 
 1. Navigate to the desktop app directory:
+
    ```bash
    cd eduaid_desktop
    ```
@@ -35,6 +36,7 @@ Before running the desktop app, make sure you have:
 ### Running in Development Mode
 
 1. First, make sure the web app is ready to serve:
+
    ```bash
    cd ../eduaid_web
    npm install
@@ -48,6 +50,7 @@ Before running the desktop app, make sure you have:
    ```
 
 This will:
+
 - Start the React development server (if not already running)
 - Wait for it to be ready
 - Launch the Electron app pointing to the development server
@@ -63,6 +66,7 @@ This will:
 ### 1. Build the Web App
 
 First, build the React web app:
+
 ```bash
 cd ../eduaid_web
 npm run build
@@ -71,6 +75,7 @@ npm run build
 ### 2. Build the Desktop App
 
 Then build the Electron app:
+
 ```bash
 cd ../eduaid_desktop
 npm run build:electron
@@ -79,6 +84,7 @@ npm run build:electron
 ### Build for All Platforms
 
 To build for all supported platforms:
+
 ```bash
 npm run build:all
 ```
@@ -113,6 +119,7 @@ eduaid_desktop/
 ### Menu Bar
 
 The app includes a native menu bar with:
+
 - **File Menu**: New question set, quit
 - **Edit Menu**: Standard editing operations
 - **View Menu**: Zoom, reload, developer tools
@@ -140,12 +147,14 @@ The app includes a native menu bar with:
 ### App Icons
 
 The app uses icons from the web app:
+
 - **macOS/Linux**: `../eduaid_web/public/aossie_logo.png`
 - **Windows**: `../eduaid_web/public/aossie_logo64.ico`
 
 ### Build Configuration
 
 Build settings can be modified in `package.json` under the `build` section:
+
 - App ID and product name
 - Output directories
 - Platform-specific settings

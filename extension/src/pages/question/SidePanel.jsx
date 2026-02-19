@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument } from "pdf-lib";
 import "../../index.css";
 import logo from "../../assets/aossie_logo.webp";
 
@@ -126,82 +126,100 @@ function SidePanel() {
     const pdfDoc = await PDFDocument.create();
     let page = pdfDoc.addPage();
     const d = new Date(Date.now());
-    page.drawText('EduAid generated Quiz', { x: 50, y: 800, size: 20 });
-    page.drawText('Created On: ' + d.toString(), { x: 50, y: 770, size: 10 });
+    page.drawText("EduAid generated Quiz", { x: 50, y: 800, size: 20 });
+    page.drawText("Created On: " + d.toString(), { x: 50, y: 770, size: 10 });
     const form = pdfDoc.getForm();
     let y = 700; // Starting y position for content
     let questionIndex = 1;
 
     qaPairs.forEach((qaPair) => {
-        if (y < 50) {
-            page = pdfDoc.addPage();
-            y = 700;
-        }
+      if (y < 50) {
+        page = pdfDoc.addPage();
+        y = 700;
+      }
 
-        page.drawText(`Q${questionIndex}) ${qaPair.question}`, { x: 50, y, size: 15 });
-        y -= 30;
+      page.drawText(`Q${questionIndex}) ${qaPair.question}`, {
+        x: 50,
+        y,
+        size: 15,
+      });
+      y -= 30;
 
-        if (qaPair.question_type === "Boolean") {
-            // Create radio buttons for True/False
-            const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
-            const drawRadioButton = (text, selected) => {
-                const options = {
-                    x: 70,
-                    y,
-                    width: 15,
-                    height: 15,
-                };
+      if (qaPair.question_type === "Boolean") {
+        // Create radio buttons for True/False
+        const radioGroup = form.createRadioGroup(
+          `question${questionIndex}_answer`
+        );
+        const drawRadioButton = (text, selected) => {
+          const options = {
+            x: 70,
+            y,
+            width: 15,
+            height: 15,
+          };
 
-                radioGroup.addOptionToPage(text, page, options);
-                page.drawText(text, { x: 90, y: y + 2, size: 12 });
-                y -= 20;
+          radioGroup.addOptionToPage(text, page, options);
+          page.drawText(text, { x: 90, y: y + 2, size: 12 });
+          y -= 20;
+        };
+
+        drawRadioButton("True", false);
+        drawRadioButton("False", false);
+      } else if (
+        qaPair.question_type === "MCQ" ||
+        qaPair.question_type === "MCQ_Hard"
+      ) {
+        // Shuffle options including qaPair.answer
+        const options = [...qaPair.options, qaPair.answer]; // Include correct answer in options
+        options.sort(() => Math.random() - 0.5); // Shuffle options randomly
+
+        const radioGroup = form.createRadioGroup(
+          `question${questionIndex}_answer`
+        );
+
+        options.forEach((option, index) => {
+          const drawRadioButton = (text, selected) => {
+            const radioOptions = {
+              x: 70,
+              y,
+              width: 15,
+              height: 15,
             };
+            radioGroup.addOptionToPage(text, page, radioOptions);
+            page.drawText(text, { x: 90, y: y + 2, size: 12 });
+            y -= 20;
+          };
+          drawRadioButton(option, false);
+        });
+      } else if (qaPair.question_type === "Short") {
+        // Text field for Short answer
+        const answerField = form.createTextField(
+          `question${questionIndex}_answer`
+        );
+        answerField.setText("");
+        answerField.addToPage(page, {
+          x: 50,
+          y: y - 20,
+          width: 450,
+          height: 20,
+        });
+        y -= 40;
+      }
 
-            drawRadioButton('True', false);
-            drawRadioButton('False', false);
-        } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
-            // Shuffle options including qaPair.answer
-            const options = [...qaPair.options, qaPair.answer]; // Include correct answer in options
-            options.sort(() => Math.random() - 0.5); // Shuffle options randomly
-
-            const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
-
-            options.forEach((option, index) => {
-                const drawRadioButton = (text, selected) => {
-                    const radioOptions = {
-                        x: 70,
-                        y,
-                        width: 15,
-                        height: 15,
-                    };
-                    radioGroup.addOptionToPage(text, page, radioOptions);
-                    page.drawText(text, { x: 90, y: y + 2, size: 12 });
-                    y -= 20;
-                };
-                drawRadioButton(option, false);
-            });
-        } else if (qaPair.question_type === "Short") {
-            // Text field for Short answer
-            const answerField = form.createTextField(`question${questionIndex}_answer`);
-            answerField.setText("");
-            answerField.addToPage(page, { x: 50, y: y - 20, width: 450, height: 20 });
-            y -= 40;
-        }
-
-        y -= 20; // Space between questions
-        questionIndex += 1;
+      y -= 20; // Space between questions
+      questionIndex += 1;
     });
 
     // Save PDF and create download link
     const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const link = document.createElement('a');
+    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = "generated_questions.pdf";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-};
+  };
 
   return (
     <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center my-custom-root">
@@ -268,7 +286,7 @@ function SidePanel() {
               })}
           </div>
           <div className="items-center flex justify-center gap-6 mx-auto">
-          <button
+            <button
               className="bg-[#161E1E] my-2 text-white px-2 py-2 rounded-xl"
               onClick={() => {
                 window.close();

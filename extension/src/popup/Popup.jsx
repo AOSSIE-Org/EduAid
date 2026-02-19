@@ -5,7 +5,7 @@ import logo from "../assets/aossie_logo.webp";
 import starsImg from "../assets/stars.png";
 import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
-import { FaGithub } from 'react-icons/fa';
+import { FaGithub } from "react-icons/fa";
 
 function Popup() {
   const [stars, setStars] = useState(null);

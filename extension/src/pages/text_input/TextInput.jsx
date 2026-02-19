@@ -5,7 +5,7 @@ import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
 import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
-import { FaClipboard , FaWikipediaW  } from "react-icons/fa";
+import { FaClipboard, FaWikipediaW } from "react-icons/fa";
 
 function Second() {
   const [text, setText] = useState("");
@@ -13,8 +13,8 @@ function Second() {
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
-  const [fileContent, setFileContent] = useState('');
-  const [docUrl, setDocUrl] = useState('');
+  const [fileContent, setFileContent] = useState("");
+  const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
 
   useEffect(() => {
@@ -25,8 +25,7 @@ function Second() {
         localStorage.setItem("textContent", result.selectedText);
       }
     });
-  }, [])
-
+  }, []);
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
@@ -36,24 +35,24 @@ function Second() {
     const file = event.target.files[0];
     if (file) {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
 
       try {
-        const response = await fetch('http://localhost:5000/upload', {
-          method: 'POST',
+        const response = await fetch("http://localhost:5000/upload", {
+          method: "POST",
           body: formData,
         });
         const data = await response.json();
         setText(data.content || data.error);
       } catch (error) {
-        console.error('Error uploading file:', error);
-        setText('Error uploading file');
+        console.error("Error uploading file:", error);
+        setText("Error uploading file");
       }
     }
   };
 
   const handleClick = (event) => {
-    event.preventDefault();  // Prevent default behavior
+    event.preventDefault(); // Prevent default behavior
     event.stopPropagation(); // Stop event propagation
 
     // Open file input dialog
@@ -66,25 +65,25 @@ function Second() {
     // Check if a Google Doc URL is provided
     if (docUrl) {
       try {
-        const response = await fetch('http://localhost:5000/get_content', {
-          method: 'POST',
+        const response = await fetch("http://localhost:5000/get_content", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify({ document_url: docUrl })
+          body: JSON.stringify({ document_url: docUrl }),
         });
 
         if (response.ok) {
           const data = await response.json();
-          setDocUrl("")
+          setDocUrl("");
           setText(data || "Error in retrieving");
         } else {
-          console.error('Error retrieving Google Doc content');
-          setText('Error retrieving Google Doc content');
+          console.error("Error retrieving Google Doc content");
+          setText("Error retrieving Google Doc content");
         }
       } catch (error) {
-        console.error('Error:', error);
-        setText('Error retrieving Google Doc content');
+        console.error("Error:", error);
+        setText("Error retrieving Google Doc content");
       } finally {
         setLoading(false);
         chrome.storage.local.remove(["selectedText"], () => {
@@ -134,7 +133,7 @@ function Second() {
       const formData = JSON.stringify({
         input_text: data,
         max_questions: numQuestions,
-        use_mediawiki: isToggleOn
+        use_mediawiki: isToggleOn,
       });
       const response = await fetch(`http://localhost:5000/${endpoint}`, {
         method: "POST",
@@ -153,15 +152,16 @@ function Second() {
           difficulty,
           numQuestions,
           date: new Date().toLocaleDateString(),
-          qaPair: responseData
+          qaPair: responseData,
         };
 
-        let last5Quizzes = JSON.parse(localStorage.getItem('last5Quizzes')) || [];
+        let last5Quizzes =
+          JSON.parse(localStorage.getItem("last5Quizzes")) || [];
         last5Quizzes.push(quizDetails);
         if (last5Quizzes.length > 5) {
-          last5Quizzes.shift();  // Keep only the last 5 quizzes
+          last5Quizzes.shift(); // Keep only the last 5 quizzes
         }
-        localStorage.setItem('last5Quizzes', JSON.stringify(last5Quizzes));
+        localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
 
         window.location.href = "/src/pages/question/question.html";
       } else {
@@ -174,7 +174,6 @@ function Second() {
     }
   };
 
-
   return (
     <div className="popup w-42rem h-35rem bg-[#02000F] flex justify-center items-center">
       {loading && (
@@ -183,8 +182,9 @@ function Second() {
         </div>
       )}
       <div
-        className={`w-full h-full bg-cust bg-opacity-50 bg-custom-gradient ${loading ? "pointer-events-none" : ""
-          }`}
+        className={`w-full h-full bg-cust bg-opacity-50 bg-custom-gradient ${
+          loading ? "pointer-events-none" : ""
+        }`}
       >
         <div className="flex items-end gap-[2px]">
           <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
@@ -231,7 +231,13 @@ function Second() {
         </div>
         <div className="text-white text-center my-2 text-sm">or</div>
         <div className="border-[3px] rounded-xl text-center mx-3 px-6 py-2 border-dotted border-[#3E5063] mt-4">
-          <img className="mx-auto" height={24} width={24} src={cloud} alt="cloud" />
+          <img
+            className="mx-auto"
+            height={24}
+            width={24}
+            src={cloud}
+            alt="cloud"
+          />
           <div className="text-center text-white text-sm">Choose a file</div>
           <div className="text-center text-white text-sm">
             PDF, MP3 supported
@@ -241,7 +247,7 @@ function Second() {
               type="file"
               ref={fileInputRef}
               onChange={handleFileUpload}
-              style={{ display: 'none' }}
+              style={{ display: "none" }}
             />
             <button
               className="bg-[#3e506380] my-2 text-sm rounded-xl text-white border border-[#cbd0dc80] px-6 py-1"
@@ -297,15 +303,19 @@ function Second() {
             </button>
           </div>
           <div className="items-center bg-[#202838] text-white rounded-xl px-2 py-2">
-           <button
-            title={isToggleOn ? "Disable Wikipedia Context" : "Enable Wikipedia Context"}
-            onClick={toggleSwitch}
-            className={`p-1 rounded-md transition 
+            <button
+              title={
+                isToggleOn
+                  ? "Disable Wikipedia Context"
+                  : "Enable Wikipedia Context"
+              }
+              onClick={toggleSwitch}
+              className={`p-1 rounded-md transition 
               ${isToggleOn ? "bg-green-500 text-white" : "bg-gray-400 text-gray-300"}
             `}
-          >
-            <FaWikipediaW className="text-2xl" />
-          </button>
+            >
+              <FaWikipediaW className="text-2xl" />
+            </button>
           </div>
         </div>
         <div className="flex my-2 justify-center gap-6 items-start">
@@ -321,7 +331,14 @@ function Second() {
               onClick={handleSaveToLocalStorage}
               className="bg-black items-center text-sm text-white px-4 py-2 mx-auto border-gradient flex"
             >
-              Next <img src={arrow} width={16} height={12} alt="arrow" className="ml-2" />
+              Next{" "}
+              <img
+                src={arrow}
+                width={16}
+                height={12}
+                alt="arrow"
+                className="ml-2"
+              />
             </button>
           </div>
         </div>
@@ -331,4 +348,3 @@ function Second() {
 }
 
 ReactDOM.render(<Second />, document.getElementById("root"));
-

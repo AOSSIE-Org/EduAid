@@ -18,7 +18,7 @@
 }
 
 .border-gradient {
-  border-width: 2px; 
+  border-width: 2px;
   border-style: solid;
   border-image: linear-gradient(to right, #ff005c, #7600f2, #00cbe7);
   border-image-slice: 1;
@@ -31,6 +31,6 @@
 }
 
 .scrollbar-hide {
-  -ms-overflow-style: none;  
+  -ms-overflow-style: none;
   scrollbar-width: none;
 }

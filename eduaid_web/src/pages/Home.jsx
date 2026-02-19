@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../index.css";
-import logo_trans from "../assets/aossie_logo_transparent.png"
+import logo_trans from "../assets/aossie_logo_transparent.png";
 import starsImg from "../assets/stars.png";
 import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
@@ -12,7 +12,9 @@ const Home = () => {
   const [error, setError] = useState("");
 
   async function fetchGitHubStars() {
-    const response = await fetch("https://api.github.com/repos/AOSSIE-Org/EduAid");
+    const response = await fetch(
+      "https://api.github.com/repos/AOSSIE-Org/EduAid"
+    );
     if (!response.ok) throw new Error("Failed to fetch stars");
     const data = await response.json();
     return data.stargazers_count;
@@ -27,7 +29,11 @@ const Home = () => {
     const storedStars = localStorage.getItem("stars");
     const storedTime = localStorage.getItem("fetchTime");
 
-    if (storedStars && storedTime && !isMoreThanOneDayOld(parseInt(storedTime))) {
+    if (
+      storedStars &&
+      storedTime &&
+      !isMoreThanOneDayOld(parseInt(storedTime))
+    ) {
       setStars(parseInt(storedStars));
     } else {
       fetchGitHubStars()

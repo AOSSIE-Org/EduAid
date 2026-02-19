@@ -1,0 +1,41 @@
+name: Prettier Check
+
+on:
+  pull_request:
+    paths:
+      - "extension/**"
+      - "eduaid_web/**"
+      - "eduaid_desktop/**"
+      - ".prettierrc"
+      - ".prettierignore"
+
+jobs:
+  prettier:
+    name: Check Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Check extension formatting
+        run: |
+          cd extension
+          npm install
+          npm run format:check
+
+      - name: Check eduaid_web formatting
+        run: |
+          cd eduaid_web
+          npm install
+          npm run format:check
+
+      - name: Check eduaid_desktop formatting
+        run: |
+          cd eduaid_desktop
+          npm install
+          npm run format:check
