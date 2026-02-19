@@ -62,7 +62,8 @@ def handle_bad_request(e):
 # This error is raised by the get_json() method of the request object
 def handle_unsupported_media(e):
     return jsonify({
-        "error": "Content-Type must be application/json"
+        "error": "Content-Type must be application/json",
+        "details": e.description
     }), 415
 
 
@@ -142,7 +143,11 @@ def get_problems():
     )
 
     return jsonify(
-        {"output_mcq": output1.get("questions", {}), "output_boolq": output2.get("Boolean_Questions", {}), "output_shortq": output3.get("questions", {})}
+        {
+            "output_mcq": output1.get("questions", []) if output1 else [],
+            "output_boolq": output2.get("Boolean_Questions", []) if output2 else [],
+            "output_shortq": output3.get("questions", []) if output3 else [],
+        }
     )
 
 @app.route("/get_mcq_answer", methods=["POST"])

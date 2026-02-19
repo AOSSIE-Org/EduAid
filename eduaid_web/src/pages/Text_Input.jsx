@@ -117,7 +117,6 @@ const Text_Input = () => {
 
   const sendToBackend = async (data, difficulty, questionType) => {
     const endpoint = getEndpoint(difficulty, questionType);
-    // try {
     const requestData = {
       input_text: data,
       max_questions: numQuestions,
