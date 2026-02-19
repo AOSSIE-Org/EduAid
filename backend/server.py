@@ -532,4 +532,4 @@ def get_transcript():
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
     print("Starting Flask App...")
-    app.run() # For production, set debug to False
+    app.run()

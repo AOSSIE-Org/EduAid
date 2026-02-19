@@ -63,6 +63,7 @@ const Text_Input = () => {
       });
     } else if (text) {
       // Proceed with existing functionality for local storage
+      let success = false;
       localStorage.setItem("textContent", text);
       localStorage.setItem("difficulty", difficulty);
       localStorage.setItem("numQuestions", numQuestions);
@@ -72,7 +73,9 @@ const Text_Input = () => {
           text,
           difficulty,
           localStorage.getItem("selectedQuestionType"),
-        ),
+        ).then(() => {
+          success = true;
+        }),
         reset,
         {
           pending: "Generating quiz...",
@@ -81,9 +84,11 @@ const Text_Input = () => {
           error: "Error generating quiz. Please try again.",
         },
       );
-      setTimeout(() => {
-        navigate("/output");
-      }, 3000);
+      if (success) {
+        setTimeout(() => {
+          navigate("/output");
+        }, 3000);
+      }
     } else {
       setLoading(false);
       toast.error(
