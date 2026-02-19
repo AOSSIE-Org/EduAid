@@ -28,3 +28,4 @@ backend/service_account_key.json
 venv
 backend/Eduaid
 .DS_Store
+node_modules/

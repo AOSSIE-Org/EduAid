@@ -13,16 +13,19 @@ function Question() {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-        const dropdown = document.getElementById('pdfDropdown');
-        if (dropdown && !dropdown.contains(event.target) && 
-            !event.target.closest('button')) {
-            dropdown.classList.add('hidden');
-        }
+      const dropdown = document.getElementById("pdfDropdown");
+      if (
+        dropdown &&
+        !dropdown.contains(event.target) &&
+        !event.target.closest("button")
+      ) {
+        dropdown.classList.add("hidden");
+      }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-}, []);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -125,27 +128,30 @@ function Question() {
       const arrayBuffer = await response.arrayBuffer();
       return new Uint8Array(arrayBuffer);
     } catch (error) {
-      console.error('Error loading logo:', error);
+      console.error("Error loading logo:", error);
       return null;
     }
   };
 
   const generatePDF = async (mode) => {
     const logoBytes = await loadLogoAsBytes();
-    const worker = new Worker(new URL("../../workers/pdfWorker.js", import.meta.url), { type: "module" });
+    const worker = new Worker(
+      new URL("../../workers/pdfWorker.js", import.meta.url),
+      { type: "module" }
+    );
 
     worker.postMessage({ qaPairs, mode, logoBytes });
 
     worker.onmessage = (e) => {
-      const blob = new Blob([e.data], { type: 'application/pdf' });
-      const link = document.createElement('a');
+      const blob = new Blob([e.data], { type: "application/pdf" });
+      const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = "generated_questions.pdf";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
-      document.getElementById('pdfDropdown').classList.add('hidden');
+      document.getElementById("pdfDropdown").classList.add("hidden");
       worker.terminate();
     };
 
@@ -154,7 +160,6 @@ function Question() {
       worker.terminate();
     };
   };
-
 
   return (
     <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
@@ -233,11 +238,15 @@ function Question() {
             >
               Generate Google form
             </button>
-            
+
             <div className="relative">
               <button
                 className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"
-                onClick={() => document.getElementById('pdfDropdown').classList.toggle('hidden')}
+                onClick={() =>
+                  document
+                    .getElementById("pdfDropdown")
+                    .classList.toggle("hidden")
+                }
               >
                 Generate PDF
               </button>
@@ -247,19 +256,19 @@ function Question() {
               >
                 <button
                   className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-t-lg"
-                  onClick={() => generatePDF('questions')}
+                  onClick={() => generatePDF("questions")}
                 >
                   Questions Only
                 </button>
                 <button
                   className="block w-full text-left px-4 py-2 hover:bg-gray-500"
-                  onClick={() => generatePDF('questions_answers')}
+                  onClick={() => generatePDF("questions_answers")}
                 >
                   Questions with Answers
                 </button>
                 <button
                   className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-b-lg"
-                  onClick={() => generatePDF('answers')}
+                  onClick={() => generatePDF("answers")}
                 >
                   Answers Only
                 </button>

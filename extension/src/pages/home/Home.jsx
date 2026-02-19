@@ -39,7 +39,7 @@ function Home() {
               Aid
             </span>
           </div>
-          
+
           {/* Dropdown for Mode Selection */}
           <div className="relative ml-auto mb-3">
             <select
@@ -58,14 +58,14 @@ function Home() {
             </select>
           </div>
         </div>
-        
+
         <div className="text-3xl mt-3 text-white ml-4 font-extrabold">
           What’s on your Mind?
         </div>
         <div className="mt-1 text-white text-sm ml-4 font-medium">
           Choose one
         </div>
-        
+
         {/* Question Type Options */}
         <div>
           <div

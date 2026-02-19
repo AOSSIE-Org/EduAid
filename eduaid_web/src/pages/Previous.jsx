@@ -4,7 +4,7 @@ import logoPNG from "../assets/aossie_logo_transparent.png";
 import stars from "../assets/stars.png";
 import { FaArrowRight } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
 const Previous = () => {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ const Previous = () => {
 
   const handleQuizClick = (quiz) => {
     localStorage.setItem("qaPairs", JSON.stringify(quiz.qaPair));
-    navigate('/output'); 
+    navigate("/output");
   };
 
   const handleClearQuizzes = () => {
@@ -27,7 +27,7 @@ const Previous = () => {
   };
 
   const handleBack = () => {
-    navigate('/'); 
+    navigate("/");
   };
 
   return (
@@ -48,7 +48,9 @@ const Previous = () => {
 
         {/* Titles */}
         <div className="mt-3 text-right">
-          <div className="text-white text-lg md:text-xl font-bold">Quiz Dashboard</div>
+          <div className="text-white text-lg md:text-xl font-bold">
+            Quiz Dashboard
+          </div>
           <div className="text-white flex justify-end gap-2 text-sm md:text-xl font-bold items-center">
             Your{" "}
             <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
@@ -68,7 +70,9 @@ const Previous = () => {
         {/* Quiz List */}
         <div className="mx-auto max-w-4xl bg-[#83b6cc40] rounded-xl p-4 mb-4 max-h-[60vh] overflow-y-auto">
           {quizzes.length === 0 ? (
-            <div className="text-center text-white text-sm">No quizzes available</div>
+            <div className="text-center text-white text-sm">
+              No quizzes available
+            </div>
           ) : (
             <ul className="space-y-2">
               {quizzes.map((quiz, index) => (

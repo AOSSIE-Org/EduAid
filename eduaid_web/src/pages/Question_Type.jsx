@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "../index.css";
-import logo_trans from "../assets/aossie_logo_transparent.png"
+import logo_trans from "../assets/aossie_logo_transparent.png";
 import { Link } from "react-router-dom";
 
 const Question_Type = () => {
@@ -20,7 +20,10 @@ const Question_Type = () => {
     <div className="popup w-full min-h-screen bg-[#02000F] flex justify-center items-center ">
       <div className="w-full bg-cust bg-opacity-50 bg-custom-gradient shadow-lg p-6 sm:p-10">
         {/* Header */}
-        <Link to="/" className="flex flex-col sm:flex-row items-center gap-4 mb-6">
+        <Link
+          to="/"
+          className="flex flex-col sm:flex-row items-center gap-4 mb-6"
+        >
           <img
             src={logo_trans}
             alt="logo"

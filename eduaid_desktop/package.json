@@ -13,7 +13,9 @@
     "build:electron": "npm run build && electron-builder",
     "build:all": "npm run build && electron-builder --mac --win --linux",
     "pack": "electron-builder --dir",
-    "dist": "npm run build:web && npm run copy:web && electron-builder"
+    "dist": "npm run build:web && npm run copy:web && electron-builder",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\""
   },
   "keywords": [
     "eduaid",
@@ -28,6 +30,7 @@
     "concurrently": "^8.2.2",
     "electron": "^27.0.0",
     "electron-builder": "^24.6.4",
+    "prettier": "^3.2.5",
     "wait-on": "^7.2.0"
   },
   "build": {
