@@ -47,7 +47,7 @@ def handle_http_exception(e):
 def handle_generic_exception(e):
     """Handle generic exceptions."""
     # For production, send generic error message without details
-    app.logger.error(e)
+    app.logger.exception(e)
     return jsonify({"error": "Internal Server Error"}), 500
 
 @app.errorhandler(BadRequest)
@@ -164,8 +164,10 @@ def get_mcq_answer():
     for question, options in zip(input_questions, input_options):
         # Generate answer using the QA model
         qa_response = qa_model(question=question, context=input_text)
-        generated_answer = qa_response["answer"]
+        if not qa_response or "answer" not in qa_response:
+            continue  # skip this question safely
 
+        generated_answer = qa_response["answer"]
         # Calculate similarity between generated answer and each option
         options_with_answer = options + [generated_answer]
         vectorizer = TfidfVectorizer().fit_transform(options_with_answer)
