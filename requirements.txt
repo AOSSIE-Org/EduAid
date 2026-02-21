@@ -18,7 +18,7 @@ sentencepiece==0.2.0
 spacy
 flask
 flask_cors
-nltk
+nltk>=3.8.1
 git+https://github.com/boudinfl/pke.git
 google-api-python-client==2.113.0
 google-auth-httplib2==0.2.0
