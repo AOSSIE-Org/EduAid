@@ -128,7 +128,7 @@ reviews:
       instructions: Apply when the PR/MR contains changes to python source-code
     - label: Solidity Lang
       instructions: Apply when the PR/MR contains changes to solidity source-code
-    - label: Typescript Lang
+    - label: TypeScript Lang
       instructions: Apply when the PR/MR contains changes to javascript or typescript source-code
     - label: Ergoscript Lang
       instructions: Apply when the PR/MR contains changes to ergoscript source-code
