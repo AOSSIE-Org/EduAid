@@ -23,3 +23,29 @@ code {
   border-image-slice: 1;
   border-radius: 2rem;
 }
+
+/* Default gradient for Web */
+.gradient-text {
+  background: linear-gradient(to right, #FF005C, #7600F2);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.gradient-text-2 {
+  background: linear-gradient(to right, #7600F2, #00CBE7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Electron fallback */
+body.electron .gradient-text {
+  background: none;
+  color: #FF005C;
+}
+
+body.electron .gradient-text-2 {
+  background: none;
+  color: #7600F2;
+}
