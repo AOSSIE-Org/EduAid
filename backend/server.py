@@ -96,13 +96,16 @@ def get_shortq():
 
 @app.route("/get_shortq_llm", methods=["POST"])
 def get_shortq_llm():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    questions = llm_shortq.generate_short_questions(input_text, max_questions)
-    return jsonify({"output": questions})
+    try:
+        data = request.get_json()
+        input_text = data.get("input_text", "")
+        use_mediawiki = data.get("use_mediawiki", 0)
+        max_questions = data.get("max_questions", 4)
+        input_text = process_input_text(input_text, use_mediawiki)
+        questions = llm_shortq.generate_short_questions(input_text, max_questions)
+        return jsonify({"output": questions})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/get_problems", methods=["POST"])

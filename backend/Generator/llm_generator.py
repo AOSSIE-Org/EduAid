@@ -1,5 +1,6 @@
 import json
 import re
+import threading
 from llama_cpp import Llama
 
 
@@ -10,18 +11,23 @@ class LLMShortAnswerGenerator:
 
     def __init__(self):
         self.llm = None
+        self._llm_lock = threading.Lock()
 
     def _load_model(self):
+        # First check: avoid lock overhead if already loaded
         if self.llm is None:
-            print("Loading Qwen3-0.6B model (downloads ~397 MB on first run)...")
-            self.llm = Llama.from_pretrained(
-                repo_id="unsloth/Qwen3-0.6B-GGUF",
-                filename="Qwen3-0.6B-Q4_K_M.gguf",
-                n_ctx=2048,
-                n_threads=4,
-                verbose=False,
-            )
-            print("Qwen3-0.6B model loaded successfully.")
+            with self._llm_lock:
+                # Second check: verify still None after acquiring lock
+                if self.llm is None:
+                    print("Loading Qwen3-0.6B model (downloads ~397 MB on first run)...")
+                    self.llm = Llama.from_pretrained(
+                        repo_id="unsloth/Qwen3-0.6B-GGUF",
+                        filename="Qwen3-0.6B-Q4_K_M.gguf",
+                        n_ctx=2048,
+                        n_threads=4,
+                        verbose=False,
+                    )
+                    print("Qwen3-0.6B model loaded successfully.")
 
     def generate_short_questions(self, input_text, max_questions=4):
         """Generate short-answer questions from the given text."""
@@ -46,14 +52,25 @@ class LLMShortAnswerGenerator:
                     "role": "system",
                     "content": "You generate short-answer quiz questions as JSON arrays. Output ONLY valid JSON.",
                 },
-                {"role": "user", "content": prompt},
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
             ],
             max_tokens=512,
             temperature=0.7,
         )
 
-        raw = response["choices"][0]["message"]["content"]
-        return self._parse_response(raw, max_questions)
+        try:
+            choices = response.get("choices", [])
+            if not choices:
+                return []
+
+            raw = choices[0].get("message", {}).get("content", "")
+            return self._parse_response(raw, max_questions)
+
+        except Exception:
+            return []
 
     def _parse_response(self, raw_text, max_questions):
         """Parse the LLM response into structured Q&A pairs."""
@@ -98,7 +115,7 @@ class LLMShortAnswerGenerator:
                 r"(?:\d+[\.\)]\s*)?(?:Q(?:uestion)?[:\.]\s*)(.*)", line, re.IGNORECASE
             )
             a_match = re.match(
-                r"(?:A(?:nswer)?[:\.]\s*)(.*)", line, re.IGNORECASE
+                r"(?:Answer[:\.]|A:)\s*(.*)", line, re.IGNORECASE
             )
 
             if q_match:
