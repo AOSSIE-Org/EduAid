@@ -411,7 +411,7 @@ def get_boolq_hard():
     generated = qg.generate(
         article=input_text,
         num_questions=input_questions,
-        answer_style="true_false"
+        answer_style="all"
     )
 
     # Apply transformation to make each question harder
