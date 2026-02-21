@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "../index.css";
+import Header from "../components/Header";
 import logoPNG from "../assets/aossie_logo_transparent.png";
 import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
@@ -210,23 +211,7 @@ const Output = () => {
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
         <div className="flex flex-col h-full">
           {/* Header - Responsive logo and title */}
-          <Link to="/">
-            <div className="flex items-end gap-[2px] px-4 sm:px-6">
-              <img 
-                src={logoPNG} 
-                alt="logo" 
-                className="w-12 sm:w-16 my-4 block" 
-              />
-              <div className="text-xl sm:text-2xl mb-3 font-extrabold">
-                <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                  Edu
-                </span>
-                <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                  Aid
-                </span>
-              </div>
-            </div>
-          </Link>
+          <Header imgClass="w-12 sm:w-16 my-4 block" titleClass="text-xl sm:text-2xl mb-3 font-extrabold" linkClass="px-4 sm:px-6" />
 
           {/* Title and Shuffle Button */}
           <div className="flex justify-between items-center mt-3 mx-4 sm:mx-6">

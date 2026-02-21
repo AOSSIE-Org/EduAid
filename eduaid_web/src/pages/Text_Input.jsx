@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import "../index.css";
-import logo_trans from "../assets/aossie_logo_transparent.png"
+import Header from "../components/Header";
 import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
@@ -136,125 +136,115 @@ const Text_Input = () => {
   };
 
   return (
-    <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen">
+    <div className="w-full popup bg-[#02000F] bg-custom-gradient min-h-screen">
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
           <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
         </div>
       )}
+      <Header imgClass="w-20 sm:w-24" titleClass="text-3xl sm:text-4xl font-extrabold" linkClass="flex items-center gap-2 p-4" />
 
       <div className={`w-full h-full bg-cust bg-opacity-50 ${loading ? "pointer-events-none" : ""}`}>
-        {/* Header */}
-        <Link to="/" className="block">
-          <div className="flex items-end gap-2 p-4">
-            <img src={logo_trans} alt="logo" className="w-20 sm:w-24" />
-            <div className="text-3xl sm:text-4xl font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">Edu</span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">Aid</span>
+        
+        {/* Main Card */}
+        <div className="max-w-4xl mx-auto p-6 sm:p-10 mt-6 bg-[#07121A] bg-opacity-70 rounded-3xl shadow-xl border border-[#22303a]">
+          {/* Headline */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-white text-2xl sm:text-3xl font-extrabold">Generate Questions</h2>
+              <p className="text-[#cbd0dc] mt-1">Paste text, upload a file, or provide a Google Doc URL to generate professional quizzes.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <img src={stars} alt="stars" className="h-6 w-6" />
+              <div className="text-sm text-[#a8cbd3]">Trusted by learners</div>
             </div>
           </div>
-        </Link>
 
-        {/* Headline */}
-        <div className="text-white text-center sm:text-right mx-4 sm:mx-8">
-          <div className="text-xl sm:text-2xl font-bold">Enter the Content</div>
-          <div className="flex flex-wrap justify-center sm:justify-end items-center gap-2 text-xl font-bold">
-            to Generate{" "}
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">Questionaries</span>
-            <img className="h-6 w-6" src={stars} alt="stars" />
-          </div>
-        </div>
-
-        {/* Textarea */}
-        <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
-            <FaClipboard className="h-[24px] w-[24px]" />
-          </button>
+          {/* Textarea */}
+          <label htmlFor="contentInput" className="block text-sm font-semibold text-[#9fb7bf] mb-2">Paste or type content</label>
           <textarea
-            className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            id="contentInput"
+            aria-label="Content to generate questions"
+            placeholder="Paste article text, lecture notes, or any content here..."
+            className="w-full bg-[#0b2730] text-white rounded-2xl p-5 min-h-[180px] sm:min-h-[260px] resize-y outline-none focus:ring-2 focus:ring-[#00CBE7] placeholder-[#7f9aa2]"
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
-          <style>{`textarea::-webkit-scrollbar { display: none; }`}</style>
-        </div>
 
-        {/* Separator */}
-        <div className="text-white text-center my-4 text-lg">or</div>
-
-        {/* File Upload Section */}
-        <div className="w-full max-w-2xl mx-auto border-[3px] rounded-2xl text-center px-6 py-6 border-dotted border-[#3E5063] mt-6">
-          <img className="mx-auto mb-2" height={32} width={32} src={cloud} alt="cloud" />
-          <p className="text-white text-lg">Choose a file (PDF, MP3 supported)</p>
-
-          <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} />
-          <button
-            className="bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2"
-            onClick={handleClick}
-          >
-            Browse File
-          </button>
-
-          <input
-            type="text"
-            placeholder="Enter Google Doc URL"
-            className="bg-transparent mt-4 border border-[#cbd0dc80] text-white text-lg sm:text-xl rounded-2xl px-4 py-2 w-full sm:w-2/3 outline-none"
-            value={docUrl}
-            onChange={(e) => setDocUrl(e.target.value)}
-          />
-        </div>
-
-        {/* Controls Section */}
-        <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-6 items-center mt-6 px-4 sm:px-8">
-          {/* Question Count */}
-          <div className="flex gap-2 items-center">
-            <div className="text-white text-lg sm:text-xl font-bold">No. of Questions:</div>
-            <button onClick={decrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3">-</button>
-            <span className="text-white text-2xl">{numQuestions}</span>
-            <button onClick={incrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3">+</button>
+          <div className="flex items-center justify-center my-6">
+            <div className="h-px bg-[#2a3a42] w-1/6" />
+            <span className="mx-4 text-[#8ea9b0] font-semibold">OR</span>
+            <div className="h-px bg-[#2a3a42] w-1/6" />
           </div>
 
-          {/* Difficulty Dropdown */}
-          <div className="text-center">
-            <select
-              value={difficulty}
-              onChange={handleDifficultyChange}
-              className="bg-[#3e5063] text-white text-lg rounded-xl p-2 outline-none"
-            >
-              <option value="Easy Difficulty">Easy Difficulty</option>
-              <option value="Hard Difficulty">Hard Difficulty</option>
-            </select>
+          {/* Upload / Google Doc */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div className="border-2 border-dashed border-[#2e4650] rounded-2xl p-6 text-center bg-[#071d24]">
+              <img className="mx-auto mb-3" height={36} width={36} src={cloud} alt="cloud" />
+              <p className="text-[#cbd0dc] font-medium mb-3">Upload a file (PDF, MP3, TXT)</p>
+              <p className="text-sm text-[#92a9b0] mb-4">We support common document and audio formats.</p>
+              <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} accept=".pdf,.mp3,.txt" />
+              <button onClick={handleClick} className="bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] text-white px-5 py-2 rounded-xl font-semibold shadow-md hover:brightness-105 transition">Choose file</button>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <label htmlFor="docUrl" className="text-sm font-semibold text-[#9fb7bf]">Google Doc URL</label>
+              <input
+                id="docUrl"
+                type="text"
+                placeholder="https://docs.google.com/document/d/...."
+                className="w-full bg-[#0b2730] text-white rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#00CBE7] placeholder-[#7f9aa2]"
+                value={docUrl}
+                onChange={(e) => setDocUrl(e.target.value)}
+              />
+              <div className="text-xs text-[#7f9aa2]">Paste a publicly shared Google Doc URL and we will fetch its content.</div>
+            </div>
           </div>
 
-          {/* Wikipedia Toggle */}
-          <div className="flex items-center gap-2">
-            <span className="text-white text-lg sm:text-xl font-bold">Use Wikipedia:</span>
-            <Switch
-              onChange={toggleSwitch}
-              checked={isToggleOn === 1}
-              onColor="#008080"
-              offColor="#3e5063"
-              checkedIcon={false}
-              uncheckedIcon={false}
-            />
+          {/* Controls */}
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+            <div className="flex items-center gap-3">
+              <div className="text-[#cbd0dc] font-semibold">No. of Questions</div>
+              <div className="inline-flex items-center bg-[#081f26] rounded-full px-2 py-1 gap-2">
+                <button onClick={decrementQuestions} className="px-3 py-1 rounded-full bg-transparent text-white border border-[#2f4a55]">-</button>
+                <div className="px-3 text-white font-bold">{numQuestions}</div>
+                <button onClick={incrementQuestions} className="px-3 py-1 rounded-full bg-transparent text-white border border-[#2f4a55]">+</button>
+              </div>
+            </div>
+
+            <div>
+              <div className="text-[#cbd0dc] font-semibold mb-1">Difficulty</div>
+              <select value={difficulty} onChange={handleDifficultyChange} className="bg-[#0b2730] text-white rounded-xl p-2 outline-none w-full md:w-40 focus:ring-2 focus:ring-[#00CBE7]">
+                <option value="Easy Difficulty">Easy</option>
+                <option value="Hard Difficulty">Hard</option>
+              </select>
+            </div>
+
+            <div className="flex items-center justify-start md:justify-end gap-3">
+              <div className="text-[#cbd0dc] font-semibold">Use Wikipedia</div>
+              <Switch onChange={toggleSwitch} checked={isToggleOn === 1} onColor="#008080" offColor="#3e5063" checkedIcon={false} uncheckedIcon={false} />
+            </div>
           </div>
+
+          {/* Footer Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8">
+            <div className="w-full sm:w-auto">
+              <Link to="/question-type">
+                <button className="w-full sm:w-auto px-6 py-2 rounded-xl border border-[#2f4a55] text-[#a8cbd3] bg-transparent">Back</button>
+              </Link>
+            </div>
+
+            <div className="w-full sm:w-auto">
+              <button onClick={handleSaveToLocalStorage} className="w-full sm:w-auto px-6 py-2 rounded-xl text-white font-semibold bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] shadow-lg hover:brightness-105 transition">Generate Questions</button>
+            </div>
+          </div>
+
+          <div className="text-xs text-[#7f9aa2] mt-4">We respect your privacy — uploaded files are processed securely and not stored after processing.</div>
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="flex flex-col sm:flex-row justify-center gap-6 mt-6 pb-10 px-4 sm:px-8">
-          <Link to="/question-type">
-            <button className="bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient rounded-xl w-full sm:w-auto">Back</button>
-          </Link>
-          <button
-            onClick={handleSaveToLocalStorage}
-            className="bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient flex justify-center items-center rounded-xl w-full sm:w-auto"
-          >
-            Next
-          </button>
         </div>
       </div>
-    </div>
-
+    
   );
 };
 

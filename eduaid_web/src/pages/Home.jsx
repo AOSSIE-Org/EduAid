@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../index.css";
-import logo_trans from "../assets/aossie_logo_transparent.png"
+import Header from "../components/Header";
 import starsImg from "../assets/stars.png";
 import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
@@ -42,19 +42,9 @@ const Home = () => {
 
   return (
     <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient overflow-auto px-4 py-6 sm:px-8 md:px-16">
+      <div className="w-full h-full flex justify-center items-center bg-cust bg-opacity-50 bg-custom-gradient overflow-auto px-4 py-6 sm:px-8 md:px-16">
         <div className="max-w-5xl mx-auto">
-          <img src={logo_trans} alt="logo" className="w-24 my-4 sm:my-6" />
-
-          {/* Heading */}
-          <h1 className="text-5xl sm:text-6xl md:text-7xl text-center font-extrabold leading-tight">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-              Edu
-            </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Aid
-            </span>
-          </h1>
+          <Header imgClass="w-24 my-4 sm:my-6" titleClass="text-5xl sm:text-6xl md:text-7xl font-extrabold leading-tight text-center" linkClass="flex items-center justify-center mb-6" />
 
           {/* Subtitle */}
           <div className="text-white text-lg sm:text-xl text-center mt-4 mb-6">
