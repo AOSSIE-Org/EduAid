@@ -26,6 +26,7 @@ You can choose to set up the backend manually or use an automated shell script.
      ```bash
      pip install -r requirements.txt
      ```
+   - The `llama-cpp-python` package will be installed for LLM-based question generation. It will automatically download the Qwen3-0.6B model (~397MB) on first use.
 
 3. **Run Flask App**:
    - Navigate to the `backend` folder and start the Flask app:
@@ -48,7 +49,28 @@ You can choose to set up the backend manually or use an automated shell script.
 - If the script fails to run, ensure that you have execution permissions:
   ```bash
   chmod +x script.sh
+  ```
 
+### LLM-Based Question Generation
+
+The backend now includes support for AI-powered short-answer question generation using Qwen3-0.6B:
+
+- **Model**: Qwen3-0.6B (Q4_K_M quantization, ~397MB)
+- **Endpoint**: POST `/get_shortq_llm`
+- **Features**:
+  - Lazy loading: Model downloads on first request
+  - Fast inference: ~2-3 seconds on CPU
+  - Configurable question count
+  - Automatic context length management
+  - Robust JSON and fallback parsing
+- **Request Parameters**:
+  ```json
+  {
+    "input_text": "Your text content here",
+    "max_questions": 4,
+    "use_mediawiki": 0
+  }
+  ```
 
 ### 3. Configure Google APIs
 
@@ -157,6 +179,7 @@ The built applications will be available in the `eduaid_desktop/dist/` directory
    - **Boolean Questions**: Quickly generate engaging true/false questions.
    - **Multiple-Choice Questions (MCQ)**: Create diverse MCQs with up to 4 options for comprehensive quizzes.
    - **Single Correct Answer Questions**: Formulate questions with one clear correct answer.
+   - **LLM-Based Short-Answer Questions**: Generate questions using Qwen3-0.6B model for AI-powered short-answer generation.
    - **Customizable Question Count**: Tailor the number of questions to your needs—just select the type, set the number, and hit "Generate" to see your quiz come to life!
 
 2. **Quiz History at Your Fingertips**:
