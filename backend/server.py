@@ -411,11 +411,11 @@ def get_boolq_hard():
     generated = qg.generate(
         article=input_text,
         num_questions=input_questions,
-        answer_style="all"
+        answer_style="sentences"
     )
 
     # Apply transformation to make each question harder
-    harder_questions = [make_question_harder(q) for q in generated]
+    harder_questions = [{**q, "question": make_question_harder(q)} for q in generated]
 
     return jsonify({"output": harder_questions})
 
