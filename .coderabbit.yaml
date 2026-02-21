@@ -254,7 +254,7 @@ reviews:
         - Async behavior is properly tested
         - Accessibility testing is included
         - Test descriptions are sufficiently detailed to clarify the purpose of each test
-        - The tests are not tautological 
+        - The tests are not tautological
 
     # Solidity test files
     - path: "**/*.test.{sol}"
