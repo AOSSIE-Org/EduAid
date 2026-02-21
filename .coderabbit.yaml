@@ -217,7 +217,7 @@ reviews:
     - path: "**/*.{py}"
       instructions: |
         Python:
-        - Check for major PEP 8 violations and Python best practices. 
+        - Check for major PEP 8 violations and Python best practices.
 
     # Solidity Smart Contract files
     - path: "**/*.sol"
