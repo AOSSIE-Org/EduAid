@@ -18,7 +18,7 @@ You can choose to set up the backend manually or use an automated shell script.
 
 ### Option 1: Manual Setup
 
-> **Note:** EduAid requires **NLTK >= 3.8.1**.  
+> **Note:** EduAid requires **NLTK >= 3.9.0**.  
 > Older versions (≤3.0) fail to install on modern Python environments due to deprecated HTTP-based dependency fetching.
 
 1. **Download the Sense2Vec Model**:
