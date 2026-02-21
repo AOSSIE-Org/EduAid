@@ -415,9 +415,10 @@ def get_boolq_hard():
     )
 
     # Apply transformation to make each question harder
-    harder_questions = [{**q, "question": make_question_harder(q)} for q in generated]
+    for q in generated:
+        q["question"] = make_question_harder(q["question"])
 
-    return jsonify({"output": harder_questions})
+    return jsonify({"output": generated})
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
