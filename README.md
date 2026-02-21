@@ -18,12 +18,11 @@ You can choose to set up the backend manually or use an automated shell script.
 
 ### Option 1: Manual Setup
 
+> **Note:** EduAid requires **NLTK >= 3.8.1**.  
+> Older versions (≤3.0) fail to install on modern Python environments due to deprecated HTTP-based dependency fetching.
+
 1. **Download the Sense2Vec Model**:
    - Download the Sense2Vec model from [this link](https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz) and extract the contents into the `backend` folder.
-
-### NLTK Version Requirement
-Older versions of NLTK (≤3.0) fail to install on modern Python environments due to deprecated HTTP-based dependency fetching.
-EduAid requires **NLTK >= 3.8** for successful installation with current versions of Python and pip.
 
 2. **Install Python Dependencies**:
    - Navigate to the root repository folder and run the following command to install the required Python dependencies:
