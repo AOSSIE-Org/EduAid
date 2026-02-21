@@ -140,7 +140,7 @@ reviews:
       instructions: >-
         Apply when the PR/MR contains changes to the file `Makefile` or makefile
         code snippets
-    - label: Documentation
+    - label: documentation
       instructions: >-
         Apply whenever project documentation (namely markdown source-code) is
         updated by the PR/MR
