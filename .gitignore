@@ -30,5 +30,3 @@ backend/Eduaid
 .DS_Store
 # Ignore s2v_old macOS metadata or temporary file
 backend/._s2v_old
-# Ignore pnpm lock file in eduaid_web workspace
-eduaid_web/pnpm-lock.yaml

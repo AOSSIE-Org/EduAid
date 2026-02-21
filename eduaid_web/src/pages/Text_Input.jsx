@@ -183,7 +183,7 @@ const Text_Input = () => {
               <img className="mx-auto mb-3" height={36} width={36} src={cloud} alt="cloud" />
               <p className="text-[#cbd0dc] font-medium mb-3">Upload a file (PDF, MP3, TXT)</p>
               <p className="text-sm text-[#92a9b0] mb-4">We support common document and audio formats.</p>
-              <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} />
+              <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} accept=".pdf,.mp3,.txt" />
               <button onClick={handleClick} className="bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] text-white px-5 py-2 rounded-xl font-semibold shadow-md hover:brightness-105 transition">Choose file</button>
             </div>
 
