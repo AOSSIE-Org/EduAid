@@ -78,14 +78,23 @@ const Text_Input = () => {
           },
         });
 
-        setUploadProgress(100);
-        setUploadSpeed("Completed");
-        setText(response.extractedText || "File uploaded successfully.");
+        if (response.extractedText) {
+          setText(response.extractedText);
+          setUploadProgress(100);
+          setUploadSpeed("Completed");
+        } else {
+          setUploadError("No text could be extracted from this file. Please try another.");
+          setFileName("");
+          setUploadProgress(0);
+          setUploadSpeed("");
+          if (fileInputRef.current) fileInputRef.current.value = "";
+        }
         
       } catch (error) {
         console.error("Upload failed:", error);
         setUploadError("Failed to upload the file. Please try again.");
         setUploadSpeed("Error");
+        setFileName("");
         if (fileInputRef.current) fileInputRef.current.value = "";
       } finally {
         setIsUploading(false);
