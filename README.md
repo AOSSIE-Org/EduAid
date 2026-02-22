@@ -1,8 +1,39 @@
+<p align="center">
+  <a href="https://aossie.org">
+    <img src="https://aossie.org/logo1.png" alt="AOSSIE Logo" width="200"/>
+  </a>
+</p>
+
+<p align="center">
+  <a href="mailto:aossie.oss@gmail.com" title="Email">
+    <img src="https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Email"/>
+  </a>
+  <a href="https://gitlab.com/aossie" title="GitLab">
+    <img src="https://img.shields.io/badge/GitLab-FC6D26?style=for-the-badge&logo=gitlab&logoColor=white" alt="GitLab"/>
+  </a>
+  <a href="https://github.com/AOSSIE-Org" title="GitHub">
+    <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
+  </a>
+  <a href="https://discord.gg/hjUhu33uAn" title="Discord">
+    <img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"/>
+  </a>
+  <a href="https://twitter.com/aossie_org" title="Twitter">
+    <img src="https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" alt="Twitter"/>
+  </a>
+  <a href="https://www.youtube.com/@AOSSIE-Org" title="YouTube">
+    <img src="https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube"/>
+  </a>
+</p>
+
+---
+
 # EduAid: AI Quiz Generation 🚀
 
 Online learning has taken the front seat in the post-pandemic age. With the advent of sophisticated AI architectures like Transformers, it is only natural that AI would find its way into education. Learning online via platforms like YouTube or MOOCs is often a method of self-learning. The biggest obstacle faced by students in self-learning is the lack of attention span. An online tool that can generate short quizzes from input educational content can be a great resource for both teachers and students. It helps retain important information, frame questions, and quickly revise large chunks of content.
 
 EduAid is one such project currently available in the form of a browser extension.
+
+---
 
 ## Installation and Setup
 
@@ -12,6 +43,9 @@ EduAid is one such project currently available in the form of a browser extensio
 git clone https://github.com/AOSSIE-Org/EduAid.git
 cd EduAid
 ```
+
+---
+
 ## 2. Backend Setup
 
 You can choose to set up the backend manually or use an automated shell script.
@@ -48,7 +82,9 @@ You can choose to set up the backend manually or use an automated shell script.
 - If the script fails to run, ensure that you have execution permissions:
   ```bash
   chmod +x script.sh
+  ```
 
+---
 
 ### 3. Configure Google APIs
 
@@ -65,6 +101,8 @@ You can choose to set up the backend manually or use an automated shell script.
 2. Enter the necessary credentials for the Google Forms API.
 3. Refer to the [Google Forms API quickstart guide](https://developers.google.com/forms/api/quickstart/python#set_up_your_environment) for setup instructions.
 
+---
+
 ### 4. Extension Setup
 
 #### Install Dependencies
@@ -74,6 +112,7 @@ Navigate to the `extension` folder and install the required dependencies:
 ```bash
 npm install
 ```
+
 #### Build the Project
 
 Build the extension:
@@ -81,6 +120,7 @@ Build the extension:
 ```bash
 npm run build
 ```
+
 #### Load the Extension in Chrome
 
 1. Open Chrome and navigate to `chrome://extensions/`.
@@ -88,14 +128,23 @@ npm run build
 3. Click on "Load Unpacked" and select the `dist` folder created in the previous step.
 
 #### EduAid Web App
+
 In addition to the browser extension, EduAid also offers a web app that provides the same powerful features for quiz generation. The web app allows you to access EduAid's capabilities directly from your browser without needing to install any extensions. Just start the backend server locally and:
 
 1. Navigate to the Web App Directory:
-`cd eduaid_web`
+   ```bash
+   cd eduaid_web
+   ```
 2. Install Dependencies:
-`npm install`
+   ```bash
+   npm install
+   ```
 3. Start the Web App:
-`npm run start`
+   ```bash
+   npm run start
+   ```
+
+---
 
 ### 5. Desktop App Setup
 
@@ -103,7 +152,7 @@ EduAid now includes a cross-platform desktop application built with Electron, pr
 
 #### Prerequisites
 - Node.js (version 16 or higher)
-- Backend server running (follow steps 2-3 above)
+- Backend server running (follow steps 2–3 above)
 - Web app built (follow step 4 above)
 
 #### Development Mode
@@ -143,13 +192,15 @@ EduAid now includes a cross-platform desktop application built with Electron, pr
    npm run build:all
    ```
 
-The built applications will be available in the `eduaid_desktop/dist/` directory with installers for Windows (.exe), macOS (.dmg), and Linux (.AppImage).
+The built applications will be available in the `eduaid_desktop/dist/` directory with installers for Windows (`.exe`), macOS (`.dmg`), and Linux (`.AppImage`).
 
 #### Desktop App Features
 - **Native Desktop Experience**: Full desktop integration with native menus and keyboard shortcuts
 - **Cross-Platform**: Works on Windows, macOS, and Linux
 - **Security**: Secure communication with context isolation
 - **Auto-Updates**: Built-in support for automatic updates
+
+---
 
 ## Features
 
@@ -180,10 +231,18 @@ The built applications will be available in the `eduaid_desktop/dist/` directory
    - **PDF Forms**: Generate editable PDF forms based on your quizzes.
    - **Google Forms**: Create Google Forms for your quizzes, perfect for easy distribution and response collection.
 
-## How to contribute
+---
 
-This is the second year of the project. While some may have their own ideas on how to contribute, for the newcomers to the repository, you may follow the following steps: 
+## How to Contribute
 
-1. First get to know the organization and the project by visiting the [Official Website](https://github.com/AOSSIE-Org)
+This is the second year of the project. While some may have their own ideas on how to contribute, for newcomers to the repository, you may follow the following steps:
 
-2. Visit the [Discord Channel](https://discord.com/channels/1022871757289422898/1073262393670504589) for interacting with the community!
+1. First get to know the organization and the project by visiting the [Official Website](https://aossie.org).
+
+2. Visit the [Discord Channel](https://discord.gg/hjUhu33uAn) for interacting with the community!
+
+---
+
+<p align="center">
+  Made with ❤️ by <a href="https://aossie.org">AOSSIE</a>
+</p>
