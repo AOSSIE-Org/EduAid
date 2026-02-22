@@ -31,7 +31,18 @@ class MCQGenerator:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
-        self.s2v = Sense2Vec().from_disk('s2v_old')
+        try:
+            self.s2v = Sense2Vec().from_disk('s2v_old')
+        except Exception as e:
+            self.s2v = None
+            print(
+                "Warning: Sense2Vec model not found at 's2v_old/'.\n"
+                "MCQ distractor generation will be unavailable.\n"
+                "To fix this, download the model from:\n"
+                "https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz\n"
+                "Extract it and rename the folder to 's2v_old' inside the backend directory.\n"
+                f"Original error: {e}"
+            )
         self.fdist = FreqDist(brown.words())
         self.normalized_levenshtein = NormalizedLevenshtein()
         self.set_seed(42)
@@ -43,6 +54,11 @@ class MCQGenerator:
             torch.cuda.manual_seed_all(seed)
             
     def generate_mcq(self, payload):
+        if self.s2v is None:
+            return {
+                "error": "Sense2Vec model is not loaded. MCQ generation is unavailable.",
+                "fix": "Download s2v_old model from https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz"
+            }
         start_time = time.time()
         inp = {
             "input_text": payload.get("input_text"),
@@ -89,7 +105,18 @@ class ShortQGenerator:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
-        self.s2v = Sense2Vec().from_disk('s2v_old')
+        try:
+            self.s2v = Sense2Vec().from_disk('s2v_old')
+        except Exception as e:
+            self.s2v = None
+            print(
+                "Warning: Sense2Vec model not found at 's2v_old/'.\n"
+                "Short question distractor generation will be unavailable.\n"
+                "To fix this, download the model from:\n"
+                "https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz\n"
+                "Extract it and rename the folder to 's2v_old' inside the backend directory.\n"
+                f"Original error: {e}"
+            )      
         self.fdist = FreqDist(brown.words())
         self.normalized_levenshtein = NormalizedLevenshtein()
         self.set_seed(42)
@@ -101,6 +128,11 @@ class ShortQGenerator:
             torch.cuda.manual_seed_all(seed)
             
     def generate_shortq(self, payload):
+        if self.s2v is None:
+                return {
+                    "error": "Sense2Vec model is not loaded. Short question generation is unavailable.",
+                    "fix": "Download s2v_old model from https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz"
+                }
         inp = {
             "input_text": payload.get("input_text"),
             "max_questions": payload.get("max_questions", 4)
