@@ -28,7 +28,7 @@ class MCQGenerator:
     def __init__(self):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
         self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
         self.s2v = Sense2Vec().from_disk('s2v_old')
