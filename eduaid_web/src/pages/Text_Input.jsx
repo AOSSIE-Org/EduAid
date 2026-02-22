@@ -80,12 +80,13 @@ const Text_Input = () => {
 
         setUploadProgress(100);
         setUploadSpeed("Completed");
-        setText(response.data.extractedText || "File uploaded successfully.");
+        setText(response.extractedText || "File uploaded successfully.");
         
       } catch (error) {
         console.error("Upload failed:", error);
         setUploadError("Failed to upload the file. Please try again.");
         setUploadSpeed("Error");
+        if (fileInputRef.current) fileInputRef.current.value = "";
       } finally {
         setIsUploading(false);
       }
@@ -96,6 +97,7 @@ const Text_Input = () => {
     e.stopPropagation();
     e.preventDefault();
     setFileName("");
+    setRawFileSize(0);
     setUploadError("");
     setText("");
     setUploadProgress(0);
@@ -135,6 +137,8 @@ const Text_Input = () => {
         difficulty,
         localStorage.getItem("selectedQuestionType")
       );
+    } else {
+      setLoading(false);
     }
   };
 
@@ -343,7 +347,10 @@ const Text_Input = () => {
           </Link>
           <button
             onClick={handleSaveToLocalStorage}
-            className="bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient flex justify-center items-center rounded-xl w-full sm:w-auto"
+            disabled={isUploading}
+            className={`text-lg sm:text-xl px-4 py-2 border-gradient flex justify-center items-center rounded-xl w-full sm:w-auto ${
+              isUploading ? "bg-gray-800 text-gray-400 cursor-not-allowed" : "bg-black text-white"
+            }`}
           >
             Next
           </button>
