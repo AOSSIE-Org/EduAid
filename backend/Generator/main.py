@@ -3,7 +3,7 @@ import time
 import torch
 import random
 from transformers import T5ForConditionalGeneration, T5Tokenizer
-from transformers import AutoModelForSequenceClassification, AutoTokenizer,AutoModelForSeq2SeqLM
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, AutoModelForSeq2SeqLM
 import numpy as np
 import spacy
 from sense2vec import Sense2Vec
@@ -24,23 +24,23 @@ import fitz
 import mammoth
 
 # Global cache to ensure models are only loaded into memory ONCE across the entire server lifecycle
+_MISSING = object() # Sentinel to distinguish between None and Not Loaded
 _ML_CACHE = {}
 _ML_CACHE_LOCK = threading.Lock()
 
 def get_cached_model(key, load_func):
-    """Helper to lazily load and cache heavy ML models."""
-    cached = _ML_CACHE.get(key)
-    if cached is not None:
-        return cached
-    
-    # If not cached, lock it down so only one thread can load it
-    with _ML_CACHE_LOCK:
-        cached = _ML_CACHE.get(key) # Double-check in case another thread just finished loading it
-        if cached is None:
-            print(f"Lazily initializing {key} to save memory...")
-            cached = load_func()
-            _ML_CACHE[key] = cached
-            
+    """
+    Thread-safe double-checked locking with sentinel support to ensure 
+    heavy ML models are only initialized once.
+    """
+    cached = _ML_CACHE.get(key, _MISSING)
+    if cached is _MISSING:
+        with _ML_CACHE_LOCK:
+            cached = _ML_CACHE.get(key, _MISSING)
+            if cached is _MISSING:
+                print(f"Lazily initializing {key} to save memory...")
+                cached = load_func()
+                _ML_CACHE[key] = cached
     return cached
 
 class MCQGenerator:
@@ -110,7 +110,8 @@ class MCQGenerator:
             final_output["questions"] = generated_questions["questions"]
             final_output["time_taken"] = end_time - start_time
             
-            if torch.device == 'cuda':
+            # FIXED: Corrected torch.device check
+            if self.device.type == 'cuda':
                 torch.cuda.empty_cache()
                 
             return final_output
@@ -175,7 +176,8 @@ class ShortQGenerator:
         final_output["statement"] = modified_text
         final_output["questions"] = generated_questions["questions"]
         
-        if torch.device == 'cuda':
+        # FIXED: Corrected torch.device check
+        if self.device.type == 'cuda':
             torch.cuda.empty_cache()
 
         return final_output
@@ -240,7 +242,8 @@ class ParaphraseGenerator:
         output['Count'] = num
         output['Paraphrased Questions'] = final_outputs
 
-        if torch.device == 'cuda':
+        # FIXED: Corrected torch.device check
+        if self.device.type == 'cuda':
             torch.cuda.empty_cache()
         
         return output
@@ -290,7 +293,9 @@ class BoolQGenerator:
         input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
 
         output = beam_search_decoding (input_ids, attention_masks, self.model, self.tokenizer,num)
-        if torch.device == 'cuda':
+        
+        # FIXED: Corrected torch.device check
+        if self.device.type == 'cuda':
             torch.cuda.empty_cache()
         
         final= {}
@@ -326,6 +331,7 @@ class AnswerPredictor:
     def nli_model(self):
         def load_model():
             m = AutoModelForSequenceClassification.from_pretrained(self.nli_model_name)
+            m.to(self.device) # FIXED: Move model to device
             return m
         return get_cached_model('nli_model', load_model)
         
@@ -368,7 +374,8 @@ class AnswerPredictor:
 
         for question in input_questions:
             hypothesis = question
-            inputs = self.nli_tokenizer.encode_plus(input_text, hypothesis, return_tensors="pt")
+            # FIXED: Moved inputs to device
+            inputs = self.nli_tokenizer.encode_plus(input_text, hypothesis, return_tensors="pt").to(self.device)
             outputs = self.nli_model(**inputs)
             logits = outputs.logits
             probabilities = torch.softmax(logits, dim=1)
@@ -598,7 +605,8 @@ class QuestionGenerator:
     def _prepare_qg_inputs_MC(
         self, sentences: List[str]
     ) -> Tuple[List[str], List[str]]:
-        spacy_nlp = en_core_web_sm.load()
+        # FIXED: Use global cache instead of en_core_web_sm.load()
+        spacy_nlp = get_cached_model('spacy_nlp', lambda: spacy.load('en_core_web_sm'))
         docs = list(spacy_nlp.pipe(sentences, disable=["parser"]))
         inputs_from_text = []
         answers_from_text = []
