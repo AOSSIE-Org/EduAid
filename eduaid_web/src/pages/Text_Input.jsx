@@ -4,6 +4,7 @@ import logo_trans from "../assets/aossie_logo_transparent.png";
 import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
+import { MdClose } from "react-icons/md"; 
 import Switch from "react-switch";
 import { Link, useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
@@ -17,6 +18,7 @@ const Text_Input = () => {
   const fileInputRef = useRef(null);
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
+  
   const [rawFileSize, setRawFileSize] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [fileName, setFileName] = useState("");
@@ -27,8 +29,9 @@ const Text_Input = () => {
   const formatBytes = (bytes) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    let i = Math.floor(Math.log(bytes) / Math.log(k));
+    if (i >= sizes.length) i = sizes.length - 1;
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
@@ -39,6 +42,13 @@ const Text_Input = () => {
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (file) {
+      const MAX_FILE_SIZE = 10 * 1024 * 1024; 
+      if (file.size > MAX_FILE_SIZE) {
+        setUploadError("File is too large. Please select a file under 10MB.");
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+
       setFileName(file.name);
       setRawFileSize(file.size);
       setIsUploading(true);
@@ -69,12 +79,13 @@ const Text_Input = () => {
         });
 
         setUploadProgress(100);
-        setUploadSpeed("0 Bytes/s");
+        setUploadSpeed("Completed");
         setText(response.data.extractedText || "File uploaded successfully.");
         
       } catch (error) {
         console.error("Upload failed:", error);
         setUploadError("Failed to upload the file. Please try again.");
+        setUploadSpeed("Error");
       } finally {
         setIsUploading(false);
       }
@@ -87,14 +98,16 @@ const Text_Input = () => {
     setFileName("");
     setUploadError("");
     setText("");
+    setUploadProgress(0);
+    setUploadSpeed("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
   const handleClick = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
+    event.preventDefault(); 
+    event.stopPropagation(); 
     fileInputRef.current.click();
   };
 
@@ -170,7 +183,7 @@ const Text_Input = () => {
       let last5Quizzes = JSON.parse(localStorage.getItem("last5Quizzes")) || [];
       last5Quizzes.push(quizDetails);
       if (last5Quizzes.length > 5) {
-        last5Quizzes.shift();
+        last5Quizzes.shift(); 
       }
       localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
 
@@ -237,7 +250,7 @@ const Text_Input = () => {
                  title="Remove file"
                  disabled={isUploading}
                >
-                 ✕
+                 <MdClose size={18} />
                </button>
             </div>
           ) : (
