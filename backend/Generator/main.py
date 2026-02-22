@@ -1,3 +1,4 @@
+import threading
 import time
 import torch
 import random
@@ -24,14 +25,23 @@ import mammoth
 
 # Global cache to ensure models are only loaded into memory ONCE across the entire server lifecycle
 _ML_CACHE = {}
+_ML_CACHE_LOCK = threading.Lock()
 
 def get_cached_model(key, load_func):
     """Helper to lazily load and cache heavy ML models."""
-    global _ML_CACHE
-    if key not in _ML_CACHE:
-        print(f"Lazily initializing {key} to save memory...")
-        _ML_CACHE[key] = load_func()
-    return _ML_CACHE[key]
+    cached = _ML_CACHE.get(key)
+    if cached is not None:
+        return cached
+    
+    # If not cached, lock it down so only one thread can load it
+    with _ML_CACHE_LOCK:
+        cached = _ML_CACHE.get(key) # Double-check in case another thread just finished loading it
+        if cached is None:
+            print(f"Lazily initializing {key} to save memory...")
+            cached = load_func()
+            _ML_CACHE[key] = cached
+            
+    return cached
 
 class MCQGenerator:
     def __init__(self):
