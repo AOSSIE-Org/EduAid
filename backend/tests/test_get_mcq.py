@@ -1,6 +1,17 @@
+"""
+Tests for the /get_mcq endpoint.
+
+These tests validate correct behavior when the MCQ generator
+returns fewer questions than requested or returns no questions.
+"""
 from unittest.mock import patch
 
+
 def test_get_mcq_partial_generation(client):
+    """
+    Verify that /get_mcq returns partial results when fewer MCQs
+    are generated than requested.
+    """
     with patch("backend.server.MCQGen.generate_mcq") as mock_generate:
         mock_generate.return_value = {
             "questions": [
@@ -22,5 +33,8 @@ def test_get_mcq_partial_generation(client):
         )
 
         assert response.status_code == 200
+
         data = response.get_json()
+        assert data is not None, "Expected JSON response from /get_mcq"
+        assert "output" in data
         assert len(data["output"]) == 1

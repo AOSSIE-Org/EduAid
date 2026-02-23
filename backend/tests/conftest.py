@@ -1,3 +1,11 @@
+"""
+Pytest configuration for backend tests.
+
+This file sets up a Flask test client and mocks all heavy ML
+dependencies used by the backend so that tests can run in
+lightweight CI environments without loading large NLP models.
+"""
+
 import sys
 import os
 import types
@@ -96,6 +104,12 @@ from backend.server import app
 
 @pytest.fixture
 def client():
+    """
+    Flask test client for backend API endpoints.
+
+    Returns:
+        FlaskClient: Test client with TESTING enabled.
+    """
     app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
