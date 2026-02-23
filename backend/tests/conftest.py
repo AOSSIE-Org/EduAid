@@ -55,10 +55,10 @@ class FakeBoolQGenerator:
 
 class FakeAnswerPredictor:
     def predict_answer(self, *args, **kwargs):
-        return ""
+        return []
 
     def predict_boolean_answer(self, *args, **kwargs):
-        return True
+        return []
 
 class FakeQuestionGenerator:
     def generate(self, *args, **kwargs):

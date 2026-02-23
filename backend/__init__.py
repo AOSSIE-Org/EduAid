@@ -1,1 +1,1 @@
-# Backend tests package
+# Backend package
