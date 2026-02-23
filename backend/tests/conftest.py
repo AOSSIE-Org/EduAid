@@ -11,7 +11,7 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 # -------------------------------------------------
-# Fake Generator package (TOP-LEVEL)
+# Fake Generator package (blocks heavy ML imports)
 # -------------------------------------------------
 
 fake_generator = types.ModuleType("Generator")
@@ -19,38 +19,52 @@ fake_main = types.ModuleType("Generator.main")
 fake_filters = types.ModuleType("Generator.question_filters")
 
 # -------------------------------------------------
-# Fake classes used by backend/server.py
+# Fake classes matching real backend interfaces
 # -------------------------------------------------
 
 class FakeMCQGenerator:
     def generate_mcq(self, *args, **kwargs):
-        return {"questions": []}
-
-class FakeFileProcessor:
-    def process(self, *args, **kwargs):
-        return ""
+        return {
+            "statement": "",
+            "questions": [],
+            "time_taken": 0.0,
+        }
 
 class FakeShortQGenerator:
     def generate_shortq(self, *args, **kwargs):
-        return []
+        return {
+            "statement": "",
+            "questions": [],
+        }
 
 class FakeBoolQGenerator:
     def generate_boolq(self, *args, **kwargs):
-        return []
+        return {
+            "Text": "",
+            "Count": 0,
+            "Boolean_Questions": [],
+        }
 
 class FakeAnswerPredictor:
-    def predict(self, *args, **kwargs):
-        return None
+    def predict_answer(self, *args, **kwargs):
+        return ""
+
+    def predict_boolean_answer(self, *args, **kwargs):
+        return True
 
 class FakeQuestionGenerator:
     def generate(self, *args, **kwargs):
         return []
 
+class FakeFileProcessor:
+    def process_file(self, *args, **kwargs):
+        return {"content": ""}
+
 def make_question_harder(*args, **kwargs):
     return args[0] if args else None
 
 # -------------------------------------------------
-# Attach everything server.py expects
+# Attach attributes expected by server.py
 # -------------------------------------------------
 
 fake_main.MCQGenerator = FakeMCQGenerator
@@ -63,7 +77,7 @@ fake_main.FileProcessor = FakeFileProcessor
 fake_filters.make_question_harder = make_question_harder
 
 # -------------------------------------------------
-# Register modules BEFORE importing server
+# Register fake modules BEFORE importing server
 # -------------------------------------------------
 
 sys.modules["Generator"] = fake_generator
@@ -71,10 +85,14 @@ sys.modules["Generator.main"] = fake_main
 sys.modules["Generator.question_filters"] = fake_filters
 
 # -------------------------------------------------
-# Safe import
+# Safe import of Flask app
 # -------------------------------------------------
 
 from backend.server import app
+
+# -------------------------------------------------
+# Pytest client fixture
+# -------------------------------------------------
 
 @pytest.fixture
 def client():
