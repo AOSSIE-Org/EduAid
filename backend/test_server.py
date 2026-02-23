@@ -53,6 +53,22 @@ def test_get_shortq():
     print(f'/get_shortq Response: {response}')
     assert 'output' in response
 
+
+def test_get_shortq_llm():
+    endpoint = '/get_shortq_llm'
+    data = {
+        'input_text': input_text,
+        'max_questions': 3
+    }
+    response = make_post_request(endpoint, data)
+    print(f'/get_shortq_llm Response: {response}')
+    assert 'output' in response
+    assert len(response['output']) > 0
+    for qa in response['output']:
+        assert 'question' in qa
+        assert 'answer' in qa
+    print(f"  Generated {len(response['output'])} questions via Qwen3-0.6B LLM")
+
 def test_get_problems():
     endpoint = '/get_problems'
     data = {
@@ -109,6 +125,7 @@ def make_post_request(endpoint, data):
     return response.json()
 
 if __name__ == '__main__':
+    test_get_shortq_llm()
     test_get_mcq()
     test_get_boolq()
     test_get_shortq()

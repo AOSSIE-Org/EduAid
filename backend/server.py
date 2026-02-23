@@ -12,6 +12,7 @@ nltk.download("stopwords")
 nltk.download('punkt_tab')
 from Generator import main
 from Generator.question_filters import make_question_harder
+from Generator.llm_generator import LLMShortAnswerGenerator
 import re
 import json
 import spacy
@@ -42,6 +43,7 @@ docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
+llm_shortq = LLMShortAnswerGenerator()
 
 
 def process_input_text(input_text, use_mediawiki):
@@ -90,6 +92,21 @@ def get_shortq():
     )
     questions = output["questions"]
     return jsonify({"output": questions})
+
+
+@app.route("/get_shortq_llm", methods=["POST"])
+def get_shortq_llm():
+    try:
+        data = request.get_json()
+        input_text = data.get("input_text", "")
+        use_mediawiki = data.get("use_mediawiki", 0)
+        max_questions = data.get("max_questions", 4)
+        input_text = process_input_text(input_text, use_mediawiki)
+        questions = llm_shortq.generate_short_questions(input_text, max_questions)
+        return jsonify({"output": questions})
+    except Exception as e:
+        app.logger.exception("Error in /get_shortq_llm: %s", e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route("/get_problems", methods=["POST"])
@@ -190,9 +207,11 @@ def get_content():
         text = docs_service.get_document_content(document_url)
         return jsonify(text)
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        app.logger.exception("ValueError in /get_content: %s", e)
+        return jsonify({'error': 'Bad request'}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.exception("Unhandled exception in /get_content: %s", e)
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route("/generate_gform", methods=["POST"])
