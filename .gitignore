@@ -28,3 +28,5 @@ backend/service_account_key.json
 venv
 backend/Eduaid
 .DS_Store
+# Ignore s2v_old macOS metadata or temporary file
+backend/._s2v_old
