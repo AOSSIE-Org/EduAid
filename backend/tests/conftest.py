@@ -66,7 +66,7 @@ class FakeQuestionGenerator:
 
 class FakeFileProcessor:
     def process_file(self, *args, **kwargs):
-        return {"content": ""}
+        return ""
 
 def make_question_harder(*args, **kwargs):
     return args[0] if args else None
