@@ -23,3 +23,29 @@ code {
   border-image-slice: 1;
   border-radius: 2rem;
 }
+
+/* =========================
+   Gradient Text Styling
+   ========================= */
+
+/* Main Gradient */
+.gradient-text {
+  background: linear-gradient(to right, #FF005C, #7600F2);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  display: inline-block;
+  transform: translateZ(0);
+}
+
+/* Secondary Gradient */
+.gradient-text-2 {
+  background: linear-gradient(to right, #7600F2, #00CBE7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  display: inline-block;
+  transform: translateZ(0);
+}
