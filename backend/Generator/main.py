@@ -402,6 +402,13 @@ class QuestionGenerator:
         self.qg_model.eval()
 
         self.qa_evaluator = QAEvaluator()
+        
+    @property
+    def nlp(self):
+        """Lazy loads the spaCy model for linguistic processing."""
+        if not hasattr(self, '_nlp'):
+            self._nlp = en_core_web_sm.load()
+        return self._nlp
 
     def generate(
         self,
@@ -501,39 +508,38 @@ class QuestionGenerator:
         return generated_questions
 
     def _split_text(self, text: str) -> List[str]:
-        """Splits the text into sentences, and attempts to split or truncate long sentences."""
-        MAX_SENTENCE_LEN = 128
-        sentences = re.findall(".*?[.!\?]", text)
-        cut_sentences = []
-
-        for sentence in sentences:
-            if len(sentence) > MAX_SENTENCE_LEN:
-                cut_sentences.extend(re.split("[,;:)]", sentence))
-
-        # remove useless post-quote sentence fragments
-        cut_sentences = [s for s in sentences if len(s.split(" ")) > 5]
-        sentences = sentences + cut_sentences
-
-        return list(set([s.strip(" ") for s in sentences]))
+        """Uses spaCy's linguistic model to accurately split text into grammatical sentences."""
+        doc = self.nlp(text)
+        
+        # Filter out short fragments that lack context
+        sentences = [sent.text.strip() for sent in doc.sents if len(sent.text.split()) > 4]
+        
+        # Deduplicate while preserving order
+        return list(dict.fromkeys(sentences))
 
     def _split_into_segments(self, text: str) -> List[str]:
-        """Splits a long text into segments short enough to be input into the transformer network.
-        Segments are used as context for question generation.
-        """
-        MAX_TOKENS = 490
+        """Groups sentences into overlapping segments to preserve context for the T5 model."""
+        MAX_TOKENS = 450  # Leave room for prompt tokens under the 512 limit
+        OVERLAP_SIZE = 50 # Context bridge length
+        
         paragraphs = text.split("\n")
         tokenized_paragraphs = [
             self.qg_tokenizer(p)["input_ids"] for p in paragraphs if len(p) > 0
         ]
+        
         segments = []
-
-        while len(tokenized_paragraphs) > 0:
-            segment = []
-
-            while len(segment) < MAX_TOKENS and len(tokenized_paragraphs) > 0:
-                paragraph = tokenized_paragraphs.pop(0)
-                segment.extend(paragraph)
-            segments.append(segment)
+        current_segment = []
+        
+        for paragraph in tokenized_paragraphs:
+            if len(current_segment) + len(paragraph) > MAX_TOKENS:
+                segments.append(current_segment)
+                # Apply sliding window overlap
+                current_segment = current_segment[-OVERLAP_SIZE:] if len(current_segment) > OVERLAP_SIZE else current_segment
+            
+            current_segment.extend(paragraph)
+            
+        if current_segment:
+            segments.append(current_segment)
 
         return [self.qg_tokenizer.decode(s, skip_special_tokens=True) for s in segments]
 
@@ -560,8 +566,8 @@ class QuestionGenerator:
         questions. Sentences are used as context, and entities as answers. Returns a tuple of (model inputs, answers).
         Model inputs are "answer_token <answer text> context_token <context text>"
         """
-        spacy_nlp = en_core_web_sm.load()
-        docs = list(spacy_nlp.pipe(sentences, disable=["parser"]))
+        # Ensure we use the loaded nlp property here too
+        docs = list(self.nlp.pipe(sentences, disable=["parser"]))
         inputs_from_text = []
         answers_from_text = []
 
