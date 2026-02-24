@@ -1,3 +1,4 @@
+import threading
 import time
 import torch
 import random
@@ -402,12 +403,15 @@ class QuestionGenerator:
         self.qg_model.eval()
 
         self.qa_evaluator = QAEvaluator()
+        self._nlp_lock = threading.Lock()
         
     @property
     def nlp(self):
         """Lazy loads the spaCy model for linguistic processing."""
         if not hasattr(self, '_nlp'):
-            self._nlp = en_core_web_sm.load()
+            with self._nlp_lock:
+                if not hasattr(self, '_nlp'):
+                    self._nlp = en_core_web_sm.load()
         return self._nlp
 
     def generate(
@@ -511,9 +515,14 @@ class QuestionGenerator:
         """Uses spaCy's linguistic model to accurately split text into grammatical sentences."""
         doc = self.nlp(text)
         
+        all_sentences = [sent.text.strip() for sent in doc.sents]
         # Filter out short fragments that lack context
-        sentences = [sent.text.strip() for sent in doc.sents if len(sent.text.split()) > 4]
+        sentences = [s for s in all_sentences if len(s.split()) > 4]
         
+        # Fallback: if filtering removes everything, keep the original short sentences
+        if not sentences:
+            sentences = all_sentences
+            
         # Deduplicate while preserving order
         return list(dict.fromkeys(sentences))
 
@@ -531,7 +540,15 @@ class QuestionGenerator:
         current_segment = []
         
         for paragraph in tokenized_paragraphs:
-            if len(current_segment) + len(paragraph) > MAX_TOKENS:
+            # If a single paragraph is too long, chunk it directly
+            if len(paragraph) > MAX_TOKENS:
+                step = MAX_TOKENS - OVERLAP_SIZE
+                for i in range(0, len(paragraph), step):
+                    segments.append(paragraph[i:i + MAX_TOKENS])
+                current_segment = []
+                continue
+
+            if current_segment and (len(current_segment) + len(paragraph) > MAX_TOKENS):
                 segments.append(current_segment)
                 # Apply sliding window overlap
                 current_segment = current_segment[-OVERLAP_SIZE:] if len(current_segment) > OVERLAP_SIZE else current_segment
