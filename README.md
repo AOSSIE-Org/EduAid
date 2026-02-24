@@ -1,4 +1,22 @@
-# EduAid: AI Quiz Generation 🚀
+<p align="center">
+  <a href="https://aossie.org">
+    <img src="https://aossie.org/logo1.png" alt="AOSSIE Logo" width="200"/>
+  </a>
+</p>
+
+<h1 align="center">EduAid: AI Quiz Generation 🚀</h1>
+
+<p align="center">
+  <a href="https://discord.gg/hjUhu33uAn">
+    <img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"/>
+  </a>
+  <a href="https://x.com/aossie_org">
+    <img src="https://img.shields.io/badge/X-000000?style=for-the-badge&logo=x&logoColor=white" alt="X"/>
+  </a>
+  <a href="https://www.youtube.com/@AOSSIE-Org">
+    <img src="https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube"/>
+  </a>
+</p>
 
 Online learning has taken the front seat in the post-pandemic age. With the advent of sophisticated AI architectures like Transformers, it is only natural that AI would find its way into education. Learning online via platforms like YouTube or MOOCs is often a method of self-learning. The biggest obstacle faced by students in self-learning is the lack of attention span. An online tool that can generate short quizzes from input educational content can be a great resource for both teachers and students. It helps retain important information, frame questions, and quickly revise large chunks of content.
 
@@ -187,3 +205,7 @@ This is the second year of the project. While some may have their own ideas on h
 1. First get to know the organization and the project by visiting the [Official Website](https://github.com/AOSSIE-Org)
 
 2. Visit the [Discord Channel](https://discord.com/channels/1022871757289422898/1073262393670504589) for interacting with the community!
+
+3. Subscribe to our [YouTube Channel](https://www.youtube.com/@AOSSIE-Org) for project demos, GSoC tutorials, and updates!
+
+4. Follow us on [X (formerly Twitter)](https://x.com/aossie_org) for the latest open-source announcements!
