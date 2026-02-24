@@ -56,6 +56,26 @@ class MCQGenerator:
         keywords = identify_keywords(self.nlp, modified_text, inp['max_questions'], self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
         keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
 
+        if len(keyword_sentence_mapping.keys()) < inp['max_questions']:
+            used_sentences = set()
+            for k in keyword_sentence_mapping.keys():
+                for sentence in sentences:
+                    if sentence.strip() in keyword_sentence_mapping[k]:
+                        used_sentences.add(sentence)
+            
+            unused_sentences = [s for s in sentences if s.strip() and s not in used_sentences]
+            
+            for sentence in unused_sentences:
+                if len(keyword_sentence_mapping.keys()) >= inp['max_questions']:
+                    break
+                nouns = [token.text for token in self.nlp(sentence) if token.pos_ in ['NOUN', 'PROPN']]
+                suitable_nouns = [n for n in nouns if n not in keyword_sentence_mapping.keys() and len(n) >= 4]
+                if suitable_nouns:
+                    fallback_key = max(suitable_nouns, key=len)
+                else:
+                    continue
+                keyword_sentence_mapping[fallback_key] = sentence
+
         for k in keyword_sentence_mapping.keys():
             text_snippet = " ".join(keyword_sentence_mapping[k][:3])
             keyword_sentence_mapping[k] = text_snippet
@@ -65,15 +85,16 @@ class MCQGenerator:
         if len(keyword_sentence_mapping.keys()) == 0:
             return final_output
         else:
-            try:
-                generated_questions = generate_multiple_choice_questions(keyword_sentence_mapping, self.device, self.tokenizer, self.model, self.s2v, self.normalized_levenshtein)
-            except:
-                return final_output
+            generated_questions = generate_multiple_choice_questions(keyword_sentence_mapping, self.device, self.tokenizer, self.model, self.s2v, self.normalized_levenshtein)
+
+            # Debug prints
+            print(f"Mapping count: {len(keyword_sentence_mapping)}")
+            print(f"Generated questions count: {len(generated_questions['questions'])}")
 
             end_time = time.time()
 
             final_output["statement"] = modified_text
-            final_output["questions"] = generated_questions["questions"]
+            final_output["questions"] = generated_questions["questions"][:inp['max_questions']]
             final_output["time_taken"] = end_time - start_time
             
             if self.device.type == 'cuda':
