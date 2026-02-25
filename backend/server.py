@@ -215,10 +215,9 @@ def get_boolean_answer():
 @app.route('/get_content', methods=['POST'])
 def get_content():
     data = request.get_json(silent=True)
-    if not data or "document_url" not in data:
-        raise BadRequest("document_url is required")
+    document_url = require_json_field(data, "document_url")
 
-    text = docs_service.get_document_content(data["document_url"])
+    text = docs_service.get_document_content(document_url)
     return jsonify(text)
 
 
