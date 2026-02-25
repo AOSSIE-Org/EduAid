@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from werkzeug.exceptions import HTTPException, BadRequest
+from werkzeug.exceptions import HTTPException, BadRequest, NotFound
 from collections.abc import Mapping
 from flask_cors import CORS
 from pprint import pprint
@@ -115,6 +115,7 @@ def get_boolq():
 
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
+    """Generate short-answer questions from input text."""
     
     data = request.get_json(silent=True)
     
@@ -131,6 +132,7 @@ def get_shortq():
 
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
+    """Generate MCQ, boolean, and short questions in a single request."""
     
     data = request.get_json(silent=True)
 
@@ -155,6 +157,7 @@ def get_problems():
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
+    """Predict answers for multiple-choice questions."""
     data = request.get_json(silent=True)
     input_text = require_json_field(data, "input_text")
     input_questions = data.get("input_question", [])
@@ -191,6 +194,7 @@ def get_mcq_answer():
 
 @app.route("/get_shortq_answer", methods=["POST"])
 def get_answer():
+    """Predict answers for short-answer questions."""
     data = request.get_json(silent=True)
     input_text = require_json_field(data, "input_text")
     input_questions = data.get("input_question", [])
@@ -204,6 +208,7 @@ def get_answer():
 
 @app.route("/get_boolean_answer", methods=["POST"])
 def get_boolean_answer():
+    """Predict True/False answers for boolean questions."""
     data = request.get_json(silent=True)
     input_text = require_json_field(data, "input_text")
     input_questions = data.get("input_question", [])
@@ -236,6 +241,7 @@ def get_content():
 
 @app.route("/generate_gform", methods=["POST"])
 def generate_gform():
+    """Generate a Google Form from question-answer pairs."""
     data = request.get_json(silent=True)
     qa_pairs = require_json_field(data, "qa_pairs")
     question_type = require_json_field(data, "question_type")
@@ -405,6 +411,7 @@ def generate_gform():
 
 @app.route("/get_shortq_hard", methods=["POST"])
 def get_shortq_hard():
+    """Generate harder variants of short-answer questions."""
     data = request.get_json(silent=True)
     input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -423,6 +430,7 @@ def get_shortq_hard():
 
 @app.route("/get_mcq_hard", methods=["POST"])
 def get_mcq_hard():
+    """Generate harder variants of multiple-choice questions."""
     data = request.get_json(silent=True)
     input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -439,6 +447,7 @@ def get_mcq_hard():
 
 @app.route("/get_boolq_hard", methods=["POST"])
 def get_boolq_hard():
+    """Generate harder variants of True/False questions."""
     data = request.get_json(silent=True)
     input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -460,6 +469,7 @@ def get_boolq_hard():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    """Upload and process a supported document file."""
     if 'file' not in request.files:
         raise BadRequest("file is required")
 
@@ -477,6 +487,7 @@ def upload_file():
 
 @app.route("/", methods=["GET"])
 def hello():
+    """Health check endpoint."""
     return "The server is working fine"
 
 def clean_transcript(file_path):
@@ -508,6 +519,7 @@ def clean_transcript(file_path):
 
 @app.route('/getTranscript', methods=['GET'])
 def get_transcript():
+    """Fetch and return transcript text for a YouTube video."""
     video_id = request.args.get('videoId')
     if not video_id:
         raise BadRequest("videoId query parameter is required")
@@ -519,7 +531,7 @@ def get_transcript():
     # Find the latest .vtt file in the "subtitles" folder
     subtitle_files = glob.glob("subtitles/*.vtt")
     if not subtitle_files:
-        return jsonify({"error": "No subtitles found"}), 404
+        raise NotFound("No subtitles found")
 
     latest_subtitle = max(subtitle_files, key=os.path.getctime)
     transcript_text = clean_transcript(latest_subtitle)
