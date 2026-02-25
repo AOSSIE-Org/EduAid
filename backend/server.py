@@ -47,7 +47,9 @@ qa_model = pipeline("question-answering")
 
 
 @app.errorhandler(HTTPException)
+
 def handle_http_exception(e):
+    """Return standardized JSON for HTTP exceptions."""
     return jsonify({
         "error": e.description,
         "type": e.__class__.__name__,
@@ -55,12 +57,14 @@ def handle_http_exception(e):
 
 @app.errorhandler(Exception)
 def handle_unexpected_exception(e):
+    """Handle unexpected exceptions with a generic JSON response."""
     return jsonify({
         "error": "Internal server error",
         "type": "InternalServerError",
     }), 500
 
 def require_json_field(data, field_name):
+    """Validate JSON payload and return a required field."""
     if not isinstance(data, Mapping):
         raise BadRequest("JSON body must be an object")
 
@@ -70,6 +74,7 @@ def require_json_field(data, field_name):
     return data[field_name]
 
 def process_input_text(input_text, use_mediawiki):
+    """Optionally enrich input text using MediaWiki summaries."""
     if use_mediawiki == 1:
         input_text = mediawikiapi.summary(input_text,8)
     return input_text
@@ -77,6 +82,7 @@ def process_input_text(input_text, use_mediawiki):
 
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
+    """Generate multiple-choice questions from input text."""
 
     data = request.get_json(silent=True)
 
@@ -93,7 +99,7 @@ def get_mcq():
 
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
-    
+    """Generate True/False questions from input text."""
     data = request.get_json(silent=True)
 
     input_text = require_json_field(data, "input_text")
