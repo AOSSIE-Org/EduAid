@@ -27,10 +27,10 @@ const Question_Type = () => {
             className="w-20 sm:w-24 object-contain"
           />
           <div className="text-4xl sm:text-5xl font-extrabold text-center sm:text-left">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
+            <span className="gradient-text-edu">
               Edu
             </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
+            <span className="gradient-text-aid">
               Aid
             </span>
           </div>
