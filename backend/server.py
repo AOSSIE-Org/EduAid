@@ -59,6 +59,12 @@ def handle_unexpected_exception(e):
         "type": e.__class__.__name__,
     }), 500
 
+def require_json_field(data, field_name):
+    if not data:
+        raise BadRequest("Invalid or missing JSON body")
+    if field_name not in data:
+        raise BadRequest(f"{field_name} is required")
+    return data[field_name]
 
 def process_input_text(input_text, use_mediawiki):
     if use_mediawiki == 1:
@@ -68,7 +74,7 @@ def process_input_text(input_text, use_mediawiki):
 
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
-    data = request.get_json(silent=True)
+
     data = request.get_json(silent=True)
     if not data or "input_text" not in data:
         raise BadRequest("input_text is required")
@@ -86,7 +92,7 @@ def get_mcq():
 
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
-    data = request.get_json(silent=True)
+    
     data = request.get_json(silent=True)
     if not data or "input_text" not in data:
         raise BadRequest("input_text is required")
@@ -104,7 +110,7 @@ def get_boolq():
 
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
-    data = request.get_json(silent=True)
+    
     data = request.get_json(silent=True)
     if not data or "input_text" not in data:
         raise BadRequest("input_text is required")
@@ -122,7 +128,7 @@ def get_shortq():
 
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
-    data = request.get_json(silent=True)
+    
     data = request.get_json(silent=True)
     if not data or "input_text" not in data:
         raise BadRequest("input_text is required")
@@ -149,7 +155,7 @@ def get_problems():
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
     data = request.get_json(silent=True)
-    input_text = data.get("input_text", "")
+    input_text = require_json_field(data, "input_text")
     input_questions = data.get("input_question", [])
     input_options = data.get("input_options", [])
     outputs = []
@@ -185,7 +191,7 @@ def get_mcq_answer():
 @app.route("/get_shortq_answer", methods=["POST"])
 def get_answer():
     data = request.get_json(silent=True)
-    input_text = data.get("input_text", "")
+    input_text = require_json_field(data, "input_text")
     input_questions = data.get("input_question", [])
     answers = []
     for question in input_questions:
@@ -198,7 +204,7 @@ def get_answer():
 @app.route("/get_boolean_answer", methods=["POST"])
 def get_boolean_answer():
     data = request.get_json(silent=True)
-    input_text = data.get("input_text", "")
+    input_text = require_json_field(data, "input_text")
     input_questions = data.get("input_question", [])
     output = []
 
@@ -396,7 +402,7 @@ def generate_gform():
 @app.route("/get_shortq_hard", methods=["POST"])
 def get_shortq_hard():
     data = request.get_json(silent=True)
-    input_text = data.get("input_text", "")
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
     input_questions = data.get("input_question", [])
@@ -414,7 +420,7 @@ def get_shortq_hard():
 @app.route("/get_mcq_hard", methods=["POST"])
 def get_mcq_hard():
     data = request.get_json(silent=True)
-    input_text = data.get("input_text", "")
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
     input_questions = data.get("input_question", [])
@@ -430,7 +436,7 @@ def get_mcq_hard():
 @app.route("/get_boolq_hard", methods=["POST"])
 def get_boolq_hard():
     data = request.get_json(silent=True)
-    input_text = data.get("input_text", "")
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
 
