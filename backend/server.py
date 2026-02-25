@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from werkzeug.exceptions import HTTPException, BadRequest
+from collections.abc import Mapping
 from flask_cors import CORS
 from pprint import pprint
 import nltk
@@ -60,10 +61,12 @@ def handle_unexpected_exception(e):
     }), 500
 
 def require_json_field(data, field_name):
-    if not data:
-        raise BadRequest("Invalid or missing JSON body")
+    if not isinstance(data, Mapping):
+        raise BadRequest("JSON body must be an object")
+
     if field_name not in data:
         raise BadRequest(f"{field_name} is required")
+
     return data[field_name]
 
 def process_input_text(input_text, use_mediawiki):
@@ -217,7 +220,11 @@ def get_content():
     data = request.get_json(silent=True)
     document_url = require_json_field(data, "document_url")
 
-    text = docs_service.get_document_content(document_url)
+    try:
+        text = docs_service.get_document_content(document_url)
+    except ValueError as e:
+        raise BadRequest(str(e))
+
     return jsonify(text)
 
 
@@ -456,11 +463,11 @@ def upload_file():
         raise BadRequest("empty filename")
 
     content = file_processor.process_file(file)
-    
-    if content:
-        return jsonify({"content": content})
-    else:
-        return jsonify({"error": "Unsupported file type or error processing file"}), 400
+
+    if not content:
+        raise BadRequest("Unsupported file type or error processing file")
+
+    return jsonify({"content": content})
 
 @app.route("/", methods=["GET"])
 def hello():
