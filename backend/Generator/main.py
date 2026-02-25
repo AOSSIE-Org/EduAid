@@ -74,7 +74,7 @@ class MCQGenerator:
                     fallback_key = max(suitable_nouns, key=len)
                 else:
                     continue
-                keyword_sentence_mapping[fallback_key] = sentence
+                keyword_sentence_mapping[fallback_key] = [sentence]
 
         for k in keyword_sentence_mapping.keys():
             text_snippet = " ".join(keyword_sentence_mapping[k][:3])
