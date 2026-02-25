@@ -552,7 +552,7 @@ class QuestionGenerator:
                     segments.append(paragraph[i:i + MAX_TOKENS])
                 continue
 
-            if current_segment and (len(current_segment) + len(paragraph) > MAX_TOKENS):
+            if current_segment and (len(current_segment) + len(paragraph) > MAX_TOKENS - OVERLAP_SIZE):
                 segments.append(current_segment)
                 # Apply sliding window overlap
                 current_segment = current_segment[-OVERLAP_SIZE:] if len(current_segment) > OVERLAP_SIZE else current_segment
