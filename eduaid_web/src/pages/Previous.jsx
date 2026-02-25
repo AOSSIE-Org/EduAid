@@ -37,10 +37,10 @@ const Previous = () => {
         <Link to="/" className="flex items-end gap-2">
           <img src={logoPNG} alt="logo" className="w-14 md:w-16" />
           <div className="text-xl md:text-2xl font-extrabold">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
+            <span className="gradient-text-edu">
               Edu
             </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
+            <span className="gradient-text-aid">
               Aid
             </span>
           </div>
@@ -51,7 +51,7 @@ const Previous = () => {
           <div className="text-white text-lg md:text-xl font-bold">Quiz Dashboard</div>
           <div className="text-white flex justify-end gap-2 text-sm md:text-xl font-bold items-center">
             Your{" "}
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
+            <span className="gradient-text-aid">
               Generated Quizzes
             </span>
             <img className="h-4 w-4 md:h-5 md:w-5" src={stars} alt="stars" />
@@ -60,7 +60,7 @@ const Previous = () => {
 
         {/* Subheading */}
         <div className="text-center my-3 text-sm md:text-xl font-bold">
-          <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
+          <span className="gradient-text-aid">
             Your Quizzes
           </span>
         </div>

@@ -149,8 +149,8 @@ const Text_Input = () => {
           <div className="flex items-end gap-2 p-4">
             <img src={logo_trans} alt="logo" className="w-20 sm:w-24" />
             <div className="text-3xl sm:text-4xl font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">Edu</span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">Aid</span>
+              <span className="gradient-text-edu">Edu</span>
+              <span className="gradient-text-aid">Aid</span>
             </div>
           </div>
         </Link>
@@ -160,7 +160,7 @@ const Text_Input = () => {
           <div className="text-xl sm:text-2xl font-bold">Enter the Content</div>
           <div className="flex flex-wrap justify-center sm:justify-end items-center gap-2 text-xl font-bold">
             to Generate{" "}
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">Questionaries</span>
+            <span className="gradient-text-aid">Questionaries</span>
             <img className="h-6 w-6" src={stars} alt="stars" />
           </div>
         </div>

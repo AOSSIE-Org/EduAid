@@ -25,6 +25,11 @@ extension/node_modules
 backend/credentials.json
 backend/token.json
 backend/service_account_key.json
-venv
+venv/
 backend/Eduaid
 .DS_Store
+backend/credentials.json
+backend/node_modules/
+backend/error.log
+backend/._*
+*.log

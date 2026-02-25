@@ -23,3 +23,20 @@ code {
   border-image-slice: 1;
   border-radius: 2rem;
 }
+
+/* Fix for gradient text in Electron/Chromium */
+.gradient-text-edu {
+  background: linear-gradient(to right, #FF005C, #7600F2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.gradient-text-aid {
+  background: linear-gradient(to right, #7600F2, #00CBE7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
