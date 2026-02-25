@@ -57,7 +57,7 @@ def handle_http_exception(e):
 def handle_unexpected_exception(e):
     return jsonify({
         "error": "Internal server error",
-        "type": e.__class__.__name__,
+        "type": "InternalServerError",
     }), 500
 
 def require_json_field(data, field_name):
@@ -223,7 +223,7 @@ def get_content():
     try:
         text = docs_service.get_document_content(document_url)
     except ValueError as e:
-        raise BadRequest(str(e))
+        raise BadRequest(str(e)) from e
 
     return jsonify(text)
 
