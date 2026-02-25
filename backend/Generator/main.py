@@ -542,10 +542,14 @@ class QuestionGenerator:
         for paragraph in tokenized_paragraphs:
             # If a single paragraph is too long, chunk it directly
             if len(paragraph) > MAX_TOKENS:
+                # FIX: Flush existing segment so prior text isn't silently lost
+                if current_segment:
+                    segments.append(current_segment)
+                    current_segment = []
+
                 step = MAX_TOKENS - OVERLAP_SIZE
                 for i in range(0, len(paragraph), step):
                     segments.append(paragraph[i:i + MAX_TOKENS])
-                current_segment = []
                 continue
 
             if current_segment and (len(current_segment) + len(paragraph) > MAX_TOKENS):
