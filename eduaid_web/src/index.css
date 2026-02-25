@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================
+   Base Styles
+   ========================= */
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -16,10 +20,38 @@ code {
     monospace;
 }
 
+/* =========================
+   Border Gradient
+   ========================= */
+
 .border-gradient {
-  border-width: 2px; 
+  border-width: 2px;
   border-style: solid;
   border-image: linear-gradient(to right, #ff005c, #7600f2, #00cbe7);
   border-image-slice: 1;
   border-radius: 2rem;
+}
+
+/* =========================
+   Gradient Text Styling
+   ========================= */
+
+/* Shared Base Class */
+.gradient-text-base {
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  transform: translateZ(0);
+}
+
+/* Main Gradient */
+.gradient-text {
+  --gradient: linear-gradient(to right, #FF005C, #7600F2);
+}
+
+/* Secondary Gradient */
+.gradient-text-2 {
+  --gradient: linear-gradient(to right, #7600F2, #00CBE7);
 }

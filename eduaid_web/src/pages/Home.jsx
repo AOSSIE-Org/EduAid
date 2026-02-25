@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../index.css";
-import logo_trans from "../assets/aossie_logo_transparent.png"
+import logo_trans from "../assets/aossie_logo_transparent.png";
 import starsImg from "../assets/stars.png";
 import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
@@ -47,14 +47,8 @@ const Home = () => {
           <img src={logo_trans} alt="logo" className="w-24 my-4 sm:my-6" />
 
           {/* Heading */}
-          <h1 className="text-5xl sm:text-6xl md:text-7xl text-center font-extrabold leading-tight">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-              Edu
-            </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Aid
-            </span>
-          </h1>
+          <h1 className="gradient-text-base gradient-text">Edu</h1>
+          <h1 className="gradient-text-base gradient-text-2">Aid</h1>
 
           {/* Subtitle */}
           <div className="text-white text-lg sm:text-xl text-center mt-4 mb-6">
