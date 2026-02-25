@@ -76,10 +76,8 @@ def process_input_text(input_text, use_mediawiki):
 def get_mcq():
 
     data = request.get_json(silent=True)
-    if not data or "input_text" not in data:
-        raise BadRequest("input_text is required")
 
-    input_text = data["input_text"]
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     input_text = process_input_text(input_text, use_mediawiki)
@@ -94,10 +92,8 @@ def get_mcq():
 def get_boolq():
     
     data = request.get_json(silent=True)
-    if not data or "input_text" not in data:
-        raise BadRequest("input_text is required")
 
-    input_text = data["input_text"]
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     input_text = process_input_text(input_text, use_mediawiki)
@@ -112,10 +108,8 @@ def get_boolq():
 def get_shortq():
     
     data = request.get_json(silent=True)
-    if not data or "input_text" not in data:
-        raise BadRequest("input_text is required")
-
-    input_text = data["input_text"]
+    
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     input_text = process_input_text(input_text, use_mediawiki)
@@ -130,10 +124,8 @@ def get_shortq():
 def get_problems():
     
     data = request.get_json(silent=True)
-    if not data or "input_text" not in data:
-        raise BadRequest("input_text is required")
 
-    input_text = data["input_text"]
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions_mcq = data.get("max_questions_mcq", 4)
     max_questions_boolq = data.get("max_questions_boolq", 4)
@@ -233,8 +225,8 @@ def get_content():
 @app.route("/generate_gform", methods=["POST"])
 def generate_gform():
     data = request.get_json(silent=True)
-    qa_pairs = data.get("qa_pairs", "")
-    question_type = data.get("question_type", "")
+    qa_pairs = require_json_field(data, "qa_pairs")
+    question_type = require_json_field(data, "question_type")
     SCOPES = "https://www.googleapis.com/auth/forms.body"
     DISCOVERY_DOC = "https://forms.googleapis.com/$discovery/rest?version=v1"
 
