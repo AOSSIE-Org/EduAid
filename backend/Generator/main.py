@@ -22,6 +22,8 @@ import re
 import os
 import fitz 
 import mammoth
+import logging
+logger = logging.getLogger(__name__)
 
 class MCQGenerator:
     
@@ -85,11 +87,11 @@ class MCQGenerator:
         if len(keyword_sentence_mapping.keys()) == 0:
             return final_output
         else:
+            logger.info(f"Mapping count: {len(keyword_sentence_mapping)}")
+            
             generated_questions = generate_multiple_choice_questions(keyword_sentence_mapping, self.device, self.tokenizer, self.model, self.s2v, self.normalized_levenshtein)
-
-            # Debug prints
-            print(f"Mapping count: {len(keyword_sentence_mapping)}")
-            print(f"Generated questions count: {len(generated_questions['questions'])}")
+            
+            logger.info(f"Generated questions count: {len(generated_questions['questions'])}")
 
             end_time = time.time()
 
