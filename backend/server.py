@@ -44,6 +44,23 @@ mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
 
 
+def enrich_boolq_output(input_text, max_questions):
+    raw = BoolQGen.generate_boolq(
+        {"input_text": input_text, "max_questions": max_questions}
+    )
+    questions = raw.get("Boolean_Questions", [])
+    raw_answers = answer.predict_boolean_answer(
+        {"input_text": input_text, "input_question": questions}
+    )
+    
+    enriched = dict(raw)
+    enriched["output"] = questions
+    enriched["answers"] = ["True" if ans else "False" for ans in raw_answers]
+    enriched["text"] = raw.get("Text", "")
+    enriched["count"] = raw.get("Count", max_questions)
+    
+    return enriched
+
 def process_input_text(input_text, use_mediawiki):
     if use_mediawiki == 1:
         input_text = mediawikiapi.summary(input_text,8)
@@ -71,11 +88,13 @@ def get_boolq():
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     input_text = process_input_text(input_text, use_mediawiki)
-    output = BoolQGen.generate_boolq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    boolean_questions = output["Boolean_Questions"]
-    return jsonify({"output": boolean_questions})
+    output = enrich_boolq_output(input_text, max_questions)
+    return jsonify({
+        "output": output["output"],
+        "answers": output["answers"],
+        "text": output["text"],
+        "count": output["count"],
+    })
 
 
 @app.route("/get_shortq", methods=["POST"])
@@ -104,9 +123,7 @@ def get_problems():
     output1 = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions_mcq}
     )
-    output2 = BoolQGen.generate_boolq(
-        {"input_text": input_text, "max_questions": max_questions_boolq}
-    )
+    output2 = enrich_boolq_output(input_text, max_questions_boolq)
     output3 = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions_shortq}
     )

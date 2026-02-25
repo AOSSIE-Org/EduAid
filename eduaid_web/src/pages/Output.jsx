@@ -7,9 +7,7 @@ import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
-  const [questionType, setQuestionType] = useState(
-    localStorage.getItem("selectedQuestionType")
-  );
+  const questionType = localStorage.getItem("selectedQuestionType");
   const [pdfMode, setPdfMode] = useState("questions");
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedQuestion, setEditedQuestion] = useState("");
@@ -91,65 +89,95 @@ const Output = () => {
   };
 
   useEffect(() => {
-    const qaPairsFromStorage =
-      JSON.parse(localStorage.getItem("qaPairs")) || {};
-    if (qaPairsFromStorage) {
-      const combinedQaPairs = [];
+    const questionType = localStorage.getItem("selectedQuestionType");
+    let qaPairsFromStorage = {};
+    try {
+      qaPairsFromStorage = JSON.parse(localStorage.getItem("qaPairs")) || {};
+    } catch (e) {
+      console.error("Failed to parse qaPairs from localStorage:", e);
+      qaPairsFromStorage = {};
+    }
 
-      if (qaPairsFromStorage["output_boolq"]) {
-        qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
-          (question, index) => {
+    if (Object.keys(qaPairsFromStorage).length > 0) {
+      const combinedQaPairs = [];
+      const hasStructuredKeys = Boolean(
+        qaPairsFromStorage.output_boolq || 
+        qaPairsFromStorage.output_mcq || 
+        qaPairsFromStorage.output_shortq
+      );
+      if (qaPairsFromStorage.output_boolq) {
+        const boolData = qaPairsFromStorage.output_boolq;
+        const questions = boolData.Boolean_Questions || boolData.output;
+        const answers = boolData.answers;
+
+        if (Array.isArray(questions)) {
+          questions.forEach((question, index) => {
             combinedQaPairs.push({
               question,
               question_type: "Boolean",
-              context: qaPairsFromStorage["output_boolq"]["Text"],
+              context: boolData.Text || boolData.text,
+              answer: answers?.[index] ?? "Answer not found",
             });
-          }
-        );
+          });
+        }
       }
 
-      if (qaPairsFromStorage["output_mcq"]) {
-        qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
+      if (qaPairsFromStorage.output_mcq && Array.isArray(qaPairsFromStorage.output_mcq.questions)) {
+        qaPairsFromStorage.output_mcq.questions.forEach((qaPair) => {
           combinedQaPairs.push({
-            question: qaPair.question_statement,
+            question: qaPair.question ?? qaPair.question_statement ?? qaPair.Question,
             question_type: "MCQ",
             options: qaPair.options,
-            answer: qaPair.answer,
+            answer: qaPair.answer ?? qaPair.Answer,
             context: qaPair.context,
           });
         });
       }
 
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+      if (qaPairsFromStorage.output_shortq && Array.isArray(qaPairsFromStorage.output_shortq.questions)) {
+        qaPairsFromStorage.output_shortq.questions.forEach((qaPair) => {
           combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
+            question: qaPair.question ?? qaPair.question_statement ?? qaPair.Question,
             options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
-          });
-        });
-      }
-
-      if (questionType == "get_boolq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair,
-            question_type: "Boolean",
-          });
-        });
-      } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question:
-              qaPair.question || qaPair.question_statement || qaPair.Question,
-            options: qaPair.options,
-            answer: qaPair.answer || qaPair.Answer,
+            answer: qaPair.answer ?? qaPair.Answer,
             context: qaPair.context,
             question_type: "Short",
           });
         });
+      }
+
+      if (!hasStructuredKeys && Array.isArray(qaPairsFromStorage.output)) {
+        if (questionType === "get_boolq") {
+          const answers = qaPairsFromStorage.answers;
+          qaPairsFromStorage.output.forEach((qaPair, index) => {
+            combinedQaPairs.push({
+              question: qaPair,
+              question_type: "Boolean",
+              context: qaPairsFromStorage.text || qaPairsFromStorage.Text,
+              answer: answers?.[index] ?? "Answer not found",
+            });
+          });
+        } else if (questionType === "get_mcq") {
+          qaPairsFromStorage.output.forEach((qaPair) => {
+            combinedQaPairs.push({
+              question: qaPair.question || qaPair.question_statement || qaPair.Question,
+              question_type: "MCQ",
+              options: qaPair.options,
+              answer: qaPair.answer || qaPair.Answer || qaPair.correctAnswer,
+              context: qaPair.context,
+            });
+          });
+        } else {
+          qaPairsFromStorage.output.forEach((qaPair) => {
+            combinedQaPairs.push({
+              question: qaPair.question ?? qaPair.question_statement ?? qaPair.Question,
+              options: qaPair.options,
+              answer: qaPair.answer ?? qaPair.Answer,
+              context: qaPair.context,
+              question_type: "Short",
+            });
+          });
+        }
       }
 
       setQaPairs(combinedQaPairs);
