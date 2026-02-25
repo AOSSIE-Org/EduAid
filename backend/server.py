@@ -38,7 +38,7 @@ answer = main.AnswerPredictor()
 BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+# docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
@@ -187,8 +187,8 @@ def get_content():
         if not document_url:
             return jsonify({'error': 'Document URL is required'}), 400
 
-        text = docs_service.get_document_content(document_url)
-        return jsonify(text)
+        # text = docs_service.get_document_content(document_url)
+        # return jsonify(text)
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
     except Exception as e:
