@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from werkzeug.exceptions import HTTPException, BadRequest, NotFound
+from werkzeug.utils import secure_filename  
 from collections.abc import Mapping
 from flask_cors import CORS
 from pprint import pprint
@@ -63,15 +64,18 @@ def handle_unexpected_exception(e):
         "type": "InternalServerError",
     }), 500
 
-def require_json_field(data, field_name):
+def require_json_field(data, field_name, *, expected_type=None, allow_empty=False):
     """Validate JSON payload and return a required field."""
     if not isinstance(data, Mapping):
         raise BadRequest("JSON body must be an object")
-
     if field_name not in data:
         raise BadRequest(f"{field_name} is required")
-
-    return data[field_name]
+    value = data[field_name]
+    if expected_type is not None and not isinstance(value, expected_type):
+        raise BadRequest(f"{field_name} has invalid type")
+    if not allow_empty and value in (None, "", [], {}):
+        raise BadRequest(f"{field_name} cannot be empty")
+    return value
 
 def process_input_text(input_text, use_mediawiki):
     """Optionally enrich input text using MediaWiki summaries."""
@@ -159,16 +163,24 @@ def get_problems():
 def get_mcq_answer():
     """Predict answers for multiple-choice questions."""
     data = request.get_json(silent=True)
-    input_text = require_json_field(data, "input_text")
-    input_questions = data.get("input_question", [])
-    input_options = data.get("input_options", [])
-    outputs = []
+    input_text = require_json_field(data, "input_text")    
+
+    input_questions = data.get("input_question")
+    input_options = data.get("input_options")
+
+    if not isinstance(input_questions, list) or not isinstance(input_options, list):
+        raise BadRequest("input_question and input_options must be arrays")
 
     if not input_questions or not input_options:
         raise BadRequest("input_question and input_options are required")
 
+    if any(not isinstance(options, list) for options in input_options):
+        raise BadRequest("each input_options entry must be an array")  # catches [["A","B"], "bad"]
+
     if len(input_questions) != len(input_options):
         raise BadRequest("input_question and input_options length mismatch")
+    
+    outputs = []
 
     for question, options in zip(input_questions, input_options):
         # Generate answer using the QA model
@@ -478,12 +490,13 @@ def upload_file():
     if file.filename == '':
         raise BadRequest("empty filename")
 
+    # Sanitize to prevent path traversal
+    normalized_name = secure_filename(file.filename)
+    if not normalized_name or normalized_name in {".", ".."}:
+        raise BadRequest("invalid filename")
+    file.filename = normalized_name
+
     content = file_processor.process_file(file)
-
-    if not content:
-        raise BadRequest("Unsupported file type or error processing file")
-
-    return jsonify({"content": content})
 
 @app.route("/", methods=["GET"])
 def hello():
