@@ -47,7 +47,7 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-start">
+    <div className="popup w-screen min-h-screen bg-[#02000F] flex justify-center items-start">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient overflow-auto px-4 py-6 sm:px-8 md:px-16">
         <div className="max-w-5xl mx-auto text-white">
           {/* Logo */}
