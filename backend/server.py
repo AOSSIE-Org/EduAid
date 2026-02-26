@@ -1,4 +1,7 @@
 from flask import Flask, request, jsonify
+from werkzeug.exceptions import HTTPException, BadRequest, NotFound
+from werkzeug.utils import secure_filename  
+from collections.abc import Mapping
 from flask_cors import CORS
 from pprint import pprint
 import nltk
@@ -44,7 +47,38 @@ mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
 
 
+@app.errorhandler(HTTPException)
+
+def handle_http_exception(e):
+    """Return standardized JSON for HTTP exceptions."""
+    return jsonify({
+        "error": e.description,
+        "type": e.__class__.__name__,
+    }), e.code
+
+@app.errorhandler(Exception)
+def handle_unexpected_exception(e):
+    """Handle unexpected exceptions with a generic JSON response."""
+    return jsonify({
+        "error": "Internal server error",
+        "type": "InternalServerError",
+    }), 500
+
+def require_json_field(data, field_name, *, expected_type=None, allow_empty=False):
+    """Validate JSON payload and return a required field."""
+    if not isinstance(data, Mapping):
+        raise BadRequest("JSON body must be an object")
+    if field_name not in data:
+        raise BadRequest(f"{field_name} is required")
+    value = data[field_name]
+    if expected_type is not None and not isinstance(value, expected_type):
+        raise BadRequest(f"{field_name} has invalid type")
+    if not allow_empty and value in (None, "", [], {}):
+        raise BadRequest(f"{field_name} cannot be empty")
+    return value
+
 def process_input_text(input_text, use_mediawiki):
+    """Optionally enrich input text using MediaWiki summaries."""
     if use_mediawiki == 1:
         input_text = mediawikiapi.summary(input_text,8)
     return input_text
@@ -52,8 +86,11 @@ def process_input_text(input_text, use_mediawiki):
 
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    """Generate multiple-choice questions from input text."""
+
+    data = request.get_json(silent=True)
+
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     input_text = process_input_text(input_text, use_mediawiki)
@@ -66,8 +103,10 @@ def get_mcq():
 
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    """Generate True/False questions from input text."""
+    data = request.get_json(silent=True)
+
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     input_text = process_input_text(input_text, use_mediawiki)
@@ -80,8 +119,11 @@ def get_boolq():
 
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    """Generate short-answer questions from input text."""
+    
+    data = request.get_json(silent=True)
+    
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     input_text = process_input_text(input_text, use_mediawiki)
@@ -94,8 +136,11 @@ def get_shortq():
 
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    """Generate MCQ, boolean, and short questions in a single request."""
+    
+    data = request.get_json(silent=True)
+
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions_mcq = data.get("max_questions_mcq", 4)
     max_questions_boolq = data.get("max_questions_boolq", 4)
@@ -116,14 +161,26 @@ def get_problems():
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    input_questions = data.get("input_question", [])
-    input_options = data.get("input_options", [])
-    outputs = []
+    """Predict answers for multiple-choice questions."""
+    data = request.get_json(silent=True)
+    input_text = require_json_field(data, "input_text")    
 
-    if not input_questions or not input_options or len(input_questions) != len(input_options):
-        return jsonify({"outputs": outputs})
+    input_questions = data.get("input_question")
+    input_options = data.get("input_options")
+
+    if not isinstance(input_questions, list) or not isinstance(input_options, list):
+        raise BadRequest("input_question and input_options must be arrays")
+
+    if not input_questions or not input_options:
+        raise BadRequest("input_question and input_options are required")
+
+    if any(not isinstance(options, list) for options in input_options):
+        raise BadRequest("each input_options entry must be an array")  # catches [["A","B"], "bad"]
+
+    if len(input_questions) != len(input_options):
+        raise BadRequest("input_question and input_options length mismatch")
+    
+    outputs = []
 
     for question, options in zip(input_questions, input_options):
         # Generate answer using the QA model
@@ -149,8 +206,9 @@ def get_mcq_answer():
 
 @app.route("/get_shortq_answer", methods=["POST"])
 def get_answer():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    """Predict answers for short-answer questions."""
+    data = request.get_json(silent=True)
+    input_text = require_json_field(data, "input_text")
     input_questions = data.get("input_question", [])
     answers = []
     for question in input_questions:
@@ -162,8 +220,9 @@ def get_answer():
 
 @app.route("/get_boolean_answer", methods=["POST"])
 def get_boolean_answer():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    """Predict True/False answers for boolean questions."""
+    data = request.get_json(silent=True)
+    input_text = require_json_field(data, "input_text")
     input_questions = data.get("input_question", [])
     output = []
 
@@ -181,25 +240,23 @@ def get_boolean_answer():
 
 @app.route('/get_content', methods=['POST'])
 def get_content():
-    try:
-        data = request.get_json()
-        document_url = data.get('document_url')
-        if not document_url:
-            return jsonify({'error': 'Document URL is required'}), 400
+    data = request.get_json(silent=True)
+    document_url = require_json_field(data, "document_url")
 
+    try:
         text = docs_service.get_document_content(document_url)
-        return jsonify(text)
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        raise BadRequest(str(e)) from e
+
+    return jsonify(text)
 
 
 @app.route("/generate_gform", methods=["POST"])
 def generate_gform():
-    data = request.get_json()
-    qa_pairs = data.get("qa_pairs", "")
-    question_type = data.get("question_type", "")
+    """Generate a Google Form from question-answer pairs."""
+    data = request.get_json(silent=True)
+    qa_pairs = require_json_field(data, "qa_pairs")
+    question_type = require_json_field(data, "question_type")
     SCOPES = "https://www.googleapis.com/auth/forms.body"
     DISCOVERY_DOC = "https://forms.googleapis.com/$discovery/rest?version=v1"
 
@@ -366,8 +423,9 @@ def generate_gform():
 
 @app.route("/get_shortq_hard", methods=["POST"])
 def get_shortq_hard():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    """Generate harder variants of short-answer questions."""
+    data = request.get_json(silent=True)
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
     input_questions = data.get("input_question", [])
@@ -384,8 +442,9 @@ def get_shortq_hard():
 
 @app.route("/get_mcq_hard", methods=["POST"])
 def get_mcq_hard():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    """Generate harder variants of multiple-choice questions."""
+    data = request.get_json(silent=True)
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
     input_questions = data.get("input_question", [])
@@ -400,8 +459,9 @@ def get_mcq_hard():
 
 @app.route("/get_boolq_hard", methods=["POST"])
 def get_boolq_hard():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    """Generate harder variants of True/False questions."""
+    data = request.get_json(silent=True)
+    input_text = require_json_field(data, "input_text")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
 
@@ -421,23 +481,26 @@ def get_boolq_hard():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    """Upload and process a supported document file."""
     if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
+        raise BadRequest("file is required")
 
     file = request.files['file']
 
     if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
+        raise BadRequest("empty filename")
+
+    # Sanitize to prevent path traversal
+    normalized_name = secure_filename(file.filename)
+    if not normalized_name or normalized_name in {".", ".."}:
+        raise BadRequest("invalid filename")
+    file.filename = normalized_name
 
     content = file_processor.process_file(file)
-    
-    if content:
-        return jsonify({"content": content})
-    else:
-        return jsonify({"error": "Unsupported file type or error processing file"}), 400
 
 @app.route("/", methods=["GET"])
 def hello():
+    """Health check endpoint."""
     return "The server is working fine"
 
 def clean_transcript(file_path):
@@ -469,9 +532,10 @@ def clean_transcript(file_path):
 
 @app.route('/getTranscript', methods=['GET'])
 def get_transcript():
+    """Fetch and return transcript text for a YouTube video."""
     video_id = request.args.get('videoId')
     if not video_id:
-        return jsonify({"error": "No video ID provided"}), 400
+        raise BadRequest("videoId query parameter is required")
 
     subprocess.run(["yt-dlp", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
                 "--sub-format", "vtt", "-o", f"subtitles/{video_id}.vtt", f"https://www.youtube.com/watch?v={video_id}"],
@@ -480,7 +544,7 @@ def get_transcript():
     # Find the latest .vtt file in the "subtitles" folder
     subtitle_files = glob.glob("subtitles/*.vtt")
     if not subtitle_files:
-        return jsonify({"error": "No subtitles found"}), 404
+        raise NotFound("No subtitles found")
 
     latest_subtitle = max(subtitle_files, key=os.path.getctime)
     transcript_text = clean_transcript(latest_subtitle)
