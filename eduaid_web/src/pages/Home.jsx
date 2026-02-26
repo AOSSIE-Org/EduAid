@@ -29,17 +29,20 @@ const Home = () => {
     const storedStars = localStorage.getItem("stars");
     const storedTime = localStorage.getItem("fetchTime");
 
+    const cachedStars = Number(storedStars);
+    const cachedTime = Number(storedTime);
+
     if (
-      storedStars &&
-      storedTime &&
-      !isMoreThanOneDayOld(parseInt(storedTime))
+      Number.isFinite(cachedStars) &&
+      Number.isFinite(cachedTime) &&
+      !isMoreThanOneDayOld(cachedTime)
     ) {
-      setStars(parseInt(storedStars));
+      setStars(cachedStars);
     } else {
       fetchGitHubStars()
         .then((starCount) => {
           setStars(starCount);
-          localStorage.setItem("stars", starCount);
+          localStorage.setItem("stars", String(starCount));
           localStorage.setItem("fetchTime", Date.now().toString());
         })
         .catch(() => setError("Failed to fetch stars"));
@@ -50,8 +53,9 @@ const Home = () => {
     <div className="popup w-screen min-h-screen bg-[#02000F] flex justify-center items-start">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient overflow-auto px-4 py-6 sm:px-8 md:px-16">
         <div className="max-w-5xl mx-auto text-white">
+
           {/* Logo */}
-          <img src={logo_trans} alt="logo" className="w-24 my-6" />
+          <img src={logo_trans} alt="EduAid Logo" className="w-24 my-6" />
 
           {/* Heading */}
           <h1 className="text-5xl sm:text-6xl md:text-7xl text-center font-extrabold leading-tight">
@@ -63,11 +67,9 @@ const Home = () => {
             </span>
           </h1>
 
-          {/* Improved Subtitle */}
+          {/* Subtitle */}
           <div className="text-center mt-6 mb-10 text-lg sm:text-xl">
-            <p>
-              Turn your notes into interactive quizzes in seconds.
-            </p>
+            <p>Turn your notes into interactive quizzes in seconds.</p>
             <p className="mt-2 text-gray-300">
               Upload your PDF or DOC file and start practicing instantly.
             </p>
@@ -94,22 +96,26 @@ const Home = () => {
 
           {/* Primary Buttons */}
           <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-12">
-            <Link to="/question-type" className="w-full sm:w-auto">
-              <button className="w-full sm:w-auto flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
-                Upload & Generate Quiz
-                <img src={arrow} width={24} height={24} alt="arrow" />
-              </button>
+
+            <Link
+              to="/question-type"
+              className="w-full sm:w-auto flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300"
+            >
+              <span>Upload & Generate Quiz</span>
+              <img src={arrow} width={24} height={24} alt="" aria-hidden="true" />
             </Link>
 
-            <Link to="/history" className="w-full sm:w-auto">
-              <button className="w-full sm:w-auto flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
-                View Previous Work
-                <img src={arrow} width={24} height={24} alt="arrow" />
-              </button>
+            <Link
+              to="/history"
+              className="w-full sm:w-auto flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300"
+            >
+              <span>View Previous Work</span>
+              <img src={arrow} width={24} height={24} alt="" aria-hidden="true" />
             </Link>
+
           </div>
 
-          {/* How It Works Section */}
+          {/* How It Works */}
           <div className="mt-20 text-center">
             <h2 className="text-3xl sm:text-4xl font-bold mb-10">
               How It Works
@@ -134,7 +140,7 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Why EduAid Section */}
+          {/* Why EduAid */}
           <div className="mt-20 text-center">
             <h2 className="text-3xl sm:text-4xl font-bold mb-10">
               Why EduAid?
@@ -159,10 +165,11 @@ const Home = () => {
 
           {/* Final CTA */}
           <div className="mt-20 text-center">
-            <Link to="/question-type">
-              <button className="text-white text-lg px-8 py-4 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] rounded-xl hover:opacity-90 transition-all duration-300">
-                Turn Your Notes Into a Quiz Now
-              </button>
+            <Link
+              to="/question-type"
+              className="inline-flex text-white text-lg px-8 py-4 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] rounded-xl hover:opacity-90 transition-all duration-300"
+            >
+              Turn Your Notes Into a Quiz Now
             </Link>
           </div>
 
@@ -187,6 +194,7 @@ const Home = () => {
               </div>
             </div>
           </a>
+
         </div>
       </div>
     </div>
