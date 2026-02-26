@@ -10,7 +10,13 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     ...config.windowOptions,
     icon: config.window.icon,
-    webPreferences: config.window.webPreferences,
+
+    // 🔥 FIX: Explicit preload path
+    webPreferences: {
+      ...config.window.webPreferences,
+      preload: path.join(__dirname, 'preload.js'),
+    },
+
     show: false,
     titleBarStyle: config.window.titleBarStyle
   });
@@ -189,7 +195,7 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
 
 
 // ================================
-// 🔥 API REQUEST HANDLER (FIXED)
+// 🔥 API REQUEST HANDLER (Timeout Fix)
 // ================================
 ipcMain.handle('api-request', async (event, { endpoint, options = {} }) => {
   return new Promise((resolve, reject) => {

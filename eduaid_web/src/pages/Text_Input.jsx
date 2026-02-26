@@ -36,7 +36,7 @@ const Text_Input = () => {
       const data = await apiClient.postFormData("/upload", formData);
       setText(data.content || data.error);
     } catch (error) {
-      console.error("Error uploading file:", error);
+      console.error("File upload failed:", error);
       setErrorMessage("File upload failed.");
     }
   };
@@ -135,40 +135,87 @@ const Text_Input = () => {
       console.error("Backend error:", error);
       setErrorMessage("Backend unavailable or request timed out.");
     } finally {
-      setLoading(false);   // 🔥 CRITICAL FIX
+      setLoading(false); // 🔥 prevents infinite loading
     }
   };
 
   return (
     <div className="popup bg-[#02000F] bg-custom-gradient min-h-screen">
-      
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 bg-black">
           <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
         </div>
       )}
 
-      <div className={`w-full h-full bg-cust bg-opacity-50 ${loading ? "pointer-events-none" : ""}`}>
-
+      <div
+        className={`w-full h-full bg-cust bg-opacity-50 ${
+          loading ? "pointer-events-none" : ""
+        }`}
+      >
         {/* Header */}
         <Link to="/" className="block">
           <div className="flex items-end gap-2 p-4">
             <img src={logo_trans} alt="logo" className="w-20 sm:w-24" />
             <div className="text-3xl sm:text-4xl font-extrabold">
-              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">Edu</span>
-              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">Aid</span>
+              <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
+                Edu
+              </span>
+              <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
+                Aid
+              </span>
             </div>
           </div>
         </Link>
 
-        {/* Error Message */}
         {errorMessage && (
           <div className="text-red-500 text-center text-lg mt-4">
             {errorMessage}
           </div>
         )}
 
-        {/* Main Controls */}
+        {/* TEXTAREA */}
+        <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[200px] mt-4">
+          <textarea
+            className="w-full h-full p-4 bg-transparent text-lg sm:text-xl rounded-2xl outline-none resize-none text-white caret-white"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Enter your text here..."
+          />
+        </div>
+
+        <div className="text-white text-center my-4 text-lg">or</div>
+
+        {/* FILE UPLOAD */}
+        <div className="w-full max-w-2xl mx-auto border-[3px] rounded-2xl text-center px-6 py-6 border-dotted border-[#3E5063] mt-6">
+          <img className="mx-auto mb-2" src={cloud} alt="cloud" />
+          <p className="text-white text-lg">
+            Choose a file (PDF supported)
+          </p>
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            style={{ display: "none" }}
+          />
+
+          <button
+            className="bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2"
+            onClick={handleClick}
+          >
+            Browse File
+          </button>
+
+          <input
+            type="text"
+            placeholder="Enter Google Doc URL"
+            className="bg-transparent mt-4 border border-[#cbd0dc80] text-white text-lg sm:text-xl rounded-2xl px-4 py-2 w-full sm:w-2/3 outline-none"
+            value={docUrl}
+            onChange={(e) => setDocUrl(e.target.value)}
+          />
+        </div>
+
+        {/* NAVIGATION */}
         <div className="flex flex-col sm:flex-row justify-center gap-6 mt-6 pb-10 px-4 sm:px-8">
           <Link to="/question-type">
             <button className="bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient rounded-xl w-full sm:w-auto">
