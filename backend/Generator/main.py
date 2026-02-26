@@ -405,6 +405,12 @@ class FileProcessor:
             content = self.extract_text_from_docx(file_path)
         elif file.filename.endswith('.pptx'):
             content = self.extract_text_from_pptx(file_path)
+        elif file.filename.endswith('.ppt'):
+            import logging
+            logging.warning(
+                "Legacy .ppt format is not supported. "
+                "Please convert to .pptx and try again."
+            )
 
         os.remove(file_path)
         return content

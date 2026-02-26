@@ -1,58 +1,32 @@
 """Tests for PPTX text extraction in FileProcessor.
 
-We test the FileProcessor class in isolation – without importing the full
-Generator.main module which would trigger heavy ML model loading.  Instead
-we import only the minimal dependencies and re-create the class here.
+Imports the real FileProcessor from Generator.main. Heavy ML dependencies
+(torch, transformers, sense2vec, etc.) are mocked at the sys.modules level
+so they are not actually loaded during test collection.
 """
 import os
+import sys
+from unittest.mock import MagicMock
+
 import pytest
 from pptx import Presentation
 from pptx.util import Inches
-from unittest.mock import MagicMock
 
+# ── Mock heavy ML dependencies before importing Generator.main ───────────────
+# This prevents model loading while still testing the real FileProcessor code.
 
-# ── Lightweight re-creation of FileProcessor (extraction logic only) ─────────
+_mock_torch = MagicMock()
+_mock_torch.cuda.is_available.return_value = False
+sys.modules.setdefault("torch", _mock_torch)
+sys.modules.setdefault("transformers", MagicMock())
+sys.modules.setdefault("sense2vec", MagicMock())
+sys.modules.setdefault("google.oauth2", MagicMock())
+sys.modules.setdefault("google.oauth2.service_account", MagicMock())
+sys.modules.setdefault("googleapiclient", MagicMock())
+sys.modules.setdefault("googleapiclient.discovery", MagicMock())
+sys.modules.setdefault("en_core_web_sm", MagicMock())
 
-class FileProcessor:
-    """Mirror of Generator.main.FileProcessor – text extraction methods only."""
-
-    def __init__(self, upload_folder='uploads/'):
-        self.upload_folder = upload_folder
-        if not os.path.exists(self.upload_folder):
-            os.makedirs(self.upload_folder)
-
-    def extract_text_from_pptx(self, file_path):
-        """Extract text from a .pptx PowerPoint file."""
-        prs = Presentation(file_path)
-        text_parts = []
-        for slide in prs.slides:
-            for shape in slide.shapes:
-                if shape.has_text_frame:
-                    for paragraph in shape.text_frame.paragraphs:
-                        para_text = paragraph.text.strip()
-                        if para_text:
-                            text_parts.append(para_text)
-                if shape.has_table:
-                    for row in shape.table.rows:
-                        for cell in row.cells:
-                            cell_text = cell.text.strip()
-                            if cell_text:
-                                text_parts.append(cell_text)
-        return "\n".join(text_parts)
-
-    def process_file(self, file):
-        file_path = os.path.join(self.upload_folder, file.filename)
-        file.save(file_path)
-        content = ""
-
-        if file.filename.endswith('.txt'):
-            with open(file_path, 'r') as f:
-                content = f.read()
-        elif file.filename.endswith('.pptx'):
-            content = self.extract_text_from_pptx(file_path)
-
-        os.remove(file_path)
-        return content
+from Generator.main import FileProcessor  # noqa: E402
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -60,8 +34,7 @@ class FileProcessor:
 def _create_pptx(tmp_path, filename, texts):
     """Create a minimal .pptx with one text-box per item in *texts*."""
     prs = Presentation()
-    slide_layout = prs.slide_layouts[6]  # blank layout
-    slide = prs.slides.add_slide(slide_layout)
+    slide = prs.slides.add_slide(prs.slide_layouts[6])  # blank layout
     for t in texts:
         txBox = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(5), Inches(1))
         txBox.text_frame.text = t
@@ -75,7 +48,9 @@ def _create_pptx_with_table(tmp_path, filename, rows_data):
     prs = Presentation()
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     cols = max(len(r) for r in rows_data)
-    table_shape = slide.shapes.add_table(len(rows_data), cols, Inches(1), Inches(1), Inches(6), Inches(2))
+    table_shape = slide.shapes.add_table(
+        len(rows_data), cols, Inches(1), Inches(1), Inches(6), Inches(2)
+    )
     table = table_shape.table
     for ri, row in enumerate(rows_data):
         for ci, cell_text in enumerate(row):
@@ -114,17 +89,15 @@ class TestExtractTextFromPptx:
         assert result == ""
 
     def test_process_file_routes_pptx(self, tmp_path):
-        """process_file() should call extract_text_from_pptx for .pptx files."""
+        """process_file() should route .pptx files to extract_text_from_pptx."""
         _create_pptx(tmp_path, "routed.pptx", ["Route test"])
         fp = FileProcessor(upload_folder=str(tmp_path))
 
         mock_file = MagicMock()
         mock_file.filename = "routed.pptx"
-        # save() just copies the file into the upload folder (it's already there)
+        # File is already in upload_folder (tmp_path), so save is a no-op
         mock_file.save = MagicMock(side_effect=lambda dest: None)
 
-        # Place the file where process_file expects it
-        _create_pptx(tmp_path, "routed.pptx", ["Route test"])
         result = fp.process_file(mock_file)
         assert "Route test" in result
 
@@ -148,7 +121,9 @@ class TestExtractTextFromPptx:
         prs = Presentation()
         for text in ["Slide 1 content", "Slide 2 content", "Slide 3 content"]:
             slide = prs.slides.add_slide(prs.slide_layouts[6])
-            txBox = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(5), Inches(1))
+            txBox = slide.shapes.add_textbox(
+                Inches(1), Inches(1), Inches(5), Inches(1)
+            )
             txBox.text_frame.text = text
         path = os.path.join(tmp_path, "multi.pptx")
         prs.save(path)
