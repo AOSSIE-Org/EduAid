@@ -15,8 +15,18 @@ const Home = () => {
     const response = await fetch(
       "https://api.github.com/repos/AOSSIE-Org/EduAid"
     );
-    if (!response.ok) throw new Error("Failed to fetch stars");
+
     const data = await response.json();
+
+    if (
+      !response.ok ||
+      !data ||
+      typeof data.stargazers_count !== "number"
+    ) {
+      console.error("Invalid GitHub API response:", data);
+      throw new Error("Invalid GitHub response");
+    }
+
     return data.stargazers_count;
   }
 
@@ -29,24 +39,27 @@ const Home = () => {
     const storedStars = localStorage.getItem("stars");
     const storedTime = localStorage.getItem("fetchTime");
 
-    const cachedStars = Number(storedStars);
-    const cachedTime = Number(storedTime);
+    if (storedStars !== null && storedTime !== null) {
+      const cachedStars = Number(storedStars);
+      const cachedTime = Number(storedTime);
 
-    if (
-      Number.isFinite(cachedStars) &&
-      Number.isFinite(cachedTime) &&
-      !isMoreThanOneDayOld(cachedTime)
-    ) {
-      setStars(cachedStars);
-    } else {
-      fetchGitHubStars()
-        .then((starCount) => {
-          setStars(starCount);
-          localStorage.setItem("stars", String(starCount));
-          localStorage.setItem("fetchTime", Date.now().toString());
-        })
-        .catch(() => setError("Failed to fetch stars"));
+      if (
+        Number.isFinite(cachedStars) &&
+        Number.isFinite(cachedTime) &&
+        !isMoreThanOneDayOld(cachedTime)
+      ) {
+        setStars(cachedStars);
+        return;
+      }
     }
+
+    fetchGitHubStars()
+      .then((starCount) => {
+        setStars(starCount);
+        localStorage.setItem("stars", String(starCount));
+        localStorage.setItem("fetchTime", Date.now().toString());
+      })
+      .catch(() => setError("Failed to fetch stars"));
   }, []);
 
   return (
