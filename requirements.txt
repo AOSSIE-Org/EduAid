@@ -31,4 +31,6 @@ tokenizers
 mammoth
 mediawikiapi
 PyMuPDF
-textblob
+textblob==0.19.0
+SpeechRecognition==3.14.5
+pydub==0.25.1
