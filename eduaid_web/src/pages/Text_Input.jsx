@@ -25,7 +25,7 @@ const Text_Input = () => {
     setIsToggleOn((prev) => (prev + 1) % 2);
   };
 
-  // ✅ FIX 1: File Upload Error Handling
+  // ✅ FIX 1: Clear stale error on success
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -34,11 +34,14 @@ const Text_Input = () => {
     formData.append("file", file);
 
     try {
+      setErrorMessage(""); // clear old errors
+
       const data = await apiClient.postFormData("/upload", formData);
 
       if (data.error) {
         setErrorMessage(data.error);
       } else {
+        setErrorMessage(""); // ensure cleared
         setText(data.content || "");
       }
     } catch (error) {
@@ -50,7 +53,7 @@ const Text_Input = () => {
   const handleClick = (event) => {
     event.preventDefault();
     event.stopPropagation();
-    fileInputRef.current.click();
+    fileInputRef.current?.click(); // ✅ FIX 2: safe ref access
   };
 
   const handleSaveToLocalStorage = async () => {
@@ -58,7 +61,6 @@ const Text_Input = () => {
     setErrorMessage("");
 
     try {
-      // ✅ FIX 2: Google Doc Error Handling
       if (docUrl) {
         const data = await apiClient.post("/get_content", {
           document_url: docUrl,
@@ -66,10 +68,19 @@ const Text_Input = () => {
 
         setDocUrl("");
 
+        // ✅ FIX 3: Proper response handling
         if (!data) {
           setErrorMessage("Error retrieving content from Google Doc.");
-        } else {
+        } else if (data.error) {
+          setErrorMessage(data.error);
+        } else if (data.content) {
+          setText(data.content);
+        } else if (typeof data === "string") {
           setText(data);
+        } else {
+          setErrorMessage(
+            "Unexpected response from Google Doc endpoint."
+          );
         }
 
         setLoading(false);
@@ -148,7 +159,7 @@ const Text_Input = () => {
       console.error("Backend error:", error);
       setErrorMessage("Backend unavailable or request timed out.");
     } finally {
-      setLoading(false); // prevents infinite loading
+      setLoading(false);
     }
   };
 
