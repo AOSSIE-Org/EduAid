@@ -38,7 +38,17 @@ answer = main.AnswerPredictor()
 BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+docs_service = None
+docs_service_error = None
+try:
+    docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+except Exception as e:
+    docs_service_error = str(e)
+    print(
+        "Google Docs integration disabled. "
+        "Fix `service_account_key.json` or set SERVICE_ACCOUNT_FILE/GOOGLE_APPLICATION_CREDENTIALS. "
+        f"Details: {docs_service_error}"
+    )
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
@@ -182,6 +192,17 @@ def get_boolean_answer():
 @app.route('/get_content', methods=['POST'])
 def get_content():
     try:
+        if docs_service is None:
+            return jsonify(
+                {
+                    "error": (
+                        "Google Docs integration is disabled because service account credentials "
+                        "could not be loaded. Provide a valid Google service-account JSON key and "
+                        "set SERVICE_ACCOUNT_FILE (or GOOGLE_APPLICATION_CREDENTIALS) to its path."
+                    ),
+                    "details": docs_service_error,
+                }
+            ), 503
         data = request.get_json()
         document_url = data.get('document_url')
         if not document_url:
