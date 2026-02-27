@@ -413,7 +413,7 @@ class QuestionGenerator:
         self,
         article: str,
         use_evaluator: bool = False,
-        num_questions: bool = None,
+        num_questions: int | None = None,
         answer_style: str = "all",
     ) -> List:
         """Takes an article and generates a set of question and answer pairs. If use_evaluator
