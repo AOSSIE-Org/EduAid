@@ -85,7 +85,7 @@ def test_get_answer():
         ]
     }
     response = make_post_request(endpoint, data)
-    print(f'/get_answer Response: {response}')
+    print(f'{endpoint} Response: {response}')
     assert 'output' in response
 
 def test_get_boolean_answer():
