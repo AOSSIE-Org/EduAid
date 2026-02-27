@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../index.css";
-import logo_trans from "../assets/aossie_logo_transparent.png"
+import logo_trans from "../assets/aossie_logo_transparent.png";
 import starsImg from "../assets/stars.png";
 import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
@@ -12,7 +12,9 @@ const Home = () => {
   const [error, setError] = useState("");
 
   async function fetchGitHubStars() {
-    const response = await fetch("https://api.github.com/repos/AOSSIE-Org/EduAid");
+    const response = await fetch(
+      "https://api.github.com/repos/AOSSIE-Org/EduAid"
+    );
     if (!response.ok) throw new Error("Failed to fetch stars");
     const data = await response.json();
     return data.stargazers_count;
@@ -27,7 +29,11 @@ const Home = () => {
     const storedStars = localStorage.getItem("stars");
     const storedTime = localStorage.getItem("fetchTime");
 
-    if (storedStars && storedTime && !isMoreThanOneDayOld(parseInt(storedTime))) {
+    if (
+      storedStars &&
+      storedTime &&
+      !isMoreThanOneDayOld(parseInt(storedTime))
+    ) {
       setStars(parseInt(storedStars));
     } else {
       fetchGitHubStars()
@@ -66,7 +72,7 @@ const Home = () => {
           </div>
 
           {/* Features */}
-          <div className="flex flex-col items-end sm:items-center sm:flex-row sm:justify-between gap-4 mt-8">
+          <div className="flex flex-col items-center sm:flex-row sm:justify-between gap-4 mt-8">
             {[
               "Doc/Audio Input",
               "In-depth questions gen",
@@ -74,10 +80,16 @@ const Home = () => {
             ].map((feature, i) => (
               <div
                 key={i}
-                className="flex items-center rounded-l-2xl sm:rounded-2xl px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] gap-4 w-fit"
+                className="flex items-center justify-center sm:justify-start
+                 rounded-2xl px-4 sm:px-6 py-3
+                 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7]
+                 gap-3 sm:gap-4
+                 w-full sm:w-fit"
               >
                 <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-base sm:text-xl">{feature}</div>
+                <div className="text-white text-base sm:text-xl text-center sm:text-left">
+                  {feature}
+                </div>
               </div>
             ))}
           </div>
