@@ -15,16 +15,16 @@ const Answer = () => {
 
   const [isToggleOn, setIsToggleOn] = useState(1);
   const [mode, setMode] = useState("ask_question"); // Dropdown state
-  
+
   useEffect(() => {
-  chrome.storage.local.get(["selectedText"], (result) => {
-    if (result.selectedText) {
-      console.log("Selected Text: ", result.selectedText);
-      setContext(result.selectedText);
-      localStorage.setItem("textContent", result.selectedText);
-    }
-  });
-  },[])
+    chrome.storage.local.get(["selectedText"], (result) => {
+      if (result.selectedText) {
+        console.log("Selected Text: ", result.selectedText);
+        setContext(result.selectedText);
+        localStorage.setItem("textContent", result.selectedText);
+      }
+    });
+  }, [])
 
   // const toggleSwitch = () => {
   //   window.location.href = "/src/pages/home/home.html";
@@ -80,19 +80,19 @@ const Answer = () => {
 
   const handleApiCall = async () => {
     setLoading(true);
-  
+
     const booleanQuestions = questions.filter((q) => q.type === "boolean").map((q) => q.question);
     const mcqQuestions = questions.filter((q) => q.type === "mcq").map((q) => ({ question: q.question, options: q.options }));
     const shortQuestions = questions.filter((q) => q.type === "single").map((q) => q.question);
-  
+
     try {
       const responses = await Promise.all([
-        fetch("http://localhost:5000/get_boolean_answer", {
+        fetch(`${API_BASE_URL}/get_boolean_answer`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ input_text: context, input_question: booleanQuestions }),
         }),
-        fetch("http://localhost:5000/get_mcq_answer", {
+        fetch(`${API_BASE_URL}/get_mcq_answer`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -101,21 +101,21 @@ const Answer = () => {
             input_options: mcqQuestions.map((q) => q.options),
           }),
         }),
-        fetch("http://localhost:5000/get_shortq_answer", {
+        fetch(`${API_BASE_URL}/get_shortq_answer`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ input_text: context, input_question: shortQuestions }),
         }),
       ]);
-  
+
       const [booleanAnswers, mcqAnswers, shortAnswers] = await Promise.all(responses.map((res) => res.json()));
-  
+
       const allAnswers = [
         ...(booleanAnswers?.output ?? []).map((answer, index) => ({ question: booleanQuestions[index], answer })),
         ...(mcqAnswers?.output ?? []).map((answer, index) => ({ question: mcqQuestions[index]?.question, answer })),
         ...(shortAnswers?.output ?? []).map((answer, index) => ({ question: shortQuestions[index], answer })),
       ];
-  
+
       setAnswers(allAnswers);
     } catch (error) {
       console.error("Error:", error);
@@ -126,7 +126,7 @@ const Answer = () => {
       });
     }
   };
-  
+
 
   return (
     <div className="popup w-36rem h-38rem bg-[#02000F] flex justify-center items-center">
@@ -136,7 +136,7 @@ const Answer = () => {
         </div>
       )}
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-      <div className="flex items-end gap-[2px]">
+        <div className="flex items-end gap-[2px]">
           <img src={logo} alt="logo" className="w-16 my-4 ml-4 block" />
           <div className="text-2xl mb-3 font-extrabold">
             <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">

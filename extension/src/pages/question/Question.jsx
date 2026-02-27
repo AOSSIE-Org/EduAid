@@ -13,16 +13,16 @@ function Question() {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-        const dropdown = document.getElementById('pdfDropdown');
-        if (dropdown && !dropdown.contains(event.target) && 
-            !event.target.closest('button')) {
-            dropdown.classList.add('hidden');
-        }
+      const dropdown = document.getElementById('pdfDropdown');
+      if (dropdown && !dropdown.contains(event.target) &&
+        !event.target.closest('button')) {
+        dropdown.classList.add('hidden');
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-}, []);
+  }, []);
 
   function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -99,7 +99,7 @@ function Question() {
   }, []);
 
   const generateGoogleForm = async () => {
-    const response = await fetch("http://localhost:5000/generate_gform", {
+    const response = await fetch(`${API_BASE_URL}/generate_gform`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -113,7 +113,7 @@ function Question() {
     if (response.ok) {
       const result = await response.json();
       const formUrl = result.form_link;
-      window.open(formUrl, "_blank");
+      window.open(formUrl, "_blank", "noopener,noreferrer");
     } else {
       console.error("Failed to generate Google Form");
     }
@@ -233,7 +233,7 @@ function Question() {
             >
               Generate Google form
             </button>
-            
+
             <div className="relative">
               <button
                 className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"

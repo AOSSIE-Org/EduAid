@@ -39,7 +39,7 @@ function Home() {
               Aid
             </span>
           </div>
-          
+
           {/* Dropdown for Mode Selection */}
           <div className="relative ml-auto mb-3">
             <select
@@ -58,28 +58,26 @@ function Home() {
             </select>
           </div>
         </div>
-        
+
         <div className="text-3xl mt-3 text-white ml-4 font-extrabold">
           What’s on your Mind?
         </div>
         <div className="mt-1 text-white text-sm ml-4 font-medium">
           Choose one
         </div>
-        
+
         {/* Question Type Options */}
         <div>
           <div
             onClick={() => handleOptionClick("get_shortq")}
-            className={`flex my-3 items-center mx-3 cursor-pointer rounded-xl gap-4 px-4 py-4 bg-opacity-50 bg-[#202838] ${
-              selectedOption === "get_shortq" ? "border border-[#405EED]" : ""
-            }`}
+            className={`flex my-3 items-center mx-3 cursor-pointer rounded-xl gap-4 px-4 py-4 bg-opacity-50 bg-[#202838] ${selectedOption === "get_shortq" ? "border border-[#405EED]" : ""
+              }`}
           >
             <div
-              className={`px-3 py-3 rounded-full ${
-                selectedOption === "get_shortq"
+              className={`px-3 py-3 rounded-full ${selectedOption === "get_shortq"
                   ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
                   : "bg-[#999C9D]"
-              }`}
+                }`}
             ></div>
             <div className="text-white text-lg font-medium">
               Short-Answer Type Questions
@@ -88,16 +86,14 @@ function Home() {
 
           <div
             onClick={() => handleOptionClick("get_mcq")}
-            className={`flex my-3 items-center mx-3 cursor-pointer rounded-xl gap-4 px-4 py-4 bg-opacity-50 bg-[#202838] ${
-              selectedOption === "get_mcq" ? "border border-[#405EED]" : ""
-            }`}
+            className={`flex my-3 items-center mx-3 cursor-pointer rounded-xl gap-4 px-4 py-4 bg-opacity-50 bg-[#202838] ${selectedOption === "get_mcq" ? "border border-[#405EED]" : ""
+              }`}
           >
             <div
-              className={`px-3 py-3 rounded-full ${
-                selectedOption === "get_mcq"
+              className={`px-3 py-3 rounded-full ${selectedOption === "get_mcq"
                   ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
                   : "bg-[#999C9D]"
-              }`}
+                }`}
             ></div>
             <div className="text-white text-lg font-medium">
               Multiple Choice Questions
@@ -106,16 +102,14 @@ function Home() {
 
           <div
             onClick={() => handleOptionClick("get_boolq")}
-            className={`flex my-3 items-center mx-3 cursor-pointer rounded-xl gap-4 px-4 py-4 bg-opacity-50 bg-[#202838] ${
-              selectedOption === "get_boolq" ? "border border-[#405EED]" : ""
-            }`}
+            className={`flex my-3 items-center mx-3 cursor-pointer rounded-xl gap-4 px-4 py-4 bg-opacity-50 bg-[#202838] ${selectedOption === "get_boolq" ? "border border-[#405EED]" : ""
+              }`}
           >
             <div
-              className={`px-3 py-3 rounded-full ${
-                selectedOption === "get_boolq"
+              className={`px-3 py-3 rounded-full ${selectedOption === "get_boolq"
                   ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
                   : "bg-[#999C9D]"
-              }`}
+                }`}
             ></div>
             <div className="text-white text-lg font-medium">
               True/False Questions
@@ -124,19 +118,37 @@ function Home() {
 
           <div
             onClick={() => handleOptionClick("get_problems")}
-            className={`flex my-3 items-center mx-3 cursor-pointer rounded-xl gap-4 px-4 py-4 bg-opacity-50 bg-[#202838] ${
-              selectedOption === "get_problems" ? "border border-[#405EED]" : ""
-            }`}
+            className={`flex my-3 items-center mx-3 cursor-pointer rounded-xl gap-4 px-4 py-4 bg-opacity-50 bg-[#202838] ${selectedOption === "get_problems" ? "border border-[#405EED]" : ""
+              }`}
           >
             <div
-              className={`px-3 py-3 rounded-full ${
-                selectedOption === "get_problems"
+              className={`px-3 py-3 rounded-full ${selectedOption === "get_problems"
                   ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
                   : "bg-[#999C9D]"
-              }`}
+                }`}
             ></div>
             <div className="text-white text-lg font-medium">All Questions</div>
           </div>
+        </div>
+
+        {/* Google Forms Integration Link */}
+        <div className="mx-3 mt-6 mb-4">
+          <div className="text-white text-sm font-medium mb-2 text-center">
+            Or use external forms
+          </div>
+          <a href="/src/pages/google_form/google_form.html">
+            <div className="flex items-center justify-center cursor-pointer rounded-xl gap-3 px-4 py-4 bg-opacity-50 bg-[#202838] hover:border hover:border-[#405EED] transition">
+              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                <polyline points="14 2 14 8 20 8" fill="none" stroke="currentColor" strokeWidth="2" />
+                <line x1="8" y1="13" x2="16" y2="13" stroke="currentColor" strokeWidth="2" />
+                <line x1="8" y1="17" x2="16" y2="17" stroke="currentColor" strokeWidth="2" />
+              </svg>
+              <div className="text-white text-lg font-medium">
+                Fill Google Forms
+              </div>
+            </div>
+          </a>
         </div>
 
         <div className="mx-auto text-center mt-6">
