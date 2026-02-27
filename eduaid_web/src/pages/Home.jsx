@@ -110,8 +110,9 @@ const Home = () => {
           {/* Primary Buttons */}
           <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-12">
 
+            {/* ✅ Changed to /input */}
             <Link
-              to="/question-type"
+              to="/input"
               className="w-full sm:w-auto flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300"
             >
               <span>Upload & Generate Quiz</span>
@@ -178,8 +179,9 @@ const Home = () => {
 
           {/* Final CTA */}
           <div className="mt-20 text-center">
+            {/* ✅ Changed to /input */}
             <Link
-              to="/question-type"
+              to="/input"
               className="inline-flex text-white text-lg px-8 py-4 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] rounded-xl hover:opacity-90 transition-all duration-300"
             >
               Turn Your Notes Into a Quiz Now
