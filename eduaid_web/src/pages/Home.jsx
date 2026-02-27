@@ -82,22 +82,23 @@ const Home = () => {
             ))}
           </div>
 
-          {/* Buttons */}
+          {/* Buttons - FIXED (No nested button) */}
           <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-10">
-            
-            {/* ✅ Only change here: /question-type → /input */}
-            <Link to="/input" className="w-full sm:w-auto">
-              <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
-                Let’s get Started
-                <img src={arrow} width={24} height={24} alt="arrow" />
-              </button>
+
+            <Link
+              to="/input"
+              className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300"
+            >
+              Let’s get Started
+              <img src={arrow} width={24} height={24} alt="arrow" />
             </Link>
 
-            <Link to="/history" className="w-full sm:w-auto">
-              <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
-                Your previous Work!
-                <img src={arrow} width={24} height={24} alt="arrow" />
-              </button>
+            <Link
+              to="/history"
+              className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300"
+            >
+              Your previous Work!
+              <img src={arrow} width={24} height={24} alt="arrow" />
             </Link>
 
           </div>
