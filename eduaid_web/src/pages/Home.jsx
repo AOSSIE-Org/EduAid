@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../index.css";
-import logo_trans from "../assets/aossie_logo_transparent.png"
+import logo_trans from "../assets/aossie_logo_transparent.png";
 import starsImg from "../assets/stars.png";
 import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
@@ -84,18 +84,22 @@ const Home = () => {
 
           {/* Buttons */}
           <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-10">
-            <Link to="/question-type" className="w-full sm:w-auto">
+            
+            {/* ✅ Only change here: /question-type → /input */}
+            <Link to="/input" className="w-full sm:w-auto">
               <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
                 Let’s get Started
                 <img src={arrow} width={24} height={24} alt="arrow" />
               </button>
             </Link>
+
             <Link to="/history" className="w-full sm:w-auto">
               <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
                 Your previous Work!
                 <img src={arrow} width={24} height={24} alt="arrow" />
               </button>
             </Link>
+
           </div>
 
           {/* GitHub Stars */}
@@ -119,6 +123,7 @@ const Home = () => {
               </div>
             </div>
           </a>
+
         </div>
       </div>
     </div>
