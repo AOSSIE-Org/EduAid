@@ -18,7 +18,11 @@ class ErrorBoundary extends Component {
   componentDidCatch(error, errorInfo) {
     // Optional callback for external monitoring
     if(typeof this.props.onError === "function") {
+      try{
         this.props.onError(error,errorInfo);
+      } catch(callbackError){
+        console.error("ErrorBoundary onError callback failed:", callbackError);
+      }
     }
 
     // This is for debugging and future monitoring integration.

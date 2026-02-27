@@ -44,7 +44,7 @@
   overflow: auto;
   max-height: 220px;
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .error-boundary-button {
