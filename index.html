@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduAid - Your AI Quiz Generator</title>
+    
+    <style>
+        /* CSS Reset and Global Styles */
+        :root {
+            --primary-color: #00AFFF; /* Electric Blue */
+            --secondary-color: #00FFC2; /* Neon Green/Cyan */
+            --text-color: #E5E7EB; /* Light Gray */
+            --bg-dark: #111827; /* Very Dark Blue/Gray */
+            --bg-light: #1F2937; /* Lighter Dark Blue/Gray */
+            --font-stack: 'Inter', sans-serif;
+            --shadow-color: rgba(0, 175, 255, 0.2);
+        }
+
+        body {
+            font-family: var(--font-stack);
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        /* --- Utility Classes --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .btn-primary {
+            display: inline-block;
+            padding: 14px 32px;
+            background-color: var(--primary-color);
+            color: var(--bg-dark);
+            text-decoration: none;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 15px 0 rgba(0, 175, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 rgba(0, 255, 194, 0.3);
+        }
+
+        /* --- Header/Navbar --- */
+        .header {
+            background-color: rgba(31, 41, 55, 0.8);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+        }
+        
+        /* Placeholder for AOSSIE Logo */
+        .aossie-logo {
+            width: 30px;
+            height: 30px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            margin-right: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--bg-dark);
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        /* --- Hero Section --- */
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+            background: radial-gradient(ellipse at top, var(--bg-light), var(--bg-dark));
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 5vw, 3.5rem); /* Fluid font size */
+            font-weight: 800;
+            margin-bottom: 20px;
+            color: var(--text-color);
+        }
+
+        .highlight {
+            color: var(--primary-color);
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1rem, 2.5vw, 1.25rem);
+            max-width: 700px;
+            margin: 0 auto 40px auto;
+            color: #9CA3AF; /* Lighter text for subtitle */
+        }
+
+        /* --- Generator Section --- */
+        .generator-container {
+            margin-top: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .content-textarea {
+            width: 100%;
+            min-height: 200px;
+            background-color: var(--bg-light);
+            border: 1px solid var(--primary-color);
+            border-radius: 8px;
+            padding: 15px;
+            color: var(--text-color);
+            font-family: var(--font-stack);
+            font-size: 1rem;
+            resize: vertical;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .content-textarea:focus {
+            outline: none;
+            box-shadow: 0 0 15px var(--shadow-color);
+        }
+
+        /* --- Quiz Display Section --- */
+        .quiz-container {
+            margin-top: 60px;
+            background-color: var(--bg-light);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: left;
+            border: 1px solid #2a3647;
+        }
+
+        .loading-status {
+            text-align: center;
+            color: #9CA3AF;
+            margin-top: 15px;
+        }
+
+        .quiz-title {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 25px;
+        }
+
+        .quiz-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .quiz-item {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #2a3647;
+            padding-bottom: 20px;
+        }
+        .quiz-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .quiz-question {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .quiz-answer {
+            color: #9CA3AF;
+            padding-left: 1.2em;
+            position: relative;
+        }
+        .quiz-answer::before {
+            content: 'A:';
+            position: absolute;
+            left: 0;
+            color: var(--secondary-color);
+        }
+
+        /* --- Loader --- */
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--bg-dark);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* --- Old CTA Section (can be removed or hidden) --- */
+        .cta-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* --- Footer --- */
+        .footer {
+            text-align: center;
+            padding: 30px 0;
+            border-top: 1px solid var(--bg-light);
+            color: #6B7280;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .hero {
+                padding: 60px 20px;
+            }
+            .btn-primary {
+                font-size: 1rem;
+                padding: 10px 20px;
+            }
+        }
+
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header class="header">
+        <div class="container">
+            <div class="navbar">
+                <div class="logo-container">
+                    <div class="aossie-logo">A</div> 
+                    EduAid
+                </div>
+                </div>
+        </div>
+    </header>
+
+    <main class="hero">
+        <div class="container">
+            
+            <h1 class="hero-title">
+                Welcome to EduAid: Your <span class="highlight">AI Quiz Generator</span>
+            </h1>
+
+            <p class="hero-subtitle">
+                Revolutionize learning! Instantly generate comprehensive short quizzes from any content you provide with the power of artificial intelligence. Simplify your study process now.
+            </p>
+
+            <div class="generator-container">
+                <textarea id="contentInput" class="content-textarea" placeholder="Paste your content here to generate a quiz..."></textarea>
+                <button id="generateButton" class="btn-primary">Generate Quiz</button>
+            </div>
+
+            <div id="quiz-section" class="quiz-container" style="display: none;">
+                <div id="loader" class="loader"></div>
+                <p id="loading-status" class="loading-status"></p>
+                <div id="quiz-content" style="display: none;"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            &copy; 2025 EduAid Project. Powered by AOSSIE.
+        </div>
+    </footer>
+
+    <script>
+        // JS to add a simple interaction when the start button is clicked
+        document.addEventListener('DOMContentLoaded', () => {
+            const generateButton = document.getElementById('generateButton');
+            const contentInput = document.getElementById('contentInput');
+            const quizSection = document.getElementById('quiz-section');
+            const loader = document.getElementById('loader');
+            const quizContent = document.getElementById('quiz-content');
+            const loadingStatus = document.getElementById('loading-status');
+
+            /**
+             * Simulates calling an AI backend to generate a quiz.
+             * @param {string} text - The user-provided content.
+             * @param {function} onProgress - A callback function to update the loading status.
+             * @returns {Promise<object>} A promise that resolves with the generated quiz data.
+             */
+            const callAIApi = (text, onProgress) => { // The 'text' parameter is kept for future real implementation
+                return new Promise(async (resolve) => {
+                    // In a real application, you would use fetch() to send the 'text' to your AI backend.
+                    // Example:
+                    // const response = await fetch('/api/generate-quiz', {
+                    //     method: 'POST',
+                    //     headers: { 'Content-Type': 'application/json' },
+                    //     body: JSON.stringify({ content: text })
+                    // });
+                    // const quizData = await response.json();
+                    // resolve(quizData);
+
+                    // --- Simulation with realistic steps and data ---
+                    onProgress('Initializing AI connection...');
+                    await new Promise(res => setTimeout(res, 1000));
+
+                    onProgress('Analyzing content for key topics and real-world scenarios...');
+                    await new Promise(res => setTimeout(res, 2000));
+
+                    onProgress('Generating problem-based and topic-based questions...');
+                    await new Promise(res => setTimeout(res, 2000));
+
+                    // New sample quiz based on a real-world topic: The Water Cycle
+                    const realWorldQuiz = {
+                        title: 'Quiz on "The Water Cycle"',
+                        questions: [
+                            { q: 'Real-World Problem: A coastal city faces water shortages despite being near the ocean. Why can\'t they use ocean water directly?', a: 'The water cycle naturally desalinates water through evaporation, leaving salt behind. Ocean water is saline; drinking it causes dehydration. The city relies on the precipitation (rain) part of the cycle for fresh water.' },
+                            { q: 'Topic-Based Question: What is the primary energy source that drives the water cycle?', a: 'The sun is the primary energy source. It provides the heat required for evaporation, which moves water from the Earth\'s surface into the atmosphere.' },
+                            { q: 'Real-World Problem: Farmers notice their crops are failing after a new factory was built upriver. Which part of the water cycle could transport pollution to their fields?', a: 'Surface runoff. Rainwater can pick up pollutants from the factory area and carry them downstream into the farmers\' water supply, contaminating the soil.' },
+                            { q: 'Topic-Based Question: What is \'transpiration\'?', a: 'Transpiration is the process where plants absorb water through the roots and then give off water vapor through pores in their leaves.' },
+                            { q: 'Real-World Problem: Why do clouds often form over mountains?', a: 'As moist air is forced to rise over a mountain range, it cools and condenses, forming clouds. This is why the windward side of a mountain is often much wetter than the leeward side.' },
+                            { q: 'Topic-Based Question: Name the three main stages of the water cycle.', a: 'The three main stages are Evaporation, Condensation, and Precipitation.' },
+                            { q: 'Real-World Problem: If you leave a glass of water on a windowsill, it slowly disappears. Which process does this demonstrate?', a: 'This demonstrates evaporation, where liquid water turns into water vapor (a gas) and enters the atmosphere.' },
+                            { q: 'Topic-Based Question: What is condensation responsible for forming?', a: 'Condensation is the process where water vapor in the air is changed into liquid water, and it is responsible for the formation of clouds.' },
+                            { q: 'Real-World Problem: Why are basement floors often damp?', a: 'Groundwater can seep through the foundation. This is part of the water cycle where water soaks into the ground and moves through the soil and rock layers.' },
+                            { q: 'Topic-Based Question: What is \'collection\' in the water cycle?', a: 'Collection is when water that falls from the clouds as rain, snow, hail or sleet, collects in the oceans, rivers, lakes, and streams. Most will infiltrate (soak into) the ground and will become part of the groundwater.' }
+                        ]
+                    };
+                    resolve(realWorldQuiz);
+                });
+            };
+
+            generateButton.addEventListener('click', async () => {
+                const content = contentInput.value.trim();
+                if (content === '') {
+                    alert('Please paste some content into the text area first!');
+                    return;
+                }
+
+                // 1. Reset UI and show loader
+                quizSection.style.display = 'block';
+                loader.style.display = 'block';
+                loadingStatus.style.display = 'block';
+                quizContent.style.display = 'none';
+                quizContent.innerHTML = '';
+
+                // 2. Call the simulated AI service and wait for the result
+                const quizData = await callAIApi(content, (status) => {
+                    loadingStatus.textContent = status;
+                });
+
+                // 3. Hide loader and display the results
+                loader.style.display = 'none';
+                loadingStatus.style.display = 'none';
+                let quizHTML = `<h2 class="quiz-title">${quizData.title}</h2><ul class="quiz-list">`;
+                quizData.questions.forEach(item => {
+                    quizHTML += `<li class="quiz-item"><div class="quiz-question">${item.q}</div><div class="quiz-answer">${item.a}</div></li>`;
+                });
+                quizHTML += '</ul>';
+                quizContent.innerHTML = quizHTML;
+                quizContent.style.display = 'block';
+            });
+        });
+    </script>
+</body>
+</html>
