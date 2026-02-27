@@ -116,14 +116,28 @@ def get_problems():
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+
+    if data is None:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     input_options = data.get("input_options", [])
     outputs = []
 
-    if not input_questions or not input_options or len(input_questions) != len(input_options):
-        return jsonify({"outputs": outputs})
+    # Validate required fields
+    if not isinstance(input_text, str) or not input_text.strip():
+        return jsonify({"error": "'input_text' must be a non-empty string"}), 400
+
+    if not isinstance(input_questions, list) or len(input_questions) == 0:
+        return jsonify({"error": "'input_question' must be a non-empty list"}), 400
+
+    if not isinstance(input_options, list) or len(input_options) == 0:
+        return jsonify({"error": "'input_options' must be a non-empty list"}), 400
+
+    if len(input_questions) != len(input_options):
+        return jsonify({"error": "'input_question' and 'input_options' must have the same length"}), 400
 
     for question, options in zip(input_questions, input_options):
         # Generate answer using the QA model
