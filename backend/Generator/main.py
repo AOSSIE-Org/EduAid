@@ -22,6 +22,9 @@ import re
 import os
 import fitz 
 import mammoth
+from pptx import Presentation
+import ppt2txt
+import logging
 
 class MCQGenerator:
     
@@ -366,6 +369,38 @@ class FileProcessor:
         with open(file_path, "rb") as docx_file:
             result = mammoth.extract_raw_text(docx_file)
             return result.value
+        
+    def extract_text_from_pptx(self, file_path):
+        text_runs = []
+        try:
+            prs = Presentation(file_path)
+        except Exception as e:
+            logging.error(f"Error opening PPTX file: {e}")
+            return ""
+
+        for slide in prs.slides:
+            for shape in slide.shapes:
+                if hasattr(shape, "has_text_frame") and shape.has_text_frame:
+                    for paragraph in shape.text_frame.paragraphs:
+                        for run in paragraph.runs:
+                            text_runs.append(run.text)
+
+        return "\n".join(text_runs)
+    
+    def extract_text_from_ppt(self, file_path):
+        try:
+            file = ppt2txt.process(file_path)
+            noise = ["Click to edit Master"]
+            text = ""
+            for line in file["content"].values():
+                line = line.replace(noise[0], "").strip()
+                text += line + "\n"
+                
+            return text
+                
+        except Exception as e:
+            logging.error(f"Error extracting text from PPT file: {e}")
+            return ""
 
     def process_file(self, file):
         file_path = os.path.join(self.upload_folder, file.filename)
@@ -379,6 +414,16 @@ class FileProcessor:
             content = self.extract_text_from_pdf(file_path)
         elif file.filename.endswith('.docx'):
             content = self.extract_text_from_docx(file_path)
+        elif file.filename.endswith('.pptx'):
+            content = self.extract_text_from_pptx(file_path)
+            if not content:
+                content = ""
+        elif file.filename.endswith('.ppt'):
+            content = self.extract_text_from_ppt(file_path)
+            if not content:
+                content = ""
+        else:
+            raise ValueError('Unsupported file format')
 
         os.remove(file_path)
         return content
