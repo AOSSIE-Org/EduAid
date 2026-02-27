@@ -25,6 +25,7 @@ const Text_Input = () => {
     setIsToggleOn((prev) => (prev + 1) % 2);
   };
 
+  // ✅ FIX 1: File Upload Error Handling
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -34,7 +35,12 @@ const Text_Input = () => {
 
     try {
       const data = await apiClient.postFormData("/upload", formData);
-      setText(data.content || data.error);
+
+      if (data.error) {
+        setErrorMessage(data.error);
+      } else {
+        setText(data.content || "");
+      }
     } catch (error) {
       console.error("File upload failed:", error);
       setErrorMessage("File upload failed.");
@@ -52,13 +58,20 @@ const Text_Input = () => {
     setErrorMessage("");
 
     try {
+      // ✅ FIX 2: Google Doc Error Handling
       if (docUrl) {
         const data = await apiClient.post("/get_content", {
           document_url: docUrl,
         });
 
         setDocUrl("");
-        setText(data || "Error retrieving content");
+
+        if (!data) {
+          setErrorMessage("Error retrieving content from Google Doc.");
+        } else {
+          setText(data);
+        }
+
         setLoading(false);
         return;
       }
@@ -135,7 +148,7 @@ const Text_Input = () => {
       console.error("Backend error:", error);
       setErrorMessage("Backend unavailable or request timed out.");
     } finally {
-      setLoading(false); // 🔥 prevents infinite loading
+      setLoading(false); // prevents infinite loading
     }
   };
 
@@ -152,7 +165,6 @@ const Text_Input = () => {
           loading ? "pointer-events-none" : ""
         }`}
       >
-        {/* Header */}
         <Link to="/" className="block">
           <div className="flex items-end gap-2 p-4">
             <img src={logo_trans} alt="logo" className="w-20 sm:w-24" />
@@ -173,7 +185,6 @@ const Text_Input = () => {
           </div>
         )}
 
-        {/* TEXTAREA */}
         <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[200px] mt-4">
           <textarea
             className="w-full h-full p-4 bg-transparent text-lg sm:text-xl rounded-2xl outline-none resize-none text-white caret-white"
@@ -185,7 +196,6 @@ const Text_Input = () => {
 
         <div className="text-white text-center my-4 text-lg">or</div>
 
-        {/* FILE UPLOAD */}
         <div className="w-full max-w-2xl mx-auto border-[3px] rounded-2xl text-center px-6 py-6 border-dotted border-[#3E5063] mt-6">
           <img className="mx-auto mb-2" src={cloud} alt="cloud" />
           <p className="text-white text-lg">
@@ -215,7 +225,6 @@ const Text_Input = () => {
           />
         </div>
 
-        {/* NAVIGATION */}
         <div className="flex flex-col sm:flex-row justify-center gap-6 mt-6 pb-10 px-4 sm:px-8">
           <Link to="/question-type">
             <button className="bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient rounded-xl w-full sm:w-auto">
