@@ -7,7 +7,7 @@ import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
-  const [questionType, setQuestionType] = useState(
+  const [questionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
   const [editingIndex, setEditingIndex] = useState(null);
@@ -18,45 +18,55 @@ const Output = () => {
 
   /* ------------------ Helpers ------------------ */
 
-  function shuffleArray(array) {
+  const shuffleArray = (array = []) => {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     return shuffled;
-  }
+  };
 
+  // ✅ Deduplicated options (CodeRabbit fix)
   const shuffledOptionsMap = useMemo(() => {
     return qaPairs.map((qa) =>
-      qa.options ? shuffleArray([...qa.options, qa.answer]) : []
+      qa.options
+        ? shuffleArray(
+            [...new Set([...(qa.options || []), qa.answer].filter(Boolean))]
+          )
+        : []
     );
   }, [qaPairs]);
 
-  const qaPair = qaPairs[currentIndex];
-  const shuffledOptions = shuffledOptionsMap[currentIndex];
+  const totalQuestions = qaPairs.length;
+  const hasQuestions = totalQuestions > 0;
+  const qaPair = hasQuestions ? qaPairs[currentIndex] : null;
+  const shuffledOptions = shuffledOptionsMap[currentIndex] || [];
   const isEditing = editingIndex === currentIndex;
 
-  /* ------------------ Handlers ------------------ */
+  /* ------------------ Navigation ------------------ */
+
+  const handleNext = () => {
+    if (isEditing || !hasQuestions) return;
+    if (currentIndex < totalQuestions - 1) {
+      setCurrentIndex((prev) => prev + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (isEditing || !hasQuestions) return;
+    if (currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
+    }
+  };
 
   const handleShuffleQuestions = () => {
-    if (editingIndex !== null) handleCancelEdit();
+    if (isEditing) handleCancelEdit();
     setQaPairs(shuffleArray(qaPairs));
     setCurrentIndex(0);
   };
-  const handleNext = () => {
-  if (editingIndex !== null) return; // block navigation while editing
-  if (currentIndex < qaPairs.length - 1) {
-    setCurrentIndex((prev) => prev + 1);
-  }
-};
 
-const handlePrevious = () => {
-  if (editingIndex !== null) return; // block navigation while editing
-  if (currentIndex > 0) {
-    setCurrentIndex((prev) => prev - 1);
-  }
-};
+  /* ------------------ Editing ------------------ */
 
   const handleEditQuestion = (index) => {
     setEditingIndex(index);
@@ -90,13 +100,19 @@ const handlePrevious = () => {
     setEditedOptions(updated);
   };
 
-  /* ------------------ Load Data ------------------ */
+  /* ------------------ Load Data (Safe) ------------------ */
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("qaPairs")) || {};
+    let stored = {};
+    try {
+      stored = JSON.parse(localStorage.getItem("qaPairs") || "{}");
+    } catch {
+      stored = {};
+    }
+
     const combined = [];
 
-    if (stored.output_mcq) {
+    if (Array.isArray(stored.output_mcq?.questions)) {
       stored.output_mcq.questions.forEach((q) => {
         combined.push({
           question: q.question_statement,
@@ -107,7 +123,7 @@ const handlePrevious = () => {
       });
     }
 
-    if (stored.output && questionType !== "get_mcq") {
+    if (Array.isArray(stored.output) && questionType !== "get_mcq") {
       stored.output.forEach((q) => {
         combined.push({
           question: q.question || q.question_statement,
@@ -119,16 +135,21 @@ const handlePrevious = () => {
     }
 
     setQaPairs(combined);
+    setCurrentIndex(0); // ✅ important
   }, [questionType]);
 
-  /* ------------------ PDF & GForm ------------------ */
+  /* ------------------ Google Form ------------------ */
 
   const generateGoogleForm = async () => {
-    const res = await apiClient.post("/generate_gform", {
-      qa_pairs: qaPairs,
-      question_type: questionType,
-    });
-    window.open(res.form_link, "_blank");
+    try {
+      const res = await apiClient.post("/generate_gform", {
+        qa_pairs: qaPairs,
+        question_type: questionType,
+      });
+      window.open(res.form_link, "_blank");
+    } catch (err) {
+      console.error("Failed to generate form", err);
+    }
   };
 
   /* ------------------ UI ------------------ */
@@ -143,12 +164,12 @@ const handlePrevious = () => {
 
         <div className="flex justify-between items-center px-6">
           <div className="text-white font-bold text-xl">
-            Question {currentIndex + 1} of {qaPairs.length}
+            Question {hasQuestions ? currentIndex + 1 : 0} of {totalQuestions}
           </div>
           <button
             onClick={handleShuffleQuestions}
-            disabled={editingIndex !== null}
-            className="bg-purple-600 px-4 py-2 rounded text-white flex items-center gap-2"
+            disabled={isEditing || !hasQuestions}
+            className="bg-purple-600 px-4 py-2 rounded text-white flex items-center gap-2 disabled:opacity-50"
           >
             <FiShuffle /> Shuffle
           </button>
@@ -162,7 +183,7 @@ const handlePrevious = () => {
                   <p className="text-white text-lg">{qaPair.question}</p>
 
                   {qaPair.options && (
-                    <div className="mt-4">
+                    <div className="mt-4 space-y-1">
                       {shuffledOptions.map((opt, i) => (
                         <div key={i} className="text-gray-200">
                           Option {i + 1}: {opt}
@@ -186,60 +207,65 @@ const handlePrevious = () => {
                     className="w-full p-2 bg-black text-white rounded"
                   />
 
-                  <button
-                    onClick={() => handleSaveQuestion(currentIndex)}
-                    className="bg-green-600 px-4 py-2 mt-3 rounded text-white"
-                  >
-                    <FiCheck /> Save
-                  </button>
+                  {editedOptions.map((opt, i) => (
+                    <input
+                      key={i}
+                      value={opt}
+                      onChange={(e) => handleOptionChange(i, e.target.value)}
+                      className="w-full p-2 mt-2 bg-black text-white rounded"
+                    />
+                  ))}
 
-                  <button
-                    onClick={handleCancelEdit}
-                    className="ml-2 bg-gray-600 px-4 py-2 rounded text-white"
-                  >
-                    <FiX /> Cancel
-                  </button>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() => handleSaveQuestion(currentIndex)}
+                      className="bg-green-600 px-4 py-2 rounded text-white"
+                    >
+                      <FiCheck /> Save
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="bg-gray-600 px-4 py-2 rounded text-white"
+                    >
+                      <FiX /> Cancel
+                    </button>
+                  </div>
                 </>
               )}
             </div>
           )}
         </div>
 
-        {/* Navigation Buttons */}
-<div className="flex justify-between items-center px-6 pb-4">
-  <button
-    onClick={handlePrevious}
-    disabled={currentIndex === 0}
-    className={`px-4 py-2 rounded text-white ${
-      currentIndex === 0
-        ? "bg-gray-500 cursor-not-allowed"
-        : "bg-teal-600 hover:bg-teal-700"
-    }`}
-  >
-    ⬅ Previous
-  </button>
+        {/* Navigation */}
+        <div className="flex justify-between items-center px-6 pb-4">
+          <button
+            onClick={handlePrevious}
+            disabled={isEditing || !hasQuestions || currentIndex === 0}
+            className="px-4 py-2 rounded text-white bg-teal-600 disabled:bg-gray-500"
+          >
+            ⬅ Previous
+          </button>
 
-  <span className="text-white text-sm">
-    Question {currentIndex + 1} of {qaPairs.length}
-  </span>
+          <span className="text-white text-sm">
+            Question {hasQuestions ? currentIndex + 1 : 0} of {totalQuestions}
+          </span>
 
-  <button
-    onClick={handleNext}
-    disabled={currentIndex === qaPairs.length - 1}
-    className={`px-4 py-2 rounded text-white ${
-      currentIndex === qaPairs.length - 1
-        ? "bg-gray-500 cursor-not-allowed"
-        : "bg-teal-600 hover:bg-teal-700"
-    }`}
-  >
-    Next ➡
-  </button>
-</div>
+          <button
+            onClick={handleNext}
+            disabled={
+              isEditing || !hasQuestions || currentIndex >= totalQuestions - 1
+            }
+            className="px-4 py-2 rounded text-white bg-teal-600 disabled:bg-gray-500"
+          >
+            Next ➡
+          </button>
+        </div>
 
-        <div className="flex justify-center gap-4 pb-6">
+        <div className="flex justify-center pb-6">
           <button
             onClick={generateGoogleForm}
-            className="bg-teal-600 px-6 py-2 rounded text-white"
+            disabled={!hasQuestions}
+            className="bg-teal-600 px-6 py-2 rounded text-white disabled:opacity-50"
           >
             Generate Google Form
           </button>
