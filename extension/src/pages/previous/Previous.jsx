@@ -3,8 +3,7 @@ import ReactDOM from 'react-dom';
 import "../../index.css";
 import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
-import { FaClipboard } from "react-icons/fa";
-import { FaArrowRight } from "react-icons/fa"; // Import the enter icon
+import { FaArrowRight } from "react-icons/fa";
 
 const Previous = () => {
   const getQuizzesFromLocalStorage = () => {

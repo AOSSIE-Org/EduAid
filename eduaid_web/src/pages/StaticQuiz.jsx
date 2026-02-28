@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "../index.css";
-import logoPNG from "../assets/aossie_logo_transparent.png";
 import { Link } from "react-router-dom";
+import logoPNG from "../assets/aossie_logo_transparent.png";
 import apiClient from "../utils/apiClient";
 import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
-const Output = () => {
+const Output = ({ questions: questionsProp }) => {
   const [qaPairs, setQaPairs] = useState([]);
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType")
@@ -40,10 +40,11 @@ const Output = () => {
 
   const shuffledOptionsMap = useMemo(() => {
     return qaPairs.map((qaPair) => {
-      const combinedOptions = qaPair.options
-        ? [...qaPair.options, qaPair.answer]
-        : [qaPair.answer];
-      return shuffleArray(combinedOptions);
+      const opts = Array.isArray(qaPair.options) ? [...qaPair.options] : [];
+      if (qaPair.answer && !opts.includes(qaPair.answer)) {
+        opts.push(qaPair.answer);
+      }
+      return shuffleArray(opts.filter(Boolean));
     });
   }, [qaPairs]);
 
@@ -91,14 +92,47 @@ const Output = () => {
   };
 
   useEffect(() => {
+    // If questions were passed via props (from QuizModeWrapper), use them directly
+    if (questionsProp && questionsProp.length > 0) {
+      // Normalize each question object for consistent rendering
+      const normalized = questionsProp.map((q) => {
+        // MCQ format from backend: { question_statement, options, answer, context }
+        if (q.question_statement) {
+          return {
+            question: q.question_statement,
+            question_type: "MCQ",
+            options: q.options || [],
+            answer: q.answer,
+            context: q.context,
+          };
+        }
+        // Boolean format: plain string
+        if (typeof q === "string") {
+          return { question: q, question_type: "Boolean" };
+        }
+        // Already normalized or short-answer
+        return {
+          question: q.question || q.Question || q.question_statement || "",
+          question_type: q.question_type || "Short",
+          options: q.options || [],
+          answer: q.answer || q.Answer || "",
+          context: q.context || "",
+        };
+      });
+      setQaPairs(normalized);
+      return;
+    }
+
+    // Fallback: load from localStorage (e.g. page refresh)
     const qaPairsFromStorage =
       JSON.parse(localStorage.getItem("qaPairs")) || {};
     if (qaPairsFromStorage) {
       const combinedQaPairs = [];
 
+      // "All types" response has output_boolq, output_mcq, output_shortq
       if (qaPairsFromStorage["output_boolq"]) {
         qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
-          (question, index) => {
+          (question) => {
             combinedQaPairs.push({
               question,
               question_type: "Boolean",
@@ -120,30 +154,10 @@ const Output = () => {
         });
       }
 
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+      if (qaPairsFromStorage["output_shortq"]) {
+        (qaPairsFromStorage["output_shortq"]["questions"] || []).forEach((qaPair) => {
           combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
-          });
-        });
-      }
-
-      if (questionType == "get_boolq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair,
-            question_type: "Boolean",
-          });
-        });
-      } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question:
-              qaPair.question || qaPair.question_statement || qaPair.Question,
+            question: qaPair.question || qaPair.question_statement || qaPair.Question,
             options: qaPair.options,
             answer: qaPair.answer || qaPair.Answer,
             context: qaPair.context,
@@ -152,9 +166,43 @@ const Output = () => {
         });
       }
 
+      // Single-type response has just "output" key
+      if (qaPairsFromStorage["output"] && !qaPairsFromStorage["output_mcq"]) {
+        if (questionType === "get_mcq" || questionType === "get_mcq_hard") {
+          qaPairsFromStorage["output"].forEach((qaPair) => {
+            combinedQaPairs.push({
+              question: qaPair.question_statement,
+              question_type: "MCQ",
+              options: qaPair.options,
+              answer: qaPair.answer,
+              context: qaPair.context,
+            });
+          });
+        } else if (questionType === "get_boolq" || questionType === "get_boolq_hard") {
+          qaPairsFromStorage["output"].forEach((qaPair) => {
+            const text = typeof qaPair === "string" ? qaPair : qaPair.question || qaPair.Question;
+            combinedQaPairs.push({
+              question: text,
+              question_type: "Boolean",
+            });
+          });
+        } else {
+          qaPairsFromStorage["output"].forEach((qaPair) => {
+            combinedQaPairs.push({
+              question:
+                qaPair.question || qaPair.question_statement || qaPair.Question,
+              options: qaPair.options,
+              answer: qaPair.answer || qaPair.Answer,
+              context: qaPair.context,
+              question_type: "Short",
+            });
+          });
+        }
+      }
+
       setQaPairs(combinedQaPairs);
     }
-  }, []);
+  }, [questionsProp]);
 
   const generateGoogleForm = async () => {
     try {
@@ -205,40 +253,48 @@ const Output = () => {
     };
   };
 
-  return (
-    <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-        <div className="flex flex-col h-full">
-          {/* Header - Responsive logo and title */}
-          <Link to="/">
-            <div className="flex items-end gap-[2px] px-4 sm:px-6">
-              <img 
-                src={logoPNG} 
-                alt="logo" 
-                className="w-12 sm:w-16 my-4 block" 
-              />
-              <div className="text-xl sm:text-2xl mb-3 font-extrabold">
-                <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                  Edu
-                </span>
-                <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                  Aid
-                </span>
-              </div>
-            </div>
+  if (qaPairs.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#02000F] flex items-center justify-center text-white">
+        <div className="fixed inset-0 pointer-events-none z-0">
+          <div className="absolute top-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-[#7600F2] opacity-[0.10] blur-[100px]" />
+          <div className="absolute bottom-[-10%] right-[-5%] w-[350px] h-[350px] rounded-full bg-[#00CBE7] opacity-[0.08] blur-[100px]" />
+        </div>
+        <div className="relative z-10 text-center p-10 rounded-2xl bg-white/[0.04] border border-white/[0.08] max-w-md">
+          <div className="text-5xl mb-4">📝</div>
+          <h2 className="text-2xl font-bold mb-3">No Questions Yet</h2>
+          <p className="text-[#718096] mb-6">Generate a quiz first to see your questions here.</p>
+          <Link to="/upload">
+            <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-white font-bold hover:scale-105 transition-all">
+              Generate a Quiz →
+            </button>
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#02000F] text-white">
+      {/* Ambient orbs */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-[#7600F2] opacity-[0.10] blur-[100px]" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[350px] h-[350px] rounded-full bg-[#00CBE7] opacity-[0.08] blur-[100px]" />
+      </div>
+      <div className="relative z-10 flex flex-col min-h-screen pt-24 pb-10">
+        <div className="flex flex-col flex-1 max-w-4xl mx-auto w-full px-2 sm:px-4">
 
           {/* Title and Shuffle Button */}
-          <div className="flex justify-between items-center mt-3 mx-4 sm:mx-6">
-            <div className="font-bold text-lg sm:text-xl text-white">
+          <div className="flex justify-between items-center mb-6">
+            <div className="font-bold text-2xl sm:text-3xl bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
               Generated Questions
             </div>
             <button
               className={`${
                 editingIndex !== null
-                  ? 'bg-gray-500 cursor-not-allowed'
-                  : 'bg-[#7C3AED] hover:bg-[#5A2AD9]'
-              } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
+                  ? 'bg-white/10 cursor-not-allowed text-white/40'
+                  : 'bg-[#7600F2] hover:bg-[#6000d0] text-white'
+              } px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2 border border-white/10`}
               onClick={handleShuffleQuestions}
               disabled={editingIndex !== null}
             >
@@ -257,7 +313,7 @@ const Output = () => {
                 return (
                   <div
                     key={index}
-                    className="px-3 sm:px-4 bg-[#d9d9d90d] border-black border my-2 sm:my-3 mx-1 sm:mx-2 rounded-xl py-3 sm:py-4"
+                    className="px-4 sm:px-5 bg-white/[0.03] border border-white/[0.07] my-3 rounded-2xl py-4 sm:py-5 hover:bg-white/[0.05] transition-colors"
                   >
                     <div className="flex justify-between items-center mb-2">
                       <div className="text-[#E4E4E4] text-xs sm:text-sm">
@@ -424,3 +480,4 @@ const Output = () => {
 
 
 export default Output;
+

@@ -1,14 +1,41 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import "../index.css";
-import logo_trans from "../assets/aossie_logo_transparent.png"
 import { Link } from "react-router-dom";
+import { FiList, FiToggleRight, FiEdit3, FiGrid } from "react-icons/fi";
+
+const QUESTION_TYPES = [
+  {
+    id: "get_mcq",
+    label: "Multiple Choice",
+    desc: "Four options per question — classic quiz format",
+    Icon: FiList,
+    gradient: "from-[#7600F2] to-[#00CBE7]",
+  },
+  {
+    id: "get_boolq",
+    label: "True / False",
+    desc: "Binary answers, great for quick knowledge checks",
+    Icon: FiToggleRight,
+    gradient: "from-[#FF005C] to-[#7600F2]",
+  },
+  {
+    id: "get_shortq",
+    label: "Short Answer",
+    desc: "Open-ended responses that test deeper understanding",
+    Icon: FiEdit3,
+    gradient: "from-[#00CBE7] to-[#7600F2]",
+  },
+  {
+    id: "get_problems",
+    label: "All Types",
+    desc: "A mix of every question type for comprehensive practice",
+    Icon: FiGrid,
+    gradient: "from-[#FF005C] via-[#7600F2] to-[#00CBE7]",
+  },
+];
 
 const Question_Type = () => {
   const [selectedOption, setSelectedOption] = useState(null);
-
-  const handleOptionClick = (option) => {
-    setSelectedOption(option);
-  };
 
   const handleSaveToLocalStorage = () => {
     if (selectedOption) {
@@ -17,90 +44,104 @@ const Question_Type = () => {
   };
 
   return (
-    <div className="popup w-full min-h-screen bg-[#02000F] flex justify-center items-center ">
-      <div className="w-full bg-cust bg-opacity-50 bg-custom-gradient shadow-lg p-6 sm:p-10">
-        {/* Header */}
-        <Link to="/" className="flex flex-col sm:flex-row items-center gap-4 mb-6">
-          <img
-            src={logo_trans}
-            alt="logo"
-            className="w-20 sm:w-24 object-contain"
-          />
-          <div className="text-4xl sm:text-5xl font-extrabold text-center sm:text-left">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-              Edu
-            </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Aid
-            </span>
-          </div>
-        </Link>
+    <div className="min-h-screen bg-[#02000F] text-white">
+      {/* Ambient orbs */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full bg-[#7600F2] opacity-[0.10] blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[400px] h-[400px] rounded-full bg-[#00CBE7] opacity-[0.08] blur-[100px]" />
+        <div className="absolute top-[40%] right-[10%] w-[250px] h-[250px] rounded-full bg-[#FF005C] opacity-[0.05] blur-[80px]" />
+      </div>
 
-        {/* Title */}
-        <div className="text-center">
-          <h2 className="text-white text-3xl sm:text-4xl font-extrabold">
-            What’s on your Mind?
-          </h2>
-          <p className="text-white text-lg sm:text-xl font-medium mt-2">
-            Choose one
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen pt-24 pb-12 px-4">
+        {/* Header text */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/[0.04] text-xs text-white/50 uppercase tracking-widest mb-5">
+            Step 1 of 2
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent mb-3">
+            What type of quiz?
+          </h1>
+          <p className="text-white/50 text-base sm:text-lg max-w-md mx-auto">
+            Pick the question format that works best for your learning goal.
           </p>
         </div>
 
-        {/* Options */}
-        <div className="flex flex-col items-center mt-8 gap-4 w-full">
-          {[
-            { id: "get_shortq", label: "Short-Answer Type Questions" },
-            { id: "get_mcq", label: "Multiple Choice Questions" },
-            { id: "get_boolq", label: "True/False Questions" },
-            { id: "get_problems", label: "All Questions" },
-          ].map((option) => (
-            <div
-              key={option.id}
-              onClick={() => handleOptionClick(option.id)}
-              className={`w-full max-w-xl flex items-center gap-6 px-6 py-5 rounded-xl cursor-pointer bg-[#202838] bg-opacity-50 hover:bg-opacity-70 transition-all duration-200 ${
-                selectedOption === option.id ? "ring-2 ring-[#00CBE7]" : ""
-              }`}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleOptionClick(option.id);
-              }}
-            >
-              <div
-                className={`w-10 h-10 rounded-full flex-shrink-0 ${
-                  selectedOption === option.id
-                    ? "bg-gradient-to-b from-[#405EED] to-[#01CBE7]"
-                    : "bg-[#999C9D]"
+        {/* Option cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
+          {QUESTION_TYPES.map((option) => {
+            const isSelected = selectedOption === option.id;
+            return (
+              <button
+                key={option.id}
+                onClick={() => setSelectedOption(option.id)}
+                className={`group relative text-left px-6 py-5 rounded-2xl border transition-all duration-200 cursor-pointer focus:outline-none ${
+                  isSelected
+                    ? "border-[#7600F2] bg-[#7600F2]/10 shadow-lg shadow-[#7600F2]/10"
+                    : "border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20"
                 }`}
-              ></div>
-              <div className="text-white text-xl sm:text-2xl font-medium">
-                {option.label}
-              </div>
-            </div>
-          ))}
+              >
+                {isSelected && (
+                  <div className="absolute inset-0 rounded-2xl ring-1 ring-[#7600F2]/60 pointer-events-none" />
+                )}
+
+                <div className="flex items-start gap-4">
+                  <div
+                    className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 bg-gradient-to-br ${option.gradient} ${
+                      isSelected ? "opacity-100" : "opacity-60 group-hover:opacity-80"
+                    } transition-opacity`}
+                  >
+                    <option.Icon className="w-5 h-5 text-white" />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-base text-white mb-1">
+                      {option.label}
+                    </div>
+                    <div className="text-white/50 text-sm leading-snug">
+                      {option.desc}
+                    </div>
+                  </div>
+
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all ${
+                      isSelected
+                        ? "border-[#7600F2] bg-[#7600F2]"
+                        : "border-white/20"
+                    }`}
+                  >
+                    {isSelected && (
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Action Button */}
-        <div className="text-center mt-10">
+        {/* CTA */}
+        <div className="mt-10 w-full max-w-2xl">
           {selectedOption ? (
-            <Link to="/input">
-              <button
-                onClick={handleSaveToLocalStorage}
-                className="rounded-2xl text-xl sm:text-2xl text-white px-6 sm:px-8 font-bold py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:brightness-110 transition-all"
-              >
-                Fire Up 🚀
+            <Link to="/input" onClick={handleSaveToLocalStorage} className="block">
+              <button className="w-full py-4 rounded-2xl font-bold text-lg bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:brightness-110 transition-all shadow-lg shadow-[#7600F2]/20">
+                Continue &rarr;
               </button>
             </Link>
           ) : (
             <button
-              onClick={() => alert("Please select a question type.")}
-              className="rounded-2xl text-xl sm:text-2xl text-white px-6 sm:px-8 font-bold py-3 bg-gray-500 cursor-not-allowed"
               disabled
+              className="w-full py-4 rounded-2xl font-bold text-lg bg-white/[0.05] text-white/30 border border-white/[0.07] cursor-not-allowed"
             >
-              Fire Up 🚀
+              Select a type to continue
             </button>
           )}
         </div>
+
+        <Link to="/upload" className="mt-5 text-white/30 hover:text-white/60 text-sm transition-colors">
+          &larr; Back to input
+        </Link>
       </div>
     </div>
   );

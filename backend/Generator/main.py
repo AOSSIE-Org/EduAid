@@ -53,7 +53,13 @@ class MCQGenerator:
         sentences = tokenize_into_sentences(text)
         modified_text = " ".join(sentences)
 
-        keywords = identify_keywords(self.nlp, modified_text, inp['max_questions'], self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
+        # Try to extract more keywords than requested, then filter down
+        # This increases the chance of finding enough valid keywords
+        target_keywords = min(inp['max_questions'] * 2, len(sentences))
+        keywords = identify_keywords(self.nlp, modified_text, target_keywords, self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
+        
+        # Trim to requested amount after validation
+        keywords = keywords[:inp['max_questions']]
         keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
 
         for k in keyword_sentence_mapping.keys():
@@ -110,7 +116,10 @@ class ShortQGenerator:
         sentences = tokenize_into_sentences(text)
         modified_text = " ".join(sentences)
 
-        keywords = identify_keywords(self.nlp, modified_text, inp['max_questions'], self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
+        # Extract 2x keywords to increase the chance of reaching max_questions
+        target_keywords = min(inp['max_questions'] * 2, len(sentences))
+        keywords = identify_keywords(self.nlp, modified_text, target_keywords, self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
+        keywords = keywords[:inp['max_questions']]
         keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
         
         for k in keyword_sentence_mapping.keys():

@@ -1,110 +1,115 @@
-import React from "react";
-import "../index.css";
-import logoPNG from "../assets/aossie_logo_transparent.png";
-import stars from "../assets/stars.png";
-import { FaArrowRight } from "react-icons/fa";
+﻿import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { useNavigate } from 'react-router-dom';
+
+const difficultyColor = (d = "") => {
+  if (!d) return "text-[#718096]";
+  const l = d.toLowerCase();
+  if (l.includes("easy")) return "text-green-400";
+  if (l.includes("medium")) return "text-yellow-400";
+  if (l.includes("hard")) return "text-red-400";
+  return "text-[#c084fc]";
+};
+
+const modeIcon = (mode) => (mode === "interactive" ? "" : "");
 
 const Previous = () => {
   const navigate = useNavigate();
 
-  const getQuizzesFromLocalStorage = () => {
-    const quizzes = localStorage.getItem("last5Quizzes");
-    return quizzes ? JSON.parse(quizzes) : [];
+  const getQuizzes = () => {
+    try { return JSON.parse(localStorage.getItem("last5Quizzes")) || []; }
+    catch { return []; }
   };
 
-  const [quizzes, setQuizzes] = React.useState(getQuizzesFromLocalStorage());
+  const [quizzes, setQuizzes] = React.useState(getQuizzes);
 
   const handleQuizClick = (quiz) => {
-    localStorage.setItem("qaPairs", JSON.stringify(quiz.qaPair));
-    navigate('/output'); 
+    navigate("/quiz", { state: { mode: quiz.mode || "static", questions: quiz.qaPair } });
   };
 
-  const handleClearQuizzes = () => {
+  const handleClear = () => {
     localStorage.removeItem("last5Quizzes");
     setQuizzes([]);
   };
 
-  const handleBack = () => {
-    navigate('/'); 
-  };
-
   return (
-    <div className="w-screen h-screen bg-[#02000F] flex flex-col justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient p-4 md:p-6 overflow-y-auto">
-        {/* Header */}
-        <Link to="/" className="flex items-end gap-2">
-          <img src={logoPNG} alt="logo" className="w-14 md:w-16" />
-          <div className="text-xl md:text-2xl font-extrabold">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-              Edu
-            </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Aid
-            </span>
-          </div>
-        </Link>
+    <div className="min-h-screen bg-[#02000F] text-white pt-24 pb-16 px-4">
+      {/* Orbs */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[-10%] right-[-5%] w-[400px] h-[400px] rounded-full bg-[#7600F2] opacity-[0.10] blur-[100px]" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[350px] h-[350px] rounded-full bg-[#00CBE7] opacity-[0.08] blur-[100px]" />
+      </div>
 
-        {/* Titles */}
-        <div className="mt-3 text-right">
-          <div className="text-white text-lg md:text-xl font-bold">Quiz Dashboard</div>
-          <div className="text-white flex justify-end gap-2 text-sm md:text-xl font-bold items-center">
-            Your{" "}
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Generated Quizzes
-            </span>
-            <img className="h-4 w-4 md:h-5 md:w-5" src={stars} alt="stars" />
-          </div>
+      <div className="relative z-10 max-w-3xl mx-auto">
+        {/* Page Header */}
+        <div className="mb-10">
+          <p className="text-[#7600F2] text-sm font-bold uppercase tracking-widest mb-2">Your Activity</p>
+          <h1 className="text-3xl sm:text-4xl font-extrabold">Quiz History</h1>
+          <p className="text-[#718096] mt-2">Revisit and re-take your recently generated quizzes.</p>
         </div>
 
-        {/* Subheading */}
-        <div className="text-center my-3 text-sm md:text-xl font-bold">
-          <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-            Your Quizzes
-          </span>
-        </div>
-
-        {/* Quiz List */}
-        <div className="mx-auto max-w-4xl bg-[#83b6cc40] rounded-xl p-4 mb-4 max-h-[60vh] overflow-y-auto">
-          {quizzes.length === 0 ? (
-            <div className="text-center text-white text-sm">No quizzes available</div>
-          ) : (
-            <ul className="space-y-2">
-              {quizzes.map((quiz, index) => (
-                <li
-                  key={index}
-                  className="bg-[#202838] p-4 rounded-lg text-white cursor-pointer border-dotted border-2 border-[#7600F2] flex justify-between items-center"
+        {quizzes.length === 0 ? (
+          <div className="text-center py-20 rounded-2xl bg-white/[0.03] border border-white/[0.07]">
+            <div className="text-5xl mb-4"></div>
+            <h3 className="text-xl font-bold mb-2">No quizzes yet</h3>
+            <p className="text-[#718096] mb-6">Generate your first quiz to see it here.</p>
+            <Link to="/upload">
+              <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-white font-bold hover:scale-105 transition-all">
+                Generate a Quiz 
+              </button>
+            </Link>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-col gap-4 mb-8">
+              {quizzes.map((quiz, i) => (
+                <button
+                  key={i}
                   onClick={() => handleQuizClick(quiz)}
+                  className="group w-full text-left p-5 rounded-2xl bg-white/[0.03] border border-white/[0.07] hover:border-[#7600F2]/40 hover:bg-[#7600F2]/[0.04] transition-all duration-200"
                 >
-                  <div>
-                    <div className="font-bold text-sm md:text-base">
-                      {quiz.difficulty} - {quiz.numQuestions} Questions
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {/* Mode badge */}
+                      <div className="w-11 h-11 rounded-xl bg-[#7600F2]/15 border border-[#7600F2]/25 flex items-center justify-center text-xl flex-shrink-0">
+                        {modeIcon(quiz.mode)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-sm font-bold ${difficultyColor(quiz.difficulty)}`}>
+                            {quiz.difficulty || "Unknown"}
+                          </span>
+                          <span className="text-white/20"></span>
+                          <span className="text-sm text-white font-semibold">
+                            {quiz.numQuestions} Questions
+                          </span>
+                          <span className="text-white/20"></span>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-[#a0aec0] capitalize">
+                            {quiz.mode || "static"}
+                          </span>
+                        </div>
+                        <div className="text-xs text-[#4a5568] mt-1">{quiz.date}</div>
+                      </div>
                     </div>
-                    <div className="mt-2 text-xs md:text-sm">{quiz.date}</div>
+                    <svg className="w-5 h-5 text-[#4a5568] group-hover:text-[#7600F2] group-hover:translate-x-1 transition-all flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                   </div>
-                  <FaArrowRight className="text-[#7600F2]" size={18} />
-                </li>
+                </button>
               ))}
-            </ul>
-          )}
-        </div>
+            </div>
 
-        {/* Buttons */}
-        <div className="flex flex-wrap justify-center gap-4">
-          <button
-            onClick={handleBack}
-            className="bg-black text-white px-5 py-2 text-sm md:text-base border-gradient"
-          >
-            Back
-          </button>
-          <button
-            onClick={handleClearQuizzes}
-            className="bg-black text-white px-5 py-2 text-sm md:text-base border-gradient"
-          >
-            Clear
-          </button>
-        </div>
+            <div className="flex justify-between items-center">
+              <p className="text-[#4a5568] text-sm">{quizzes.length} quiz{quizzes.length !== 1 ? "zes" : ""} saved</p>
+              <button
+                onClick={handleClear}
+                className="px-4 py-2 rounded-xl border border-red-500/20 text-red-400/70 text-sm font-semibold hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/40 transition-all duration-200"
+              >
+                Clear History
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

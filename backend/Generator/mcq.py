@@ -1,16 +1,16 @@
 import string
 import nltk
-import pke
 import torch
 from nltk.tokenize import sent_tokenize
 from flashtext import KeywordProcessor
 from nltk.corpus import stopwords
 from sense2vec import Sense2Vec
 from similarity.normalized_levenshtein import NormalizedLevenshtein
+import spacy
+from Generator.nltk_utils import safe_nltk_download
 
-nltk.download('brown')
-nltk.download('stopwords')
-nltk.download('popular')
+safe_nltk_download('corpora/brown')
+safe_nltk_download('corpora/stopwords')
 
 def is_word_available(word, s2v_model):
     word = word.replace(" ", "_")
@@ -57,15 +57,31 @@ def find_similar_words(word, s2v_model):
 def get_answer_choices(answer, s2v_model):
     choices = []
 
+    source = "sense2vec"
     try:
         choices = find_similar_words(answer, s2v_model)
         if len(choices) > 0:
             print("Generated choices successfully for word:", answer)
-            return choices, "sense2vec"
+            return choices, source
     except Exception as e:
         print(f"Failed to generate choices for word: {answer}. Error: {e}")
+    
+    # Fallback: if sense2vec fails, generate generic distractors
+    if len(choices) < 3:
+        source = "fallback"
+        print(f"sense2vec returned {len(choices)} choices for '{answer}', adding generic fallbacks")
+        fallbacks = [
+            f"Not {answer}",
+            "None of the above",
+            "Incorrect option",
+            "Another answer",
+            "Different response"
+        ]
+        for fb in fallbacks:
+            if fb not in choices and len(choices) < 10:
+                choices.append(fb)
 
-    return choices, "None"
+    return choices, source
 
 def tokenize_into_sentences(text):
     sentences = [sent_tokenize(text)]
@@ -100,34 +116,42 @@ def are_words_distant(words_list, current_word, threshold, normalized_levenshtei
     score_list = [normalized_levenshtein.distance(word.lower(), current_word.lower()) for word in words_list]
     return min(score_list) >= threshold
 
-def filter_useful_phrases(phrase_keys, max_count, normalized_levenshtein):
+def filter_useful_phrases(phrase_keys, max_count, normalized_levenshtein, threshold=0.5):
     filtered_phrases = []
     if phrase_keys:
         filtered_phrases.append(phrase_keys[0])
         for ph in phrase_keys[1:]:
-            if are_words_distant(filtered_phrases, ph, 0.7, normalized_levenshtein):
+            if are_words_distant(filtered_phrases, ph, threshold, normalized_levenshtein):
                 filtered_phrases.append(ph)
             if len(filtered_phrases) >= max_count:
                 break
     return filtered_phrases
 
-def extract_noun_phrases(text):
-    out = []
-    extractor = pke.unsupervised.MultipartiteRank()
-    extractor.load_document(input=text, language='en')
-    pos = {'PROPN', 'NOUN'}
-    stoplist = list(string.punctuation)
-    stoplist += stopwords.words('english')
-    extractor.candidate_selection(pos=pos)
-    try:
-        extractor.candidate_weighting(alpha=1.1, threshold=0.75, method='average')
-    except Exception as e:
-        print(f"Error in candidate weighting: {e}")
-        return out
+# Lazy-loaded spaCy model cache for noun phrase extraction
+_spacy_nlp = None
 
-    keyphrases = extractor.get_n_best(n=10)
-    out = [key[0] for key in keyphrases]
-    return out
+def _get_spacy_nlp():
+    global _spacy_nlp
+    if _spacy_nlp is None:
+        _spacy_nlp = spacy.load('en_core_web_sm')
+    return _spacy_nlp
+
+def extract_noun_phrases(text):
+    """Extract noun phrases using spaCy instead of pke"""
+    out = []
+    try:
+        nlp = _get_spacy_nlp()
+        doc = nlp(text)
+        # Extract noun phrases (multi-word nouns and proper nouns)
+        for chunk in doc.noun_chunks:
+            phrase = chunk.text.lower().strip()
+            if len(phrase.split()) > 1 and phrase not in out:
+                out.append(phrase)
+        # Limit to top 10
+        return out[:10]
+    except Exception as e:
+        print(f"Error extracting noun phrases: {e}")
+        return out
 
 def extract_phrases_from_doc(doc):
     phrases = {}
@@ -195,6 +219,11 @@ def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, 
         question_statement = decoded_question.replace("question:", "").strip()
         options, options_algorithm = get_answer_choices(answer, sense2vec_model)
         options = filter_useful_phrases(options, 10, normalized_levenshtein)
+        
+        # Ensure we have at least 3 distractors
+        while len(options) < 3:
+            options.append(f"Option {len(options) + 1}")
+        
         extra_options = options[3:]
         options = options[:3]
 
