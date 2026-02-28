@@ -7,16 +7,13 @@ import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
-  const [questionType] = useState(
-    localStorage.getItem("selectedQuestionType")
-  );
+  const [questionType] = useState(localStorage.getItem("selectedQuestionType"));
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedQuestion, setEditedQuestion] = useState("");
   const [editedAnswer, setEditedAnswer] = useState("");
   const [editedOptions, setEditedOptions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  /* ------------------ Helpers ------------------ */
+  const [formError, setFormError] = useState(null);
 
   const shuffleArray = (array = []) => {
     const shuffled = [...array];
@@ -27,13 +24,10 @@ const Output = () => {
     return shuffled;
   };
 
-  // ✅ Deduplicated options (CodeRabbit fix)
   const shuffledOptionsMap = useMemo(() => {
     return qaPairs.map((qa) =>
       qa.options
-        ? shuffleArray(
-            [...new Set([...(qa.options || []), qa.answer].filter(Boolean))]
-          )
+        ? shuffleArray([...new Set([...(qa.options || []), qa.answer].filter(Boolean))])
         : []
     );
   }, [qaPairs]);
@@ -44,20 +38,15 @@ const Output = () => {
   const shuffledOptions = shuffledOptionsMap[currentIndex] || [];
   const isEditing = editingIndex === currentIndex;
 
-  /* ------------------ Navigation ------------------ */
-
+  /* Navigation */
   const handleNext = () => {
     if (isEditing || !hasQuestions) return;
-    if (currentIndex < totalQuestions - 1) {
-      setCurrentIndex((prev) => prev + 1);
-    }
+    if (currentIndex < totalQuestions - 1) setCurrentIndex((prev) => prev + 1);
   };
 
   const handlePrevious = () => {
     if (isEditing || !hasQuestions) return;
-    if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1);
-    }
+    if (currentIndex > 0) setCurrentIndex((prev) => prev - 1);
   };
 
   const handleShuffleQuestions = () => {
@@ -66,8 +55,7 @@ const Output = () => {
     setCurrentIndex(0);
   };
 
-  /* ------------------ Editing ------------------ */
-
+  /* Editing */
   const handleEditQuestion = (index) => {
     setEditingIndex(index);
     setEditedQuestion(qaPairs[index].question);
@@ -100,8 +88,7 @@ const Output = () => {
     setEditedOptions(updated);
   };
 
-  /* ------------------ Load Data (Safe) ------------------ */
-
+  /* Load Data */
   useEffect(() => {
     let stored = {};
     try {
@@ -111,7 +98,6 @@ const Output = () => {
     }
 
     const combined = [];
-
     if (Array.isArray(stored.output_mcq?.questions)) {
       stored.output_mcq.questions.forEach((q) => {
         combined.push({
@@ -135,32 +121,30 @@ const Output = () => {
     }
 
     setQaPairs(combined);
-    setCurrentIndex(0); // ✅ important
+    setCurrentIndex(0);
   }, [questionType]);
 
-  /* ------------------ Google Form ------------------ */
-
+  /* Google Form */
   const generateGoogleForm = async () => {
-  try {
-    const res = await apiClient.post("/generate_gform", {
-      qa_pairs: qaPairs,
-      question_type: questionType,
-    });
-
-    const formUrl = res?.form_link;
-
-    if (formUrl) {
-      window.open(formUrl, "_blank", "noopener,noreferrer");
-    } else {
-      console.error("Form link missing in response", res);
+    setFormError(null);
+    try {
+      const res = await apiClient.post("/generate_gform", {
+        qa_pairs: qaPairs,
+        question_type: questionType,
+      });
+      const formUrl = res?.form_link;
+      if (formUrl) {
+        window.open(formUrl, "_blank", "noopener,noreferrer");
+      } else {
+        setFormError("Failed to generate Google Form. Please try again.");
+      }
+    } catch (err) {
+      console.error("Failed to generate Google Form:", err);
+      setFormError("Failed to generate Google Form. Please try again.");
     }
-  } catch (err) {
-    console.error("Failed to generate Google Form:", err);
-  }
-};
+  };
 
-  /* ------------------ UI ------------------ */
-
+  /* UI */
   return (
     <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
       <div className="w-full h-full bg-custom-gradient flex flex-col">
@@ -200,7 +184,7 @@ const Output = () => {
                   )}
 
                   <button
-                    className="mt-4 bg-teal-600 px-4 py-2 rounded text-white"
+                    className="flex items-center gap-1 mt-4 bg-teal-600 px-4 py-2 rounded text-white"
                     onClick={() => handleEditQuestion(currentIndex)}
                   >
                     <FiEdit2 /> Edit
@@ -215,32 +199,33 @@ const Output = () => {
                   />
 
                   {editedOptions.map((opt, i) => (
-  <input
-    key={i}
-    value={opt}
-    onChange={(e) => handleOptionChange(i, e.target.value)}
-    className="w-full p-2 mt-2 bg-black text-white rounded"
-  />
-))}
+                    <input
+                      key={i}
+                      value={opt}
+                      onChange={(e) => handleOptionChange(i, e.target.value)}
+                      className="w-full p-2 mt-2 bg-black text-white rounded"
+                    />
+                  ))}
 
-{/* ✅ Answer editor (CodeRabbit fix) */}
-<input
-  value={editedAnswer}
-  onChange={(e) => setEditedAnswer(e.target.value)}
-  placeholder="Correct answer"
-  className="w-full p-2 mt-3 bg-black text-white rounded border border-gray-600"
-/>
+                  {/* ✅ Answer editor with label */}
+                  <label className="text-white mt-2 block">Correct Answer</label>
+                  <input
+                    value={editedAnswer}
+                    onChange={(e) => setEditedAnswer(e.target.value)}
+                    placeholder="Enter correct answer"
+                    className="w-full p-2 mt-1 bg-black text-white rounded border border-gray-600"
+                  />
 
                   <div className="mt-3 flex gap-2">
                     <button
                       onClick={() => handleSaveQuestion(currentIndex)}
-                      className="bg-green-600 px-4 py-2 rounded text-white"
+                      className="flex items-center gap-1 bg-green-600 px-4 py-2 rounded text-white"
                     >
                       <FiCheck /> Save
                     </button>
                     <button
                       onClick={handleCancelEdit}
-                      className="bg-gray-600 px-4 py-2 rounded text-white"
+                      className="flex items-center gap-1 bg-gray-600 px-4 py-2 rounded text-white"
                     >
                       <FiX /> Cancel
                     </button>
@@ -267,16 +252,15 @@ const Output = () => {
 
           <button
             onClick={handleNext}
-            disabled={
-              isEditing || !hasQuestions || currentIndex >= totalQuestions - 1
-            }
+            disabled={isEditing || !hasQuestions || currentIndex >= totalQuestions - 1}
             className="px-4 py-2 rounded text-white bg-teal-600 disabled:bg-gray-500"
           >
             Next ➡
           </button>
         </div>
 
-        <div className="flex justify-center pb-6">
+        {/* Google Form Button + Error */}
+        <div className="flex flex-col items-center pb-6">
           <button
             onClick={generateGoogleForm}
             disabled={!hasQuestions}
@@ -284,6 +268,10 @@ const Output = () => {
           >
             Generate Google Form
           </button>
+
+          {formError && (
+            <p className="text-red-500 text-sm mt-2 text-center">{formError}</p>
+          )}
         </div>
       </div>
     </div>
