@@ -141,16 +141,23 @@ const Output = () => {
   /* ------------------ Google Form ------------------ */
 
   const generateGoogleForm = async () => {
-    try {
-      const res = await apiClient.post("/generate_gform", {
-        qa_pairs: qaPairs,
-        question_type: questionType,
-      });
-      window.open(res.form_link, "_blank");
-    } catch (err) {
-      console.error("Failed to generate form", err);
+  try {
+    const res = await apiClient.post("/generate_gform", {
+      qa_pairs: qaPairs,
+      question_type: questionType,
+    });
+
+    const formUrl = res?.form_link;
+
+    if (formUrl) {
+      window.open(formUrl, "_blank", "noopener,noreferrer");
+    } else {
+      console.error("Form link missing in response", res);
     }
-  };
+  } catch (err) {
+    console.error("Failed to generate Google Form:", err);
+  }
+};
 
   /* ------------------ UI ------------------ */
 
@@ -208,13 +215,21 @@ const Output = () => {
                   />
 
                   {editedOptions.map((opt, i) => (
-                    <input
-                      key={i}
-                      value={opt}
-                      onChange={(e) => handleOptionChange(i, e.target.value)}
-                      className="w-full p-2 mt-2 bg-black text-white rounded"
-                    />
-                  ))}
+  <input
+    key={i}
+    value={opt}
+    onChange={(e) => handleOptionChange(i, e.target.value)}
+    className="w-full p-2 mt-2 bg-black text-white rounded"
+  />
+))}
+
+{/* ✅ Answer editor (CodeRabbit fix) */}
+<input
+  value={editedAnswer}
+  onChange={(e) => setEditedAnswer(e.target.value)}
+  placeholder="Correct answer"
+  className="w-full p-2 mt-3 bg-black text-white rounded border border-gray-600"
+/>
 
                   <div className="mt-3 flex gap-2">
                     <button
