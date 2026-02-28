@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import "../index.css";
 import logoPNG from "../assets/aossie_logo_transparent.png";
 import { Link } from "react-router-dom";
@@ -7,6 +7,7 @@ import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
+  const [shuffledOptionsMap, setShuffledOptionsMap] = useState([]);
   const [questionType] = useState(localStorage.getItem("selectedQuestionType"));
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedQuestion, setEditedQuestion] = useState("");
@@ -24,14 +25,6 @@ const Output = () => {
     return shuffled;
   };
 
-  const shuffledOptionsMap = useMemo(() => {
-    return qaPairs.map((qa) =>
-      qa.options
-        ? shuffleArray([...new Set([...(qa.options || []), qa.answer].filter(Boolean))])
-        : []
-    );
-  }, [qaPairs]);
-
   const totalQuestions = qaPairs.length;
   const hasQuestions = totalQuestions > 0;
   const qaPair = hasQuestions ? qaPairs[currentIndex] : null;
@@ -40,18 +33,28 @@ const Output = () => {
 
   /* Navigation */
   const handleNext = () => {
-    if (isEditing || !hasQuestions) return;
-    if (currentIndex < totalQuestions - 1) setCurrentIndex((prev) => prev + 1);
+    if (isEditing || currentIndex >= totalQuestions - 1) return;
+    setCurrentIndex((prev) => prev + 1);
   };
 
   const handlePrevious = () => {
-    if (isEditing || !hasQuestions) return;
-    if (currentIndex > 0) setCurrentIndex((prev) => prev - 1);
+    if (isEditing || currentIndex === 0) return;
+    setCurrentIndex((prev) => prev - 1);
   };
 
   const handleShuffleQuestions = () => {
     if (isEditing) handleCancelEdit();
-    setQaPairs(shuffleArray(qaPairs));
+
+    const shuffledQAs = shuffleArray(qaPairs);
+    setQaPairs(shuffledQAs);
+
+    const shuffledOpts = shuffledQAs.map((qa) =>
+      qa.options
+        ? shuffleArray([...new Set([...(qa.options || []), qa.answer].filter(Boolean))])
+        : []
+    );
+
+    setShuffledOptionsMap(shuffledOpts);
     setCurrentIndex(0);
   };
 
@@ -72,6 +75,13 @@ const Output = () => {
       options: editedOptions,
     };
     setQaPairs(updated);
+
+    const updatedShuffled = [...shuffledOptionsMap];
+    updatedShuffled[index] = shuffleArray(
+      [...new Set([...(editedOptions || []), editedAnswer].filter(Boolean))]
+    );
+    setShuffledOptionsMap(updatedShuffled);
+
     handleCancelEdit();
   };
 
@@ -98,13 +108,13 @@ const Output = () => {
     }
 
     const combined = [];
+
     if (Array.isArray(stored.output_mcq?.questions)) {
       stored.output_mcq.questions.forEach((q) => {
         combined.push({
           question: q.question_statement,
           answer: q.answer,
           options: q.options,
-          question_type: "MCQ",
         });
       });
     }
@@ -115,12 +125,19 @@ const Output = () => {
           question: q.question || q.question_statement,
           answer: q.answer,
           options: q.options,
-          question_type: "Short",
         });
       });
     }
 
     setQaPairs(combined);
+
+    const shuffled = combined.map((qa) =>
+      qa.options
+        ? shuffleArray([...new Set([...(qa.options || []), qa.answer].filter(Boolean))])
+        : []
+    );
+
+    setShuffledOptionsMap(shuffled);
     setCurrentIndex(0);
   }, [questionType]);
 
@@ -132,14 +149,12 @@ const Output = () => {
         qa_pairs: qaPairs,
         question_type: questionType,
       });
-      const formUrl = res?.form_link;
-      if (formUrl) {
-        window.open(formUrl, "_blank", "noopener,noreferrer");
+      if (res?.form_link) {
+        window.open(res.form_link, "_blank", "noopener,noreferrer");
       } else {
         setFormError("Failed to generate Google Form. Please try again.");
       }
-    } catch (err) {
-      console.error("Failed to generate Google Form:", err);
+    } catch {
       setFormError("Failed to generate Google Form. Please try again.");
     }
   };
@@ -167,13 +182,22 @@ const Output = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 mt-4">
+          {!hasQuestions && (
+            <div className="text-center text-gray-300 mt-20">
+              <p className="text-xl font-semibold">No questions available</p>
+              <p className="text-sm mt-2">
+                Please generate questions to preview them here.
+              </p>
+            </div>
+          )}
+
           {qaPair && (
             <div className="bg-[#ffffff0d] p-4 rounded-xl">
               {!isEditing ? (
                 <>
                   <p className="text-white text-lg">{qaPair.question}</p>
 
-                  {qaPair.options && (
+                  {shuffledOptions.length > 0 && (
                     <div className="mt-4 space-y-1">
                       {shuffledOptions.map((opt, i) => (
                         <div key={i} className="text-gray-200">
@@ -207,12 +231,10 @@ const Output = () => {
                     />
                   ))}
 
-                  {/* ✅ Answer editor with label */}
                   <label className="text-white mt-2 block">Correct Answer</label>
                   <input
                     value={editedAnswer}
                     onChange={(e) => setEditedAnswer(e.target.value)}
-                    placeholder="Enter correct answer"
                     className="w-full p-2 mt-1 bg-black text-white rounded border border-gray-600"
                   />
 
@@ -236,30 +258,6 @@ const Output = () => {
           )}
         </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between items-center px-6 pb-4">
-          <button
-            onClick={handlePrevious}
-            disabled={isEditing || !hasQuestions || currentIndex === 0}
-            className="px-4 py-2 rounded text-white bg-teal-600 disabled:bg-gray-500"
-          >
-            ⬅ Previous
-          </button>
-
-          <span className="text-white text-sm">
-            Question {hasQuestions ? currentIndex + 1 : 0} of {totalQuestions}
-          </span>
-
-          <button
-            onClick={handleNext}
-            disabled={isEditing || !hasQuestions || currentIndex >= totalQuestions - 1}
-            className="px-4 py-2 rounded text-white bg-teal-600 disabled:bg-gray-500"
-          >
-            Next ➡
-          </button>
-        </div>
-
-        {/* Google Form Button + Error */}
         <div className="flex flex-col items-center pb-6">
           <button
             onClick={generateGoogleForm}
