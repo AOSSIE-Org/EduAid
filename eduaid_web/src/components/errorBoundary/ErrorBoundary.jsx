@@ -2,12 +2,15 @@ import React, { Component } from "react";
 import "./ErrorBoundary.css";
 
 class ErrorBoundary extends Component {
+  static MAX_RETRIES = 3;
+
   constructor(props) {
     super(props);
     this.state = {
       hasError: false,
       error: null,
       errorInfo: null,
+      retryCount: 0,
     };
   }
 
@@ -35,15 +38,19 @@ class ErrorBoundary extends Component {
   }
 
   handleRetry = () => {
-    this.setState({
+    if (this.state.retryCount >= ErrorBoundary.MAX_RETRIES) return;
+
+    this.setState((prevState) => ({
       hasError: false,
       error: null,
       errorInfo: null,
-    });
+      retryCount: prevState.retryCount + 1,
+    }));
   };
 
   render() {
     if (this.state.hasError) {
+      const canRetry = this.state.retryCount < ErrorBoundary.MAX_RETRIES;
       const {
         title = "Something went wrong in this section.",
         message = "An unexpected error occurred. You can try again.",
@@ -65,13 +72,19 @@ class ErrorBoundary extends Component {
               </pre>
             )}
 
-            <button
-              type="button"
-              className="error-boundary-button"
-              onClick={this.handleRetry}
-            >
-              Try Again
-            </button>
+            {canRetry ? (
+              <button
+                type="button"
+                className="error-boundary-button"
+                onClick={this.handleRetry}
+              >
+                Try Again ({ErrorBoundary.MAX_RETRIES - this.state.retryCount} left)
+              </button>
+            ) : (
+              <p className="error-boundary-retry-limit">
+                Maximum retry attempts reached. Please refresh the page.
+              </p>
+            )}
           </div>
         </div>
       );
