@@ -6,8 +6,7 @@ from nltk.tokenize import sent_tokenize
 from flashtext import KeywordProcessor
 from nltk.corpus import stopwords
 from sense2vec import Sense2Vec
-from similarity.normalized_levenshtein import NormalizedLevenshtein
-
+from strsimpy.normalized_levenshtein import NormalizedLevenshtein
 nltk.download('brown')
 nltk.download('stopwords')
 nltk.download('popular')

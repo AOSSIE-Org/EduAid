@@ -9,7 +9,7 @@ from sense2vec import Sense2Vec
 from collections import OrderedDict
 from nltk import FreqDist
 from nltk.corpus import brown
-from similarity.normalized_levenshtein import NormalizedLevenshtein
+from strsimpy.normalized_levenshtein import NormalizedLevenshtein
 from Generator.mcq import tokenize_into_sentences, identify_keywords, find_sentences_with_keywords, generate_multiple_choice_questions, generate_normal_questions
 from Generator.encoding import beam_search_decoding
 from google.oauth2 import service_account
@@ -24,14 +24,13 @@ import fitz
 import mammoth
 
 class MCQGenerator:
-    
     def __init__(self):
-        self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
-        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
+        self.tokenizer = T5Tokenizer.from_pretrained('t5-small')
+        self.model = T5ForConditionalGeneration.from_pretrained('t5-small')
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
-        self.s2v = Sense2Vec().from_disk('s2v_old')
+        self.s2v = None
         self.fdist = FreqDist(brown.words())
         self.normalized_levenshtein = NormalizedLevenshtein()
         self.set_seed(42)
@@ -84,12 +83,12 @@ class MCQGenerator:
 class ShortQGenerator:
     
     def __init__(self):
-        self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
-        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
+        self.tokenizer = T5Tokenizer.from_pretrained('t5-small')
+        self.model = T5ForConditionalGeneration.from_pretrained('t5-small')
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
-        self.s2v = Sense2Vec().from_disk('s2v_old')
+        self.s2v = None
         self.fdist = FreqDist(brown.words())
         self.normalized_levenshtein = NormalizedLevenshtein()
         self.set_seed(42)
@@ -135,8 +134,8 @@ class ShortQGenerator:
 class ParaphraseGenerator:
     
     def __init__(self):
-        self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
-        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
+        self.tokenizer = T5Tokenizer.from_pretrained('t5-small')
+        self.model = T5ForConditionalGeneration.from_pretrained('t5-small')
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.set_seed(42)
@@ -192,8 +191,8 @@ class ParaphraseGenerator:
 class BoolQGenerator:
        
     def __init__(self):
-        self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
-        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Boolean-Questions')
+        self.tokenizer = T5Tokenizer.from_pretrained('t5-small')
+        self.model = T5ForConditionalGeneration.from_pretrained('t5-small')
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.set_seed(42)
@@ -241,8 +240,8 @@ class BoolQGenerator:
 class AnswerPredictor:
           
     def __init__(self):
-        self.tokenizer = T5Tokenizer.from_pretrained('t5-large', model_max_length=512)
-        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Answer-Predictor')
+        self.tokenizer = T5Tokenizer.from_pretrained('t5-small')
+        self.model = T5ForConditionalGeneration.from_pretrained('t5-small')
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         

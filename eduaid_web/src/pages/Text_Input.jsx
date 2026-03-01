@@ -1,11 +1,11 @@
 import React, { useState, useRef } from "react";
 import "../index.css";
-import logo_trans from "../assets/aossie_logo_transparent.png"
+import logo_trans from "../assets/aossie_logo_transparent.png";
 import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
-import { Link,useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 
 const Text_Input = () => {
@@ -15,12 +15,11 @@ const Text_Input = () => {
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
-  const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
 
   const toggleSwitch = () => {
-    setIsToggleOn((isToggleOn + 1) % 2);
+    setIsToggleOn((prev) => (prev + 1) % 2);
   };
 
   const handleFileUpload = async (event) => {
@@ -34,46 +33,15 @@ const Text_Input = () => {
         setText(data.content || data.error);
       } catch (error) {
         console.error("Error uploading file:", error);
-        setText("Error uploading file");
+        alert("Error uploading file.");
       }
     }
   };
 
   const handleClick = (event) => {
-    event.preventDefault(); // Prevent default behavior
-    event.stopPropagation(); // Stop event propagation
-
-    // Open file input dialog
+    event.preventDefault();
+    event.stopPropagation();
     fileInputRef.current.click();
-  };
-
-  const handleSaveToLocalStorage = async () => {
-    setLoading(true);
-
-    // Check if a Google Doc URL is provided
-    if (docUrl) {
-      try {
-        const data = await apiClient.post("/get_content", { document_url: docUrl });
-        setDocUrl("");
-        setText(data || "Error in retrieving");
-      } catch (error) {
-        console.error("Error:", error);
-        setText("Error retrieving Google Doc content");
-      } finally {
-        setLoading(false);
-      }
-    } else if (text) {
-      // Proceed with existing functionality for local storage
-      localStorage.setItem("textContent", text);
-      localStorage.setItem("difficulty", difficulty);
-      localStorage.setItem("numQuestions", numQuestions);
-
-      await sendToBackend(
-        text,
-        difficulty,
-        localStorage.getItem("selectedQuestionType")
-      );
-    }
   };
 
   const handleDifficultyChange = (e) => {
@@ -90,17 +58,15 @@ const Text_Input = () => {
 
   const getEndpoint = (difficulty, questionType) => {
     if (difficulty !== "Easy Difficulty") {
-      if (questionType === "get_shortq") {
-        return "get_shortq_hard";
-      } else if (questionType === "get_mcq") {
-        return "get_mcq_hard";
-      }
+      if (questionType === "get_shortq") return "get_shortq_hard";
+      if (questionType === "get_mcq") return "get_mcq_hard";
     }
     return questionType;
   };
 
   const sendToBackend = async (data, difficulty, questionType) => {
     const endpoint = getEndpoint(difficulty, questionType);
+
     try {
       const requestData = {
         input_text: data,
@@ -108,10 +74,19 @@ const Text_Input = () => {
         use_mediawiki: isToggleOn,
       };
 
-      const responseData = await apiClient.post(`/${endpoint}`, requestData);
+      localStorage.setItem("lastQuizPayload", JSON.stringify(requestData));
+      localStorage.setItem("selectedQuestionType", questionType);
+
+      const response = await apiClient.post(`/${endpoint}`, requestData);
+
+      const responseData = response.output || [];
+      if (!responseData.length) {
+      alert("No questions generated. Try longer text.");
+      return;
+      }
+
       localStorage.setItem("qaPairs", JSON.stringify(responseData));
 
-      // Save quiz details to local storage
       const quizDetails = {
         difficulty,
         numQuestions,
@@ -121,17 +96,52 @@ const Text_Input = () => {
 
       let last5Quizzes =
         JSON.parse(localStorage.getItem("last5Quizzes")) || [];
+
       last5Quizzes.push(quizDetails);
       if (last5Quizzes.length > 5) {
-        last5Quizzes.shift(); // Keep only the last 5 quizzes
+        last5Quizzes.shift();
       }
+
       localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
 
       navigate("/output");
     } catch (error) {
       console.error("Error:", error);
+
+      if (error.message?.includes("cancelled")) {
+        alert("Request cancelled or timed out. Please try again.");
+      } else {
+        alert("Failed to generate questions. Please try again.");
+      }
+
+      throw error; // let outer function handle loading reset
+    }
+  };
+
+  const handleSaveToLocalStorage = async () => {
+    if (loading) return; // ✅ prevent duplicate clicks
+
+    setLoading(true);
+
+    try {
+      if (docUrl) {
+        const data = await apiClient.post("/get_content", {
+          document_url: docUrl,
+        });
+
+        setDocUrl("");
+        setText(data || "Error retrieving Google Doc content");
+      } else if (text) {
+        localStorage.setItem("textContent", text);
+        localStorage.setItem("difficulty", difficulty);
+        localStorage.setItem("numQuestions", numQuestions);
+
+        await sendToBackend(text, difficulty, "get_mcq");
+      }
+    } catch (error) {
+      console.error("Error:", error);
     } finally {
-      setLoading(false);
+      setLoading(false); // ✅ always reset loading
     }
   };
 
@@ -143,7 +153,11 @@ const Text_Input = () => {
         </div>
       )}
 
-      <div className={`w-full h-full bg-cust bg-opacity-50 ${loading ? "pointer-events-none" : ""}`}>
+      <div
+        className={`w-full h-full bg-cust bg-opacity-50 ${
+          loading ? "pointer-events-none" : ""
+        }`}
+      >
         {/* Header */}
         <Link to="/" className="block">
           <div className="flex items-end gap-2 p-4">
@@ -176,7 +190,6 @@ const Text_Input = () => {
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
-          <style>{`textarea::-webkit-scrollbar { display: none; }`}</style>
         </div>
 
         {/* Separator */}
@@ -206,7 +219,6 @@ const Text_Input = () => {
 
         {/* Controls Section */}
         <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-6 items-center mt-6 px-4 sm:px-8">
-          {/* Question Count */}
           <div className="flex gap-2 items-center">
             <div className="text-white text-lg sm:text-xl font-bold">No. of Questions:</div>
             <button onClick={decrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3">-</button>
@@ -214,7 +226,6 @@ const Text_Input = () => {
             <button onClick={incrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3">+</button>
           </div>
 
-          {/* Difficulty Dropdown */}
           <div className="text-center">
             <select
               value={difficulty}
@@ -226,7 +237,6 @@ const Text_Input = () => {
             </select>
           </div>
 
-          {/* Wikipedia Toggle */}
           <div className="flex items-center gap-2">
             <span className="text-white text-lg sm:text-xl font-bold">Use Wikipedia:</span>
             <Switch
@@ -245,16 +255,19 @@ const Text_Input = () => {
           <Link to="/question-type">
             <button className="bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient rounded-xl w-full sm:w-auto">Back</button>
           </Link>
+
           <button
             onClick={handleSaveToLocalStorage}
-            className="bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient flex justify-center items-center rounded-xl w-full sm:w-auto"
+            disabled={loading}
+            className={`bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient flex justify-center items-center rounded-xl w-full sm:w-auto ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
-            Next
+            {loading ? "Generating..." : "Next"}
           </button>
         </div>
       </div>
     </div>
-
   );
 };
 
