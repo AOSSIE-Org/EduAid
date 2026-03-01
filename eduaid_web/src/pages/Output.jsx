@@ -1,33 +1,92 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "../index.css";
 import logoPNG from "../assets/aossie_logo_transparent.png";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
 const Output = () => {
+  const navigate = useNavigate();
   const [qaPairs, setQaPairs] = useState([]);
   const [questionType, setQuestionType] = useState(
-    localStorage.getItem("selectedQuestionType")
-  );
+    localStorage.getItem("selectedQuestionType") || "get_mcq"
+);
   const [pdfMode, setPdfMode] = useState("questions");
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedQuestion, setEditedQuestion] = useState("");
   const [editedAnswer, setEditedAnswer] = useState("");
   const [editedOptions, setEditedOptions] = useState([]);
 
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regenError, setRegenError] = useState(null);
+
+  const handleBackToInput = () => {
+    navigate("/text-input");
+  };
+
+  // ✅ Regenerate Function
+  const handleRegenerateQuiz = async () => {
+    try {
+      setIsRegenerating(true);
+      setRegenError(null);
+
+      const rawPayload = localStorage.getItem("lastQuizPayload");
+
+      if (!rawPayload) {
+        setRegenError("No previous quiz parameters found.");
+        return;
+      }
+
+      let storedPayload;
+
+      try {
+        storedPayload = JSON.parse(rawPayload);
+      } catch (e) {
+        setRegenError("Invalid quiz parameters.");
+        return;
+      }
+      if (!storedPayload || typeof storedPayload !== "object") {
+        setRegenError("Invalid quiz parameters.");
+        return;
+    }
+      storedPayload.regenerate = Date.now();
+
+      const endpoint = questionType;
+
+      const response = await apiClient.post(
+        `/${endpoint}`,
+        storedPayload
+      );
+      const questions = response.output || [];
+
+      if (!questions.length) {
+        setRegenError("No questions generated. Try different text.");
+        return;
+      }
+      const wrappedData = { output: questions };
+      localStorage.setItem("qaPairs", JSON.stringify(wrappedData));
+      window.location.reload(); // intentional minimal-risk approach
+
+    } catch (error) {
+      console.error("Regeneration failed:", error);
+      setRegenError("Failed to regenerate quiz.");
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
-        const dropdown = document.getElementById('pdfDropdown');
-        if (dropdown && !dropdown.contains(event.target) && 
-            !event.target.closest('button')) {
-            dropdown.classList.add('hidden');
-        }
+      const dropdown = document.getElementById('pdfDropdown');
+      if (dropdown && !dropdown.contains(event.target) &&
+        !event.target.closest('button')) {
+        dropdown.classList.add('hidden');
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-}, []);
+  }, []);
 
   function shuffleArray(array) {
     const shuffledArray = [...array];
@@ -120,20 +179,10 @@ const Output = () => {
         });
       }
 
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
-          });
-        });
-      }
-
-      if (questionType == "get_boolq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+      if (questionType === "get_boolq" &&
+          Array.isArray(qaPairsFromStorage?.output)
+      ) {
+        qaPairsFromStorage.output.forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair,
             question_type: "Boolean",
@@ -154,7 +203,7 @@ const Output = () => {
 
       setQaPairs(combinedQaPairs);
     }
-  }, []);
+  }, [questionType]);
 
   const generateGoogleForm = async () => {
     try {
@@ -180,7 +229,7 @@ const Output = () => {
     }
   };
 
-    const generatePDF = async (mode) => {
+  const generatePDF = async (mode) => {
     const logoBytes = await loadLogoAsBytes();
     const worker = new Worker(new URL("../workers/pdfWorker.js", import.meta.url), { type: "module" });
 
@@ -212,10 +261,10 @@ const Output = () => {
           {/* Header - Responsive logo and title */}
           <Link to="/">
             <div className="flex items-end gap-[2px] px-4 sm:px-6">
-              <img 
-                src={logoPNG} 
-                alt="logo" 
-                className="w-12 sm:w-16 my-4 block" 
+              <img
+                src={logoPNG}
+                alt="logo"
+                className="w-12 sm:w-16 my-4 block"
               />
               <div className="text-xl sm:text-2xl mb-3 font-extrabold">
                 <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
@@ -228,24 +277,47 @@ const Output = () => {
             </div>
           </Link>
 
-          {/* Title and Shuffle Button */}
-          <div className="flex justify-between items-center mt-3 mx-4 sm:mx-6">
+          {/* Control Bar */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-3 mx-4 sm:mx-6 gap-3">
             <div className="font-bold text-lg sm:text-xl text-white">
               Generated Questions
             </div>
-            <button
-              className={`${
-                editingIndex !== null
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={handleBackToInput}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+              >
+                🔙 Back to Input
+              </button>
+              <button
+                onClick={handleRegenerateQuiz}
+                disabled={isRegenerating}
+                className={`${isRegenerating
+                  ? "bg-gray-500 cursor-not-allowed"
+                  : "bg-indigo-600 hover:bg-indigo-700"
+                  } text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors`}
+              >
+                {isRegenerating ? "Regenerating..." : "🔄 Regenerate Quiz"}
+              </button>
+              <button
+                className={`${editingIndex !== null
                   ? 'bg-gray-500 cursor-not-allowed'
                   : 'bg-[#7C3AED] hover:bg-[#5A2AD9]'
-              } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
-              onClick={handleShuffleQuestions}
-              disabled={editingIndex !== null}
-            >
-              <FiShuffle className="text-sm sm:text-base" />
-              Shuffle
-            </button>
+                  } text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
+                onClick={handleShuffleQuestions}
+                disabled={editingIndex !== null}
+              >
+                <FiShuffle />
+                Shuffle
+              </button>
+            </div>
           </div>
+
+          {regenError && (
+            <div className="text-red-400 text-sm mx-6 mt-2">
+              {regenError}
+            </div>
+          )}
 
           {/* Questions Container - Responsive padding and margins */}
           <div className="flex-1 overflow-y-auto scrollbar-hide px-2 sm:px-4">
@@ -253,7 +325,7 @@ const Output = () => {
               qaPairs.map((qaPair, index) => {
                 const shuffledOptions = shuffledOptionsMap[index];
                 const isEditing = editingIndex === index;
-                
+
                 return (
                   <div
                     key={index}
@@ -332,7 +404,7 @@ const Output = () => {
                           value={editedQuestion}
                           onChange={(e) => setEditedQuestion(e.target.value)}
                         />
-                        
+
                         {qaPair.question_type !== "Boolean" && (
                           <>
                             <div className="text-[#E4E4E4] text-xs sm:text-sm mt-3 mb-1">
@@ -344,7 +416,7 @@ const Output = () => {
                               value={editedAnswer}
                               onChange={(e) => setEditedAnswer(e.target.value)}
                             />
-                            
+
                             {editedOptions && editedOptions.length > 0 && (
                               <div className="mt-3">
                                 <div className="text-[#E4E4E4] text-xs sm:text-sm mb-2">
@@ -382,7 +454,7 @@ const Output = () => {
             >
               Generate Google form
             </button>
-            
+
             <div className="relative w-full sm:w-auto">
               <button
                 className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
@@ -390,7 +462,7 @@ const Output = () => {
               >
                 Generate PDF
               </button>
-              
+
               <div
                 id="pdfDropdown"
                 className="hidden absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48"
@@ -421,6 +493,5 @@ const Output = () => {
     </div>
   );
 };
-
 
 export default Output;

@@ -38,7 +38,7 @@ answer = main.AnswerPredictor()
 BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+# docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
@@ -52,16 +52,32 @@ def process_input_text(input_text, use_mediawiki):
 
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output = MCQGen.generate_mcq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    questions = output["questions"]
-    return jsonify({"output": questions})
+    print("🔥 /get_mcq endpoint HIT")
+
+    try:
+        data = request.get_json()
+        input_text = data.get("input_text", "")
+        use_mediawiki = data.get("use_mediawiki", 0)
+        max_questions = data.get("max_questions", 4)
+
+        input_text = process_input_text(input_text, use_mediawiki)
+
+        output = MCQGen.generate_mcq(
+            {"input_text": input_text, "max_questions": max_questions}
+        )
+
+        print("MCQ Generator Output:", output)
+
+        # SAFE HANDLING
+        if not output or "questions" not in output:
+            return jsonify({"output": []}), 200
+
+        questions = output.get("questions", [])
+        return jsonify({"output": questions}), 200
+
+    except Exception as e:
+        print("❌ ERROR inside get_mcq:", str(e))
+        return jsonify({"output": []}), 200
 
 
 @app.route("/get_boolq", methods=["POST"])
