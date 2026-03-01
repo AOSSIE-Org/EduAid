@@ -94,11 +94,10 @@ const Output = () => {
   useEffect(() => {
     const qaPairsFromStorage =
       JSON.parse(localStorage.getItem("qaPairs")) || {};
-    if (qaPairsFromStorage) {
-      const combinedQaPairs = [];
-      const outputQuestions = qaPairsFromStorage["output"];
-      const boolQuestions = qaPairsFromStorage["output_boolq"]?.["Boolean_Questions"];
-      const mcqQuestions = qaPairsFromStorage["output_mcq"]?.["questions"];
+    const combinedQaPairs = [];
+    const outputQuestions = qaPairsFromStorage["output"];
+    const boolQuestions = qaPairsFromStorage["output_boolq"]?.["Boolean_Questions"];
+    const mcqQuestions = qaPairsFromStorage["output_mcq"]?.["questions"];
 
       if (questionType === "get_problems" && Array.isArray(boolQuestions)) {
         boolQuestions.forEach((question) => {
@@ -169,7 +168,6 @@ const Output = () => {
       }
 
       setQaPairs(combinedQaPairs);
-    }
   }, [questionType]);
 
   const generateGoogleForm = async () => {
