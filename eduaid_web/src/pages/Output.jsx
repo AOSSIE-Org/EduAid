@@ -63,8 +63,8 @@ const Output = () => {
         setRegenError("No questions generated. Try different text.");
         return;
       }
-
-      localStorage.setItem("qaPairs", JSON.stringify(questions));
+      const wrappedData = { output: questions };
+      localStorage.setItem("qaPairs", JSON.stringify(wrappedData));
       window.location.reload(); // intentional minimal-risk approach
 
     } catch (error) {
@@ -203,7 +203,7 @@ const Output = () => {
 
       setQaPairs(combinedQaPairs);
     }
-  }, []);
+  }, [questionType]);
 
   const generateGoogleForm = async () => {
     try {

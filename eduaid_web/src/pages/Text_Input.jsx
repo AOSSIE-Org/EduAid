@@ -85,8 +85,8 @@ const Text_Input = () => {
         return;
       }
 
-      localStorage.setItem("qaPairs", JSON.stringify(responseData));
-
+      const wrappedData = { output: responseData };
+      localStorage.setItem("qaPairs", JSON.stringify(wrappedData));
       const quizDetails = {
         difficulty,
         numQuestions,
