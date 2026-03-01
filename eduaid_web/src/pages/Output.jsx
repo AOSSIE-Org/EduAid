@@ -45,7 +45,10 @@ const Output = () => {
         setRegenError("Invalid quiz parameters.");
         return;
       }
-
+      if (!storedPayload || typeof storedPayload !== "object") {
+        setRegenError("Invalid quiz parameters.");
+        return;
+    }
       storedPayload.regenerate = Date.now();
 
       const endpoint = questionType;
@@ -176,8 +179,10 @@ const Output = () => {
         });
       }
 
-      if (questionType === "get_boolq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+      if (questionType === "get_boolq" &&
+          Array.isArray(qaPairsFromStorage?.output)
+      ) {
+        qaPairsFromStorage.output.forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair,
             question_type: "Boolean",
