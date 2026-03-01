@@ -112,8 +112,11 @@ export default function ChooseTopic() {
 
     if (!story) return;
 
+    // Create a short preview for the topic title
+    const topicPreview = topicText.replace(/\s+/g, ' ').trim().slice(0, 80) || 'Story Presentation';
+
     navigate('/story', {
-      state: { topic: topicText, story, language },
+      state: { topic: topicPreview, story, language },
     });
   };
 

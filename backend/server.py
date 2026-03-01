@@ -493,8 +493,8 @@ def get_transcript():
 @app.route("/generate_story", methods=["POST"])
 def generate_story():
     """Generate an educational story from input text"""
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    data = request.get_json(silent=True) or {}
+    input_text = (data.get("input_text") or "").strip()
     language = data.get("language", "english")
     use_mediawiki = data.get("use_mediawiki", 0)
     
@@ -552,9 +552,9 @@ def generate_story():
             "language": language
         })
         
-    except Exception as e:
-        print(f"Error generating story: {str(e)}")
-        return jsonify({"error": f"Story generation failed: {str(e)}"}), 500
+    except Exception:
+        app.logger.exception("Error generating story")
+        return jsonify({"error": "Story generation failed"}), 500
 
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)

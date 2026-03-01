@@ -49,10 +49,10 @@ export function Avatar({ isSpeaking, animationName = 'Idle', ...props }) {
   useFrame((_, delta) => {
     const head = headMesh.current
     const morphs = morphIndexRef.current
-    if (!head || morphs.mouthOpen == null) return
+    if (!head) return
 
     // Lip-sync
-    if (isSpeaking) {
+    if (morphs.mouthOpen != null && isSpeaking) {
       timeRef.current += delta
       visemeTimer.current -= delta
       if (visemeTimer.current <= 0) {
@@ -61,7 +61,7 @@ export function Avatar({ isSpeaking, animationName = 'Idle', ...props }) {
       }
       const prev = head.morphTargetInfluences[morphs.mouthOpen] || 0
       head.morphTargetInfluences[morphs.mouthOpen] = THREE.MathUtils.lerp(prev, currentIntensity.current, 0.3)
-    } else {
+    } else if (morphs.mouthOpen != null) {
       head.morphTargetInfluences[morphs.mouthOpen] = 0
     }
 
@@ -94,7 +94,9 @@ export function Avatar({ isSpeaking, animationName = 'Idle', ...props }) {
   // Play idle animation
   useEffect(() => {
     if (actions && actions[animationName]) {
-      Object.values(actions).forEach((a) => a.stop())
+      Object.values(actions).forEach((a) => {
+        a.stop()
+      })
       actions[animationName].play()
     }
   }, [animationName, actions])
