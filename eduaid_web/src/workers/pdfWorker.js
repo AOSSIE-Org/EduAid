@@ -78,6 +78,89 @@ self.onmessage = async (e) => {
   }
 
   for (const qaPair of qaPairs) {
+
+    if (qaPair.question_type === "MatchColumns") {
+      const pairs = qaPair.pairs || [];
+      const rightColumn = qaPair.right_column || [];
+
+      const requiredHeight = 40 + pairs.length * 30 + 20 + pairs.length * 20 + 20;
+      createNewPageIfNeeded(requiredHeight);
+
+      page.drawText("Match the Columns", {
+        x: margin,
+        y,
+        size: 14,
+        color: rgb(0.2, 0.2, 0.8)
+      });
+      y -= 25;
+
+      const colWidth = (maxContentWidth - 20) / 2;
+
+      page.drawText("Column A (Terms)", {
+        x: margin,
+        y,
+        size: 11,
+        color: rgb(0, 0, 0)
+      });
+      page.drawText("Column B (Definitions)", {
+        x: margin + colWidth + 20,
+        y,
+        size: 11,
+        color: rgb(0, 0, 0)
+      });
+      y -= 20;
+
+      pairs.forEach((pair, i) => {
+        createNewPageIfNeeded(30);
+
+        page.drawText(`${i + 1}. ${pair.term}`, {
+          x: margin,
+          y,
+          size: 11
+        });
+
+        const defLabel = String.fromCharCode(65 + i);
+        const defLines = wrapText(`${defLabel}. ${rightColumn[i]}`, colWidth);
+        defLines.forEach((line, lineIdx) => {
+          page.drawText(line, {
+            x: margin + colWidth + 20,
+            y: y - lineIdx * 15,
+            size: 11
+          });
+        });
+
+        y -= Math.max(20, defLines.length * 15) + 5;
+      });
+
+      if (mode === 'questions_answers' || mode === 'answers') {
+        y -= 10;
+        createNewPageIfNeeded(20 + pairs.length * 18);
+
+        page.drawText("Answer Key", {
+          x: margin,
+          y,
+          size: 11,
+          color: rgb(0, 0.5, 0)
+        });
+        y -= 18;
+
+        pairs.forEach((pair, i) => {
+          const correctIndex = rightColumn.indexOf(pair.definition);
+          const letter = String.fromCharCode(65 + correctIndex);
+          page.drawText(`${i + 1} → ${letter}`, {
+            x: margin,
+            y,
+            size: 11,
+            color: rgb(0, 0.5, 0)
+          });
+          y -= 18;
+        });
+      }
+
+      y -= 20;
+      continue;
+    }
+
     let requiredHeight = 60;
     const questionLines = wrapText(qaPair.question, maxContentWidth);
     requiredHeight += questionLines.length * 20;
