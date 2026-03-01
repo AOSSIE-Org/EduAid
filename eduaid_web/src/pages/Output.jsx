@@ -18,11 +18,12 @@ const Output = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-        const dropdown = document.getElementById('pdfDropdown');
-        if (dropdown && !dropdown.contains(event.target) && 
-            !event.target.closest('button')) {
-            dropdown.classList.add('hidden');
-        }
+      const dropdown = document.getElementById('pdfDropdown');
+      const isInsideDropdown = dropdown?.contains(event.target);
+      const isToggleButton = event.target.closest?.('#pdfDropdownToggle');
+      if (dropdown && !isInsideDropdown && !isToggleButton) {
+        dropdown.classList.add('hidden');
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -95,21 +96,22 @@ const Output = () => {
       JSON.parse(localStorage.getItem("qaPairs")) || {};
     if (qaPairsFromStorage) {
       const combinedQaPairs = [];
+      const outputQuestions = qaPairsFromStorage["output"];
+      const boolQuestions = qaPairsFromStorage["output_boolq"]?.["Boolean_Questions"];
+      const mcqQuestions = qaPairsFromStorage["output_mcq"]?.["questions"];
 
-      if (questionType === "get_problems" && qaPairsFromStorage["output_boolq"]) {
-        qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
-          (question) => {
-            combinedQaPairs.push({
-              question,
-              question_type: "Boolean",
-              context: qaPairsFromStorage["output_boolq"]["Text"],
-            });
-          }
-        );
+      if (questionType === "get_problems" && Array.isArray(boolQuestions)) {
+        boolQuestions.forEach((question) => {
+          combinedQaPairs.push({
+            question,
+            question_type: "Boolean",
+            context: qaPairsFromStorage["output_boolq"]["Text"],
+          });
+        });
       }
 
-      if (questionType === "get_problems" && qaPairsFromStorage["output_mcq"]) {
-        qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
+      if (questionType === "get_problems" && Array.isArray(mcqQuestions)) {
+        mcqQuestions.forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
             question_type: "MCQ",
@@ -120,8 +122,8 @@ const Output = () => {
         });
       }
 
-      if (questionType === "get_mcq" && qaPairsFromStorage["output"]) {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+      if (questionType === "get_mcq" && Array.isArray(outputQuestions)) {
+        outputQuestions.forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
             question_type: "MCQ",
@@ -131,8 +133,12 @@ const Output = () => {
           });
         });
       } else if (questionType === "get_match_columns") {
-        const pairs = qaPairsFromStorage["pairs"] || [];
-        const shuffledRight = qaPairsFromStorage["right_column"] || [];
+        const pairs = Array.isArray(qaPairsFromStorage["pairs"])
+          ? qaPairsFromStorage["pairs"]
+          : [];
+        const shuffledRight = Array.isArray(qaPairsFromStorage["right_column"])
+          ? qaPairsFromStorage["right_column"]
+          : [];
 
         if (pairs.length > 0) {
           combinedQaPairs.push({
@@ -142,15 +148,15 @@ const Output = () => {
             right_column: shuffledRight,
           });
         }
-      } else if (questionType === "get_boolq" && qaPairsFromStorage["output"]) {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+      } else if (questionType === "get_boolq" && Array.isArray(outputQuestions)) {
+        outputQuestions.forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair,
             question_type: "Boolean",
           });
         });
-      } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+      } else if (Array.isArray(outputQuestions) && questionType !== "get_mcq") {
+        outputQuestions.forEach((qaPair) => {
           combinedQaPairs.push({
             question:
               qaPair.question || qaPair.question_statement || qaPair.Question,
@@ -199,13 +205,15 @@ const Output = () => {
     worker.onmessage = (e) => {
       const blob = new Blob([e.data], { type: 'application/pdf' });
       const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
+      const objectUrl = URL.createObjectURL(blob);
+      link.href = objectUrl;
       link.download = "generated_questions.pdf";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(objectUrl);
 
-      document.getElementById('pdfDropdown').classList.add('hidden');
+      document.getElementById('pdfDropdown')?.classList.add('hidden');
       worker.terminate();
     };
 
@@ -221,10 +229,10 @@ const Output = () => {
         <div className="flex flex-col h-full">
           <Link to="/">
             <div className="flex items-end gap-[2px] px-4 sm:px-6">
-              <img 
-                src={logoPNG} 
-                alt="logo" 
-                className="w-12 sm:w-16 my-4 block" 
+              <img
+                src={logoPNG}
+                alt="logo"
+                className="w-12 sm:w-16 my-4 block"
               />
               <div className="text-xl sm:text-2xl mb-3 font-extrabold">
                 <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
@@ -260,7 +268,7 @@ const Output = () => {
               qaPairs.map((qaPair, index) => {
                 const shuffledOptions = shuffledOptionsMap[index];
                 const isEditing = editingIndex === index;
-                
+
                 return (
                   <div
                     key={index}
@@ -386,7 +394,7 @@ const Output = () => {
                           value={editedQuestion}
                           onChange={(e) => setEditedQuestion(e.target.value)}
                         />
-                        
+
                         {qaPair.question_type !== "Boolean" && (
                           <>
                             <div className="text-[#E4E4E4] text-xs sm:text-sm mt-3 mb-1">
@@ -398,7 +406,7 @@ const Output = () => {
                               value={editedAnswer}
                               onChange={(e) => setEditedAnswer(e.target.value)}
                             />
-                            
+
                             {editedOptions && editedOptions.length > 0 && (
                               <div className="mt-3">
                                 <div className="text-[#E4E4E4] text-xs sm:text-sm mb-2">
@@ -435,15 +443,16 @@ const Output = () => {
             >
               Generate Google form
             </button>
-            
+
             <div className="relative w-full sm:w-auto">
               <button
+                id="pdfDropdownToggle"
                 className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
                 onClick={() => document.getElementById('pdfDropdown').classList.toggle('hidden')}
               >
                 Generate PDF
               </button>
-              
+
               <div
                 id="pdfDropdown"
                 className="hidden absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48"
