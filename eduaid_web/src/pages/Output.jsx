@@ -120,7 +120,7 @@ useEffect(() => {
       });
     }
 
-    if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
+    if (questionType === "get_mcq" && qaPairsFromStorage["output"]) {
       qaPairsFromStorage["output"].forEach((qaPair) => {
         combinedQaPairs.push({
           question: qaPair.question_statement,
