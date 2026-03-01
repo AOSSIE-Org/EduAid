@@ -490,6 +490,70 @@ def get_transcript():
 
     return jsonify({"transcript": transcript_text})
 
+@app.route("/generate_story", methods=["POST"])
+def generate_story():
+    """Generate an educational story from input text"""
+    data = request.get_json()
+    input_text = data.get("input_text", "")
+    language = data.get("language", "english")
+    use_mediawiki = data.get("use_mediawiki", 0)
+    
+    if not input_text:
+        return jsonify({"error": "No input text provided"}), 400
+    
+    try:
+        # Process input text
+        input_text = process_input_text(input_text, use_mediawiki)
+        
+        # Generate questions to create story structure
+        shortq_output = ShortQGen.generate_shortq(
+            {"input_text": input_text, "max_questions": 3}
+        )
+        
+        # Create story narrative
+        story_parts = []
+        
+        # Introduction
+        first_sentence = input_text.split('.')[0] if '.' in input_text else input_text[:100]
+        story_parts.append(f"Let me explain {first_sentence}.")
+        story_parts.append("")
+        
+        # Main content - use first 300 characters as context
+        context = input_text[:300].strip()
+        if len(input_text) > 300:
+            context += "..."
+        story_parts.append(context)
+        story_parts.append("")
+        
+        # Add key points from questions
+        if shortq_output and "questions" in shortq_output:
+            story_parts.append("Here are some key points to understand:")
+            story_parts.append("")
+            
+            for idx, qa in enumerate(shortq_output["questions"], 1):
+                question = qa.get("question", "")
+                answer = qa.get("answer", "")
+                
+                # Format as narrative
+                if question and answer:
+                    # Remove question mark and convert to statement
+                    topic = question.replace("?", "").strip()
+                    story_parts.append(f"{idx}. {topic}")
+                    story_parts.append(f"   {answer}")
+                    story_parts.append("")
+        
+        # Combine into final story
+        story = "\n".join(story_parts)
+        
+        return jsonify({
+            "story": story,
+            "language": language
+        })
+        
+    except Exception as e:
+        print(f"Error generating story: {str(e)}")
+        return jsonify({"error": f"Story generation failed: {str(e)}"}), 500
+
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
     app.run()
