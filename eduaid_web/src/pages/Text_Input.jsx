@@ -81,8 +81,8 @@ const Text_Input = () => {
 
       const responseData = response.output || [];
       if (!responseData.length) {
-      alert("No questions generated. Try longer text.");
-      return;
+        alert("No questions generated. Try longer text.");
+        return;
       }
 
       localStorage.setItem("qaPairs", JSON.stringify(responseData));
@@ -119,29 +119,49 @@ const Text_Input = () => {
   };
 
   const handleSaveToLocalStorage = async () => {
-    if (loading) return; // ✅ prevent duplicate clicks
+    if (loading) return;
 
     setLoading(true);
 
     try {
+      const questionType =
+        localStorage.getItem("selectedQuestionType") || "get_mcq";
+
+      let inputText = text;
+
+      // 🔹 If Google Doc URL is provided
       if (docUrl) {
         const data = await apiClient.post("/get_content", {
           document_url: docUrl,
         });
 
-        setDocUrl("");
-        setText(data || "Error retrieving Google Doc content");
-      } else if (text) {
-        localStorage.setItem("textContent", text);
-        localStorage.setItem("difficulty", difficulty);
-        localStorage.setItem("numQuestions", numQuestions);
+        inputText = data?.content || "";
 
-        await sendToBackend(text, difficulty, "get_mcq");
+        if (!inputText) {
+          alert("Error retrieving Google Doc content");
+          return;
+        }
+
+        setDocUrl("");
+        setText(inputText);
       }
+
+      if (!inputText) {
+        alert("Please enter some text.");
+        return;
+      }
+
+      // 🔹 Persist data
+      localStorage.setItem("textContent", inputText);
+      localStorage.setItem("difficulty", difficulty);
+      localStorage.setItem("numQuestions", numQuestions);
+
+      // 🔹 Generate quiz
+      await sendToBackend(inputText, difficulty, questionType);
     } catch (error) {
       console.error("Error:", error);
     } finally {
-      setLoading(false); // ✅ always reset loading
+      setLoading(false);
     }
   };
 
