@@ -331,19 +331,25 @@ useEffect(() => {
                             </div>
                           ))}
 
-                          {/* Answer Key */}
-                          <div className="mt-4 px-2 border-t border-gray-700 pt-3">
-                            <div className="text-[#E4E4E4] text-xs sm:text-sm font-bold mb-2">
-                              Answer Key
-                            </div>
-                            {qaPair.pairs.map((pair, i) => (
-                              <div key={i} className="text-[#FFF4F4] text-xs sm:text-sm mb-1">
-                                {i + 1} → {String.fromCharCode(
-                                  65 + qaPair.right_column.indexOf(pair.definition)
-                                )}
+                        {/* Answer Key */}
+                        {(() => {
+                          const answerMap = qaPair.pairs.map((pair) => {
+                            const idx = qaPair.right_column.indexOf(pair.definition);
+                            return idx >= 0 ? String.fromCharCode(65 + idx) : "?";
+                          });
+                          return (
+                            <div className="mt-4 px-2 border-t border-gray-700 pt-3">
+                              <div className="text-[#E4E4E4] text-xs sm:text-sm font-bold mb-2">
+                                Answer Key
                               </div>
-                            ))}
-                          </div>
+                              {qaPair.pairs.map((pair, i) => (
+                                <div key={i} className="text-[#FFF4F4] text-xs sm:text-sm mb-1">
+                                  {i + 1} → {answerMap[i]}
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
                         </div>
                       ) : (
                         <>
