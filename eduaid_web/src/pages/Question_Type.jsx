@@ -52,6 +52,7 @@ const Question_Type = () => {
             { id: "get_shortq", label: "Short-Answer Type Questions" },
             { id: "get_mcq", label: "Multiple Choice Questions" },
             { id: "get_boolq", label: "True/False Questions" },
+            { id: "get_match_columns", label: "Match the Columns" },
             { id: "get_problems", label: "All Questions" },
           ].map((option) => (
             <div
