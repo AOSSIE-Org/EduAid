@@ -14,6 +14,16 @@ export function Avatar({ isSpeaking, animationName = 'Idle', ...props }) {
   const visemeTimer = useRef(0)
   const currentIntensity = useRef(0)
   const blinkTimer = useRef(Math.random() * 4 + 2)
+  const blinkTimeoutRef = useRef(null)
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (blinkTimeoutRef.current) {
+        clearTimeout(blinkTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // Detect head mesh and morph targets
   useEffect(() => {
@@ -60,7 +70,7 @@ export function Avatar({ isSpeaking, animationName = 'Idle', ...props }) {
     if (blinkTimer.current <= 0 && morphs.blinkL != null && morphs.blinkR != null) {
       head.morphTargetInfluences[morphs.blinkL] = 1
       head.morphTargetInfluences[morphs.blinkR] = 1
-      setTimeout(() => {
+      blinkTimeoutRef.current = setTimeout(() => {
         if (head.morphTargetInfluences) {
           head.morphTargetInfluences[morphs.blinkL] = 0
           head.morphTargetInfluences[morphs.blinkR] = 0

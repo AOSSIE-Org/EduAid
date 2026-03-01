@@ -19,7 +19,7 @@ export default function ChooseTopic() {
   // ✅ CLEAN TEXT
   const cleanText = (text) => {
     return text
-      .replace(/[^\w\s.,?!]/g, '') // remove special chars
+      .replace(/[^\w\s.,?!:;'"\-()]/g, '') // preserve common punctuation
       .replace(/\s+/g, ' ')
       .trim();
   };

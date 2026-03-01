@@ -514,7 +514,9 @@ def generate_story():
         story_parts = []
         
         # Introduction
-        first_sentence = input_text.split('.')[0] if '.' in input_text else input_text[:100]
+        first_sentence = input_text.split('.')[0].strip() if '.' in input_text else input_text[:100]
+        if not first_sentence:
+            first_sentence = input_text[:100].strip() or "this topic"
         story_parts.append(f"Let me explain {first_sentence}.")
         story_parts.append("")
         

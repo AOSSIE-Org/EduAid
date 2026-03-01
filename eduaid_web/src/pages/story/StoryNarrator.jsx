@@ -15,6 +15,11 @@ export default function StoryNarrator() {
   useEffect(() => {
     if (!story) return;
 
+    if (!window.speechSynthesis) {
+      console.warn('Web Speech API not supported');
+      return;
+    }
+
     const synth = window.speechSynthesis;
     const utterance = new SpeechSynthesisUtterance(story);
 
@@ -22,7 +27,8 @@ export default function StoryNarrator() {
       utterance.lang = 'hi-IN';
     } else if (language === 'hinglish') {
       utterance.lang = 'hi-IN';
-      utterance.text = story.replace(/[.,]/g, '').split(' ').map(w => /[a-zA-Z]/.test(w) ? w : '').join(' ');
+      // Keep the original text; hi-IN voice can handle mixed content
+      utterance.text = story;
     } else {
       utterance.lang = 'en-US';
     }
