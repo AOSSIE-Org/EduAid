@@ -256,6 +256,7 @@ class AnswerPredictor:
         
         # Explicitly push the NLI model to the detected hardware (GPU or CPU)
         self.nli_model.to(self.device)
+        self.nli_model.eval()
         
         self.set_seed(42)
         
@@ -292,7 +293,8 @@ class AnswerPredictor:
             torch.cuda.empty_cache()
 
         return answers
-
+    
+    @torch.no_grad()
     def predict_boolean_answer(self, payload):
         input_text = payload.get("input_text", "")
         input_questions = payload.get("input_question", [])
