@@ -26,6 +26,7 @@ from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
+from utils.text_processor import TextProcessor
 
 app = Flask(__name__)
 CORS(app)
@@ -49,6 +50,7 @@ ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
 docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
+text_processor = TextProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
 
@@ -480,7 +482,12 @@ def upload_file():
     content = file_processor.process_file(file)
     
     if content:
-        return jsonify({"content": content})
+        chunks = text_processor.chunk_document(content)
+        return jsonify({
+            "content": content,
+            "chunks": chunks,
+            "num_chunks": len(chunks),
+        })
     else:
         return jsonify({"error": "Unsupported file type or error processing file"}), 400
 
