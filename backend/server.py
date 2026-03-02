@@ -48,7 +48,8 @@ BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
 docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
-file_processor = main.FileProcessor()
+from utils.file_processor import FileProcessor
+file_processor = FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
 
@@ -448,19 +449,21 @@ def get_boolq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_questions = data.get("input_question", [])
+    max_questions = data.get("max_questions", 4)
 
     input_text, wiki_warning = process_input_text(input_text, use_mediawiki)
 
-    # Generate questions using the same QG model
-    generated = qg.generate(
-        article=input_text,
-        num_questions=input_questions,
-        answer_style="true_false"
+    # Generate questions using the BoolQ generator
+    generated = BoolQGen.generate_boolq(
+        {"input_text": input_text, "max_questions": max_questions}
     )
 
     # Apply transformation to make each question harder
-    harder_questions = [make_question_harder(q) for q in generated]
+    harder_questions = []
+    for q in generated.get("Boolean_Questions", []):
+        q_copy = q.copy()
+        q_copy["question"] = make_question_harder(q["question"])
+        harder_questions.append(q_copy)
 
     result = {"output": harder_questions}
     if wiki_warning:

@@ -7,6 +7,11 @@ import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
 import { FaClipboard, FaWikipediaW } from "react-icons/fa";
 
+const ALLOWED_FILE_TYPES = {
+  accept: ".pdf,.pptx,.txt,.docx,.mp3",
+  label: "PDF, PPTX, TXT, DOCX, MP3 supported"
+};
+
 function Second() {
   const [text, setText] = useState("");
   const [difficulty, setDifficulty] = useState("Easy Difficulty");
@@ -234,14 +239,14 @@ function Second() {
           <img className="mx-auto" height={24} width={24} src={cloud} alt="cloud" />
           <div className="text-center text-white text-sm">Choose a file</div>
           <div className="text-center text-white text-sm">
-            PDF, PPTX, TXT, DOCX, MP3 supported
+            {ALLOWED_FILE_TYPES.label}
           </div>
           <div>
             <input
               type="file"
               ref={fileInputRef}
               onChange={handleFileUpload}
-              accept=".pdf,.pptx,.txt,.docx,.mp3"
+              accept={ALLOWED_FILE_TYPES.accept}
               style={{ display: 'none' }}
             />
             <button

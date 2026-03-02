@@ -1,32 +1,15 @@
 """Tests for PPTX text extraction in FileProcessor.
 
-Imports the real FileProcessor from Generator.main. Heavy ML dependencies
-(torch, transformers, sense2vec, etc.) are mocked at the sys.modules level
-so they are not actually loaded during test collection.
+Imports the lightweight FileProcessor from utils.file_processor.
 """
 import os
-import sys
 from unittest.mock import MagicMock
 
 import pytest
 from pptx import Presentation
 from pptx.util import Inches
 
-# ── Mock heavy ML dependencies before importing Generator.main ───────────────
-# This prevents model loading while still testing the real FileProcessor code.
-
-_mock_torch = MagicMock()
-_mock_torch.cuda.is_available.return_value = False
-sys.modules.setdefault("torch", _mock_torch)
-sys.modules.setdefault("transformers", MagicMock())
-sys.modules.setdefault("sense2vec", MagicMock())
-sys.modules.setdefault("google.oauth2", MagicMock())
-sys.modules.setdefault("google.oauth2.service_account", MagicMock())
-sys.modules.setdefault("googleapiclient", MagicMock())
-sys.modules.setdefault("googleapiclient.discovery", MagicMock())
-sys.modules.setdefault("en_core_web_sm", MagicMock())
-
-from Generator.main import FileProcessor  # noqa: E402
+from utils.file_processor import FileProcessor
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────

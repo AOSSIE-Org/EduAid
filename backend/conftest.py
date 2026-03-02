@@ -122,7 +122,6 @@ def _prevent_model_initialization():
         patch.object(gen_main, "QuestionGenerator", MagicMock),
         patch.object(gen_main, "AnswerPredictor", MagicMock),
         patch.object(gen_main, "GoogleDocsService", MagicMock),
-        patch.object(gen_main, "FileProcessor", MagicMock),
     ]
     for p in patches:
         p.start()
