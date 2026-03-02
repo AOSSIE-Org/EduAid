@@ -29,6 +29,7 @@ google-auth
 datasets==3.1.0
 tokenizers
 mammoth
+python-pptx
 mediawikiapi
 PyMuPDF
 textblob
