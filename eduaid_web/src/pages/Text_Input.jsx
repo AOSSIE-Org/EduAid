@@ -5,8 +5,13 @@ import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
-import { Link,useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
+
+const ALLOWED_FILE_TYPES = {
+  accept: ".pdf,.pptx,.txt,.docx,.mp3",
+  label: "PDF, PPTX, TXT, DOCX, MP3 supported"
+};
 
 const Text_Input = () => {
   const navigate = useNavigate();
@@ -185,9 +190,9 @@ const Text_Input = () => {
         {/* File Upload Section */}
         <div className="w-full max-w-2xl mx-auto border-[3px] rounded-2xl text-center px-6 py-6 border-dotted border-[#3E5063] mt-6">
           <img className="mx-auto mb-2" height={32} width={32} src={cloud} alt="cloud" />
-          <p className="text-white text-lg">Choose a file (PDF, MP3 supported)</p>
+          <p className="text-white text-lg">Choose a file ({ALLOWED_FILE_TYPES.label})</p>
 
-          <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} />
+          <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept={ALLOWED_FILE_TYPES.accept} style={{ display: "none" }} />
           <button
             className="bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2"
             onClick={handleClick}
