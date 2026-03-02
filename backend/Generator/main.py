@@ -367,18 +367,46 @@ class FileProcessor:
             result = mammoth.extract_raw_text(docx_file)
             return result.value
 
+    def extract_text_from_image(self, file_path):
+        try:
+            import cv2
+            import pytesseract
+        except ImportError:
+            raise RuntimeError("OCR requires opencv-python and pytesseract installed.")
+
+        image = cv2.imread(file_path)
+        if image is None:
+            return ""
+
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        thresh = cv2.adaptiveThreshold(
+            gray, 255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY,
+            11, 2
+        )
+        pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+        return text.strip()
+
     def process_file(self, file):
         file_path = os.path.join(self.upload_folder, file.filename)
         file.save(file_path)
         content = ""
 
-        if file.filename.endswith('.txt'):
+        filename = file.filename.lower()
+
+        if filename.endswith('.txt'):
             with open(file_path, 'r') as f:
                 content = f.read()
-        elif file.filename.endswith('.pdf'):
+
+        elif filename.endswith('.pdf'):
             content = self.extract_text_from_pdf(file_path)
-        elif file.filename.endswith('.docx'):
+
+        elif filename.endswith('.docx'):
             content = self.extract_text_from_docx(file_path)
+
+        elif filename.endswith(('.png', '.jpg', '.jpeg')):
+            content = self.extract_text_from_image(file_path)
 
         os.remove(file_path)
         return content
