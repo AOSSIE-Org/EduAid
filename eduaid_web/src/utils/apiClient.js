@@ -13,6 +13,7 @@ class ApiClient {
 
   subscribeConnectionStatus(listener) {
     this.listeners.add(listener);
+    listener({ status: this.currentStatus, detail: this.currentDetail });
     return () => this.listeners.delete(listener);
   }
 
