@@ -6,8 +6,6 @@ class ApiClient {
       ? window.electronAPI.getApiConfig().baseUrl
       : process.env.REACT_APP_BASE_URL || "http://localhost:5000";
 
-    this.fallbackBaseUrls = this.getFallbackBaseUrls();
-
     this.listeners = new Set();
     this.currentStatus = "unknown"; // unknown | up | down | error
     this.currentDetail = "";
@@ -74,7 +72,11 @@ class ApiClient {
         throw error;
       }
 
-      for (const fallbackBaseUrl of this.fallbackBaseUrls) {
+      const fallbackBaseUrls = this.getFallbackBaseUrls().filter(
+        (url) => url !== this.baseUrl
+      );
+
+      for (const fallbackBaseUrl of fallbackBaseUrls) {
         try {
           const data = await this.fetchJson(`${fallbackBaseUrl}${endpoint}`, options);
           this.baseUrl = fallbackBaseUrl;
@@ -102,13 +104,17 @@ class ApiClient {
         const response = await window.electronAPI.makeApiRequest(endpoint, options);
         if (!response.ok) {
           const err = new Error(`API request failed with status ${response.status}`);
+          err.isHttpError = true;
           this.setConnectionStatus("error", err.message);
           throw err;
         }
         this.setConnectionStatus("up");
         return response.data;
       } catch (error) {
-        this.setConnectionStatus("down", error.message);
+        if (error?.isHttpError) {
+          throw error;
+        }
+        this.setConnectionStatus("down", error?.message || "API request failed");
         throw error;
       }
     }
