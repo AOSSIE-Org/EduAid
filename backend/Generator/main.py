@@ -2,7 +2,7 @@ import time
 import torch
 import random
 from transformers import T5ForConditionalGeneration, T5Tokenizer
-from transformers import AutoModelForSequenceClassification, AutoTokenizer,AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5Tokenizer
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5Tokenizer
 import numpy as np
 import spacy
 from sense2vec import Sense2Vec
@@ -18,7 +18,6 @@ import en_core_web_sm
 import json
 import re
 from typing import Any, List, Mapping, Tuple
-import re
 import os
 import fitz 
 import mammoth
@@ -171,7 +170,7 @@ class ParaphraseGenerator:
             num_return_sequences=num,
             no_repeat_ngram_size=2,
             early_stopping=True
-            )
+        )
 
         final_outputs =[]
         for beam_output in beam_outputs:
@@ -208,7 +207,6 @@ class BoolQGenerator:
         a = random.choice([0,1])
         return bool(a)
     
-
     def generate_boolq(self, payload):
         start_time = time.time()
         inp = {
@@ -226,7 +224,7 @@ class BoolQGenerator:
         encoding = self.tokenizer.encode_plus(form, return_tensors="pt")
         input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
 
-        output = beam_search_decoding (input_ids, attention_masks, self.model, self.tokenizer,num)
+        output = beam_search_decoding(input_ids, attention_masks, self.model, self.tokenizer, num)
         if self.device.type == 'cuda':
             torch.cuda.empty_cache()
         
@@ -237,7 +235,6 @@ class BoolQGenerator:
             
         return final
             
-
 class AnswerPredictor:
           
     def __init__(self):
@@ -267,11 +264,10 @@ class AnswerPredictor:
     def predict_answer(self, payload):
         answers = []
         inp = {
-                "input_text": payload.get("input_text"),
-                "input_question" : payload.get("input_question")
-            }
+            "input_text": payload.get("input_text"),
+            "input_question": payload.get("input_question")
+        }
         for ques in payload.get("input_question"):
-                
             context = inp["input_text"]
             question = ques
             input_text = "question: %s <s> context: %s </s>" % (question, context)
@@ -348,7 +344,6 @@ class GoogleDocsService:
 
         return text.strip()
     
-
 class FileProcessor:
     def __init__(self, upload_folder='uploads/'):
         self.upload_folder = upload_folder
@@ -367,20 +362,67 @@ class FileProcessor:
             result = mammoth.extract_raw_text(docx_file)
             return result.value
 
+    def extract_text_from_image(self, file_path):
+        try:
+            import cv2
+            import pytesseract
+            import shutil
+        except ImportError as e:
+            raise RuntimeError(
+                "OCR requires opencv-python and pytesseract installed."
+            ) from e
+
+        image = cv2.imread(file_path)
+        if image is None:
+            return ""
+
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        thresh = cv2.adaptiveThreshold(
+            gray,
+            255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY,
+            11,
+            2
+        )
+
+        # Cross-platform Tesseract discovery
+        tesseract_cmd = os.getenv("TESSERACT_CMD")
+        if tesseract_cmd:
+            pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+        else:
+            detected = shutil.which("tesseract")
+            if detected:
+                pytesseract.pytesseract.tesseract_cmd = detected
+
+        text = pytesseract.image_to_string(thresh)
+        return text.strip()
+
     def process_file(self, file):
         file_path = os.path.join(self.upload_folder, file.filename)
         file.save(file_path)
         content = ""
 
-        if file.filename.endswith('.txt'):
-            with open(file_path, 'r') as f:
-                content = f.read()
-        elif file.filename.endswith('.pdf'):
-            content = self.extract_text_from_pdf(file_path)
-        elif file.filename.endswith('.docx'):
-            content = self.extract_text_from_docx(file_path)
+        filename = file.filename.lower()
 
-        os.remove(file_path)
+        try:
+            if filename.endswith('.txt'):
+                with open(file_path, 'r') as f:
+                    content = f.read()
+
+            elif filename.endswith('.pdf'):
+                content = self.extract_text_from_pdf(file_path)
+
+            elif filename.endswith('.docx'):
+                content = self.extract_text_from_docx(file_path)
+
+            elif filename.endswith(('.png', '.jpg', '.jpeg')):
+                content = self.extract_text_from_image(file_path)
+
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
         return content
 
 class QuestionGenerator:
