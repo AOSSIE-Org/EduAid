@@ -369,32 +369,48 @@ class FileProcessor:
 
     def extract_text_from_image(self, file_path):
         try:
-            import cv2
-            import pytesseract
-        except ImportError:
-            raise RuntimeError("OCR requires opencv-python and pytesseract installed.")
+        import cv2
+        import pytesseract
+        import shutil
+    except ImportError as e:
+        raise RuntimeError(
+            "OCR requires opencv-python and pytesseract installed."
+        ) from e
 
-        image = cv2.imread(file_path)
-        if image is None:
-            return ""
+    image = cv2.imread(file_path)
+    if image is None:
+        return ""
 
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        thresh = cv2.adaptiveThreshold(
-            gray, 255,
-            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY,
-            11, 2
-        )
-        pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-        return text.strip()
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    thresh = cv2.adaptiveThreshold(
+        gray,
+        255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY,
+        11,
+        2
+    )
+
+    # Cross-platform Tesseract discovery
+    tesseract_cmd = os.getenv("TESSERACT_CMD")
+    if tesseract_cmd:
+        pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+    else:
+        detected = shutil.which("tesseract")
+        if detected:
+            pytesseract.pytesseract.tesseract_cmd = detected
+
+    text = pytesseract.image_to_string(thresh)
+    return text.strip()
 
     def process_file(self, file):
         file_path = os.path.join(self.upload_folder, file.filename)
-        file.save(file_path)
-        content = ""
+    file.save(file_path)
+    content = ""
 
-        filename = file.filename.lower()
+    filename = file.filename.lower()
 
+    try:
         if filename.endswith('.txt'):
             with open(file_path, 'r') as f:
                 content = f.read()
@@ -408,8 +424,11 @@ class FileProcessor:
         elif filename.endswith(('.png', '.jpg', '.jpeg')):
             content = self.extract_text_from_image(file_path)
 
-        os.remove(file_path)
-        return content
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+    return content
 
 class QuestionGenerator:
     """A transformer-based NLP system for generating reading comprehension-style questions from
