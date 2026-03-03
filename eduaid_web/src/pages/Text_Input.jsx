@@ -1,11 +1,11 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "../index.css";
 import logo_trans from "../assets/aossie_logo_transparent.png"
 import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
-import { Link,useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 
 const Text_Input = () => {
@@ -15,9 +15,38 @@ const Text_Input = () => {
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
-  const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
+  const [inputSource, setInputSource] = useState("text");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const savedText = localStorage.getItem("textContent");
+    const savedDifficulty = localStorage.getItem("difficulty");
+    const savedNumQuestions = localStorage.getItem("numQuestions");
+    const savedWikipedia = localStorage.getItem("useWikipedia");
+    const savedInputSource = localStorage.getItem("inputSource");
+
+    if (savedText) setText(savedText);
+    if (savedDifficulty) setDifficulty(savedDifficulty);
+    if (savedNumQuestions !== null) {
+      const parsedNumQuestions = Number.parseInt(savedNumQuestions, 10);
+
+      setNumQuestions(
+        Number.isInteger(parsedNumQuestions) && parsedNumQuestions > 0
+          ? parsedNumQuestions
+          : 10
+      );
+    }
+    if (savedWikipedia !== null) {
+      const normalizedWikipedia =
+        savedWikipedia === "1" || savedWikipedia === "true"
+          ? 1
+          : 0;
+      setIsToggleOn(normalizedWikipedia);
+    }
+    if (savedInputSource) setInputSource(savedInputSource);
+  }, []);
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
@@ -31,10 +60,16 @@ const Text_Input = () => {
 
       try {
         const data = await apiClient.postFormData("/upload", formData);
-        setText(data.content || data.error);
+
+        if (data && typeof data.content === "string" && data.content.trim()) {
+          setText(data.content.trim());
+          setInputSource("file");
+        } else {
+          setError("Invalid file content received.");
+        }
       } catch (error) {
         console.error("Error uploading file:", error);
-        setText("Error uploading file");
+        setError("Error uploading file. Please try again.");
       }
     }
   };
@@ -48,31 +83,49 @@ const Text_Input = () => {
   };
 
   const handleSaveToLocalStorage = async () => {
-    setLoading(true);
-
-    // Check if a Google Doc URL is provided
-    if (docUrl) {
+    const trimmedUrl = docUrl.trim();
+    const trimmedText = text.trim();
+    const validQuestionCount = Number.isInteger(numQuestions) && numQuestions > 0;
+    if (!validQuestionCount) {
+      console.error("Number of questions must be a positive integer");
+      setError("Number of questions must be at least 1.");
+      return;
+    }
+    if (trimmedUrl) {
+      setError("");
+      setLoading(true);
       try {
-        const data = await apiClient.post("/get_content", { document_url: docUrl });
+        const data = await apiClient.post("/get_content", { document_url: trimmedUrl });
+        if (!data || typeof data !== "string" || !data.trim()) {
+          setError("could not retrieve content from the provided URL.");
+          setLoading(false);
+          return;
+        }
+
+        const fetchedText = data.trim();
         setDocUrl("");
-        setText(data || "Error in retrieving");
+        setText(fetchedText);
+        setInputSource("url");
+
+        localStorage.setItem("textContent", fetchedText);
+        localStorage.setItem("difficulty", difficulty);
+        localStorage.setItem("numQuestions", numQuestions.toString());
+        localStorage.setItem("useWikipedia", isToggleOn.toString());
+        localStorage.setItem("inputSource", "url");
+        navigate("/review");
       } catch (error) {
         console.error("Error:", error);
-        setText("Error retrieving Google Doc content");
+        setError("failed to fetch document content. Please try again.")
       } finally {
         setLoading(false);
       }
-    } else if (text) {
-      // Proceed with existing functionality for local storage
-      localStorage.setItem("textContent", text);
+    } else if (trimmedText) {
+      localStorage.setItem("textContent", trimmedText);
       localStorage.setItem("difficulty", difficulty);
-      localStorage.setItem("numQuestions", numQuestions);
-
-      await sendToBackend(
-        text,
-        difficulty,
-        localStorage.getItem("selectedQuestionType")
-      );
+      localStorage.setItem("numQuestions", numQuestions.toString());
+      localStorage.setItem("useWikipedia", isToggleOn.toString());
+      localStorage.setItem("inputSource", inputSource);
+      navigate("/review");
     }
   };
 
@@ -86,53 +139,6 @@ const Text_Input = () => {
 
   const decrementQuestions = () => {
     setNumQuestions((prev) => (prev > 0 ? prev - 1 : 0));
-  };
-
-  const getEndpoint = (difficulty, questionType) => {
-    if (difficulty !== "Easy Difficulty") {
-      if (questionType === "get_shortq") {
-        return "get_shortq_hard";
-      } else if (questionType === "get_mcq") {
-        return "get_mcq_hard";
-      }
-    }
-    return questionType;
-  };
-
-  const sendToBackend = async (data, difficulty, questionType) => {
-    const endpoint = getEndpoint(difficulty, questionType);
-    try {
-      const requestData = {
-        input_text: data,
-        max_questions: numQuestions,
-        use_mediawiki: isToggleOn,
-      };
-
-      const responseData = await apiClient.post(`/${endpoint}`, requestData);
-      localStorage.setItem("qaPairs", JSON.stringify(responseData));
-
-      // Save quiz details to local storage
-      const quizDetails = {
-        difficulty,
-        numQuestions,
-        date: new Date().toLocaleDateString(),
-        qaPair: responseData,
-      };
-
-      let last5Quizzes =
-        JSON.parse(localStorage.getItem("last5Quizzes")) || [];
-      last5Quizzes.push(quizDetails);
-      if (last5Quizzes.length > 5) {
-        last5Quizzes.shift(); // Keep only the last 5 quizzes
-      }
-      localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
-
-      navigate("/output");
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
@@ -174,7 +180,10 @@ const Text_Input = () => {
             className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              setInputSource("text");
+            }}
           />
           <style>{`textarea::-webkit-scrollbar { display: none; }`}</style>
         </div>
@@ -202,6 +211,11 @@ const Text_Input = () => {
             value={docUrl}
             onChange={(e) => setDocUrl(e.target.value)}
           />
+          {error && (
+            <div className="text-red-400 text-center mt-3">
+              {error}
+            </div>
+          )}
         </div>
 
         {/* Controls Section */}
