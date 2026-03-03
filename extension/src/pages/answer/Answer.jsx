@@ -101,7 +101,7 @@ const Answer = () => {
             input_options: mcqQuestions.map((q) => q.options),
           }),
         }),
-        fetch("http://localhost:5000/get_shortq_answer", {
+        fetch("http://localhost:5000/get_answer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ input_text: context, input_question: shortQuestions }),
