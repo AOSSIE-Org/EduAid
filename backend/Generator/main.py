@@ -27,6 +27,8 @@ from typing import Any, List, Mapping, Tuple
 import os
 import fitz 
 import mammoth
+import uuid
+
 
 class MCQGenerator:
     
@@ -430,8 +432,8 @@ class FileProcessor:
         if not safe_name:
             return ""
 
-        file_path = os.path.join(self.upload_folder, safe_name)
-
+        unique_name = f"{uuid.uuid4().hex}_{safe_name}"
+        file_path = os.path.join(self.upload_folder, unique_name)
         # Extra safety check (prevents ../ traversal)
         abs_upload = os.path.abspath(self.upload_folder)
         abs_path = os.path.abspath(file_path)

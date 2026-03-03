@@ -12,13 +12,24 @@ nltk.download('brown')
 nltk.download('stopwords')
 nltk.download('popular')
 
-def is_word_available(word, s2v_model):
-    word = word.replace(" ", "_")
-    sense = s2v_model.get_best_sense(word)
-    if sense is not None:
+def is_word_available(word, s2v_model, fdist, normalized_levenshtein):
+    """
+    Checks if a word is valid for question generation.
+    Safely handles s2v_model=None.
+    """
+
+    # If sense2vec disabled, skip sense check
+    if s2v_model is None:
         return True
-    else:
+
+    try:
+        sense = s2v_model.get_best_sense(word)
+        if sense is None:
+            return False
+    except Exception:
         return False
+
+    return True
 
 def generate_word_variations(word):
     letters = 'abcdefghijklmnopqrstuvwxyz ' + string.punctuation
@@ -55,6 +66,8 @@ def find_similar_words(word, s2v_model):
     return out
 
 def get_answer_choices(answer, s2v_model):
+    if s2v_model is None:
+        return [], "None"
     choices = []
 
     try:
