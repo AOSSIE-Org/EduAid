@@ -1,5 +1,4 @@
 import time
-from pkg_resources import safe_name
 import torch
 import random
 from transformers import (
@@ -452,12 +451,20 @@ class FileProcessor:
                 content = self.extract_text_from_pdf(file_path)
             elif filename.endswith('.docx'):
                 content = self.extract_text_from_docx(file_path)
-
+            elif filename.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
+                content = self.extract_text_from_image(file_path)
             return content
 
         except Exception:
             return ""
-
+        
+        
+        finally:
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            except OSError:
+                pass
 
 class QuestionGenerator:
     """A transformer-based NLP system for generating reading comprehension-style questions from
