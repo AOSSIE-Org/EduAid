@@ -147,7 +147,7 @@ def get_mcq_answer():
     return jsonify({"output": outputs})
 
 
-@app.route("/get_shortq_answer", methods=["POST"])
+@app.route("/get_answer", methods=["POST"])
 def get_answer():
     data = request.get_json()
     input_text = data.get("input_text", "")
