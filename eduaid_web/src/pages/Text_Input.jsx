@@ -51,8 +51,6 @@ const Text_Input = () => {
         setInputSource("file");
       } catch (error) {
         console.error("Error uploading file:", error);
-        setText("Error uploading file");
-        setInputSource("file");
       }
     }
   };
@@ -66,11 +64,20 @@ const Text_Input = () => {
   };
 
   const handleSaveToLocalStorage = async () => {
-    if (docUrl) {
+    const trimmedUrl = docUrl.trim();
+    const trimmedText = text.trim();
+
+    if (trimmedUrl) {
       setLoading(true);
       try {
-        const data = await apiClient.post("/get_content", { document_url: docUrl });
-        const fetchedText = data || "Error in retrieving";
+        const data = await apiClient.post("/get_content", { document_url: trimmedUrl });
+        if (!data || typeof data !== "string" || !data.trim()) {
+          console.error("Invalid document content received");
+          setLoading(false);
+          return;
+        }
+
+        const fetchedText = data.trim();
         setDocUrl("");
         setText(fetchedText);
         setInputSource("url");
@@ -83,13 +90,11 @@ const Text_Input = () => {
         navigate("/review");
       } catch (error) {
         console.error("Error:", error);
-        setText("Error retrieving Google Doc content");
-        setInputSource("url");
       } finally {
         setLoading(false);
       }
-    } else if (text) {
-      localStorage.setItem("textContent", text);
+    } else if (trimmedText) {
+      localStorage.setItem("textContent", trimmedText);
       localStorage.setItem("difficulty", difficulty);
       localStorage.setItem("numQuestions", numQuestions.toString());
       localStorage.setItem("useWikipedia", isToggleOn.toString());
@@ -149,7 +154,10 @@ const Text_Input = () => {
             className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              setInputSource("text");
+            }}
           />
           <style>{`textarea::-webkit-scrollbar { display: none; }`}</style>
         </div>

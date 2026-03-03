@@ -89,9 +89,16 @@ const Review = () => {
             return;
         }
 
+        const trimmedText = reviewData.text.trim();
+        if (!trimmedText || !Number.isInteger(reviewData.numQuestions) || reviewData.numQuestions <= 0) {
+            console.error("Invalid generation payload");
+            setLoading(false);
+            return;
+        }
+
         try {
             const requestData = {
-                input_text: reviewData.text,
+                input_text: trimmedText,
                 max_questions: reviewData.numQuestions,
                 use_mediawiki: reviewData.useWikipedia ? 1 : 0,
             };
