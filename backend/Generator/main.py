@@ -22,40 +22,45 @@ import re
 import os
 import fitz 
 import mammoth
+import threading
 
 
 
+import threading
 
 class ModelManager:
     """Singleton class to load and share massive ML models across generators."""
     _instance = None
     _is_initialized = False
+    _lock = threading.Lock()  
 
-    def __new__(cls):      
+    def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(ModelManager, cls).__new__(cls)
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(ModelManager, cls).__new__(cls)
         return cls._instance
 
     def __init__(self):
         if self._is_initialized:
             return
             
-        print("Initializing Shared ModelManager... Loading massive models into memory ONCE.")
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
-        self.qg_tokenizer = T5Tokenizer.from_pretrained('t5-large')
-        self.qg_model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
-        self.qg_model.to(self.device)
-        self.qg_model.eval() 
-        
-        self.nlp = spacy.load('en_core_web_sm')
-        self.s2v = Sense2Vec().from_disk('s2v_old')
-        self.fdist = FreqDist(brown.words())
-        self.normalized_levenshtein = NormalizedLevenshtein()
-        
-        self._is_initialized = True
-
-
+        with self._lock:
+            if not self._is_initialized:
+                print("Initializing Shared ModelManager... Loading massive models into memory ONCE.")
+                self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                
+                self.qg_tokenizer = T5Tokenizer.from_pretrained('t5-large')
+                self.qg_model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
+                self.qg_model.to(self.device)
+                self.qg_model.eval() 
+                
+                self.nlp = spacy.load('en_core_web_sm')
+                self.s2v = Sense2Vec().from_disk('s2v_old')
+                self.fdist = FreqDist(brown.words())
+                self.normalized_levenshtein = NormalizedLevenshtein()
+                
+                self._is_initialized = True
 
 
 class MCQGenerator:
