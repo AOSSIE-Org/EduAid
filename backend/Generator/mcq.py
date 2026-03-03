@@ -12,13 +12,24 @@ nltk.download('brown')
 nltk.download('stopwords')
 nltk.download('popular')
 
-def is_word_available(word, s2v_model):
-    word = word.replace(" ", "_")
-    sense = s2v_model.get_best_sense(word)
-    if sense is not None:
+def is_word_available(word, s2v_model, fdist, normalized_levenshtein):
+    """
+    Checks if a word is valid for question generation.
+    Safely handles s2v_model=None.
+    """
+
+    # If sense2vec disabled, skip sense check
+    if s2v_model is None:
         return True
-    else:
+
+    try:
+        sense = s2v_model.get_best_sense(word)
+        if sense is None:
+            return False
+    except Exception:
         return False
+
+    return True
 
 def generate_word_variations(word):
     letters = 'abcdefghijklmnopqrstuvwxyz ' + string.punctuation
@@ -55,6 +66,8 @@ def find_similar_words(word, s2v_model):
     return out
 
 def get_answer_choices(answer, s2v_model):
+    if s2v_model is None:
+        return [], "None"
     choices = []
 
     try:
@@ -177,8 +190,12 @@ def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, 
         text = context + " " + "answer: " + answer + " </s>"
         batch_text.append(text)
 
-    encoding = tokenizer.batch_encode_plus(batch_text, pad_to_max_length=True, return_tensors="pt")
-
+    encoding = tokenizer.batch_encode_plus(
+        batch_text,
+        padding="max_length",
+        truncation=True,
+        return_tensors="pt"
+    )
     print("Generating questions using the model...")
     input_ids, attention_masks = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)
 
@@ -223,8 +240,12 @@ def generate_normal_questions(keyword_sent_mapping, device, tokenizer, model):
         text = context + " " + "answer: " + answer + " </s>"
         batch_text.append(text)
 
-    encoding = tokenizer.batch_encode_plus(batch_text, pad_to_max_length=True, return_tensors="pt")
-
+    encoding = tokenizer.batch_encode_plus(
+        batch_text,
+        padding="max_length",
+        truncation=True,
+        return_tensors="pt"
+    )
     print("Running model for generation...")
     input_ids, attention_masks = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)
 

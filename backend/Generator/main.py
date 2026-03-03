@@ -1,8 +1,13 @@
 import time
 import torch
 import random
-from transformers import T5ForConditionalGeneration, T5Tokenizer
-from transformers import AutoModelForSequenceClassification, AutoTokenizer,AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5Tokenizer
+from transformers import (
+    AutoModelForSequenceClassification,
+    AutoModelForSeq2SeqLM,
+    AutoTokenizer,
+    T5ForConditionalGeneration,
+    T5Tokenizer,
+)
 import numpy as np
 import spacy
 from sense2vec import Sense2Vec
@@ -14,14 +19,16 @@ from Generator.mcq import tokenize_into_sentences, identify_keywords, find_sente
 from Generator.encoding import beam_search_decoding
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
+from werkzeug.utils import secure_filename
 import en_core_web_sm
 import json
 import re
 from typing import Any, List, Mapping, Tuple
-import re
 import os
 import fitz 
 import mammoth
+import uuid
+
 
 class MCQGenerator:
     
@@ -31,7 +38,7 @@ class MCQGenerator:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
-        self.s2v = Sense2Vec().from_disk('s2v_old')
+        self.s2v = None
         self.fdist = FreqDist(brown.words())
         self.normalized_levenshtein = NormalizedLevenshtein()
         self.set_seed(42)
@@ -53,7 +60,15 @@ class MCQGenerator:
         sentences = tokenize_into_sentences(text)
         modified_text = " ".join(sentences)
 
-        keywords = identify_keywords(self.nlp, modified_text, inp['max_questions'], self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
+        keywords = identify_keywords(
+            self.nlp,
+            modified_text,
+            inp['max_questions'],
+            None,  # disable sense2vec
+            self.fdist,
+            self.normalized_levenshtein,
+            len(sentences)
+        )
         keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
 
         for k in keyword_sentence_mapping.keys():
@@ -89,7 +104,7 @@ class ShortQGenerator:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
-        self.s2v = Sense2Vec().from_disk('s2v_old')
+        self.s2v = None
         self.fdist = FreqDist(brown.words())
         self.normalized_levenshtein = NormalizedLevenshtein()
         self.set_seed(42)
@@ -110,7 +125,15 @@ class ShortQGenerator:
         sentences = tokenize_into_sentences(text)
         modified_text = " ".join(sentences)
 
-        keywords = identify_keywords(self.nlp, modified_text, inp['max_questions'], self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
+        keywords = identify_keywords(
+            self.nlp,
+            modified_text,
+            inp['max_questions'],
+            None,  # disable sense2vec
+            self.fdist,
+            self.normalized_levenshtein,
+            len(sentences)
+        )
         keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
         
         for k in keyword_sentence_mapping.keys():
@@ -160,7 +183,12 @@ class ParaphraseGenerator:
         sentence = text
         text_to_paraphrase = "paraphrase: " + sentence + " </s>"
 
-        encoding = self.tokenizer.encode_plus(text_to_paraphrase, pad_to_max_length=True, return_tensors="pt")
+        encoding = self.tokenizer.encode_plus(
+            text_to_paraphrase,
+            padding="max_length",
+            truncation=True,
+            return_tensors="pt"
+        )
         input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
 
         beam_outputs = self.model.generate(
@@ -171,7 +199,7 @@ class ParaphraseGenerator:
             num_return_sequences=num,
             no_repeat_ngram_size=2,
             early_stopping=True
-            )
+        )
 
         final_outputs =[]
         for beam_output in beam_outputs:
@@ -208,7 +236,6 @@ class BoolQGenerator:
         a = random.choice([0,1])
         return bool(a)
     
-
     def generate_boolq(self, payload):
         start_time = time.time()
         inp = {
@@ -226,7 +253,7 @@ class BoolQGenerator:
         encoding = self.tokenizer.encode_plus(form, return_tensors="pt")
         input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
 
-        output = beam_search_decoding (input_ids, attention_masks, self.model, self.tokenizer,num)
+        output = beam_search_decoding(input_ids, attention_masks, self.model, self.tokenizer, num)
         if self.device.type == 'cuda':
             torch.cuda.empty_cache()
         
@@ -237,7 +264,6 @@ class BoolQGenerator:
             
         return final
             
-
 class AnswerPredictor:
           
     def __init__(self):
@@ -267,11 +293,10 @@ class AnswerPredictor:
     def predict_answer(self, payload):
         answers = []
         inp = {
-                "input_text": payload.get("input_text"),
-                "input_question" : payload.get("input_question")
-            }
+            "input_text": payload.get("input_text"),
+            "input_question": payload.get("input_question")
+        }
         for ques in payload.get("input_question"):
-                
             context = inp["input_text"]
             question = ques
             input_text = "question: %s <s> context: %s </s>" % (question, context)
@@ -348,7 +373,6 @@ class GoogleDocsService:
 
         return text.strip()
     
-
 class FileProcessor:
     def __init__(self, upload_folder='uploads/'):
         self.upload_folder = upload_folder
@@ -367,21 +391,82 @@ class FileProcessor:
             result = mammoth.extract_raw_text(docx_file)
             return result.value
 
+    def extract_text_from_image(self, file_path):
+        try:
+            import cv2
+            import pytesseract
+            import shutil
+        except ImportError as e:
+            raise RuntimeError(
+                "OCR requires opencv-python and pytesseract installed."
+            ) from e
+
+        image = cv2.imread(file_path)
+        if image is None:
+            return ""
+
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        thresh = cv2.adaptiveThreshold(
+            gray,
+            255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY,
+            11,
+            2
+        )
+
+        # Cross-platform Tesseract discovery
+        tesseract_cmd = os.getenv("TESSERACT_CMD")
+        if tesseract_cmd:
+            pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+        else:
+            detected = shutil.which("tesseract")
+            if detected:
+                pytesseract.pytesseract.tesseract_cmd = detected
+
+        text = pytesseract.image_to_string(thresh)
+        return text.strip()
+
     def process_file(self, file):
-        file_path = os.path.join(self.upload_folder, file.filename)
+        safe_name = secure_filename(file.filename or "")
+        if not safe_name:
+            return ""
+
+        unique_name = f"{uuid.uuid4().hex}_{safe_name}"
+        file_path = os.path.join(self.upload_folder, unique_name)
+        # Extra safety check (prevents ../ traversal)
+        abs_upload = os.path.abspath(self.upload_folder)
+        abs_path = os.path.abspath(file_path)
+
+        if not abs_path.startswith(abs_upload):
+            return ""
+
         file.save(file_path)
         content = ""
+        filename = safe_name.lower()
 
-        if file.filename.endswith('.txt'):
-            with open(file_path, 'r') as f:
-                content = f.read()
-        elif file.filename.endswith('.pdf'):
-            content = self.extract_text_from_pdf(file_path)
-        elif file.filename.endswith('.docx'):
-            content = self.extract_text_from_docx(file_path)
+        try:
+            if filename.endswith('.txt'):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+            elif filename.endswith('.pdf'):
+                content = self.extract_text_from_pdf(file_path)
+            elif filename.endswith('.docx'):
+                content = self.extract_text_from_docx(file_path)
+            elif filename.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
+                content = self.extract_text_from_image(file_path)
+            return content
 
-        os.remove(file_path)
-        return content
+        except Exception:
+            return ""
+        
+        
+        finally:
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            except OSError:
+                pass
 
 class QuestionGenerator:
     """A transformer-based NLP system for generating reading comprehension-style questions from
