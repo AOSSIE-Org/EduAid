@@ -29,7 +29,13 @@ const Text_Input = () => {
     if (savedText) setText(savedText);
     if (savedDifficulty) setDifficulty(savedDifficulty);
     if (savedNumQuestions !== null) {
-      setNumQuestions(parseInt(savedNumQuestions, 10));
+      const parsedNumQuestions = Number.parseInt(savedNumQuestions, 10);
+
+      setNumQuestions(
+        Number.isInteger(parsedNumQuestions) && parsedNumQuestions > 0
+          ? parsedNumQuestions
+          : 10
+      );
     }
     if (savedWikipedia) setIsToggleOn(parseInt(savedWikipedia, 10));
     if (savedInputSource) setInputSource(savedInputSource);
@@ -47,8 +53,13 @@ const Text_Input = () => {
 
       try {
         const data = await apiClient.postFormData("/upload", formData);
-        setText(data.content || data.error);
-        setInputSource("file");
+
+        if (data && typeof data.content === "string" && data.content.trim()) {
+          setText(data.content.trim());
+          setInputSource("file");
+        } else {
+          console.error("Invalid file upload response");
+        }
       } catch (error) {
         console.error("Error uploading file:", error);
       }
