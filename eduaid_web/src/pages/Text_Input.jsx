@@ -66,7 +66,11 @@ const Text_Input = () => {
   const handleSaveToLocalStorage = async () => {
     const trimmedUrl = docUrl.trim();
     const trimmedText = text.trim();
-
+    const validQuestionCount = Number.isInteger(numQuestions) && numQuestions > 0;
+    if (!validQuestionCount) {
+      console.error("Number of questions must be a positive integer");
+      return;
+    }
     if (trimmedUrl) {
       setLoading(true);
       try {

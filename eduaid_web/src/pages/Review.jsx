@@ -20,7 +20,8 @@ const Review = () => {
         const text = localStorage.getItem("textContent") || "";
         const difficulty = localStorage.getItem("difficulty") || "Easy Difficulty";
         const savedNumQuestions = localStorage.getItem("numQuestions");
-        const numQuestions = savedNumQuestions !== null ? parseInt(savedNumQuestions, 10) : 10;
+        const parsedNumQuestions = Number.parseInt(savedNumQuestions ?? "", 10);
+        const numQuestions = Number.isInteger(parsedNumQuestions) && parsedNumQuestions > 0 ? parsedNumQuestions : 10;
         const questionType = localStorage.getItem("selectedQuestionType") || "";
         const useWikipedia = localStorage.getItem("useWikipedia") === "1";
         const savedInputSource = localStorage.getItem("inputSource");
