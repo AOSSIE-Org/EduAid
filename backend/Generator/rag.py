@@ -11,70 +11,102 @@ class RAGService:
         self.current_text = None
 
         # Embedding model
-        self.embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+        self.embedder = SentenceTransformer(
+            "sentence-transformers/all-MiniLM-L6-v2"
+        )
 
         # Generator model
         self.tokenizer = T5Tokenizer.from_pretrained("t5-base")
         self.generator = T5ForConditionalGeneration.from_pretrained("t5-base")
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device(
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
         self.generator.to(self.device)
 
-        # FAISS index
+        # FAISS state
         self.index = None
         self.text_chunks = []
         self.dimension = None
 
-    # -----------------------------
+    # ---------------------------------------------------
     # TEXT CHUNKING
-    # -----------------------------
+    # ---------------------------------------------------
     def chunk_text(self, text, chunk_size=400, overlap=50):
+
+        if chunk_size <= 0:
+            raise ValueError("chunk_size must be > 0")
+
+        if overlap < 0 or overlap >= chunk_size:
+            raise ValueError(
+                "overlap must be >= 0 and < chunk_size"
+            )
+
         words = text.split()
         chunks = []
 
-        for i in range(0, len(words), chunk_size - overlap):
+        step = chunk_size - overlap
+
+        for i in range(0, len(words), step):
             chunk = words[i:i + chunk_size]
             chunks.append(" ".join(chunk))
 
         return chunks
 
-    # -----------------------------
-    # INDEXING
-    # -----------------------------
+    # ---------------------------------------------------
+    # SAFE ATOMIC INDEXING
+    # ---------------------------------------------------
     def index_text(self, text):
 
-        # Avoid re-indexing same document
-        if self.current_text == text:
+        # Skip only if state is already valid
+        if (
+            self.current_text == text
+            and self.index is not None
+            and self.text_chunks
+        ):
             return
 
-        self.current_text = text
-        self.text_chunks = []
+        try:
+            # Build temporary chunks
+            temp_chunks = self.chunk_text(text)
 
-        # Create chunks
-        self.text_chunks = self.chunk_text(text)
+            if not temp_chunks:
+                self.current_text = text
+                self.text_chunks = []
+                self.index = None
+                self.dimension = None
+                return
 
-        if not self.text_chunks:
-            return
+            # Generate embeddings
+            temp_embeddings = self.embedder.encode(
+                temp_chunks,
+                convert_to_numpy=True
+            )
 
-        # Create embeddings
-        embeddings = self.embedder.encode(
-            self.text_chunks,
-            convert_to_numpy=True
-        )
+            # Normalize for cosine similarity
+            faiss.normalize_L2(temp_embeddings)
+            temp_embeddings = temp_embeddings.astype("float32")
 
-        # Normalize for cosine similarity
-        faiss.normalize_L2(embeddings)
+            temp_dimension = temp_embeddings.shape[1]
+            temp_index = faiss.IndexFlatIP(temp_dimension)
+            temp_index.add(temp_embeddings)
 
-        embeddings = embeddings.astype("float32")
+            # 🔐 Commit state only after success
+            self.current_text = text
+            self.text_chunks = temp_chunks
+            self.dimension = temp_dimension
+            self.index = temp_index
 
-        # Create FAISS index (cosine similarity)
-        self.dimension = embeddings.shape[1]
-        self.index = faiss.IndexFlatIP(self.dimension)
-        self.index.add(embeddings)
+        except Exception:
+            # Prevent corrupted state
+            self.index = None
+            self.text_chunks = []
+            self.dimension = None
+            raise
 
-    # -----------------------------
-    # QUERY (WITH MEMORY)
-    # -----------------------------
+    # ---------------------------------------------------
+    # QUERY WITH MEMORY
+    # ---------------------------------------------------
     def query(self, question, chat_history=None, top_k=3):
 
         if self.index is None:
@@ -89,13 +121,13 @@ class RAGService:
         faiss.normalize_L2(question_embedding)
         question_embedding = question_embedding.astype("float32")
 
-        # Safe top_k
         top_k = min(top_k, len(self.text_chunks))
 
-        # Search
-        distances, indices = self.index.search(question_embedding, top_k)
+        distances, indices = self.index.search(
+            question_embedding,
+            top_k
+        )
 
-        # Retrieve relevant chunks
         retrieved_chunks = [
             self.text_chunks[i]
             for i in indices[0]
@@ -104,9 +136,7 @@ class RAGService:
 
         context = " ".join(retrieved_chunks)
 
-        # -----------------------------
-        # BUILD CHAT HISTORY TEXT
-        # -----------------------------
+        # Build conversation history
         history_text = ""
 
         if chat_history:
@@ -119,9 +149,7 @@ class RAGService:
                 elif role == "assistant":
                     history_text += f"Assistant: {message}\n"
 
-        # -----------------------------
-        # FINAL PROMPT
-        # -----------------------------
+        # Final prompt
         input_text = f"""
 You are a helpful educational assistant.
 
