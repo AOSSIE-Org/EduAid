@@ -25,23 +25,26 @@ from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
+from Generator.rag import RAGService
+
 
 app = Flask(__name__)
 CORS(app)
-print("Starting Flask App...")
+rag_service = None
+print("RAG SERVICE INITIALIZED SUCCESSFULLY")
 
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
 
-MCQGen = main.MCQGenerator()
-answer = main.AnswerPredictor()
-BoolQGen = main.BoolQGenerator()
-ShortQGen = main.ShortQGenerator()
-qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+# MCQGen = main.MCQGenerator()
+# answer = main.AnswerPredictor()
+# BoolQGen = main.BoolQGenerator()
+# ShortQGen = main.ShortQGenerator()
+# qg = main.QuestionGenerator()
+# docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
-qa_model = pipeline("question-answering")
+# qa_model = pipeline("question-answering")
 
 
 def process_input_text(input_text, use_mediawiki):
@@ -490,6 +493,39 @@ def get_transcript():
 
     return jsonify({"transcript": transcript_text})
 
+
+@app.route("/chat", methods=["POST"])
+def chat():
+    global rag_service
+
+    if rag_service is None:
+        print("Initializing RAG...")
+        rag_service = RAGService()
+
+    try:
+        data = request.get_json()
+
+        document_text = data.get("document_text")
+        question = data.get("question")
+        chat_history = data.get("chat_history", [])
+
+        # Safe validation
+        if not document_text or not document_text.strip():
+            return jsonify({"error": "Document text is required"}), 400
+
+        if not question or not question.strip():
+            return jsonify({"error": "Question is required"}), 400
+
+        rag_service.index_text(document_text)
+        answer = rag_service.query(question, chat_history)
+
+        return jsonify({
+            "answer": answer,
+            "status": "success"
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
 if __name__ == "__main__":
-    os.makedirs("subtitles", exist_ok=True)
-    app.run()
+    app.run(host="0.0.0.0", port=5000, debug=False)
