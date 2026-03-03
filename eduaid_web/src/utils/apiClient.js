@@ -13,7 +13,11 @@ class ApiClient {
 
   subscribeConnectionStatus(listener) {
     this.listeners.add(listener);
-    listener({ status: this.currentStatus, detail: this.currentDetail });
+    try {
+      listener({ status: this.currentStatus, detail: this.currentDetail });
+    } catch (error) {
+      console.error("Connection listener failed:", error);
+    }
     return () => this.listeners.delete(listener);
   }
 
@@ -51,6 +55,11 @@ class ApiClient {
       const text = await response.text().catch(() => "");
       throw new Error(`HTTP ${response.status}: ${text || "Request Failed"}`);
     }
+
+    if (response.status === 204 || response.status === 205) return null;
+
+    const contentLength = response.headers.get("Content-Length");
+    if (contentLength === "0") return null;
     return response.json();
   }
 
@@ -153,7 +162,7 @@ class ApiClient {
         return data;
       } catch (error) {
         const status = error instanceof TypeError ? "down" : "error";
-        this.setConnectionStatus(status, error.message);
+        this.setConnectionStatus(status, error?.message || "API request failed");
         throw error;
       }
     }
