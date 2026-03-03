@@ -36,3 +36,37 @@
     transform: rotate(360deg);
   }
 }
+
+.connection-banner {
+  padding: 8px 12px;
+  text-align: center;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.connection-banner.down {
+  background: #b91c1c;
+  color: white;
+}
+
+.connection-banner.error {
+  background: #facc15;
+  color: #111827;
+}
+
+.connection-banner-retry {
+  background: #ffffff;
+  color: #b91c1c;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.connection-banner-retry:hover {
+  filter: brightness(0.95);
+}
