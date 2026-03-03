@@ -177,8 +177,12 @@ def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, 
         text = context + " " + "answer: " + answer + " </s>"
         batch_text.append(text)
 
-    encoding = tokenizer.batch_encode_plus(batch_text, pad_to_max_length=True, return_tensors="pt")
-
+    encoding = tokenizer.batch_encode_plus(
+        batch_text,
+        padding="max_length",
+        truncation=True,
+        return_tensors="pt"
+    )
     print("Generating questions using the model...")
     input_ids, attention_masks = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)
 
@@ -223,8 +227,12 @@ def generate_normal_questions(keyword_sent_mapping, device, tokenizer, model):
         text = context + " " + "answer: " + answer + " </s>"
         batch_text.append(text)
 
-    encoding = tokenizer.batch_encode_plus(batch_text, pad_to_max_length=True, return_tensors="pt")
-
+    encoding = tokenizer.batch_encode_plus(
+        batch_text,
+        padding="max_length",
+        truncation=True,
+        return_tensors="pt"
+    )
     print("Running model for generation...")
     input_ids, attention_masks = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)
 
