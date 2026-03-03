@@ -12,6 +12,7 @@ nltk.download("stopwords")
 nltk.download('punkt_tab')
 from Generator import main
 from Generator.question_filters import make_question_harder
+from threading import Lock
 import re
 import json
 import spacy
@@ -31,6 +32,7 @@ from Generator.rag import RAGService
 app = Flask(__name__)
 CORS(app)
 rag_service = None
+rag_lock = Lock()
 print("RAG SERVICE INITIALIZED SUCCESSFULLY")
 
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
@@ -500,10 +502,6 @@ def get_transcript():
 def chat():
     global rag_service
 
-    if rag_service is None:
-        print("Initializing RAG...")
-        rag_service = RAGService()
-
     try:
         data = request.get_json()
 
@@ -511,23 +509,28 @@ def chat():
         question = data.get("question")
         chat_history = data.get("chat_history", [])
 
-        # Safe validation
+        # Input validation
         if not document_text or not document_text.strip():
             return jsonify({"error": "Document text is required"}), 400
 
         if not question or not question.strip():
             return jsonify({"error": "Question is required"}), 400
 
-        rag_service.index_text(document_text)
-        answer = rag_service.query(question, chat_history)
+        with rag_lock:
+            if rag_service is None:
+                rag_service = RAGService()
+
+            rag_service.index_text(document_text)
+            answer = rag_service.query(question, chat_history)
 
         return jsonify({
             "answer": answer,
             "status": "success"
         })
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        app.logger.exception("Chat endpoint error")
+        return jsonify({"error": "Internal server error"}), 500
     
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
