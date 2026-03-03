@@ -73,8 +73,8 @@ def test_root():
     print(f'Root Endpoint Response: {response.text}')
     assert response.status_code == 200
 
-def test_get_answer():
-    endpoint = '/get_answer'
+def test_get_shortq_answer():
+    endpoint = '/get_shortq_answer'
     data = {
         'input_text': input_text,
         'input_question': [
@@ -85,7 +85,7 @@ def test_get_answer():
         ]
     }
     response = make_post_request(endpoint, data)
-    print(f'/get_answer Response: {response}')
+    print(f"{endpoint} Response: {response}")
     assert 'output' in response
 
 def test_get_boolean_answer():
@@ -114,5 +114,5 @@ if __name__ == '__main__':
     test_get_shortq()
     test_get_problems()
     test_root()
-    test_get_answer()
+    test_get_shortq_answer()
     test_get_boolean_answer()
