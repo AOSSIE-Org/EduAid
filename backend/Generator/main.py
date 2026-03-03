@@ -26,7 +26,6 @@ import threading
 
 
 
-import threading
 
 class ModelManager:
     """Singleton class to load and share massive ML models across generators."""
