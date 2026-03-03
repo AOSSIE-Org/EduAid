@@ -74,7 +74,7 @@ def test_root():
     assert response.status_code == 200
 
 def test_get_answer():
-    endpoint = '/get_answer'
+    endpoint = '/get_shortq_answer'
     data = {
         'input_text': input_text,
         'input_question': [
