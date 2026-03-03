@@ -17,17 +17,22 @@ const Text_Input = () => {
   const fileInputRef = useRef(null);
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
+  const [inputSource, setInputSource] = useState("text");
 
   useEffect(() => {
     const savedText = localStorage.getItem("textContent");
     const savedDifficulty = localStorage.getItem("difficulty");
     const savedNumQuestions = localStorage.getItem("numQuestions");
     const savedWikipedia = localStorage.getItem("useWikipedia");
+    const savedInputSource = localStorage.getItem("inputSource");
 
     if (savedText) setText(savedText);
     if (savedDifficulty) setDifficulty(savedDifficulty);
-    if (savedNumQuestions) setNumQuestions(parseInt(savedNumQuestions));
-    if (savedWikipedia) setIsToggleOn(parseInt(savedWikipedia));
+    if (savedNumQuestions !== null) {
+      setNumQuestions(parseInt(savedNumQuestions, 10));
+    }
+    if (savedWikipedia) setIsToggleOn(parseInt(savedWikipedia, 10));
+    if (savedInputSource) setInputSource(savedInputSource);
   }, []);
 
   const toggleSwitch = () => {
@@ -43,9 +48,11 @@ const Text_Input = () => {
       try {
         const data = await apiClient.postFormData("/upload", formData);
         setText(data.content || data.error);
+        setInputSource("file");
       } catch (error) {
         console.error("Error uploading file:", error);
         setText("Error uploading file");
+        setInputSource("file");
       }
     }
   };
@@ -63,19 +70,30 @@ const Text_Input = () => {
       setLoading(true);
       try {
         const data = await apiClient.post("/get_content", { document_url: docUrl });
+        const fetchedText = data || "Error in retrieving";
         setDocUrl("");
-        setText(data || "Error in retrieving");
+        setText(fetchedText);
+        setInputSource("url");
+
+        localStorage.setItem("textContent", fetchedText);
+        localStorage.setItem("difficulty", difficulty);
+        localStorage.setItem("numQuestions", numQuestions.toString());
+        localStorage.setItem("useWikipedia", isToggleOn.toString());
+        localStorage.setItem("inputSource", "url");
+        navigate("/review");
       } catch (error) {
         console.error("Error:", error);
         setText("Error retrieving Google Doc content");
+        setInputSource("url");
       } finally {
         setLoading(false);
       }
     } else if (text) {
       localStorage.setItem("textContent", text);
       localStorage.setItem("difficulty", difficulty);
-      localStorage.setItem("numQuestions", numQuestions);
+      localStorage.setItem("numQuestions", numQuestions.toString());
       localStorage.setItem("useWikipedia", isToggleOn.toString());
+      localStorage.setItem("inputSource", inputSource);
       navigate("/review");
     }
   };

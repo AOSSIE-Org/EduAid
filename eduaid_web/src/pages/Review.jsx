@@ -19,15 +19,19 @@ const Review = () => {
     useEffect(() => {
         const text = localStorage.getItem("textContent") || "";
         const difficulty = localStorage.getItem("difficulty") || "Easy Difficulty";
-        const numQuestions = parseInt(localStorage.getItem("numQuestions")) || 10;
+        const savedNumQuestions = localStorage.getItem("numQuestions");
+        const numQuestions = savedNumQuestions !== null ? parseInt(savedNumQuestions, 10) : 10;
         const questionType = localStorage.getItem("selectedQuestionType") || "";
         const useWikipedia = localStorage.getItem("useWikipedia") === "1";
+        const savedInputSource = localStorage.getItem("inputSource");
 
-        let inputSource = "Text";
-        if (text.includes("uploaded file") || text.includes("Error uploading")) {
-            inputSource = "File Upload";
-        } else if (text.includes("Google Doc")) {
-            inputSource = "Google Doc URL";
+        let inputSource = savedInputSource || "text";
+        if (!savedInputSource) {
+            if (text.includes("uploaded file") || text.includes("Error uploading")) {
+                inputSource = "file";
+            } else if (text.includes("Google Doc")) {
+                inputSource = "url";
+            }
         }
 
         setReviewData({
@@ -43,6 +47,15 @@ const Review = () => {
             navigate("/input");
         }
     }, [navigate]);
+
+    const getInputSourceLabel = (source) => {
+        const labels = {
+            text: "Text",
+            file: "File Upload",
+            url: "Google Doc URL"
+        };
+        return labels[source] || "Text";
+    };
 
     const getQuestionTypeLabel = (type) => {
         const types = {
@@ -69,6 +82,13 @@ const Review = () => {
         setLoading(true);
         const endpoint = getEndpoint(reviewData.difficulty, reviewData.questionType);
 
+        const allowedEndpoints = ["get_shortq", "get_mcq", "get_boolq", "get_problems", "get_shortq_hard", "get_mcq_hard"];
+        if (!allowedEndpoints.includes(endpoint)) {
+            console.error("Invalid endpoint:", endpoint);
+            setLoading(false);
+            return;
+        }
+
         try {
             const requestData = {
                 input_text: reviewData.text,
@@ -86,7 +106,19 @@ const Review = () => {
                 qaPair: responseData,
             };
 
-            let last5Quizzes = JSON.parse(localStorage.getItem("last5Quizzes")) || [];
+            let last5Quizzes = [];
+            try {
+                const stored = localStorage.getItem("last5Quizzes");
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (Array.isArray(parsed)) {
+                        last5Quizzes = parsed;
+                    }
+                }
+            } catch (parseError) {
+                console.error("Failed to parse last5Quizzes:", parseError);
+            }
+
             last5Quizzes.push(quizDetails);
             if (last5Quizzes.length > 5) {
                 last5Quizzes.shift();
@@ -129,7 +161,7 @@ const Review = () => {
                     <div className="bg-[#83b6cc40] rounded-2xl p-6 space-y-4">
                         <div className="border-b border-gray-600 pb-4">
                             <div className="text-[#E4E4E4] text-sm sm:text-base mb-1">Input Source</div>
-                            <div className="text-white text-lg sm:text-xl font-semibold">{reviewData.inputSource}</div>
+                            <div className="text-white text-lg sm:text-xl font-semibold">{getInputSourceLabel(reviewData.inputSource)}</div>
                         </div>
 
                         <div className="border-b border-gray-600 pb-4">
@@ -177,8 +209,8 @@ const Review = () => {
                             onClick={handleConfirmGenerate}
                             disabled={loading}
                             className={`text-white text-lg sm:text-xl px-6 py-3 rounded-xl w-full sm:w-auto ${loading
-                                    ? "bg-gray-500 cursor-not-allowed"
-                                    : "bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:brightness-110"
+                                ? "bg-gray-500 cursor-not-allowed"
+                                : "bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:brightness-110"
                                 }`}
                         >
                             {loading ? "Generating..." : "Confirm & Generate"}
