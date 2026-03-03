@@ -18,6 +18,7 @@ const Text_Input = () => {
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
   const [inputSource, setInputSource] = useState("text");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const savedText = localStorage.getItem("textContent");
@@ -37,7 +38,13 @@ const Text_Input = () => {
           : 10
       );
     }
-    if (savedWikipedia) setIsToggleOn(parseInt(savedWikipedia, 10));
+    if (savedWikipedia !== null) {
+      const normalizedWikipedia =
+        savedWikipedia === "1" || savedWikipedia === "true"
+          ? 1
+          : 0;
+      setIsToggleOn(normalizedWikipedia);
+    }
     if (savedInputSource) setInputSource(savedInputSource);
   }, []);
 
@@ -83,11 +90,12 @@ const Text_Input = () => {
       return;
     }
     if (trimmedUrl) {
+      setError("");
       setLoading(true);
       try {
         const data = await apiClient.post("/get_content", { document_url: trimmedUrl });
         if (!data || typeof data !== "string" || !data.trim()) {
-          console.error("Invalid document content received");
+          setError("could not retrieve content from the provided URL.");
           setLoading(false);
           return;
         }
@@ -105,6 +113,7 @@ const Text_Input = () => {
         navigate("/review");
       } catch (error) {
         console.error("Error:", error);
+        setError("failed to fetch document content. Please try again.")
       } finally {
         setLoading(false);
       }
@@ -200,6 +209,11 @@ const Text_Input = () => {
             value={docUrl}
             onChange={(e) => setDocUrl(e.target.value)}
           />
+          {error && (
+            <div className="text-red-400 text-center mt-3">
+              {error}
+            </div>
+          )}
         </div>
 
         {/* Controls Section */}
