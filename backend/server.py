@@ -198,8 +198,9 @@ def get_content():
         return jsonify(text)
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    except Exception:
+        app.logger.exception("Google Docs content error")
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route("/generate_gform", methods=["POST"])
