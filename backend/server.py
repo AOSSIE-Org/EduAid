@@ -36,15 +36,17 @@ print("RAG SERVICE INITIALIZED SUCCESSFULLY")
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
 
-# MCQGen = main.MCQGenerator()
-# answer = main.AnswerPredictor()
-# BoolQGen = main.BoolQGenerator()
-# ShortQGen = main.ShortQGenerator()
-# qg = main.QuestionGenerator()
-# docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+MCQGen = main.MCQGenerator()
+answer = main.AnswerPredictor()
+BoolQGen = main.BoolQGenerator()
+ShortQGen = main.ShortQGenerator()
+qg = main.QuestionGenerator()
+docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
-# qa_model = pipeline("question-answering")
+
+qa_model = pipeline("question-answering")
 
 
 def process_input_text(input_text, use_mediawiki):
