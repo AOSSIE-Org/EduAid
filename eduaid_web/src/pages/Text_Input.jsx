@@ -1,11 +1,11 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "../index.css";
 import logo_trans from "../assets/aossie_logo_transparent.png"
 import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
-import { Link,useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 
 const Text_Input = () => {
@@ -15,9 +15,20 @@ const Text_Input = () => {
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
-  const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
+
+  useEffect(() => {
+    const savedText = localStorage.getItem("textContent");
+    const savedDifficulty = localStorage.getItem("difficulty");
+    const savedNumQuestions = localStorage.getItem("numQuestions");
+    const savedWikipedia = localStorage.getItem("useWikipedia");
+
+    if (savedText) setText(savedText);
+    if (savedDifficulty) setDifficulty(savedDifficulty);
+    if (savedNumQuestions) setNumQuestions(parseInt(savedNumQuestions));
+    if (savedWikipedia) setIsToggleOn(parseInt(savedWikipedia));
+  }, []);
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
@@ -48,10 +59,8 @@ const Text_Input = () => {
   };
 
   const handleSaveToLocalStorage = async () => {
-    setLoading(true);
-
-    // Check if a Google Doc URL is provided
     if (docUrl) {
+      setLoading(true);
       try {
         const data = await apiClient.post("/get_content", { document_url: docUrl });
         setDocUrl("");
@@ -63,16 +72,11 @@ const Text_Input = () => {
         setLoading(false);
       }
     } else if (text) {
-      // Proceed with existing functionality for local storage
       localStorage.setItem("textContent", text);
       localStorage.setItem("difficulty", difficulty);
       localStorage.setItem("numQuestions", numQuestions);
-
-      await sendToBackend(
-        text,
-        difficulty,
-        localStorage.getItem("selectedQuestionType")
-      );
+      localStorage.setItem("useWikipedia", isToggleOn.toString());
+      navigate("/review");
     }
   };
 
@@ -86,53 +90,6 @@ const Text_Input = () => {
 
   const decrementQuestions = () => {
     setNumQuestions((prev) => (prev > 0 ? prev - 1 : 0));
-  };
-
-  const getEndpoint = (difficulty, questionType) => {
-    if (difficulty !== "Easy Difficulty") {
-      if (questionType === "get_shortq") {
-        return "get_shortq_hard";
-      } else if (questionType === "get_mcq") {
-        return "get_mcq_hard";
-      }
-    }
-    return questionType;
-  };
-
-  const sendToBackend = async (data, difficulty, questionType) => {
-    const endpoint = getEndpoint(difficulty, questionType);
-    try {
-      const requestData = {
-        input_text: data,
-        max_questions: numQuestions,
-        use_mediawiki: isToggleOn,
-      };
-
-      const responseData = await apiClient.post(`/${endpoint}`, requestData);
-      localStorage.setItem("qaPairs", JSON.stringify(responseData));
-
-      // Save quiz details to local storage
-      const quizDetails = {
-        difficulty,
-        numQuestions,
-        date: new Date().toLocaleDateString(),
-        qaPair: responseData,
-      };
-
-      let last5Quizzes =
-        JSON.parse(localStorage.getItem("last5Quizzes")) || [];
-      last5Quizzes.push(quizDetails);
-      if (last5Quizzes.length > 5) {
-        last5Quizzes.shift(); // Keep only the last 5 quizzes
-      }
-      localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
-
-      navigate("/output");
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
