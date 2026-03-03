@@ -65,10 +65,11 @@ const Text_Input = () => {
           setText(data.content.trim());
           setInputSource("file");
         } else {
-          console.error("Invalid file upload response");
+          setError("Invalid file content received.");
         }
       } catch (error) {
         console.error("Error uploading file:", error);
+        setError("Error uploading file. Please try again.");
       }
     }
   };
@@ -87,6 +88,7 @@ const Text_Input = () => {
     const validQuestionCount = Number.isInteger(numQuestions) && numQuestions > 0;
     if (!validQuestionCount) {
       console.error("Number of questions must be a positive integer");
+      setError("Number of questions must be at least 1.");
       return;
     }
     if (trimmedUrl) {
