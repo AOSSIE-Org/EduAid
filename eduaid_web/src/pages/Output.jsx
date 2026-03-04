@@ -109,19 +109,29 @@ const Output = () => {
     const combinedQaPairs = [];
 
     if (responseData["output_boolq"]) {
-      responseData["output_boolq"]["Boolean_Questions"].forEach(
-        (question, index) => {
-          combinedQaPairs.push({
-            question,
-            question_type: "Boolean",
-            context: responseData["output_boolq"]["Text"],
-          });
-        }
-      );
+      const boolQuestions = Array.isArray(
+        responseData["output_boolq"]?.["Boolean_Questions"]
+      )
+        ? responseData["output_boolq"]["Boolean_Questions"]
+        : [];
+
+      boolQuestions.forEach((question) => {
+        combinedQaPairs.push({
+          question,
+          question_type: "Boolean",
+          context: responseData["output_boolq"]["Text"],
+        });
+      });
     }
 
     if (responseData["output_mcq"]) {
-      responseData["output_mcq"]["questions"].forEach((qaPair) => {
+      const mcqQuestions = Array.isArray(
+        responseData["output_mcq"]?.["questions"]
+      )
+        ? responseData["output_mcq"]["questions"]
+        : [];
+
+      mcqQuestions.forEach((qaPair) => {
         combinedQaPairs.push({
           question: qaPair.question_statement,
           question_type: "MCQ",
@@ -282,7 +292,7 @@ const Output = () => {
       }
     }
   }, []);
-  
+
   const generateGoogleForm = async () => {
     try {
       const result = await apiClient.post("/generate_gform", {
