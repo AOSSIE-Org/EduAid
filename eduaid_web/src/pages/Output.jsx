@@ -131,6 +131,24 @@ const Output = () => {
         });
       });
     }
+    if (responseData["output_shortq"]) {
+      const shortItems = Array.isArray(responseData["output_shortq"])
+        ? responseData["output_shortq"]
+        : Array.isArray(responseData["output_shortq"]?.questions)
+          ? responseData["output_shortq"].questions
+          : [];
+
+      shortItems.forEach((qaPair) => {
+        combinedQaPairs.push({
+          question:
+            qaPair.question || qaPair.question_statement || qaPair.Question,
+          options: qaPair.options,
+          answer: qaPair.answer || qaPair.Answer,
+          context: qaPair.context,
+          question_type: "Short",
+        });
+      });
+    }
 
     if (questionType === "get_mcq" && Array.isArray(responseData["output"])) {
       responseData["output"].forEach((qaPair) => {
@@ -147,7 +165,10 @@ const Output = () => {
     if (questionType === "get_boolq" && Array.isArray(responseData["output"])) {
       responseData["output"].forEach((qaPair) => {
         combinedQaPairs.push({
-          question: qaPair,
+          question:
+            typeof qaPair === "string"
+              ? qaPair
+              : qaPair.question || qaPair.question_statement || qaPair.Question || "",
           question_type: "Boolean",
         });
       });
@@ -247,13 +268,21 @@ const Output = () => {
 
   useEffect(() => {
     const storedQaPairs = localStorage.getItem("qaPairs");
+
     if (storedQaPairs) {
-      const qaPairsFromStorage = JSON.parse(storedQaPairs);
-      const combinedQaPairs = processQaPairsResponse(qaPairsFromStorage, questionType);
-      setQaPairs(combinedQaPairs);
+      try {
+        const qaPairsFromStorage = JSON.parse(storedQaPairs);
+        const combinedQaPairs = processQaPairsResponse(
+          qaPairsFromStorage,
+          questionType
+        );
+        setQaPairs(combinedQaPairs);
+      } catch {
+        setError("Saved quiz data is invalid. Please regenerate the quiz.");
+      }
     }
   }, []);
-
+  
   const generateGoogleForm = async () => {
     try {
       const result = await apiClient.post("/generate_gform", {
