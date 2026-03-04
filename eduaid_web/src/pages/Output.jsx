@@ -144,14 +144,14 @@ const Output = () => {
       });
     }
 
-    if (questionType == "get_boolq") {
+    if (questionType === "get_boolq" && Array.isArray(responseData["output"])) {
       responseData["output"].forEach((qaPair) => {
         combinedQaPairs.push({
           question: qaPair,
           question_type: "Boolean",
         });
       });
-    } else if (responseData["output"] && questionType !== "get_mcq") {
+    } else if (Array.isArray(responseData["output"]) && questionType !== "get_mcq") {
       responseData["output"].forEach((qaPair) => {
         combinedQaPairs.push({
           question:
@@ -246,9 +246,9 @@ const Output = () => {
   };
 
   useEffect(() => {
-    const qaPairsFromStorage =
-      JSON.parse(localStorage.getItem("qaPairs")) || {};
-    if (qaPairsFromStorage) {
+    const storedQaPairs = localStorage.getItem("qaPairs");
+    if (storedQaPairs) {
+      const qaPairsFromStorage = JSON.parse(storedQaPairs);
       const combinedQaPairs = processQaPairsResponse(qaPairsFromStorage, questionType);
       setQaPairs(combinedQaPairs);
     }
