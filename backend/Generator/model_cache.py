@@ -7,8 +7,19 @@ from threading import Lock
 
 class ModelCache:
     """
-    Global lazy-loading model cache.
-    Ensures each model loads only once.
+    Lazy-loading cache for transformer models.
+
+    Models are loaded only once per Python process and reused
+    across generator classes to avoid redundant initialization.
+
+    Note:
+    This cache is process-local. In multi-worker deployments
+    (e.g., Gunicorn with multiple workers), each worker process
+    will maintain its own cache and load its own model instances.
+
+    For large-scale deployments, consider using a dedicated
+    model-serving service or shared model infrastructure to
+    avoid duplicated memory usage across processes.
     """
 
     # Stores loaded models
@@ -20,13 +31,10 @@ class ModelCache:
     @classmethod
     def get_t5_question_generator(cls):
 
-        # First check (fast path)
         if "t5_qg" not in cls._models:
 
-            # Acquire lock to ensure only one thread loads model
             with cls._lock:
 
-                # Second check (double-checked locking)
                 if "t5_qg" not in cls._models:
                     tokenizer = T5Tokenizer.from_pretrained("t5-large")
                     model = T5ForConditionalGeneration.from_pretrained(
