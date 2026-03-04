@@ -94,14 +94,15 @@ const Output = () => {
   };
 
   const getEndpoint = (difficulty, questionType) => {
-    if (difficulty !== "Easy Difficulty") {
-      if (questionType === "get_shortq") {
-        return "get_shortq_hard";
-      } else if (questionType === "get_mcq") {
-        return "get_mcq_hard";
-      }
-    }
-    return questionType;
+    if (difficulty === "Easy Difficulty") return questionType;
+
+    const hardEndpointMap = {
+      get_shortq: "get_shortq_hard",
+      get_mcq: "get_mcq_hard",
+      get_boolq: "get_boolq_hard",
+    };
+
+    return hardEndpointMap[questionType] || null;
   };
 
   const processQaPairsResponse = (responseData, questionType) => {
@@ -131,7 +132,7 @@ const Output = () => {
       });
     }
 
-    if (responseData["output_mcq"] || questionType === "get_mcq") {
+    if (questionType === "get_mcq" && Array.isArray(responseData["output"])) {
       responseData["output"].forEach((qaPair) => {
         combinedQaPairs.push({
           question: qaPair.question_statement,
@@ -187,13 +188,29 @@ const Output = () => {
 
       // Determine the correct endpoint
       const endpoint = getEndpoint(difficulty, selectedQuestionType);
+      if (!endpoint) {
+        setError("Selected hard-difficulty combination is not supported yet.");
+        setLoading(false);
+        return;
+      }
 
       // Prepare request data
+      const parsedQuestionCount = Number.parseInt(numQuestions, 10) || 10;
+
       const requestData = {
         input_text: textContent,
-        max_questions: parseInt(numQuestions) || 10,
         use_mediawiki: parseInt(useWikipedia),
       };
+
+      if (endpoint === "get_problems") {
+        requestData.max_questions_mcq = parsedQuestionCount;
+        requestData.max_questions_boolq = parsedQuestionCount;
+        requestData.max_questions_shortq = parsedQuestionCount;
+      } else if (endpoint.endsWith("_hard")) {
+        requestData.input_question = parsedQuestionCount;
+      } else {
+        requestData.max_questions = parsedQuestionCount;
+      }
 
       // Send API request
       const responseData = await apiClient.post(`/${endpoint}`, requestData);
