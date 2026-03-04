@@ -5,7 +5,7 @@ import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
-import { Link,useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 
 const Text_Input = () => {
@@ -54,8 +54,23 @@ const Text_Input = () => {
     if (docUrl) {
       try {
         const data = await apiClient.post("/get_content", { document_url: docUrl });
+
+        const fetchedText = data || "";
+
         setDocUrl("");
-        setText(data || "Error in retrieving");
+        setText(fetchedText);
+
+        // Persist quiz parameters
+        localStorage.setItem("textContent", fetchedText);
+        localStorage.setItem("difficulty", difficulty);
+        localStorage.setItem("numQuestions", numQuestions);
+        localStorage.setItem("useWikipedia", isToggleOn);
+
+        await sendToBackend(
+          fetchedText,
+          difficulty,
+          localStorage.getItem("selectedQuestionType")
+        );
       } catch (error) {
         console.error("Error:", error);
         setText("Error retrieving Google Doc content");
@@ -67,6 +82,7 @@ const Text_Input = () => {
       localStorage.setItem("textContent", text);
       localStorage.setItem("difficulty", difficulty);
       localStorage.setItem("numQuestions", numQuestions);
+      localStorage.setItem("useWikipedia", isToggleOn);
 
       await sendToBackend(
         text,
