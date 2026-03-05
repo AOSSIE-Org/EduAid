@@ -38,7 +38,7 @@ answer = main.AnswerPredictor()
 BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+# docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
@@ -53,9 +53,22 @@ def process_input_text(input_text, use_mediawiki):
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
     data = request.get_json()
+    if data is None:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+
     input_text = data.get("input_text", "")
+    if not input_text:
+        return jsonify({"error": "input_text is required"}), 400
+
     use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
+    
+    try:
+        max_questions = int(data.get("max_questions", 4))
+        if max_questions <= 0:
+            return jsonify({"error": "max_questions must be a positive integer"}), 400
+    except (ValueError, TypeError):
+        return jsonify({"error": "max_questions must be a positive integer"}), 400
+
     input_text = process_input_text(input_text, use_mediawiki)
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
@@ -67,9 +80,22 @@ def get_mcq():
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
     data = request.get_json()
+    if data is None:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+
     input_text = data.get("input_text", "")
+    if not input_text:
+        return jsonify({"error": "input_text is required"}), 400
+
     use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
+    
+    try:
+        max_questions = int(data.get("max_questions", 4))
+        if max_questions <= 0:
+            return jsonify({"error": "max_questions must be a positive integer"}), 400
+    except (ValueError, TypeError):
+        return jsonify({"error": "max_questions must be a positive integer"}), 400
+
     input_text = process_input_text(input_text, use_mediawiki)
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
@@ -81,9 +107,22 @@ def get_boolq():
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
     data = request.get_json()
+    if data is None:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+
     input_text = data.get("input_text", "")
+    if not input_text:
+        return jsonify({"error": "input_text is required"}), 400
+
     use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
+    
+    try:
+        max_questions = int(data.get("max_questions", 4))
+        if max_questions <= 0:
+            return jsonify({"error": "max_questions must be a positive integer"}), 400
+    except (ValueError, TypeError):
+        return jsonify({"error": "max_questions must be a positive integer"}), 400
+
     input_text = process_input_text(input_text, use_mediawiki)
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
@@ -95,11 +134,25 @@ def get_shortq():
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
     data = request.get_json()
+    if data is None:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+
     input_text = data.get("input_text", "")
+    if not input_text:
+        return jsonify({"error": "input_text is required"}), 400
+        
     use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions_mcq = data.get("max_questions_mcq", 4)
-    max_questions_boolq = data.get("max_questions_boolq", 4)
-    max_questions_shortq = data.get("max_questions_shortq", 4)
+    
+    try:
+        max_questions_mcq = int(data.get("max_questions_mcq", 4))
+        max_questions_boolq = int(data.get("max_questions_boolq", 4))
+        max_questions_shortq = int(data.get("max_questions_shortq", 4))
+        
+        if max_questions_mcq <= 0 or max_questions_boolq <= 0 or max_questions_shortq <= 0:
+            return jsonify({"error": "max_questions must be a positive integer"}), 400
+    except (ValueError, TypeError):
+        return jsonify({"error": "max_questions must be a positive integer"}), 400
+
     input_text = process_input_text(input_text, use_mediawiki)
     output1 = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions_mcq}
@@ -117,14 +170,20 @@ def get_problems():
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
     data = request.get_json()
+    if data is None:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     input_options = data.get("input_options", [])
+
+    if not isinstance(input_questions, list) or not isinstance(input_options, list) or len(input_questions) != len(input_options):
+        return jsonify({"error": "input_questions and input_options must have equal length"}), 400
+
+    if not input_questions:
+        return jsonify({"output": []})
+
     outputs = []
-
-    if not input_questions or not input_options or len(input_questions) != len(input_options):
-        return jsonify({"outputs": outputs})
-
     for question, options in zip(input_questions, input_options):
         # Generate answer using the QA model
         qa_response = qa_model(question=question, context=input_text)
@@ -179,20 +238,20 @@ def get_boolean_answer():
     return jsonify({"output": output})
 
 
-@app.route('/get_content', methods=['POST'])
-def get_content():
-    try:
-        data = request.get_json()
-        document_url = data.get('document_url')
-        if not document_url:
-            return jsonify({'error': 'Document URL is required'}), 400
+# @app.route('/get_content', methods=['POST'])
+#def get_content():
+#   try:
+#        data = request.get_json()
+#        document_url = data.get('document_url')
+#        if not document_url:
+#            return jsonify({'error': 'Document URL is required'}), 400
 
-        text = docs_service.get_document_content(document_url)
-        return jsonify(text)
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+#        text = docs_service.get_document_content(document_url)
+#        return jsonify(text)
+#    except ValueError as e:
+#        return jsonify({'error': str(e)}), 400
+#    except Exception as e:
+#        return jsonify({'error': str(e)}), 500
 
 
 @app.route("/generate_gform", methods=["POST"])
@@ -367,10 +426,17 @@ def generate_gform():
 @app.route("/get_shortq_hard", methods=["POST"])
 def get_shortq_hard():
     data = request.get_json()
+    if data is None:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+
     input_text = data.get("input_text", "")
+    if not input_text:
+        return jsonify({"error": "input_text is required"}), 400
+        
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
     input_questions = data.get("input_question", [])
+    
+    input_text = process_input_text(input_text,use_mediawiki)
 
     output = qg.generate(
         article=input_text, num_questions=input_questions, answer_style="sentences"
@@ -385,10 +451,18 @@ def get_shortq_hard():
 @app.route("/get_mcq_hard", methods=["POST"])
 def get_mcq_hard():
     data = request.get_json()
+    if data is None:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+
     input_text = data.get("input_text", "")
+    if not input_text:
+        return jsonify({"error": "input_text is required"}), 400
+
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
     input_questions = data.get("input_question", [])
+
+    input_text = process_input_text(input_text,use_mediawiki)
+
     output = qg.generate(
         article=input_text, num_questions=input_questions, answer_style="multiple_choice"
     )
@@ -401,7 +475,13 @@ def get_mcq_hard():
 @app.route("/get_boolq_hard", methods=["POST"])
 def get_boolq_hard():
     data = request.get_json()
+    if data is None:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+
     input_text = data.get("input_text", "")
+    if not input_text:
+        return jsonify({"error": "input_text is required"}), 400
+
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
 
