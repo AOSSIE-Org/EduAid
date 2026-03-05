@@ -233,7 +233,7 @@ def get_shortq_hard():
         input_questions = len(input_questions)
 
     input_questions = int(input_questions)
-    output = []
+    
     output = qg.generate(
         article=input_text,
         num_questions=input_questions,
@@ -522,8 +522,12 @@ def get_boolq_hard():
     )
 
     # Apply transformation to make each question harder
-    harder_questions = [make_question_harder(q) for q in generated]
+    harder_questions = []
 
+    for q in generated:
+        question_text = q.get("question", "")
+        q["question"] = make_question_harder(question_text)
+        harder_questions.append(q)
     return jsonify({"output": harder_questions})
 
 @app.route('/upload', methods=['POST'])
