@@ -25,6 +25,9 @@ from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
+from threading import Lock
+
+init_lock = Lock()
 
 app = Flask(__name__)
 CORS(app)
@@ -38,7 +41,7 @@ answer = None
 BoolQGen = None
 ShortQGen = None
 qg = None
-# docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = None
@@ -60,7 +63,9 @@ def get_mcq():
     global MCQGen
 
     if MCQGen is None:
-        MCQGen = main.MCQGenerator()
+        with init_lock:
+            if MCQGen is None:
+                MCQGen = main.MCQGenerator()
 
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
@@ -81,7 +86,9 @@ def get_boolq():
     input_text = process_input_text(input_text, use_mediawiki)
 
     if BoolQGen is None:
-        BoolQGen = main.BoolQGenerator()
+        with init_lock:
+            if BoolQGen is None:
+                BoolQGen = main.BoolQGenerator()
 
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
@@ -104,7 +111,9 @@ def get_shortq():
     input_text = process_input_text(input_text, use_mediawiki)
 
     if ShortQGen is None:
-        ShortQGen = main.ShortQGenerator()
+        with init_lock:
+            if ShortQGen is None:
+                ShortQGen = main.ShortQGenerator()
 
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
@@ -130,14 +139,20 @@ def get_problems():
     input_text = process_input_text(input_text, use_mediawiki)
 
     if MCQGen is None:
-        MCQGen = main.MCQGenerator()
+        with init_lock:
+            if MCQGen is None:
+                MCQGen = main.MCQGenerator()
 
     if BoolQGen is None:
-        BoolQGen = main.BoolQGenerator()
+        with init_lock:
+            if BoolQGen is None:
+                BoolQGen = main.BoolQGenerator()
 
     if ShortQGen is None:
-        ShortQGen = main.ShortQGenerator()
-
+        with init_lock:
+            if ShortQGen is None:
+                ShortQGen = main.ShortQGenerator()
+                
     output1 = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions_mcq}
     )
@@ -161,15 +176,19 @@ def get_mcq_answer():
     global qa_model
 
     if qa_model is None:
-        qa_model = pipeline("question-answering")
+        with init_lock:
+            if qa_model is None:
+                qa_model = pipeline("question-answering")
+                
     data = request.get_json()
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     input_options = data.get("input_options", [])
-    outputs = []
 
     if not input_questions or not input_options or len(input_questions) != len(input_options):
-        return jsonify({"outputs": outputs})
+        return jsonify({"output": []})
+
+    outputs = []
 
     for question, options in zip(input_questions, input_options):
         # Generate answer using the QA model
@@ -199,15 +218,22 @@ def get_shortq_hard():
     global qg
 
     if qg is None:
-        qg = main.QuestionGenerator()
+        with init_lock:
+            if qg is None:
+                qg = main.QuestionGenerator()
 
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
 
     input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
+    input_questions = data.get("input_question", 4)
 
+    if isinstance(input_questions, list):
+        input_questions = len(input_questions)
+
+    input_questions = int(input_questions)
+    output = []
     output = qg.generate(
         article=input_text,
         num_questions=input_questions,
@@ -226,11 +252,14 @@ def get_boolean_answer():
     global answer
 
     if answer is None:
-        answer = main.AnswerPredictor()
+        with init_lock:
+            if answer is None:
+                answer = main.AnswerPredictor()
 
     data = request.get_json()
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
+
     output = []
 
     for question in input_questions:
@@ -438,13 +467,20 @@ def get_mcq_hard():
     global qg
 
     if qg is None:
-        qg = main.QuestionGenerator()
+        with init_lock:
+            if qg is None:
+                qg = main.QuestionGenerator()
 
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
+    input_questions = data.get("input_question", 4)
+
+    if isinstance(input_questions, list):
+        input_questions = len(input_questions)
+
+    input_questions = int(input_questions)
 
     output = qg.generate(
         article=input_text,
@@ -463,13 +499,19 @@ def get_boolq_hard():
     global qg
 
     if qg is None:
-        qg = main.QuestionGenerator()
+        with init_lock:
+            if qg is None:
+                qg = main.QuestionGenerator()
 
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_questions = data.get("input_question", [])
+    input_questions = data.get("input_question", 4)
 
+    if isinstance(input_questions, list):
+        input_questions = len(input_questions)
+
+    input_questions = int(input_questions)
     input_text = process_input_text(input_text, use_mediawiki)
 
     # Generate questions using the same QG model
