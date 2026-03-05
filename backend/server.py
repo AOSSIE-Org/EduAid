@@ -191,7 +191,13 @@ def get_mcq_answer():
     outputs = []
 
     for question, options in zip(input_questions, input_options):
-        # Generate answer using the QA model
+    
+    # skip if options list is empty to avoid argmax crash
+        if not options:
+            outputs.append("")
+            continue
+
+    # Generate answer using the QA model
         qa_response = qa_model(question=question, context=input_text)
         generated_answer = qa_response["answer"]
 
