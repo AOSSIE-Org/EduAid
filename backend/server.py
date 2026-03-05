@@ -38,7 +38,7 @@ answer = main.AnswerPredictor()
 BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
-# docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
@@ -52,12 +52,14 @@ def process_input_text(input_text, use_mediawiki):
 
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
-    data = request.get_json()
+    if not request.is_json:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+    data = request.get_json(silent=True)
     if data is None:
         return jsonify({"error": "Invalid or missing JSON body"}), 400
 
-    input_text = data.get("input_text", "")
-    if not input_text:
+    input_text = data.get("input_text")
+    if not isinstance(input_text, str) or not input_text.strip():
         return jsonify({"error": "input_text is required"}), 400
 
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -79,12 +81,14 @@ def get_mcq():
 
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
-    data = request.get_json()
+    if not request.is_json:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+    data = request.get_json(silent=True)
     if data is None:
         return jsonify({"error": "Invalid or missing JSON body"}), 400
 
-    input_text = data.get("input_text", "")
-    if not input_text:
+    input_text = data.get("input_text")
+    if not isinstance(input_text, str) or not input_text.strip():
         return jsonify({"error": "input_text is required"}), 400
 
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -106,12 +110,14 @@ def get_boolq():
 
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
-    data = request.get_json()
+    if not request.is_json:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+    data = request.get_json(silent=True)
     if data is None:
         return jsonify({"error": "Invalid or missing JSON body"}), 400
 
-    input_text = data.get("input_text", "")
-    if not input_text:
+    input_text = data.get("input_text")
+    if not isinstance(input_text, str) or not input_text.strip():
         return jsonify({"error": "input_text is required"}), 400
 
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -133,12 +139,14 @@ def get_shortq():
 
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
-    data = request.get_json()
+    if not request.is_json:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+    data = request.get_json(silent=True)
     if data is None:
         return jsonify({"error": "Invalid or missing JSON body"}), 400
 
-    input_text = data.get("input_text", "")
-    if not input_text:
+    input_text = data.get("input_text")
+    if not isinstance(input_text, str) or not input_text.strip():
         return jsonify({"error": "input_text is required"}), 400
         
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -169,12 +177,16 @@ def get_problems():
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
-    data = request.get_json()
+    if not request.is_json:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+    data = request.get_json(silent=True)
     if data is None:
         return jsonify({"error": "Invalid or missing JSON body"}), 400
 
-    input_text = data.get("input_text", "")
-    input_questions = data.get("input_question", [])
+    input_text = data.get("input_text")
+    if not isinstance(input_text, str) or not input_text.strip():
+        return jsonify({"error": "input_text is required"}), 400
+    input_questions = data.get("input_questions", [])
     input_options = data.get("input_options", [])
 
     if not isinstance(input_questions, list) or not isinstance(input_options, list) or len(input_questions) != len(input_options):
@@ -208,8 +220,15 @@ def get_mcq_answer():
 
 @app.route("/get_shortq_answer", methods=["POST"])
 def get_answer():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    if not request.is_json:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+
+    input_text = data.get("input_text")
+    if not isinstance(input_text, str) or not input_text.strip():
+        return jsonify({"error": "input_text is required"}), 400
     input_questions = data.get("input_question", [])
     answers = []
     for question in input_questions:
@@ -221,8 +240,15 @@ def get_answer():
 
 @app.route("/get_boolean_answer", methods=["POST"])
 def get_boolean_answer():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    if not request.is_json:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+
+    input_text = data.get("input_text")
+    if not isinstance(input_text, str) or not input_text.strip():
+        return jsonify({"error": "input_text is required"}), 400
     input_questions = data.get("input_question", [])
     output = []
 
@@ -238,20 +264,27 @@ def get_boolean_answer():
     return jsonify({"output": output})
 
 
-# @app.route('/get_content', methods=['POST'])
-#def get_content():
-#   try:
-#        data = request.get_json()
-#        document_url = data.get('document_url')
-#        if not document_url:
-#            return jsonify({'error': 'Document URL is required'}), 400
+@app.route('/get_content', methods=['POST'])
+def get_content():
+    if not request.is_json:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
 
-#        text = docs_service.get_document_content(document_url)
-#        return jsonify(text)
-#    except ValueError as e:
-#        return jsonify({'error': str(e)}), 400
-#    except Exception as e:
-#        return jsonify({'error': str(e)}), 500
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+
+    try:
+        document_url = data.get("document_url")
+        if not document_url:
+            return jsonify({"error": "Document URL is required"}), 400
+
+        text = docs_service.get_document_content(document_url)
+        return jsonify(text)
+
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/generate_gform", methods=["POST"])
@@ -425,12 +458,14 @@ def generate_gform():
 
 @app.route("/get_shortq_hard", methods=["POST"])
 def get_shortq_hard():
-    data = request.get_json()
+    if not request.is_json:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+    data = request.get_json(silent=True)
     if data is None:
         return jsonify({"error": "Invalid or missing JSON body"}), 400
 
-    input_text = data.get("input_text", "")
-    if not input_text:
+    input_text = data.get("input_text")
+    if not isinstance(input_text, str) or not input_text.strip():
         return jsonify({"error": "input_text is required"}), 400
         
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -450,12 +485,14 @@ def get_shortq_hard():
 
 @app.route("/get_mcq_hard", methods=["POST"])
 def get_mcq_hard():
-    data = request.get_json()
+    if not request.is_json:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+    data = request.get_json(silent=True)
     if data is None:
         return jsonify({"error": "Invalid or missing JSON body"}), 400
 
-    input_text = data.get("input_text", "")
-    if not input_text:
+    input_text = data.get("input_text")
+    if not isinstance(input_text, str) or not input_text.strip():
         return jsonify({"error": "input_text is required"}), 400
 
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -474,12 +511,14 @@ def get_mcq_hard():
 
 @app.route("/get_boolq_hard", methods=["POST"])
 def get_boolq_hard():
-    data = request.get_json()
+    if not request.is_json:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
+    data = request.get_json(silent=True)
     if data is None:
         return jsonify({"error": "Invalid or missing JSON body"}), 400
 
-    input_text = data.get("input_text", "")
-    if not input_text:
+    input_text = data.get("input_text")
+    if not isinstance(input_text, str) or not input_text.strip():
         return jsonify({"error": "input_text is required"}), 400
 
     use_mediawiki = data.get("use_mediawiki", 0)
