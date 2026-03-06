@@ -10,7 +10,6 @@ const Output = () => {
   const [questionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
-  const [pdfMode, setPdfMode] = useState("questions");
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedQuestion, setEditedQuestion] = useState("");
   const [editedAnswer, setEditedAnswer] = useState("");
@@ -154,7 +153,7 @@ const Output = () => {
 
       setQaPairs(combinedQaPairs);
     }
-  }, []);
+  }, [questionType]);
 
   const generateGoogleForm = async () => {
     try {

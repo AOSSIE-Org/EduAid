@@ -40,7 +40,7 @@ You can choose to set up the backend manually or use an automated shell script.
    - Download the Sense2Vec model from [this link](https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz) and extract the contents into the `backend` folder.
 
 2. **Install Python Dependencies**:
-   "Note: Ensure you are using Python 3.11 or 3.12. Python 3.13 is currently incompatible with several required machine learning libraries."
+   -Note: Ensure you are using Python 3.11 or 3.12. Python 3.13 is currently incompatible with several required machine learning libraries.
    
    - Navigate to the root repository folder and run the following command to install the required Python dependencies:
      ```bash
