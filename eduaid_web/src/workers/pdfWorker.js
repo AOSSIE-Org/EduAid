@@ -100,39 +100,39 @@ self.onmessage = async (e) => {
     createNewPageIfNeeded(requiredHeight);
 
     if (mode !== 'answers') {
-      questionLines.forEach((line, i) => {
+      for (const [i, line] of questionLines.entries()) {
         const prefix = i === 0 ? `Q${questionIndex}) ` : '    ';
         page.drawText(`${prefix}${line}`, { x: margin, y: y - i * 20, size: 12 });
-      });
+      }
       y -= questionLines.length * 20 + 20;
 
       if (mode === 'questions') {
         if (qaPair.question_type === "Boolean") {
           const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
-          ['True', 'False'].forEach(option => {
+          for (const option of ['True', 'False']) {
             radioGroup.addOptionToPage(option, page, {
               x: margin + 20, y, width: 15, height: 15
             });
             page.drawText(option, { x: margin + 40, y: y + 2, size: 12 });
             y -= 20;
-          });
+          }
         } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
           const allOptions = [...(qaPair.options || [])];
           if (qaPair.answer && !allOptions.includes(qaPair.answer)) allOptions.push(qaPair.answer);
           const shuffled = shuffleArray([...allOptions]);
 
           const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
-          shuffled.forEach((option, idx) => {
+          for (const [idx, option] of shuffled.entries()) {
             radioGroup.addOptionToPage(`option${idx}`, page, {
               x: margin + 20, y, width: 15, height: 15
             });
 
             const optionLines = wrapText(option, maxContentWidth - 60);
-            optionLines.forEach((line, i) => {
+            for (const [i, line] of optionLines.entries()) {
               page.drawText(line, { x: margin + 40, y: y + 2 - i * 15, size: 12 });
-            });
+            }
             y -= Math.max(25, optionLines.length * 20);
-          });
+          }
         } else if (qaPair.question_type === "Short") {
           const field = form.createTextField(`question${questionIndex}_answer`);
           field.setText('');
@@ -146,11 +146,11 @@ self.onmessage = async (e) => {
 
     if (mode === 'answers' || mode === 'questions_answers') {
       const answerLines = wrapText(`Answer ${questionIndex}: ${qaPair.answer}`, maxContentWidth);
-      answerLines.forEach((line, i) => {
+      for (const [i, line] of answerLines.entries()) {
         page.drawText(line, {
           x: margin, y: y - i * 15, size: 12, color: rgb(0, 0.5, 0)
         });
-      });
+      }
       y -= answerLines.length * 20;
     }
 
