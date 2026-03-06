@@ -48,15 +48,21 @@ def process_input_text(input_text, use_mediawiki):
     if use_mediawiki == 1:
         input_text = mediawikiapi.summary(input_text,8)
     return input_text
+    
+def parse_quiz_request(data):
+    input_text = data.get("input_text", "")
+    use_mediawiki = data.get("use_mediawiki", 0)
+    max_questions = data.get("max_questions", 4)
 
+    input_text = process_input_text(input_text, use_mediawiki)
+
+    return input_text, max_questions
+    
 
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
     data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
+    input_text, max_questions = parse_quiz_request(data)
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
     )
@@ -67,10 +73,7 @@ def get_mcq():
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
     data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
+    input_text, max_questions = parse_quiz_request(data)
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
     )
@@ -81,10 +84,7 @@ def get_boolq():
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
     data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
+    input_text, max_questions = parse_quiz_request(data)
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
     )
@@ -367,11 +367,7 @@ def generate_gform():
 @app.route("/get_shortq_hard", methods=["POST"])
 def get_shortq_hard():
     data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
-    max_questions = data.get("max_questions", 4)
-
+    input_text, max_questions = parse_quiz_request(data)
     output = qg.generate(
         article=input_text, num_questions=max_questions, answer_style="sentences"
     )
@@ -385,10 +381,7 @@ def get_shortq_hard():
 @app.route("/get_mcq_hard", methods=["POST"])
 def get_mcq_hard():
     data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
-    max_questions = data.get("max_questions", 4)
+    input_text, max_questions = parse_quiz_request(data)
     output = qg.generate(
         article=input_text, num_questions=max_questions, answer_style="multiple_choice"
     )
@@ -401,12 +394,8 @@ def get_mcq_hard():
 @app.route("/get_boolq_hard", methods=["POST"])
 def get_boolq_hard():
     data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
-
-    input_text = process_input_text(input_text, use_mediawiki)
-
+    input_text, max_questions = parse_quiz_request(data)
+    
     # Generate questions using the same QG model
     generated = qg.generate(
         article=input_text,
