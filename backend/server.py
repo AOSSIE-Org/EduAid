@@ -370,10 +370,10 @@ def get_shortq_hard():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
+    max_questions = data.get("max_questions", 4)
 
     output = qg.generate(
-        article=input_text, num_questions=input_questions, answer_style="sentences"
+        article=input_text, num_questions=max_questions, answer_style="sentences"
     )
 
     for item in output:
@@ -388,9 +388,9 @@ def get_mcq_hard():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
+    max_questions = data.get("max_questions", 4)
     output = qg.generate(
-        article=input_text, num_questions=input_questions, answer_style="multiple_choice"
+        article=input_text, num_questions=max_questions, answer_style="multiple_choice"
     )
     
     for q in output:
@@ -403,14 +403,14 @@ def get_boolq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_questions = data.get("input_question", [])
+    max_questions = data.get("max_questions", 4)
 
     input_text = process_input_text(input_text, use_mediawiki)
 
     # Generate questions using the same QG model
     generated = qg.generate(
         article=input_text,
-        num_questions=input_questions,
+        num_questions=max_questions,
         answer_style="true_false"
     )
 
