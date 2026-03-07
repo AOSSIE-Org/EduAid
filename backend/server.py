@@ -6,7 +6,9 @@ import subprocess
 import os
 import glob
 import sys
-import importlib
+import importlib.util
+import logging
+logger = logging.getLogger(__name__)
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
@@ -44,7 +46,8 @@ ShortQGen = None
 qg = None
 try:
     docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
-except Exception:
+except Exception as e:
+    logger.warning("Failed to initialize Google Docs service: %s", e)
     docs_service = None
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
