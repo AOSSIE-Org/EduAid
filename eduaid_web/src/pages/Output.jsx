@@ -506,6 +506,9 @@ const Output = () => {
                     Facebook
                   </button>
                 </div>
+                <div className="text-xs text-gray-400 mt-3 text-center">
+                  ⚠️ Shared links work only within the same browser session because quizzes are stored locally.
+                </div>
               </div>
             </div>
           </div>
