@@ -1,8 +1,15 @@
 import time
 import torch
 import random
-from transformers import T5ForConditionalGeneration, T5Tokenizer
-from transformers import AutoModelForSequenceClassification, AutoTokenizer,AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5Tokenizer
+
+from Generator.model_cache import ModelCache
+from transformers import (
+    T5ForConditionalGeneration,
+    T5Tokenizer,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    AutoModelForSeq2SeqLM
+)
 import numpy as np
 import spacy
 from sense2vec import Sense2Vec
@@ -18,7 +25,7 @@ import en_core_web_sm
 import json
 import re
 from typing import Any, List, Mapping, Tuple
-import re
+
 import os
 import fitz 
 import mammoth
@@ -26,8 +33,7 @@ import mammoth
 class MCQGenerator:
     
     def __init__(self):
-        self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
-        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
+        self.tokenizer, self.model = ModelCache.get_t5_question_generator()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
@@ -84,8 +90,7 @@ class MCQGenerator:
 class ShortQGenerator:
     
     def __init__(self):
-        self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
-        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
+        self.tokenizer, self.model = ModelCache.get_t5_question_generator()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
@@ -135,8 +140,7 @@ class ShortQGenerator:
 class ParaphraseGenerator:
     
     def __init__(self):
-        self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
-        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
+        self.tokenizer, self.model = ModelCache.get_t5_question_generator()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.set_seed(42)
@@ -160,7 +164,7 @@ class ParaphraseGenerator:
         sentence = text
         text_to_paraphrase = "paraphrase: " + sentence + " </s>"
 
-        encoding = self.tokenizer.encode_plus(text_to_paraphrase, pad_to_max_length=True, return_tensors="pt")
+        encoding = self.tokenizer(text_to_paraphrase, padding="max_length", return_tensors="pt")
         input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
 
         beam_outputs = self.model.generate(
@@ -192,8 +196,7 @@ class ParaphraseGenerator:
 class BoolQGenerator:
        
     def __init__(self):
-        self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
-        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Boolean-Questions')
+        self.tokenizer, self.model = ModelCache.get_boolean_model()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.set_seed(42)
@@ -223,7 +226,7 @@ class BoolQGenerator:
         answer = self.random_choice()
         form = "truefalse: %s passage: %s </s>" % (modified_text, answer)
         print(form)
-        encoding = self.tokenizer.encode_plus(form, return_tensors="pt")
+        encoding = self.tokenizer(form, return_tensors="pt")
         input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
 
         output = beam_search_decoding (input_ids, attention_masks, self.model, self.tokenizer,num)
@@ -241,8 +244,7 @@ class BoolQGenerator:
 class AnswerPredictor:
           
     def __init__(self):
-        self.tokenizer = T5Tokenizer.from_pretrained('t5-large', model_max_length=512)
-        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Answer-Predictor')
+        self.tokenizer, self.model = ModelCache.get_answer_predictor()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         

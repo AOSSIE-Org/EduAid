@@ -5,7 +5,10 @@ import nltk
 import subprocess
 import os
 import glob
-
+import sys
+import importlib.util
+import logging
+logger = logging.getLogger(__name__)
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
@@ -25,6 +28,9 @@ from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
+from threading import Lock
+
+init_lock = Lock()
 
 app = Flask(__name__)
 CORS(app)
@@ -33,15 +39,19 @@ print("Starting Flask App...")
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
 
-MCQGen = main.MCQGenerator()
-answer = main.AnswerPredictor()
-BoolQGen = main.BoolQGenerator()
-ShortQGen = main.ShortQGenerator()
-qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+MCQGen = None
+answer = None
+BoolQGen = None
+ShortQGen = None
+qg = None
+try:
+    docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+except Exception as e:
+    logger.warning("Failed to initialize Google Docs service: %s", e)
+    docs_service = None
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
-qa_model = pipeline("question-answering")
+qa_model = None
 
 
 def process_input_text(input_text, use_mediawiki):
@@ -57,6 +67,13 @@ def get_mcq():
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     input_text = process_input_text(input_text, use_mediawiki)
+    global MCQGen
+
+    if MCQGen is None:
+        with init_lock:
+            if MCQGen is None:
+                MCQGen = main.MCQGenerator()
+
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
     )
@@ -66,67 +83,128 @@ def get_mcq():
 
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
+    global BoolQGen
+
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+
     input_text = process_input_text(input_text, use_mediawiki)
+
+    if BoolQGen is None:
+        with init_lock:
+            if BoolQGen is None:
+                BoolQGen = main.BoolQGenerator()
+
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
     )
+
     boolean_questions = output["Boolean_Questions"]
     return jsonify({"output": boolean_questions})
 
 
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
+
+    global ShortQGen
+
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+
     input_text = process_input_text(input_text, use_mediawiki)
+
+    if ShortQGen is None:
+        with init_lock:
+            if ShortQGen is None:
+                ShortQGen = main.ShortQGenerator()
+
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
     )
+
     questions = output["questions"]
     return jsonify({"output": questions})
 
-
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
+
+    global MCQGen, BoolQGen, ShortQGen
+
     data = request.get_json()
+
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
+
     max_questions_mcq = data.get("max_questions_mcq", 4)
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
+
     input_text = process_input_text(input_text, use_mediawiki)
+
+    if MCQGen is None:
+        with init_lock:
+            if MCQGen is None:
+                MCQGen = main.MCQGenerator()
+
+    if BoolQGen is None:
+        with init_lock:
+            if BoolQGen is None:
+                BoolQGen = main.BoolQGenerator()
+
+    if ShortQGen is None:
+        with init_lock:
+            if ShortQGen is None:
+                ShortQGen = main.ShortQGenerator()
+                
     output1 = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions_mcq}
     )
+
     output2 = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions_boolq}
     )
+
     output3 = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions_shortq}
     )
-    return jsonify(
-        {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
-    )
+
+    return jsonify({
+        "output_mcq": output1,
+        "output_boolq": output2,
+        "output_shortq": output3
+    })
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
+    global qa_model
+
+    if qa_model is None:
+        with init_lock:
+            if qa_model is None:
+                qa_model = pipeline("question-answering")
+                
     data = request.get_json()
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     input_options = data.get("input_options", [])
-    outputs = []
 
     if not input_questions or not input_options or len(input_questions) != len(input_options):
-        return jsonify({"outputs": outputs})
+        return jsonify({"output": []})
+
+    outputs = []
 
     for question, options in zip(input_questions, input_options):
-        # Generate answer using the QA model
+    
+    # skip if options list is empty to avoid argmax crash
+        if not options:
+            outputs.append("")
+            continue
+
+    # Generate answer using the QA model
         qa_response = qa_model(question=question, context=input_text)
         generated_answer = qa_response["answer"]
 
@@ -147,34 +225,59 @@ def get_mcq_answer():
     return jsonify({"output": outputs})
 
 
-@app.route("/get_shortq_answer", methods=["POST"])
-def get_answer():
+@app.route("/get_shortq_hard", methods=["POST"])
+def get_shortq_hard():
+
+    global qg
+
+    if qg is None:
+        with init_lock:
+            if qg is None:
+                qg = main.QuestionGenerator()
+
     data = request.get_json()
     input_text = data.get("input_text", "")
-    input_questions = data.get("input_question", [])
-    answers = []
-    for question in input_questions:
-        qa_response = qa_model(question=question, context=input_text)
-        answers.append(qa_response["answer"])
+    use_mediawiki = data.get("use_mediawiki", 0)
 
-    return jsonify({"output": answers})
+    input_text = process_input_text(input_text,use_mediawiki)
+    input_questions = data.get("input_question", 4)
+
+    if isinstance(input_questions, list):
+        input_questions = len(input_questions)
+
+    input_questions = int(input_questions)
+    
+    output = qg.generate(
+        article=input_text,
+        num_questions=input_questions,
+        answer_style="sentences"
+    )
+
+    for item in output:
+        item["question"] = make_question_harder(item["question"])
+
+    return jsonify({"output": output})
 
 
 @app.route("/get_boolean_answer", methods=["POST"])
 def get_boolean_answer():
+
+    global answer
+
+    if answer is None:
+        with init_lock:
+            if answer is None:
+                answer = main.AnswerPredictor()
+
     data = request.get_json()
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
-    output = []
 
-    for question in input_questions:
-        qa_response = answer.predict_boolean_answer(
-            {"input_text": input_text, "input_question": question}
-        )
-        if(qa_response):
-            output.append("True")
-        else:
-            output.append("False")
+    qa_responses = answer.predict_boolean_answer(
+        {"input_text": input_text, "input_question": input_questions}
+    )
+
+    output = ["True" if r else "False" for r in qa_responses]
 
     return jsonify({"output": output})
 
@@ -186,6 +289,9 @@ def get_content():
         document_url = data.get('document_url')
         if not document_url:
             return jsonify({'error': 'Document URL is required'}), 400
+
+        if docs_service is None:
+            return jsonify({"error": "Google Docs service not configured"}), 500
 
         text = docs_service.get_document_content(document_url)
         return jsonify(text)
@@ -364,59 +470,74 @@ def generate_gform():
     return edit_url
 
 
-@app.route("/get_shortq_hard", methods=["POST"])
-def get_shortq_hard():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
-
-    output = qg.generate(
-        article=input_text, num_questions=input_questions, answer_style="sentences"
-    )
-
-    for item in output:
-        item["question"] = make_question_harder(item["question"])
-
-    return jsonify({"output": output})
-
 
 @app.route("/get_mcq_hard", methods=["POST"])
 def get_mcq_hard():
+
+    global qg
+
+    if qg is None:
+        with init_lock:
+            if qg is None:
+                qg = main.QuestionGenerator()
+
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
+    input_questions = data.get("input_question", 4)
+
+    if isinstance(input_questions, list):
+        input_questions = len(input_questions)
+
+    input_questions = int(input_questions)
+
     output = qg.generate(
-        article=input_text, num_questions=input_questions, answer_style="multiple_choice"
+        article=input_text,
+        num_questions=input_questions,
+        answer_style="multiple_choice"
     )
-    
+
     for q in output:
         q["question"] = make_question_harder(q["question"])
-        
+
     return jsonify({"output": output})
 
 @app.route("/get_boolq_hard", methods=["POST"])
 def get_boolq_hard():
+
+    global qg
+
+    if qg is None:
+        with init_lock:
+            if qg is None:
+                qg = main.QuestionGenerator()
+
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_questions = data.get("input_question", [])
+    input_questions = data.get("input_question", 4)
 
+    if isinstance(input_questions, list):
+        input_questions = len(input_questions)
+
+    input_questions = int(input_questions)
     input_text = process_input_text(input_text, use_mediawiki)
 
     # Generate questions using the same QG model
     generated = qg.generate(
         article=input_text,
         num_questions=input_questions,
-        answer_style="true_false"
+        answer_style="sentences"
     )
 
     # Apply transformation to make each question harder
-    harder_questions = [make_question_harder(q) for q in generated]
+    harder_questions = []
 
+    for q in generated:
+        question_text = q.get("question", "")
+        q["question"] = make_question_harder(question_text)
+        harder_questions.append(q)
     return jsonify({"output": harder_questions})
 
 @app.route('/upload', methods=['POST'])
@@ -436,9 +557,20 @@ def upload_file():
     else:
         return jsonify({"error": "Unsupported file type or error processing file"}), 400
 
-@app.route("/", methods=["GET"])
-def hello():
-    return "The server is working fine"
+
+
+@app.route("/diagnostics", methods=["GET"])
+def diagnostics():
+    diagnostics_info = {
+        "status": "ok",
+        "python_version": sys.version.split()[0],
+        "transformers_available": importlib.util.find_spec("transformers") is not None,
+        "spacy_available": importlib.util.find_spec("spacy") is not None,
+        "nltk_available": importlib.util.find_spec("nltk") is not None,
+        "google_credentials_file_exists": os.path.exists(SERVICE_ACCOUNT_FILE)
+    }
+
+    return jsonify(diagnostics_info), 200
 
 def clean_transcript(file_path):
     """Extracts and cleans transcript from a VTT file."""
