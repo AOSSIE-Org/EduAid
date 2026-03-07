@@ -31,6 +31,9 @@ app = Flask(__name__)
 CORS(app)
 print("Starting Flask App...")
 
+os.makedirs("subtitles", exist_ok=True)
+    
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -491,13 +494,13 @@ def get_transcript():
     logger.info(f"Processing transcript request for video ID: {video_id}")
     
     # Define the expected subtitle file path
-    subtitle_file = f"subtitles/{video_id}.vtt"
+    subtitle_file = f"subtitles/{video_id}.en.vtt"
     
     try:
         # Execute subprocess with 20-second timeout
         subprocess.run(
-            ["yt-dlp", "--write-sub", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
-             "--sub-format", "vtt", "-o", subtitle_file, 
+            ["python", "-m", "yt-dlp", "--write-sub", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
+             "--sub-format", "vtt", "-o", f"subtitles/{video_id}", 
              f"https://www.youtube.com/watch?v={video_id}"],
             check=True, 
             capture_output=True, 
@@ -535,5 +538,4 @@ def get_transcript():
                 logger.warning(f"Failed to clean up subtitle file {subtitle_file}: {e}")
 
 if __name__ == "__main__":
-    os.makedirs("subtitles", exist_ok=True)
     app.run()
