@@ -42,7 +42,10 @@ answer = None
 BoolQGen = None
 ShortQGen = None
 qg = None
-docs_service = None
+try:
+    docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+except Exception:
+    docs_service = None
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = None
@@ -267,17 +270,11 @@ def get_boolean_answer():
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
 
-    output = []
+    qa_responses = answer.predict_boolean_answer(
+        {"input_text": input_text, "input_question": input_questions}
+    )
 
-    for question in input_questions:
-        qa_response = answer.predict_boolean_answer(
-            {"input_text": input_text, "input_question": question}
-        )
-
-        if qa_response:
-            output.append("True")
-        else:
-            output.append("False")
+    output = ["True" if r else "False" for r in qa_responses]
 
     return jsonify({"output": output})
 
@@ -528,7 +525,7 @@ def get_boolq_hard():
     generated = qg.generate(
         article=input_text,
         num_questions=input_questions,
-        answer_style="true_false"
+        answer_style="sentences"
     )
 
     # Apply transformation to make each question harder
