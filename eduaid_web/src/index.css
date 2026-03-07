@@ -9,6 +9,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #02000F;
+  background-image: linear-gradient(to bottom, #02000F, #1a0033);
 }
 
 code {
@@ -16,10 +18,10 @@ code {
     monospace;
 }
 
-.border-gradient {
-  border-width: 2px; 
-  border-style: solid;
-  border-image: linear-gradient(to right, #ff005c, #7600f2, #00cbe7);
-  border-image-slice: 1;
-  border-radius: 2rem;
+
+.grid-bg {
+  background-image: 
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
 }

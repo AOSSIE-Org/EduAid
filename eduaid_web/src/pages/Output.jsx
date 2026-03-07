@@ -206,90 +206,91 @@ const Output = () => {
   };
 
   return (
-    <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
-      <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
-        <div className="flex flex-col h-full">
-          {/* Header - Responsive logo and title */}
-          <Link to="/">
-            <div className="flex items-end gap-[2px] px-4 sm:px-6">
-              <img 
-                src={logoPNG} 
-                alt="logo" 
-                className="w-12 sm:w-16 my-4 block" 
-              />
-              <div className="text-xl sm:text-2xl mb-3 font-extrabold">
-                <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                  Edu
-                </span>
-                <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                  Aid
-                </span>
+    <div className="popup grid-bg w-screen min-h-screen flex justify-center items-center">
+      <div className="w-full h-full overflow-auto px-4 py-6 sm:px-8 md:px-16">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col h-full">
+            {/* Header - Responsive logo and title */}
+            <Link to="/">
+              <div className="flex items-end gap-[2px] mb-8">
+                <img 
+                  src={logoPNG} 
+                  alt="logo" 
+                  className="w-12 sm:w-16 block" 
+                />
+                <div className="text-xl sm:text-2xl font-extrabold">
+                  <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
+                    Edu
+                  </span>
+                  <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
+                    Aid
+                  </span>
+                </div>
               </div>
-            </div>
-          </Link>
+            </Link>
 
-          {/* Title and Shuffle Button */}
-          <div className="flex justify-between items-center mt-3 mx-4 sm:mx-6">
-            <div className="font-bold text-lg sm:text-xl text-white">
-              Generated Questions
+            {/* Title and Shuffle Button */}
+            <div className="flex justify-between items-center mb-6">
+              <div className="font-bold text-lg sm:text-xl text-white">
+                Generated Questions
+              </div>
+              <button
+                className={`${
+                  editingIndex !== null
+                    ? 'bg-gray-500 cursor-not-allowed'
+                    : 'bg-[#7C3AED] hover:bg-[#5A2AD9]'
+                } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
+                onClick={handleShuffleQuestions}
+                disabled={editingIndex !== null}
+              >
+                <FiShuffle className="text-sm sm:text-base" />
+                Shuffle
+              </button>
             </div>
-            <button
-              className={`${
-                editingIndex !== null
-                  ? 'bg-gray-500 cursor-not-allowed'
-                  : 'bg-[#7C3AED] hover:bg-[#5A2AD9]'
-              } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
-              onClick={handleShuffleQuestions}
-              disabled={editingIndex !== null}
-            >
-              <FiShuffle className="text-sm sm:text-base" />
-              Shuffle
-            </button>
-          </div>
 
-          {/* Questions Container - Responsive padding and margins */}
-          <div className="flex-1 overflow-y-auto scrollbar-hide px-2 sm:px-4">
-            {qaPairs &&
-              qaPairs.map((qaPair, index) => {
-                const shuffledOptions = shuffledOptionsMap[index];
-                const isEditing = editingIndex === index;
-                
-                return (
-                  <div
-                    key={index}
-                    className="px-3 sm:px-4 bg-[#d9d9d90d] border-black border my-2 sm:my-3 mx-1 sm:mx-2 rounded-xl py-3 sm:py-4"
-                  >
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="text-[#E4E4E4] text-xs sm:text-sm">
-                        Question {index + 1}
-                      </div>
-                      {!isEditing ? (
-                        <button
-                          className="bg-[#518E8E] hover:bg-[#3a6b6b] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors shadow-sm flex items-center gap-2"
-                          onClick={() => handleEditQuestion(index)}
-                        >
-                          <FiEdit2 className="text-sm sm:text-base" />
-                          Edit
-                        </button>
-                      ) : (
-                        <div className="flex gap-2">
-                          <button
-                            className="bg-green-700 hover:bg-green-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors shadow-sm flex items-center gap-2"
-                            onClick={() => handleSaveQuestion(index)}
-                          >
-                            <FiCheck className="text-sm sm:text-base" />
-                            Save
-                          </button>
-                          <button
-                            className="bg-gray-600 hover:bg-gray-700 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors shadow-sm flex items-center gap-2"
-                            onClick={handleCancelEdit}
-                          >
-                            <FiX className="text-sm sm:text-base" />
-                            Cancel
-                          </button>
+            {/* Questions Container - Responsive padding and margins */}
+            <div className="flex-1 overflow-y-auto scrollbar-hide mb-6">
+              {qaPairs &&
+                qaPairs.map((qaPair, index) => {
+                  const shuffledOptions = shuffledOptionsMap[index];
+                  const isEditing = editingIndex === index;
+                  
+                  return (
+                    <div
+                      key={index}
+                      className="px-3 sm:px-4 bg-[#45454533] backdrop-blur-sm border border-[#ffffff20] my-2 sm:my-3 rounded-xl py-3 sm:py-4"
+                    >
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="text-[#E4E4E4] text-xs sm:text-sm">
+                          Question {index + 1}
                         </div>
-                      )}
-                    </div>
+                        {!isEditing ? (
+                          <button
+                            className="bg-[#45454599] hover:bg-[#5a5a5a99] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors shadow-sm flex items-center gap-2"
+                            onClick={() => handleEditQuestion(index)}
+                          >
+                            <FiEdit2 className="text-sm sm:text-base" />
+                            Edit
+                          </button>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button
+                              className="bg-green-700 hover:bg-green-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors shadow-sm flex items-center gap-2"
+                              onClick={() => handleSaveQuestion(index)}
+                            >
+                              <FiCheck className="text-sm sm:text-base" />
+                              Save
+                            </button>
+                            <button
+                              className="bg-gray-600 hover:bg-gray-700 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors shadow-sm flex items-center gap-2"
+                              onClick={handleCancelEdit}
+                            >
+                              <FiX className="text-sm sm:text-base" />
+                              Cancel
+                            </button>
+                          </div>
+                        )}
+                      </div>
 
                     {!isEditing ? (
                       <>
@@ -327,7 +328,7 @@ const Output = () => {
                           Edit Question
                         </div>
                         <textarea
-                          className="w-full bg-[#1a1a2e] text-[#FFF4F4] text-sm sm:text-base p-2 rounded border border-gray-600 focus:border-[#7600F2] focus:outline-none resize-none"
+                          className="w-full bg-[#45454599] text-[#FFF4F4] text-sm sm:text-base p-3 rounded-lg border border-[#ffffff20] focus:border-[#7600F2] focus:outline-none resize-none"
                           rows="3"
                           value={editedQuestion}
                           onChange={(e) => setEditedQuestion(e.target.value)}
@@ -339,7 +340,7 @@ const Output = () => {
                               Edit Answer
                             </div>
                             <textarea
-                              className="w-full bg-[#1a1a2e] text-[#FFF4F4] text-sm sm:text-base p-2 rounded border border-gray-600 focus:border-[#7600F2] focus:outline-none resize-none"
+                              className="w-full bg-[#45454599] text-[#FFF4F4] text-sm sm:text-base p-3 rounded-lg border border-[#ffffff20] focus:border-[#7600F2] focus:outline-none resize-none"
                               rows="2"
                               value={editedAnswer}
                               onChange={(e) => setEditedAnswer(e.target.value)}
@@ -357,7 +358,7 @@ const Output = () => {
                                     </div>
                                     <input
                                       type="text"
-                                      className="w-full bg-[#1a1a2e] text-[#FFF4F4] text-sm sm:text-base p-2 rounded border border-gray-600 focus:border-[#7600F2] focus:outline-none"
+                                      className="w-full bg-[#45454599] text-[#FFF4F4] text-sm sm:text-base p-3 rounded-lg border border-[#ffffff20] focus:border-[#7600F2] focus:outline-none"
                                       value={option}
                                       onChange={(e) => handleOptionChange(optIdx, e.target.value)}
                                     />
@@ -374,45 +375,46 @@ const Output = () => {
               })}
           </div>
 
-          {/* Action Buttons - Responsive layout */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mx-4 sm:mx-auto pb-4 sm:pb-6">
-            <button
-              className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
-              onClick={generateGoogleForm}
-            >
-              Generate Google form
-            </button>
-            
-            <div className="relative w-full sm:w-auto">
+            {/* Action Buttons - Responsive layout */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 pb-6">
               <button
-                className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
-                onClick={() => document.getElementById('pdfDropdown').classList.toggle('hidden')}
+                className="w-full sm:w-auto flex justify-center items-center gap-3 text-lg text-white px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] rounded-lg hover:opacity-90 transition-all duration-300"
+                onClick={generateGoogleForm}
               >
-                Generate PDF
+                Generate Google form
               </button>
+            
+              <div className="relative w-full sm:w-auto">
+                <button
+                  className="w-full sm:w-auto flex justify-center items-center gap-3 text-lg text-white px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] rounded-lg hover:opacity-90 transition-all duration-300"
+                  onClick={() => document.getElementById('pdfDropdown').classList.toggle('hidden')}
+                >
+                  Generate PDF
+                </button>
               
-              <div
-                id="pdfDropdown"
-                className="hidden absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48"
-              >
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-t-lg text-sm sm:text-base"
-                  onClick={() => generatePDF('questions')}
+                <div
+                  id="pdfDropdown"
+                  className="hidden absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#45454599] backdrop-blur-sm shadow-lg text-white rounded-lg z-50 w-full sm:w-48 border border-[#ffffff20]"
                 >
-                  Questions Only
-                </button>
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 text-sm sm:text-base"
-                  onClick={() => generatePDF('questions_answers')}
-                >
-                  Questions with Answers
-                </button>
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-b-lg text-sm sm:text-base"
-                  onClick={() => generatePDF('answers')}
-                >
-                  Answers Only
-                </button>
+                  <button
+                    className="block w-full text-left px-4 py-2 hover:bg-[#5a5a5a99] rounded-t-lg text-sm sm:text-base transition-colors"
+                    onClick={() => generatePDF('questions')}
+                  >
+                    Questions Only
+                  </button>
+                  <button
+                    className="block w-full text-left px-4 py-2 hover:bg-[#5a5a5a99] text-sm sm:text-base transition-colors"
+                    onClick={() => generatePDF('questions_answers')}
+                  >
+                    Questions with Answers
+                  </button>
+                  <button
+                    className="block w-full text-left px-4 py-2 hover:bg-[#5a5a5a99] rounded-b-lg text-sm sm:text-base transition-colors"
+                    onClick={() => generatePDF('answers')}
+                  >
+                    Answers Only
+                  </button>
+              </div>
               </div>
             </div>
           </div>
