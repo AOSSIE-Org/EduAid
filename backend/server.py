@@ -4,7 +4,7 @@ from pprint import pprint
 import nltk
 import subprocess
 import os
-import glob
+import sys
 import logging
 
 from sklearn.metrics.pairwise import cosine_similarity
@@ -499,7 +499,7 @@ def get_transcript():
     try:
         # Execute subprocess with 20-second timeout
         subprocess.run(
-            ["python", "-m", "yt-dlp", "--write-sub", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
+            [sys.executable, "-m", "yt_dlp", "--write-sub", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
              "--sub-format", "vtt", "-o", f"subtitles/{video_id}", 
              f"https://www.youtube.com/watch?v={video_id}"],
             check=True, 
@@ -520,13 +520,13 @@ def get_transcript():
         return jsonify({"transcript": transcript_text})
 
     except subprocess.TimeoutExpired:
-        logger.error(f"Transcript extraction timed out for video ID: {video_id}")
+        logger.exception(f"Transcript extraction timed out for video ID: {video_id}")
         return jsonify({"error": "Transcript extraction timed out"}), 504
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Subprocess failed for video ID {video_id}: {e}")
+    except subprocess.CalledProcessError:
+        logger.exception(f"Subprocess failed for video ID {video_id}: {e}")
         return jsonify({"error": "Failed to fetch subtitles"}), 500
     except Exception as e:
-        logger.error(f"Unexpected error for video ID {video_id}: {e}")
+        logger.exception(f"Unexpected error for video ID {video_id}: {e}")
         return jsonify({"error": "Failed to fetch subtitles"}), 500
     finally:
         # Always clean up the subtitle file if it exists
