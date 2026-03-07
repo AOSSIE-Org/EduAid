@@ -123,11 +123,11 @@ const Output = () => {
       if (qaPairsFromStorage["output"]) {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
-          question: qaPair.question_statement,
-          question_type: "MCQ",
-          options: qaPair.options,
-          answer: qaPair.answer,
-          context: qaPair.context,
+            question: qaPair.question_statement,
+            question_type: "MCQ",
+            options: qaPair.options,
+            answer: qaPair.answer,
+            context: qaPair.context,
           });
         });
       }
