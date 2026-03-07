@@ -5,10 +5,11 @@ import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
-import { Link } from "react-router-dom";
+import { Link,useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 
 const Text_Input = () => {
+  const navigate = useNavigate();
   const [text, setText] = useState("");
   const [difficulty, setDifficulty] = useState("Easy Difficulty");
   const [numQuestions, setNumQuestions] = useState(10);
@@ -126,7 +127,7 @@ const Text_Input = () => {
       }
       localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
 
-      window.location.href = "output";
+      navigate("/output");
     } catch (error) {
       console.error("Error:", error);
     } finally {

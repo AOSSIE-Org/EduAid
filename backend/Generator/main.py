@@ -22,6 +22,9 @@ from typing import Any, List, Mapping, Tuple
 import os
 import fitz 
 import mammoth
+import nltk
+nltk.download('brown', quiet=True)
+nltk.download('stopwords', quiet=True)
 
 # Global cache to ensure models are only loaded into memory ONCE across the entire server lifecycle
 _MISSING = object() # Sentinel to distinguish between None and Not Loaded
@@ -79,13 +82,23 @@ class MCQGenerator:
     def generate_mcq(self, payload):
         start_time = time.time()
         inp = {
-            "input_text": payload.get("input_text"),
+            "input_text": payload.get("input_text", ""),
             "max_questions": payload.get("max_questions", 4)
         }
 
         text = inp['input_text']
         sentences = tokenize_into_sentences(text)
         modified_text = " ".join(sentences)
+
+        # Initialize output structure immediately
+        final_output = {
+            "statement": modified_text,
+            "questions": [],
+            "time_taken": 0.0
+        }
+
+        if not sentences:
+            return final_output
 
         keywords = identify_keywords(self.nlp, modified_text, inp['max_questions'], self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
         keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
@@ -94,27 +107,21 @@ class MCQGenerator:
             text_snippet = " ".join(keyword_sentence_mapping[k][:3])
             keyword_sentence_mapping[k] = text_snippet
 
-        final_output = {}
-
-        if len(keyword_sentence_mapping.keys()) == 0:
-            return final_output
-        else:
+        if len(keyword_sentence_mapping) > 0:
             try:
                 generated_questions = generate_multiple_choice_questions(keyword_sentence_mapping, self.device, self.tokenizer, self.model, self.s2v, self.normalized_levenshtein)
-            except:
-                return final_output
+                final_output["questions"] = generated_questions.get("questions", [])
+            except Exception as e:
+                print(f"MCQ Generation Error: {e}")
 
-            end_time = time.time()
-
-            final_output["statement"] = modified_text
-            final_output["questions"] = generated_questions["questions"]
-            final_output["time_taken"] = end_time - start_time
+        final_output["time_taken"] = time.time() - start_time
+        
+        if self.device.type == 'cuda':
+            torch.cuda.empty_cache()
+        import gc
+        gc.collect() 
             
-            # FIXED: Corrected torch.device check
-            if self.device.type == 'cuda':
-                torch.cuda.empty_cache()
-                
-            return final_output
+        return final_output
 
 class ShortQGenerator:
     def __init__(self):
@@ -150,14 +157,24 @@ class ShortQGenerator:
             torch.cuda.manual_seed_all(seed)
             
     def generate_shortq(self, payload):
+        start_time = time.time() # Added for consistency
         inp = {
-            "input_text": payload.get("input_text"),
+            "input_text": payload.get("input_text", ""),
             "max_questions": payload.get("max_questions", 4)
         }
 
         text = inp['input_text']
         sentences = tokenize_into_sentences(text)
         modified_text = " ".join(sentences)
+
+        final_output = {
+            "statement": modified_text,
+            "questions": [],
+            "time_taken": 0.0
+        }
+
+        if not sentences:
+            return final_output
 
         keywords = identify_keywords(self.nlp, modified_text, inp['max_questions'], self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
         keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
@@ -166,19 +183,19 @@ class ShortQGenerator:
             text_snippet = " ".join(keyword_sentence_mapping[k][:3])
             keyword_sentence_mapping[k] = text_snippet
 
-        final_output = {}
+        if len(keyword_sentence_mapping) > 0:
+            try:
+                generated_questions = generate_normal_questions(keyword_sentence_mapping, self.device, self.tokenizer, self.model)
+                final_output["questions"] = generated_questions.get("questions", [])
+            except Exception as e:
+                print(f"ShortQ Generation Error: {e}")
 
-        if len(keyword_sentence_mapping.keys()) == 0:
-            return final_output
-        else:
-            generated_questions = generate_normal_questions(keyword_sentence_mapping, self.device, self.tokenizer, self.model)
+        final_output["time_taken"] = time.time() - start_time
 
-        final_output["statement"] = modified_text
-        final_output["questions"] = generated_questions["questions"]
-        
-        # FIXED: Corrected torch.device check
         if self.device.type == 'cuda':
             torch.cuda.empty_cache()
+        import gc
+        gc.collect()
 
         return final_output
             
@@ -364,6 +381,9 @@ class AnswerPredictor:
             Question = self.tokenizer.decode(greedy_output[0], skip_special_tokens=True, clean_up_tokenization_spaces=True)
             answers.append(Question.strip().capitalize())
 
+        if self.device.type == 'cuda':
+            torch.cuda.empty_cache()
+
         return answers
 
     def predict_boolean_answer(self, payload):
@@ -371,6 +391,9 @@ class AnswerPredictor:
         input_questions = payload.get("input_question", [])
 
         answers = []
+        
+        #Ensure the model is on the same device as the inputs
+        self.nli_model.to(self.device)
 
         for question in input_questions:
             hypothesis = question
@@ -386,6 +409,9 @@ class AnswerPredictor:
                 answers.append(True)
             else:
                 answers.append(False)
+
+        if self.device.type == 'cuda':
+            torch.cuda.empty_cache()
 
         return answers
 
@@ -512,6 +538,9 @@ class QuestionGenerator:
             print("Skipping evaluation step.\n")
             qa_list = self._get_all_qa_pairs(generated_questions, qg_answers)
 
+        if self.device.type == 'cuda':
+            torch.cuda.empty_cache()
+
         return qa_list
 
     def generate_qg_inputs(
@@ -630,35 +659,46 @@ class QuestionGenerator:
     ) -> List[Mapping[str, Any]]:
         entities = []
 
+        # Tweak: Strip text to ensure better matching in the pool
         for doc in docs:
-            entities.extend([{"text": e.text, "label_": e.label_} for e in doc.ents])
+            entities.extend([{"text": e.text.strip(), "label_": e.label_} for e in doc.ents])
 
-        entities_json = [json.dumps(kv) for kv in entities]
+        entities_json = [json.dumps(kv, sort_keys=True) for kv in entities]
         pool = set(entities_json)
-        num_choices = (
-            min(4, len(pool)) - 1
-        )  
+        
+        # Ensure num_choices is never negative
+        num_choices = max(0, min(4, len(pool)) - 1)
 
         final_choices = []
         correct_label = correct_answer.label_
-        final_choices.append({"answer": correct_answer.text, "correct": True})
-        pool.remove(
-            json.dumps({"text": correct_answer.text, "label_": correct_answer.label_})
-        )
+        final_choices.append({"answer": correct_answer.text.strip(), "correct": True})
+        
+        # Tweak: Use .discard() to prevent KeyError crashes
+        # sort_keys=True ensures the JSON string is identical every time
+        target = json.dumps({"text": correct_answer.text.strip(), "label_": correct_answer.label_}, sort_keys=True)
+        pool.discard(target)
 
-        matches = [e for e in pool if correct_label in e]
+        # Filter distractors by the same entity label (e.g., PERSON, ORG)
+        matches = [e for e in pool if f'"label_": "{correct_label}"' in e]
 
         if len(matches) < num_choices:
             choices = matches
-            pool = pool.difference(set(choices))
-            choices.extend(random.sample(list(pool), num_choices - len(choices)))
+            pool_remaining = pool.difference(set(choices))
+            # Tweak: Added safety check for random.sample size
+            needed = num_choices - len(choices)
+            if needed > 0 and len(pool_remaining) >= needed:
+                choices.extend(random.sample(list(pool_remaining), needed))
+            elif needed > 0:
+                choices.extend(list(pool_remaining))
         else:
             choices = random.sample(matches, num_choices)
 
         choices = [json.loads(s) for s in choices]
 
         for choice in choices:
-            final_choices.append({"answer": choice["text"], "correct": False})
+            # Avoid adding the correct answer back in if it somehow duplicated
+            if choice["text"].lower() != correct_answer.text.strip().lower():
+                final_choices.append({"answer": choice["text"], "correct": False})
 
         random.shuffle(final_choices)
         return final_choices
@@ -751,6 +791,9 @@ class QAEvaluator:
 
         for i in range(len(encoded_qa_pairs)):
             scores[i] = self._evaluate_qa(encoded_qa_pairs[i])
+
+        if self.device.type == 'cuda':
+            torch.cuda.empty_cache()
 
         return [
             k for k, v in sorted(scores.items(), key=lambda item: item[1], reverse=True)
