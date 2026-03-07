@@ -522,8 +522,8 @@ def get_transcript():
     except subprocess.TimeoutExpired:
         logger.exception(f"Transcript extraction timed out for video ID: {video_id}")
         return jsonify({"error": "Transcript extraction timed out"}), 504
-    except subprocess.CalledProcessError:
-        logger.exception(f"Subprocess failed for video ID {video_id}: {e}")
+    except subprocess.CalledProcessError as e:
+        logger.exception(f"Subprocess failed for video ID {video_id}")
         return jsonify({"error": "Failed to fetch subtitles"}), 500
     except Exception as e:
         logger.exception(f"Unexpected error for video ID {video_id}: {e}")
