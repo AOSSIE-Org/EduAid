@@ -62,6 +62,7 @@ class MCQGenerator:
         def load_model():
             m = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
             m.to(self.device)
+            m.eval()
             return m
         return get_cached_model('qg_model', load_model)
 
@@ -139,6 +140,7 @@ class ShortQGenerator:
         def load_model():
             m = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
             m.to(self.device)
+            m.eval()
             return m
         return get_cached_model('qg_model', load_model)
 
@@ -213,6 +215,7 @@ class ParaphraseGenerator:
         def load_model():
             m = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
             m.to(self.device)
+            m.eval()
             return m
         return get_cached_model('qg_model', load_model)
         
@@ -279,6 +282,7 @@ class BoolQGenerator:
         def load_model():
             m = T5ForConditionalGeneration.from_pretrained('Roasters/Boolean-Questions')
             m.to(self.device)
+            m.eval()
             return m
         return get_cached_model('bool_model', load_model)
         
@@ -337,6 +341,7 @@ class AnswerPredictor:
         def load_model():
             m = T5ForConditionalGeneration.from_pretrained('Roasters/Answer-Predictor')
             m.to(self.device)
+            m.eval()
             return m
         return get_cached_model('ans_pred_model', load_model)
 
@@ -391,7 +396,7 @@ class AnswerPredictor:
         input_questions = payload.get("input_question", [])
 
         answers = []
-        
+
         #Ensure the model is on the same device as the inputs
         self.nli_model.to(self.device)
 
@@ -399,7 +404,9 @@ class AnswerPredictor:
             hypothesis = question
             # FIXED: Moved inputs to device
             inputs = self.nli_tokenizer.encode_plus(input_text, hypothesis, return_tensors="pt").to(self.device)
-            outputs = self.nli_model(**inputs)
+            # FIX: Wrap in no_grad to save memory/speed
+            with torch.no_grad():
+                outputs = self.nli_model(**inputs)
             logits = outputs.logits
             probabilities = torch.softmax(logits, dim=1)
             entailment_prob = probabilities[0][0].item()
@@ -497,6 +504,7 @@ class QuestionGenerator:
         def load_model():
             m = AutoModelForSeq2SeqLM.from_pretrained(self.QG_PRETRAINED)
             m.to(self.device)
+            m.eval()
             m.eval()
             return m
         return get_cached_model('iarf_qg_model', load_model)
