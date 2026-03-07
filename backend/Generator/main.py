@@ -99,6 +99,7 @@ class MCQGenerator:
         }
 
         if not sentences:
+            final_output["time_taken"] = time.time() - start_time
             return final_output
 
         keywords = identify_keywords(self.nlp, modified_text, inp['max_questions'], self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
@@ -354,6 +355,7 @@ class AnswerPredictor:
         def load_model():
             m = AutoModelForSequenceClassification.from_pretrained(self.nli_model_name)
             m.to(self.device) # FIXED: Move model to device
+            m.eval()
             return m
         return get_cached_model('nli_model', load_model)
         
@@ -396,9 +398,6 @@ class AnswerPredictor:
         input_questions = payload.get("input_question", [])
 
         answers = []
-
-        #Ensure the model is on the same device as the inputs
-        self.nli_model.to(self.device)
 
         for question in input_questions:
             hypothesis = question
