@@ -5,7 +5,8 @@ import nltk
 import subprocess
 import os
 import glob
-
+import sys
+import importlib
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
@@ -41,7 +42,7 @@ answer = None
 BoolQGen = None
 ShortQGen = None
 qg = None
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+docs_service = None
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = None
@@ -288,6 +289,9 @@ def get_content():
         document_url = data.get('document_url')
         if not document_url:
             return jsonify({'error': 'Document URL is required'}), 400
+
+        if docs_service is None:
+            return jsonify({"error": "Google Docs service not configured"}), 500
 
         text = docs_service.get_document_content(document_url)
         return jsonify(text)
@@ -553,9 +557,20 @@ def upload_file():
     else:
         return jsonify({"error": "Unsupported file type or error processing file"}), 400
 
-@app.route("/", methods=["GET"])
-def hello():
-    return "The server is working fine"
+
+
+@app.route("/diagnostics", methods=["GET"])
+def diagnostics():
+    diagnostics_info = {
+        "status": "ok",
+        "python_version": sys.version.split()[0],
+        "transformers_available": importlib.util.find_spec("transformers") is not None,
+        "spacy_available": importlib.util.find_spec("spacy") is not None,
+        "nltk_available": importlib.util.find_spec("nltk") is not None,
+        "google_credentials_file_exists": os.path.exists(SERVICE_ACCOUNT_FILE)
+    }
+
+    return jsonify(diagnostics_info), 200
 
 def clean_transcript(file_path):
     """Extracts and cleans transcript from a VTT file."""
