@@ -105,9 +105,9 @@ function Second() {
     }
   };
 
-  const handleDifficultyChange = (e) => {
+  function handleDifficultyChange(e) {
     setDifficulty(e.target.value);
-  };
+  }
 
   const incrementQuestions = () => {
     setNumQuestions((prev) => prev + 1);

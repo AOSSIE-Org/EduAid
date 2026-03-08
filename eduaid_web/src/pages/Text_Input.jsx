@@ -127,7 +127,7 @@ const Text_Input = () => {
       }
       localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
 
-      navigate("/output");
+      navigate("/mode");
     } catch (error) {
       console.error("Error:", error);
     } finally {
