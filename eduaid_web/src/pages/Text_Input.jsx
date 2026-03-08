@@ -5,7 +5,7 @@ import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
-import { Link,useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 
 const Text_Input = () => {
@@ -33,7 +33,6 @@ const Text_Input = () => {
         const data = await apiClient.postFormData("/upload", formData);
         setText(data.content || data.error);
       } catch (error) {
-        console.error("Error uploading file:", error);
         setText("Error uploading file");
       }
     }
@@ -57,7 +56,6 @@ const Text_Input = () => {
         setDocUrl("");
         setText(data || "Error in retrieving");
       } catch (error) {
-        console.error("Error:", error);
         setText("Error retrieving Google Doc content");
       } finally {
         setLoading(false);
@@ -129,7 +127,7 @@ const Text_Input = () => {
 
       navigate("/output");
     } catch (error) {
-      console.error("Error:", error);
+      // Error sending to backend
     } finally {
       setLoading(false);
     }

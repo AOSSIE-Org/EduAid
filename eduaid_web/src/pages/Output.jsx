@@ -18,21 +18,21 @@ const Output = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-        const dropdown = document.getElementById('pdfDropdown');
-        if (dropdown && !dropdown.contains(event.target) && 
-            !event.target.closest('button')) {
-            dropdown.classList.add('hidden');
-        }
+      const dropdown = document.getElementById('pdfDropdown');
+      if (dropdown && !dropdown.contains(event.target) &&
+        !event.target.closest('button')) {
+        dropdown.classList.add('hidden');
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-}, []);
+  }, []);
 
   function shuffleArray(array) {
     const shuffledArray = [...array];
     for (let i = shuffledArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = window.crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
       [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
     }
     return shuffledArray;
@@ -165,7 +165,7 @@ const Output = () => {
       const formUrl = result.form_link;
       window.open(formUrl, "_blank");
     } catch (error) {
-      console.error("Failed to generate Google Form:", error);
+      // Failed to generate form
     }
   };
 
@@ -175,12 +175,11 @@ const Output = () => {
       const arrayBuffer = await response.arrayBuffer();
       return new Uint8Array(arrayBuffer);
     } catch (error) {
-      console.error('Error loading logo:', error);
       return null;
     }
   };
 
-    const generatePDF = async (mode) => {
+  const generatePDF = async (mode) => {
     const logoBytes = await loadLogoAsBytes();
     const worker = new Worker(new URL("../workers/pdfWorker.js", import.meta.url), { type: "module" });
 
@@ -200,7 +199,6 @@ const Output = () => {
     };
 
     worker.onerror = (err) => {
-      console.error("PDF generation failed in worker:", err);
       worker.terminate();
     };
   };
@@ -212,10 +210,10 @@ const Output = () => {
           {/* Header - Responsive logo and title */}
           <Link to="/">
             <div className="flex items-end gap-[2px] px-4 sm:px-6">
-              <img 
-                src={logoPNG} 
-                alt="logo" 
-                className="w-12 sm:w-16 my-4 block" 
+              <img
+                src={logoPNG}
+                alt="logo"
+                className="w-12 sm:w-16 my-4 block"
               />
               <div className="text-xl sm:text-2xl mb-3 font-extrabold">
                 <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
@@ -234,11 +232,10 @@ const Output = () => {
               Generated Questions
             </div>
             <button
-              className={`${
-                editingIndex !== null
+              className={`${editingIndex !== null
                   ? 'bg-gray-500 cursor-not-allowed'
                   : 'bg-[#7C3AED] hover:bg-[#5A2AD9]'
-              } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
+                } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
               onClick={handleShuffleQuestions}
               disabled={editingIndex !== null}
             >
@@ -253,7 +250,7 @@ const Output = () => {
               qaPairs.map((qaPair, index) => {
                 const shuffledOptions = shuffledOptionsMap[index];
                 const isEditing = editingIndex === index;
-                
+
                 return (
                   <div
                     key={index}
@@ -332,7 +329,7 @@ const Output = () => {
                           value={editedQuestion}
                           onChange={(e) => setEditedQuestion(e.target.value)}
                         />
-                        
+
                         {qaPair.question_type !== "Boolean" && (
                           <>
                             <div className="text-[#E4E4E4] text-xs sm:text-sm mt-3 mb-1">
@@ -344,7 +341,7 @@ const Output = () => {
                               value={editedAnswer}
                               onChange={(e) => setEditedAnswer(e.target.value)}
                             />
-                            
+
                             {editedOptions && editedOptions.length > 0 && (
                               <div className="mt-3">
                                 <div className="text-[#E4E4E4] text-xs sm:text-sm mb-2">
@@ -382,7 +379,7 @@ const Output = () => {
             >
               Generate Google form
             </button>
-            
+
             <div className="relative w-full sm:w-auto">
               <button
                 className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
@@ -390,7 +387,7 @@ const Output = () => {
               >
                 Generate PDF
               </button>
-              
+
               <div
                 id="pdfDropdown"
                 className="hidden absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48"
