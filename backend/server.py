@@ -6,12 +6,18 @@ import random
 import logging
 import subprocess
 
+# Set environment variables for model caching BEFORE any AI imports
+# This prevents crashes when C: drive is full
+os.environ['HF_HOME'] = 'D:/huggingface_cache'
+os.environ['TRANSFORMERS_CACHE'] = 'D:/huggingface_cache'
+os.makedirs('D:/huggingface_cache', exist_ok=True)
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import nltk
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
-from transformers import pipeline
+
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +33,20 @@ from mediawikiapi import MediaWikiAPI
 
 # Initialize Flask app
 app = Flask(__name__)
+app.config['DEBUG'] = True  # Enable debug mode for better error visibility
+
+import traceback
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Log the full traceback to the terminal
+    logger.error("!!! UNHANDLED EXCEPTION !!!")
+    logger.error(traceback.format_exc())
+    # Return JSON error to frontend
+    return jsonify({
+        "error": "Internal Server Error",
+        "message": str(e)
+    }), 500
 
 # Security: Configure CORS with restricted origins
 # Override in production via ALLOWED_ORIGINS env var (comma-separated)
@@ -743,7 +763,7 @@ def get_shortq_hard():
         
         input_text = data.get("input_text", "")
         use_mediawiki = data.get("use_mediawiki", 0)
-        input_questions = data.get("input_question", [])
+        max_questions = data.get("max_questions", 4)
         
         try:
             input_text = validate_input(input_text)
@@ -753,7 +773,7 @@ def get_shortq_hard():
         input_text = process_input_text(input_text, use_mediawiki)
 
         output = qg.generate(
-            article=input_text, num_questions=input_questions, answer_style="sentences"
+            article=input_text, num_questions=max_questions, answer_style="sentences"
         )
 
         for item in output:
@@ -784,7 +804,7 @@ def get_mcq_hard():
         
         input_text = data.get("input_text", "")
         use_mediawiki = data.get("use_mediawiki", 0)
-        input_questions = data.get("input_question", [])
+        max_questions = data.get("max_questions", 4)
         
         try:
             input_text = validate_input(input_text)
@@ -793,22 +813,81 @@ def get_mcq_hard():
         
         input_text = process_input_text(input_text, use_mediawiki)
         output = qg.generate(
-            article=input_text, num_questions=input_questions, answer_style="multiple_choice"
+            article=input_text, num_questions=max_questions, answer_style="multiple_choice"
         )
         
         for q in output:
             try:
                 q["question"] = make_question_harder(q["question"])
             except Exception as e:
-                logger.warning(f"Failed to make question harder: {e}")
-            
+                logger.warning(f"Failed to make MCQ harder: {e}")
+        
         return jsonify({"output": output}), 200
-    except ValueError as e:
-        logger.warning(f"Validation error in /get_mcq_hard: {e}")
-        return jsonify({"error": str(e)}), 400
     except Exception as e:
         logger.error(f"Error in /get_mcq_hard: {e}")
         return jsonify({"error": "Failed to generate hard MCQ questions"}), 500
+
+@app.route("/make_harder", methods=["POST"])
+def make_harder():
+    """Enhance a single question's difficulty dynamically."""
+    try:
+        data = request.get_json()
+        if not data:
+             return jsonify({"error": "No data provided"}), 400
+        question_text = data.get("question", "")
+        if not question_text:
+            return jsonify({"error": "No question provided"}), 400
+        
+        harder_text = make_question_harder(question_text)
+        return jsonify({"harder_question": harder_text}), 200
+    except Exception as e:
+        logger.error(f"Error in /make_harder: {e}")
+        return jsonify({"error": "Failed to evolve question"}), 500
+
+@app.route("/refine_concept", methods=["POST"])
+def refine_concept():
+    """Generate a pedagogical refinement explanation for a missed concept."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+        
+        question = data.get("question", "")
+        answer = data.get("answer", "")
+        context = data.get("context", "")
+        
+        if not context:
+            return jsonify({"refinement": f"The correct answer is '{answer}'. Re-read the source material to strengthen this concept."}), 200
+            
+        # Extract pedagogical explanation using QA model or sentence surrounding the answer
+        refinement = ""
+        if qa_model:
+            try:
+                # Ask a pedagogical question
+                query = f"Explain the concept of {answer} in the context of {question}"
+                res = qa_model(question=query, context=context)
+                refinement = res.get("answer", "")
+            except:
+                pass
+        
+        if not refinement or len(refinement) < 10:
+            # Fallback: Find the sentence containing the answer
+            sentences = re.split(r'(?<=[.!?])\s+', context)
+            for i, sent in enumerate(sentences):
+                if answer.lower() in sent.lower():
+                    # Return this sentence and maybe the next one
+                    refinement = sent
+                    if i + 1 < len(sentences):
+                        refinement += " " + sentences[i+1]
+                    break
+        
+        if not refinement:
+            refinement = f"The concept involves '{answer}'. Research shows that active review of this specific node improves long-term retention."
+
+        return jsonify({"refinement": refinement}), 200
+    except Exception as e:
+        logger.error(f"Error in /refine_concept: {e}")
+        return jsonify({"error": "Failed to generate refinement"}), 500
 
 @app.route("/get_boolq_hard", methods=["POST"])
 def get_boolq_hard():
