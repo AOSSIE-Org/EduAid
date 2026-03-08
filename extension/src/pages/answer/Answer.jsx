@@ -2,18 +2,13 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import "../../index.css";
 import logo from "../../assets/aossie_logo.webp";
-import stars from "../../assets/stars.png";
-import { FaClipboard } from "react-icons/fa";
-import Switch from "react-switch"
-import { FaQuestionCircle, FaClipboardList } from "react-icons/fa"; // Icons for the dropdown
+import { FaQuestionCircle, FaClipboardList } from "react-icons/fa";
 
 const Answer = () => {
   const [context, setContext] = useState("");
   const [questions, setQuestions] = useState([{ type: "boolean", question: "", options: [""] }]);
   const [answers, setAnswers] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  const [isToggleOn, setIsToggleOn] = useState(1);
   const [mode, setMode] = useState("ask_question"); // Dropdown state
   
   useEffect(() => {
@@ -25,12 +20,6 @@ const Answer = () => {
     }
   });
   },[])
-
-  // const toggleSwitch = () => {
-  //   window.location.href = "/src/pages/home/home.html";
-  //   setIsToggleOn(0);
-
-  // };
 
   const handleModeChange = (event) => {
     setMode(event.target.value);
@@ -146,15 +135,6 @@ const Answer = () => {
               Aid
             </span>
           </div>
-          {/* <Switch
-            checked={isToggleOn}
-            onChange={toggleSwitch}
-            offColor="#FF005C"
-            onColor="#00CBE7"
-            height={32}
-            width={64}
-            className="ml-32 mb-8"
-          /> */}
           {/* Dropdown for Mode Selection */}
           <div className="relative ml-auto mb-3">
             <select

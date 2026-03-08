@@ -9,10 +9,11 @@ def greedy_decoding (inp_ids,attn_mask,model,tokenizer):
 
 
 def beam_search_decoding (inp_ids,attn_mask,model,tokenizer,num):
+  num_beams = max(10, num)  # num_beams must be >= num_return_sequences
   beam_output = model.generate(input_ids=inp_ids,
                                  attention_mask=attn_mask,
                                  max_length=256,
-                               num_beams=10,
+                               num_beams=num_beams,
                                num_return_sequences=num,
                                no_repeat_ngram_size=2,
                                early_stopping=True
