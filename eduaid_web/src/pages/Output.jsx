@@ -396,7 +396,7 @@ const Output = () => {
                               </div>
 
                               <div className="text-green-400">
-                                Correct Answer: {qaPair.answer}
+                                Correct Answer: {qaPair.answer?.toString().toLowerCase() === "true" ? "True" : "False"}
                               </div>
                             </div>                    
                         )}
