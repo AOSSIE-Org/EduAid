@@ -66,6 +66,9 @@ const Output = () => {
     }
     const shuffled = shuffleArray(qaPairs);
     setQaPairs(shuffled);
+    
+    setSelectedAnswers({});
+    setShortInputs({});
   };
 
   const handleEditQuestion = (index) => {
@@ -165,13 +168,22 @@ const Output = () => {
         });
       }
 
-      if (questionType == "get_boolq" && qaPairsFromStorage["output"]) {
+      if (questionType === "get_boolq" && qaPairsFromStorage["output"]) {
         qaPairsFromStorage["output"].forEach((qaPair) => {
+          
+          let answer = "";
+          if (typeof qaPair === "object" && qaPair !== null) {
+            answer = qaPair.answer || qaPair.Answer || "";
+          }
+          
           combinedQaPairs.push({
-            question: typeof qaPair === "string" ? qaPair : qaPair.question,
+            question: 
+              typeof qaPair === "string" 
+              ? qaPair 
+              : qaPair.question || qaPair.question_statement,
             question_type: "Boolean",
             options: [],
-            answer: "",
+            answer: answer,
           });
         });
     } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {

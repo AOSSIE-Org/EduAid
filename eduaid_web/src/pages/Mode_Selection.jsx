@@ -50,7 +50,7 @@ const Mode_Selection = () => {
           <div className="grid sm:grid-cols-2 gap-6">
 
           {/* Play Card */}
-          <div
+          <button
             onClick={() => handleModeSelect("play")}
             className="cursor-pointer   border border-gradient transition-all p-6  shadow-lg "
           >
@@ -60,10 +60,11 @@ const Mode_Selection = () => {
             <p className="text-gray-400 text-sm">
               Answer questions interactively and reveal answers instantly.
             </p>
-          </div>
+          </button>
 
           {/* Generate Card */}
-          <div
+          <button
+            type="button"
             onClick={() => handleModeSelect("generate")}
             className="cursor-pointer  border border-gradient  transition-all p-6 rounded-xl shadow-lg"
           >
@@ -73,7 +74,7 @@ const Mode_Selection = () => {
             <p className="text-gray-400 text-sm">
               View all questions and answers in structured format.
             </p>
-          </div>
+          </button>
 
         </div>
         </div>
