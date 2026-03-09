@@ -38,7 +38,12 @@ answer = main.AnswerPredictor()
 BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+try:
+    docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+except Exception as e:
+    import logging
+    logging.warning(f"Google Docs Service failed to initialize (missing credentials?): {e}")
+    docs_service = None
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
@@ -125,7 +130,7 @@ def get_mcq_answer():
     if not input_questions or not input_options or len(input_questions) != len(input_options):
         return jsonify({"outputs": outputs})
 
-    for question, options in zip(input_questions, input_options):
+    for question, options in zip(input_questions, input_options, strict=True):
         # Generate answer using the QA model
         qa_response = qa_model(question=question, context=input_text)
         generated_answer = qa_response["answer"]
@@ -181,6 +186,8 @@ def get_boolean_answer():
 
 @app.route('/get_content', methods=['POST'])
 def get_content():
+    if docs_service is None:
+        return jsonify({'error': 'Google Docs service is not configured on this server (missing credentials).'}), 500
     try:
         data = request.get_json()
         document_url = data.get('document_url')
@@ -411,7 +418,7 @@ def get_boolq_hard():
     generated = qg.generate(
         article=input_text,
         num_questions=input_questions,
-        answer_style="true_false"
+        answer_style="sentences"
     )
 
     # Apply transformation to make each question harder
