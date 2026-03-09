@@ -40,9 +40,9 @@ ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
 try:
     docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
-except Exception as e:
+except (FileNotFoundError, ValueError) as e:
     import logging
-    logging.warning(f"Google Docs Service failed to initialize (missing credentials?): {e}")
+    logging.error(f"Google Docs Service failed to initialize (missing credentials?): {e}", exc_info=True)
     docs_service = None
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
@@ -130,7 +130,7 @@ def get_mcq_answer():
     if not input_questions or not input_options or len(input_questions) != len(input_options):
         return jsonify({"outputs": outputs})
 
-    for question, options in zip(input_questions, input_options, strict=True):
+    for question, options in zip(input_questions, input_options):
         # Generate answer using the QA model
         qa_response = qa_model(question=question, context=input_text)
         generated_answer = qa_response["answer"]
@@ -421,8 +421,11 @@ def get_boolq_hard():
         answer_style="sentences"
     )
 
-    # Apply transformation to make each question harder
-    harder_questions = [make_question_harder(q) for q in generated]
+    # Apply transformation to the question string, keeping the dict structure intact
+    for item in generated:
+        item["question"] = make_question_harder(item["question"])
+    
+    harder_questions = generated
 
     return jsonify({"output": harder_questions})
 
