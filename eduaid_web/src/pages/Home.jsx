@@ -96,6 +96,12 @@ const Home = () => {
                 <img src={arrow} width={24} height={24} alt="arrow" />
               </button>
             </Link>
+            <Link to="/playlists" className="w-full sm:w-auto">
+              <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
+                Quiz Playlists
+                <img src={arrow} width={24} height={24} alt="arrow" />
+              </button>
+            </Link>
           </div>
 
           {/* GitHub Stars */}

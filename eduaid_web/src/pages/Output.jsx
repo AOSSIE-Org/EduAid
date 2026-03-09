@@ -15,19 +15,23 @@ const Output = () => {
   const [editedQuestion, setEditedQuestion] = useState("");
   const [editedAnswer, setEditedAnswer] = useState("");
   const [editedOptions, setEditedOptions] = useState([]);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [playlists, setPlaylists] = useState([]);
+  const [selectedPlaylist, setSelectedPlaylist] = useState("");
+  const [playlistError, setPlaylistError] = useState("");
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-        const dropdown = document.getElementById('pdfDropdown');
-        if (dropdown && !dropdown.contains(event.target) && 
-            !event.target.closest('button')) {
-            dropdown.classList.add('hidden');
-        }
+      const dropdown = document.getElementById('pdfDropdown');
+      if (dropdown && !dropdown.contains(event.target) &&
+        !event.target.closest('button')) {
+        dropdown.classList.add('hidden');
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-}, []);
+  }, []);
 
   function shuffleArray(array) {
     const shuffledArray = [...array];
@@ -169,6 +173,53 @@ const Output = () => {
     }
   };
 
+  const fetchPlaylists = async () => {
+    try {
+      const response = await apiClient.get("/playlists");
+      if (response.success) {
+        setPlaylists(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch playlists:", error);
+      setPlaylistError("Failed to load playlists");
+    }
+  };
+
+  const handleAddToPlaylist = async () => {
+    if (!selectedPlaylist) {
+      setPlaylistError("Please select a playlist");
+      return;
+    }
+
+    try {
+      const quizData = {
+        output: qaPairs,
+        questionType: questionType,
+        timestamp: new Date().toISOString(),
+      };
+
+      const response = await apiClient.post(
+        `/playlists/${selectedPlaylist}/quizzes`,
+        { quiz_data: quizData }
+      );
+
+      if (response.success) {
+        alert("Quiz added to playlist successfully!");
+        setShowPlaylistModal(false);
+        setSelectedPlaylist("");
+        setPlaylistError("");
+      }
+    } catch (error) {
+      console.error("Failed to add quiz to playlist:", error);
+      setPlaylistError("Failed to add quiz to playlist");
+    }
+  };
+
+  const handleOpenPlaylistModal = () => {
+    fetchPlaylists();
+    setShowPlaylistModal(true);
+  };
+
   const loadLogoAsBytes = async () => {
     try {
       const response = await fetch(logoPNG);
@@ -180,7 +231,7 @@ const Output = () => {
     }
   };
 
-    const generatePDF = async (mode) => {
+  const generatePDF = async (mode) => {
     const logoBytes = await loadLogoAsBytes();
     const worker = new Worker(new URL("../workers/pdfWorker.js", import.meta.url), { type: "module" });
 
@@ -212,10 +263,10 @@ const Output = () => {
           {/* Header - Responsive logo and title */}
           <Link to="/">
             <div className="flex items-end gap-[2px] px-4 sm:px-6">
-              <img 
-                src={logoPNG} 
-                alt="logo" 
-                className="w-12 sm:w-16 my-4 block" 
+              <img
+                src={logoPNG}
+                alt="logo"
+                className="w-12 sm:w-16 my-4 block"
               />
               <div className="text-xl sm:text-2xl mb-3 font-extrabold">
                 <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
@@ -234,11 +285,10 @@ const Output = () => {
               Generated Questions
             </div>
             <button
-              className={`${
-                editingIndex !== null
-                  ? 'bg-gray-500 cursor-not-allowed'
-                  : 'bg-[#7C3AED] hover:bg-[#5A2AD9]'
-              } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
+              className={`${editingIndex !== null
+                ? 'bg-gray-500 cursor-not-allowed'
+                : 'bg-[#7C3AED] hover:bg-[#5A2AD9]'
+                } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
               onClick={handleShuffleQuestions}
               disabled={editingIndex !== null}
             >
@@ -253,7 +303,7 @@ const Output = () => {
               qaPairs.map((qaPair, index) => {
                 const shuffledOptions = shuffledOptionsMap[index];
                 const isEditing = editingIndex === index;
-                
+
                 return (
                   <div
                     key={index}
@@ -332,7 +382,7 @@ const Output = () => {
                           value={editedQuestion}
                           onChange={(e) => setEditedQuestion(e.target.value)}
                         />
-                        
+
                         {qaPair.question_type !== "Boolean" && (
                           <>
                             <div className="text-[#E4E4E4] text-xs sm:text-sm mt-3 mb-1">
@@ -344,7 +394,7 @@ const Output = () => {
                               value={editedAnswer}
                               onChange={(e) => setEditedAnswer(e.target.value)}
                             />
-                            
+
                             {editedOptions && editedOptions.length > 0 && (
                               <div className="mt-3">
                                 <div className="text-[#E4E4E4] text-xs sm:text-sm mb-2">
@@ -382,7 +432,14 @@ const Output = () => {
             >
               Generate Google form
             </button>
-            
+
+            <button
+              className="bg-[#7C3AED] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#5A2AD9] transition-colors justify-center"
+              onClick={handleOpenPlaylistModal}
+            >
+              Add to Playlist
+            </button>
+
             <div className="relative w-full sm:w-auto">
               <button
                 className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
@@ -390,7 +447,7 @@ const Output = () => {
               >
                 Generate PDF
               </button>
-              
+
               <div
                 id="pdfDropdown"
                 className="hidden absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48"
@@ -418,6 +475,63 @@ const Output = () => {
           </div>
         </div>
       </div>
+
+      {/* Add to Playlist Modal */}
+      {showPlaylistModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#202838] p-6 rounded-lg max-w-md w-full mx-4">
+            <h2 className="text-white text-xl font-bold mb-4">
+              Add Quiz to Playlist
+            </h2>
+
+            {playlistError && (
+              <div className="text-red-400 text-sm mb-3">{playlistError}</div>
+            )}
+
+            {playlists.length === 0 ? (
+              <div className="text-gray-400 mb-4">
+                No playlists available. Create one first!
+              </div>
+            ) : (
+              <select
+                value={selectedPlaylist}
+                onChange={(e) => setSelectedPlaylist(e.target.value)}
+                className="w-full bg-[#1a1a2e] text-white p-3 rounded border border-gray-600 focus:border-[#7600F2] focus:outline-none mb-4"
+              >
+                <option value="">Select a playlist</option>
+                {playlists.map((playlist) => (
+                  <option key={playlist.id} value={playlist.id}>
+                    {playlist.name} ({playlist.quizzes.length} quizzes)
+                  </option>
+                ))}
+              </select>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleAddToPlaylist}
+                disabled={playlists.length === 0}
+                className={`flex-1 ${playlists.length === 0
+                    ? "bg-gray-600 cursor-not-allowed"
+                    : "bg-[#7C3AED] hover:bg-[#5A2AD9]"
+                  } text-white px-4 py-2 rounded-lg font-semibold transition-colors`}
+              >
+                Add
+              </button>
+              <button
+                onClick={() => {
+                  setShowPlaylistModal(false);
+                  setSelectedPlaylist("");
+                  setPlaylistError("");
+                }}
+                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

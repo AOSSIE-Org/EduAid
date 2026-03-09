@@ -25,10 +25,14 @@ from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
+from playlist_manager import PlaylistManager
 
 app = Flask(__name__)
 CORS(app)
 print("Starting Flask App...")
+
+# Initialize playlist manager
+playlist_manager = PlaylistManager()
 
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
@@ -38,7 +42,8 @@ answer = main.AnswerPredictor()
 BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+#docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+docs_service = None
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
@@ -439,6 +444,109 @@ def upload_file():
 @app.route("/", methods=["GET"])
 def hello():
     return "The server is working fine"
+
+
+# Playlist Management Endpoints
+
+@app.route("/playlists", methods=["POST"])
+def create_playlist():
+    """Create a new playlist"""
+    try:
+        data = request.get_json()
+        name = data.get("name", "").strip()
+        
+        if not name:
+            return jsonify({"success": False, "error": "Playlist name is required"}), 400
+        
+        playlist = playlist_manager.create_playlist(name)
+        return jsonify({"success": True, "data": playlist}), 201
+    
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/playlists", methods=["GET"])
+def get_playlists():
+    """Get all playlists"""
+    try:
+        playlists = playlist_manager.get_all_playlists()
+        return jsonify({"success": True, "data": playlists}), 200
+    
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/playlists/<playlist_id>", methods=["GET"])
+def get_playlist(playlist_id):
+    """Get a specific playlist"""
+    try:
+        playlist = playlist_manager.get_playlist(playlist_id)
+        
+        if not playlist:
+            return jsonify({"success": False, "error": "Playlist not found"}), 404
+        
+        return jsonify({"success": True, "data": playlist}), 200
+    
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/playlists/<playlist_id>/quizzes", methods=["POST"])
+def add_quiz_to_playlist(playlist_id):
+    """Add a quiz to a playlist"""
+    try:
+        data = request.get_json()
+        quiz_data = data.get("quiz_data")
+        
+        if not quiz_data:
+            return jsonify({"success": False, "error": "Quiz data is required"}), 400
+        
+        # Check if playlist exists
+        playlist = playlist_manager.get_playlist(playlist_id)
+        if not playlist:
+            return jsonify({"success": False, "error": "Playlist not found"}), 404
+        
+        quiz_entry = playlist_manager.add_quiz_to_playlist(playlist_id, quiz_data)
+        return jsonify({"success": True, "data": quiz_entry}), 201
+    
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/playlists/<playlist_id>/quizzes/<quiz_id>", methods=["DELETE"])
+def remove_quiz_from_playlist(playlist_id, quiz_id):
+    """Remove a quiz from a playlist"""
+    try:
+        # Check if playlist exists
+        playlist = playlist_manager.get_playlist(playlist_id)
+        if not playlist:
+            return jsonify({"success": False, "error": "Playlist not found"}), 404
+        
+        success = playlist_manager.remove_quiz_from_playlist(playlist_id, quiz_id)
+        
+        if not success:
+            return jsonify({"success": False, "error": "Quiz not found in playlist"}), 404
+        
+        return jsonify({"success": True, "message": "Quiz removed successfully"}), 200
+    
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/playlists/<playlist_id>", methods=["DELETE"])
+def delete_playlist(playlist_id):
+    """Delete a playlist"""
+    try:
+        # Check if playlist exists
+        playlist = playlist_manager.get_playlist(playlist_id)
+        if not playlist:
+            return jsonify({"success": False, "error": "Playlist not found"}), 404
+        
+        playlist_manager.delete_playlist(playlist_id)
+        return jsonify({"success": True, "message": "Playlist deleted successfully"}), 200
+    
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 def clean_transcript(file_path):
     """Extracts and cleans transcript from a VTT file."""
