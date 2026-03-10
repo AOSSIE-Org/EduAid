@@ -33,20 +33,84 @@ print("Starting Flask App...")
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
 
-MCQGen = main.MCQGenerator()
-answer = main.AnswerPredictor()
-BoolQGen = main.BoolQGenerator()
-ShortQGen = main.ShortQGenerator()
-qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
-file_processor = main.FileProcessor()
-mediawikiapi = MediaWikiAPI()
-qa_model = pipeline("question-answering")
+# Lazy initialization - instances created on first use
+_mcq_gen = None
+_answer_predictor = None
+_boolq_gen = None
+_shortq_gen = None
+_question_gen = None
+_docs_service = None
+_file_processor = None
+_mediawiki = None
+_qa_model = None
+
+def get_mcq_generator():
+    """Lazy load MCQ generator."""
+    global _mcq_gen
+    if _mcq_gen is None:
+        _mcq_gen = main.MCQGenerator()
+    return _mcq_gen
+
+def get_answer_predictor():
+    """Lazy load answer predictor."""
+    global _answer_predictor
+    if _answer_predictor is None:
+        _answer_predictor = main.AnswerPredictor()
+    return _answer_predictor
+
+def get_boolq_generator():
+    """Lazy load boolean question generator."""
+    global _boolq_gen
+    if _boolq_gen is None:
+        _boolq_gen = main.BoolQGenerator()
+    return _boolq_gen
+
+def get_shortq_generator():
+    """Lazy load short question generator."""
+    global _shortq_gen
+    if _shortq_gen is None:
+        _shortq_gen = main.ShortQGenerator()
+    return _shortq_gen
+
+def get_question_generator():
+    """Lazy load question generator."""
+    global _question_gen
+    if _question_gen is None:
+        _question_gen = main.QuestionGenerator()
+    return _question_gen
+
+def get_docs_service():
+    """Lazy load Google Docs service."""
+    global _docs_service
+    if _docs_service is None:
+        _docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+    return _docs_service
+
+def get_file_processor():
+    """Lazy load file processor."""
+    global _file_processor
+    if _file_processor is None:
+        _file_processor = main.FileProcessor()
+    return _file_processor
+
+def get_mediawiki():
+    """Lazy load MediaWiki API."""
+    global _mediawiki
+    if _mediawiki is None:
+        _mediawiki = MediaWikiAPI()
+    return _mediawiki
+
+def get_qa_model():
+    """Lazy load QA model."""
+    global _qa_model
+    if _qa_model is None:
+        _qa_model = pipeline("question-answering")
+    return _qa_model
 
 
 def process_input_text(input_text, use_mediawiki):
     if use_mediawiki == 1:
-        input_text = mediawikiapi.summary(input_text,8)
+        input_text = get_mediawiki().summary(input_text, 8)
     return input_text
 
 
@@ -57,7 +121,7 @@ def get_mcq():
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     input_text = process_input_text(input_text, use_mediawiki)
-    output = MCQGen.generate_mcq(
+    output = get_mcq_generator().generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
     )
     questions = output["questions"]
@@ -71,7 +135,7 @@ def get_boolq():
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     input_text = process_input_text(input_text, use_mediawiki)
-    output = BoolQGen.generate_boolq(
+    output = get_boolq_generator().generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
     )
     boolean_questions = output["Boolean_Questions"]
@@ -85,7 +149,7 @@ def get_shortq():
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     input_text = process_input_text(input_text, use_mediawiki)
-    output = ShortQGen.generate_shortq(
+    output = get_shortq_generator().generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
     )
     questions = output["questions"]
@@ -101,13 +165,13 @@ def get_problems():
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
     input_text = process_input_text(input_text, use_mediawiki)
-    output1 = MCQGen.generate_mcq(
+    output1 = get_mcq_generator().generate_mcq(
         {"input_text": input_text, "max_questions": max_questions_mcq}
     )
-    output2 = BoolQGen.generate_boolq(
+    output2 = get_boolq_generator().generate_boolq(
         {"input_text": input_text, "max_questions": max_questions_boolq}
     )
-    output3 = ShortQGen.generate_shortq(
+    output3 = get_shortq_generator().generate_shortq(
         {"input_text": input_text, "max_questions": max_questions_shortq}
     )
     return jsonify(
@@ -125,6 +189,7 @@ def get_mcq_answer():
     if not input_questions or not input_options or len(input_questions) != len(input_options):
         return jsonify({"outputs": outputs})
 
+    qa_model = get_qa_model()
     for question, options in zip(input_questions, input_options):
         # Generate answer using the QA model
         qa_response = qa_model(question=question, context=input_text)
@@ -153,6 +218,7 @@ def get_answer():
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     answers = []
+    qa_model = get_qa_model()
     for question in input_questions:
         qa_response = qa_model(question=question, context=input_text)
         answers.append(qa_response["answer"])
@@ -167,8 +233,9 @@ def get_boolean_answer():
     input_questions = data.get("input_question", [])
     output = []
 
+    answer_pred = get_answer_predictor()
     for question in input_questions:
-        qa_response = answer.predict_boolean_answer(
+        qa_response = answer_pred.predict_boolean_answer(
             {"input_text": input_text, "input_question": question}
         )
         if(qa_response):
@@ -187,7 +254,7 @@ def get_content():
         if not document_url:
             return jsonify({'error': 'Document URL is required'}), 400
 
-        text = docs_service.get_document_content(document_url)
+        text = get_docs_service().get_document_content(document_url)
         return jsonify(text)
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
@@ -372,6 +439,7 @@ def get_shortq_hard():
     input_text = process_input_text(input_text,use_mediawiki)
     input_questions = data.get("input_question", [])
 
+    qg = get_question_generator()
     output = qg.generate(
         article=input_text, num_questions=input_questions, answer_style="sentences"
     )
@@ -389,6 +457,8 @@ def get_mcq_hard():
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
     input_questions = data.get("input_question", [])
+    
+    qg = get_question_generator()
     output = qg.generate(
         article=input_text, num_questions=input_questions, answer_style="multiple_choice"
     )
@@ -407,6 +477,7 @@ def get_boolq_hard():
 
     input_text = process_input_text(input_text, use_mediawiki)
 
+    qg = get_question_generator()
     # Generate questions using the same QG model
     generated = qg.generate(
         article=input_text,
@@ -429,7 +500,7 @@ def upload_file():
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
-    content = file_processor.process_file(file)
+    content = get_file_processor().process_file(file)
     
     if content:
         return jsonify({"content": content})
