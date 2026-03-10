@@ -3,6 +3,7 @@ import torch
 import random
 import gc
 import logging
+import threading
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 from transformers import AutoModelForSequenceClassification, AutoTokenizer,AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5Tokenizer
 import numpy as np
@@ -39,6 +40,8 @@ class ModelManager:
     def __init__(self):
         self._models = {}
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self._lock = threading.Lock()
+        self._model_locks = {}
         logger.info(f"ModelManager initialized. Using device: {self._device}")
     
     def get_device(self):
@@ -55,57 +58,69 @@ class ModelManager:
         Returns:
             loaded model
         """
-        if model_name in self._models:
-            logger.info(f"Model '{model_name}' already loaded, returning cached version")
-            return self._models[model_name]
+        # Check cache first with main lock
+        with self._lock:
+            if model_name in self._models:
+                logger.info(f"Model '{model_name}' already loaded, returning cached version")
+                return self._models[model_name]
+            
+            # Get or create a lock for this specific model
+            model_lock = self._model_locks.setdefault(model_name, threading.Lock())
         
-        try:
-            logger.info(f"Loading model '{model_name}' of type '{model_type}'...")
+        # Load model with model-specific lock
+        with model_lock:
+            # Double-check after acquiring model lock
+            if model_name in self._models:
+                logger.info(f"Model '{model_name}' already loaded, returning cached version")
+                return self._models[model_name]
             
-            if model_type == 'tokenizer':
-                pretrained = kwargs.get('pretrained', 't5-large')
-                model = T5Tokenizer.from_pretrained(pretrained, **{k: v for k, v in kwargs.items() if k != 'pretrained'})
-            
-            elif model_type == 'transformer':
-                pretrained = kwargs.get('pretrained', 'Roasters/Question-Generator')
-                model = T5ForConditionalGeneration.from_pretrained(pretrained)
-                model.to(self._device)
-                model.eval()
-            
-            elif model_type == 'auto_tokenizer':
-                pretrained = kwargs.get('pretrained')
-                model = AutoTokenizer.from_pretrained(pretrained, **{k: v for k, v in kwargs.items() if k != 'pretrained'})
-            
-            elif model_type == 'auto_model_seq2seq':
-                pretrained = kwargs.get('pretrained')
-                model = AutoModelForSeq2SeqLM.from_pretrained(pretrained)
-                model.to(self._device)
-                model.eval()
-            
-            elif model_type == 'auto_model_classification':
-                pretrained = kwargs.get('pretrained')
-                model = AutoModelForSequenceClassification.from_pretrained(pretrained)
-                model.to(self._device)
-                model.eval()
-            
-            elif model_type == 'spacy':
-                model_name_spacy = kwargs.get('model', 'en_core_web_sm')
-                model = spacy.load(model_name_spacy)
-            
-            elif model_type == 'sense2vec':
-                path = kwargs.get('path', 's2v_old')
-                model = Sense2Vec().from_disk(path)
-            
-            else:
-                raise ValueError(f"Unknown model type: {model_type}")
-            
-            self._models[model_name] = model
-            logger.info(f"Model '{model_name}' loaded successfully")
-            return model
-            
-        except Exception as e:
-            logger.error(f"Failed to load model '{model_name}': {e}")
-            raise
+            try:
+                logger.info(f"Loading model '{model_name}' of type '{model_type}'...")
+                
+                if model_type == 'tokenizer':
+                    pretrained = kwargs.get('pretrained', 't5-large')
+                    model = T5Tokenizer.from_pretrained(pretrained, **{k: v for k, v in kwargs.items() if k != 'pretrained'})
+                
+                elif model_type == 'transformer':
+                    pretrained = kwargs.get('pretrained', 'Roasters/Question-Generator')
+                    model = T5ForConditionalGeneration.from_pretrained(pretrained)
+                    model.to(self._device)
+                    model.eval()
+                
+                elif model_type == 'auto_tokenizer':
+                    pretrained = kwargs.get('pretrained')
+                    model = AutoTokenizer.from_pretrained(pretrained, **{k: v for k, v in kwargs.items() if k != 'pretrained'})
+                
+                elif model_type == 'auto_model_seq2seq':
+                    pretrained = kwargs.get('pretrained')
+                    model = AutoModelForSeq2SeqLM.from_pretrained(pretrained)
+                    model.to(self._device)
+                    model.eval()
+                
+                elif model_type == 'auto_model_classification':
+                    pretrained = kwargs.get('pretrained')
+                    model = AutoModelForSequenceClassification.from_pretrained(pretrained)
+                    model.to(self._device)
+                    model.eval()
+                
+                elif model_type == 'spacy':
+                    model_name_spacy = kwargs.get('model', 'en_core_web_sm')
+                    model = spacy.load(model_name_spacy)
+                
+                elif model_type == 'sense2vec':
+                    path = kwargs.get('path', 's2v_old')
+                    model = Sense2Vec().from_disk(path)
+                
+                else:
+                    raise ValueError(f"Unknown model type: {model_type}")
+                
+                self._models[model_name] = model
+                logger.info(f"Model '{model_name}' loaded successfully")
+                return model
+                
+            except Exception as e:
+                logger.error(f"Failed to load model '{model_name}': {e}")
+                raise
     
     def get_model(self, model_name):
         """
@@ -260,7 +275,7 @@ class MCQGenerator:
                 text_snippet = " ".join(keyword_sentence_mapping[k][:3])
                 keyword_sentence_mapping[k] = text_snippet
 
-            final_output = {}
+            final_output = {"questions": [], "time_taken": 0}
 
             if len(keyword_sentence_mapping.keys()) == 0:
                 logger.warning("No keywords found in text")
@@ -411,7 +426,7 @@ class ShortQGenerator:
                 text_snippet = " ".join(keyword_sentence_mapping[k][:3])
                 keyword_sentence_mapping[k] = text_snippet
 
-            final_output = {}
+            final_output = {"questions": []}
 
             if len(keyword_sentence_mapping.keys()) == 0:
                 logger.warning("No keywords found in text")
@@ -769,6 +784,8 @@ class AnswerPredictor:
                 try:
                     hypothesis = question
                     inputs = self.nli_tokenizer.encode_plus(input_text, hypothesis, return_tensors="pt")
+                    # Move inputs to device
+                    inputs = {k: v.to(self.device) for k, v in inputs.items()}
                     outputs = self.nli_model(**inputs)
                     logits = outputs.logits
                     probabilities = torch.softmax(logits, dim=1)

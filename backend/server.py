@@ -5,6 +5,7 @@ import nltk
 import subprocess
 import os
 import glob
+import threading
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -43,68 +44,87 @@ _docs_service = None
 _file_processor = None
 _mediawiki = None
 _qa_model = None
+_init_lock = threading.Lock()
 
 def get_mcq_generator():
-    """Lazy load MCQ generator."""
+    """Lazy load MCQ generator with thread safety."""
     global _mcq_gen
     if _mcq_gen is None:
-        _mcq_gen = main.MCQGenerator()
+        with _init_lock:
+            if _mcq_gen is None:
+                _mcq_gen = main.MCQGenerator()
     return _mcq_gen
 
 def get_answer_predictor():
-    """Lazy load answer predictor."""
+    """Lazy load answer predictor with thread safety."""
     global _answer_predictor
     if _answer_predictor is None:
-        _answer_predictor = main.AnswerPredictor()
+        with _init_lock:
+            if _answer_predictor is None:
+                _answer_predictor = main.AnswerPredictor()
     return _answer_predictor
 
 def get_boolq_generator():
-    """Lazy load boolean question generator."""
+    """Lazy load boolean question generator with thread safety."""
     global _boolq_gen
     if _boolq_gen is None:
-        _boolq_gen = main.BoolQGenerator()
+        with _init_lock:
+            if _boolq_gen is None:
+                _boolq_gen = main.BoolQGenerator()
     return _boolq_gen
 
 def get_shortq_generator():
-    """Lazy load short question generator."""
+    """Lazy load short question generator with thread safety."""
     global _shortq_gen
     if _shortq_gen is None:
-        _shortq_gen = main.ShortQGenerator()
+        with _init_lock:
+            if _shortq_gen is None:
+                _shortq_gen = main.ShortQGenerator()
     return _shortq_gen
 
 def get_question_generator():
-    """Lazy load question generator."""
+    """Lazy load question generator with thread safety."""
     global _question_gen
     if _question_gen is None:
-        _question_gen = main.QuestionGenerator()
+        with _init_lock:
+            if _question_gen is None:
+                _question_gen = main.QuestionGenerator()
     return _question_gen
 
 def get_docs_service():
-    """Lazy load Google Docs service."""
+    """Lazy load Google Docs service with thread safety."""
     global _docs_service
     if _docs_service is None:
-        _docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+        with _init_lock:
+            if _docs_service is None:
+                _docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
     return _docs_service
 
 def get_file_processor():
-    """Lazy load file processor."""
+    """Lazy load file processor with thread safety."""
     global _file_processor
     if _file_processor is None:
-        _file_processor = main.FileProcessor()
+        with _init_lock:
+            if _file_processor is None:
+                _file_processor = main.FileProcessor()
     return _file_processor
 
 def get_mediawiki():
-    """Lazy load MediaWiki API."""
+    """Lazy load MediaWiki API with thread safety."""
     global _mediawiki
     if _mediawiki is None:
-        _mediawiki = MediaWikiAPI()
+        with _init_lock:
+            if _mediawiki is None:
+                _mediawiki = MediaWikiAPI()
     return _mediawiki
 
 def get_qa_model():
-    """Lazy load QA model."""
+    """Lazy load QA model with thread safety."""
     global _qa_model
     if _qa_model is None:
-        _qa_model = pipeline("question-answering")
+        with _init_lock:
+            if _qa_model is None:
+                _qa_model = pipeline("question-answering")
     return _qa_model
 
 
@@ -231,17 +251,12 @@ def get_boolean_answer():
     data = request.get_json()
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
-    output = []
 
     answer_pred = get_answer_predictor()
-    for question in input_questions:
-        qa_response = answer_pred.predict_boolean_answer(
-            {"input_text": input_text, "input_question": question}
-        )
-        if(qa_response):
-            output.append("True")
-        else:
-            output.append("False")
+    answers = answer_pred.predict_boolean_answer(
+        {"input_text": input_text, "input_question": input_questions}
+    )
+    output = ["True" if answer else "False" for answer in answers]
 
     return jsonify({"output": output})
 
@@ -477,16 +492,14 @@ def get_boolq_hard():
 
     input_text = process_input_text(input_text, use_mediawiki)
 
-    qg = get_question_generator()
-    # Generate questions using the same QG model
-    generated = qg.generate(
-        article=input_text,
-        num_questions=input_questions,
-        answer_style="true_false"
+    # Use BoolQGenerator instead of QuestionGenerator
+    output = get_boolq_generator().generate_boolq(
+        {"input_text": input_text, "max_questions": input_questions}
     )
 
     # Apply transformation to make each question harder
-    harder_questions = [make_question_harder(q) for q in generated]
+    boolean_questions = output.get("Boolean_Questions", [])
+    harder_questions = [make_question_harder(q) for q in boolean_questions]
 
     return jsonify({"output": harder_questions})
 

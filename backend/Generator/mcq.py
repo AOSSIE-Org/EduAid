@@ -5,6 +5,8 @@ import torch
 import gc
 import psutil
 import logging
+import hashlib
+from collections import deque
 from nltk.tokenize import sent_tokenize
 from flashtext import KeywordProcessor
 from nltk.corpus import stopwords
@@ -148,10 +150,14 @@ def get_answer_choices(answer, s2v_model):
     try:
         choices = find_similar_words(answer, s2v_model)
         if len(choices) > 0:
-            logger.info(f"Generated choices successfully for word: {answer}")
+            # Redact sensitive content from logs
+            answer_hash = hashlib.sha256(answer.encode()).hexdigest()[:8]
+            logger.info(f"Generated choices successfully | answer_hash={answer_hash} | answer_length={len(answer)}")
             return choices, "sense2vec"
     except Exception as e:
-        logger.error(f"Failed to generate choices for word: {answer}. Error: {e}")
+        # Redact sensitive content from logs
+        answer_hash = hashlib.sha256(answer.encode()).hexdigest()[:8]
+        logger.error(f"Failed to generate choices | answer_hash={answer_hash}. Error: {e}")
 
     return choices, "None"
 
@@ -287,19 +293,23 @@ def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, 
         else:
             current_batch_size = min(MAX_BATCH_SIZE, len(answers))
         
-        # Split answers into batches
+        # Split answers into batches and use deque for retry logic
         answer_batches = split_into_batches(answers, current_batch_size)
+        batch_queue = deque(answer_batches)
         logger.info(f"Processing {len(answers)} questions in {len(answer_batches)} batches (batch size: {current_batch_size})")
         
         generated_questions = []
         
-        # Process each batch
-        for batch_idx, answer_batch in enumerate(answer_batches):
+        # Process each batch with retry logic
+        while batch_queue:
+            answer_batch = batch_queue.popleft()
+            
             try:
-                # Check memory before processing batch (simplified - no mid-iteration re-batching)
+                # Check memory before processing batch
                 memory_usage = get_memory_usage()
                 if memory_usage > MAX_MEMORY_USAGE_PERCENT:
-                    logger.warning(f"High memory usage ({memory_usage:.1f}%) during batch {batch_idx + 1}")
+                    logger.warning(f"High memory usage ({memory_usage:.1f}%) during batch processing")
+                    cleanup_memory(device)
                 
                 # Prepare batch text
                 batch_text = []
@@ -312,11 +322,13 @@ def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, 
                 # Encode batch
                 encoding = tokenizer.batch_encode_plus(
                     batch_text, 
-                    pad_to_max_length=True, 
+                    padding=True,
+                    truncation=True,
+                    max_length=tokenizer.model_max_length,
                     return_tensors="pt"
                 )
                 
-                logger.info(f"Processing batch {batch_idx + 1}/{len(answer_batches)} with {len(answer_batch)} questions...")
+                logger.info(f"Processing batch with {len(answer_batch)} questions...")
                 input_ids = encoding["input_ids"].to(device)
                 attention_masks = encoding["attention_mask"].to(device)
                 
@@ -359,7 +371,7 @@ def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, 
                         
                         generated_questions.append(question_data)
                     except Exception as e:
-                        logger.error(f"Error processing question for answer '{answer}': {e}")
+                        logger.error(f"Error processing question for answer: {e}")
                         continue
                 
                 # Clean up batch tensors
@@ -369,8 +381,26 @@ def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, 
                 if memory_usage > MEMORY_CLEANUP_THRESHOLD:
                     cleanup_memory(device)
                     
+            except (RuntimeError, MemoryError) as e:
+                # Handle OOM or memory errors by splitting batch
+                if len(answer_batch) > 1:
+                    logger.warning(f"Batch processing failed with {len(answer_batch)} items. Splitting and retrying. Error: {e}")
+                    # Split batch into smaller chunks
+                    mid = len(answer_batch) // 2
+                    smaller_batch_1 = answer_batch[:mid]
+                    smaller_batch_2 = answer_batch[mid:]
+                    # Add smaller batches back to the front of the queue
+                    batch_queue.appendleft(smaller_batch_2)
+                    batch_queue.appendleft(smaller_batch_1)
+                    # Clean up memory before retry
+                    cleanup_memory(device)
+                else:
+                    # Single item batch failed - log and skip
+                    logger.error(f"Failed to process single item batch. Skipping. Error: {e}")
+                    cleanup_memory(device)
+                    
             except Exception as e:
-                logger.error(f"Error processing batch {batch_idx + 1}: {e}")
+                logger.error(f"Unexpected error processing batch: {e}")
                 # Try to recover by cleaning memory and continuing
                 cleanup_memory(device)
                 continue
@@ -415,19 +445,23 @@ def generate_normal_questions(keyword_sent_mapping, device, tokenizer, model):
         else:
             current_batch_size = min(MAX_BATCH_SIZE, len(answers))
         
-        # Split answers into batches
+        # Split answers into batches and use deque for retry logic
         answer_batches = split_into_batches(answers, current_batch_size)
+        batch_queue = deque(answer_batches)
         logger.info(f"Processing {len(answers)} questions in {len(answer_batches)} batches (batch size: {current_batch_size})")
         
         output_array = {"questions": []}
         
-        # Process each batch
-        for batch_idx, answer_batch in enumerate(answer_batches):
+        # Process each batch with retry logic
+        while batch_queue:
+            answer_batch = batch_queue.popleft()
+            
             try:
-                # Check memory before processing batch (simplified - no mid-iteration re-batching)
+                # Check memory before processing batch
                 memory_usage = get_memory_usage()
                 if memory_usage > MAX_MEMORY_USAGE_PERCENT:
-                    logger.warning(f"High memory usage ({memory_usage:.1f}%) during batch {batch_idx + 1}")
+                    logger.warning(f"High memory usage ({memory_usage:.1f}%) during batch processing")
+                    cleanup_memory(device)
                 
                 # Prepare batch text
                 batch_text = []
@@ -440,11 +474,13 @@ def generate_normal_questions(keyword_sent_mapping, device, tokenizer, model):
                 # Encode batch
                 encoding = tokenizer.batch_encode_plus(
                     batch_text, 
-                    pad_to_max_length=True, 
+                    padding=True,
+                    truncation=True,
+                    max_length=tokenizer.model_max_length,
                     return_tensors="pt"
                 )
                 
-                logger.info(f"Processing batch {batch_idx + 1}/{len(answer_batches)} with {len(answer_batch)} questions...")
+                logger.info(f"Processing batch with {len(answer_batch)} questions...")
                 input_ids = encoding["input_ids"].to(device)
                 attention_masks = encoding["attention_mask"].to(device)
                 
@@ -477,7 +513,7 @@ def generate_normal_questions(keyword_sent_mapping, device, tokenizer, model):
                         
                         output_array["questions"].append(individual_quest)
                     except Exception as e:
-                        logger.error(f"Error processing question for answer '{val}': {e}")
+                        logger.error(f"Error processing question: {e}")
                         continue
                 
                 # Clean up batch tensors
@@ -487,8 +523,26 @@ def generate_normal_questions(keyword_sent_mapping, device, tokenizer, model):
                 if memory_usage > MEMORY_CLEANUP_THRESHOLD:
                     cleanup_memory(device)
                     
+            except (RuntimeError, MemoryError) as e:
+                # Handle OOM or memory errors by splitting batch
+                if len(answer_batch) > 1:
+                    logger.warning(f"Batch processing failed with {len(answer_batch)} items. Splitting and retrying. Error: {e}")
+                    # Split batch into smaller chunks
+                    mid = len(answer_batch) // 2
+                    smaller_batch_1 = answer_batch[:mid]
+                    smaller_batch_2 = answer_batch[mid:]
+                    # Add smaller batches back to the front of the queue
+                    batch_queue.appendleft(smaller_batch_2)
+                    batch_queue.appendleft(smaller_batch_1)
+                    # Clean up memory before retry
+                    cleanup_memory(device)
+                else:
+                    # Single item batch failed - log and skip
+                    logger.error(f"Failed to process single item batch. Skipping. Error: {e}")
+                    cleanup_memory(device)
+                    
             except Exception as e:
-                logger.error(f"Error processing batch {batch_idx + 1}: {e}")
+                logger.error(f"Unexpected error processing batch: {e}")
                 # Try to recover by cleaning memory and continuing
                 cleanup_memory(device)
                 continue
