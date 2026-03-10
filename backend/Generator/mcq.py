@@ -39,7 +39,8 @@ def get_memory_usage():
         return memory.percent
     except Exception as e:
         logger.warning(f"Failed to get memory usage: {e}")
-        return 0
+        # Return high value to trigger conservative behavior when monitoring fails
+        return MAX_MEMORY_USAGE_PERCENT
 
 
 def cleanup_memory(device=None):
@@ -157,7 +158,7 @@ def get_answer_choices(answer, s2v_model):
     except Exception as e:
         # Redact sensitive content from logs
         answer_hash = hashlib.sha256(answer.encode()).hexdigest()[:8]
-        logger.error(f"Failed to generate choices | answer_hash={answer_hash}. Error: {e}")
+        logger.exception(f"Failed to generate choices | answer_hash={answer_hash}")
 
     return choices, "None"
 
@@ -371,7 +372,7 @@ def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, 
                         
                         generated_questions.append(question_data)
                     except Exception as e:
-                        logger.error(f"Error processing question for answer: {e}")
+                        logger.exception("Error processing question for answer")
                         continue
                 
                 # Clean up batch tensors
@@ -400,7 +401,7 @@ def generate_multiple_choice_questions(keyword_sent_mapping, device, tokenizer, 
                     cleanup_memory(device)
                     
             except Exception as e:
-                logger.error(f"Unexpected error processing batch: {e}")
+                logger.exception("Unexpected error processing batch")
                 # Try to recover by cleaning memory and continuing
                 cleanup_memory(device)
                 continue

@@ -124,7 +124,9 @@ def get_qa_model():
     if _qa_model is None:
         with _init_lock:
             if _qa_model is None:
-                _qa_model = pipeline("question-answering")
+                import torch
+                device = 0 if torch.cuda.is_available() else -1
+                _qa_model = pipeline("question-answering", device=device)
     return _qa_model
 
 

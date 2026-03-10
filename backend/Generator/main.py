@@ -138,24 +138,26 @@ class ModelManager:
         Args:
             model_name: str - identifier for the model
         """
-        if model_name in self._models:
-            logger.info(f"Unloading model '{model_name}'")
-            del self._models[model_name]
-            gc.collect()
-            if self._device.type == 'cuda':
-                torch.cuda.empty_cache()
-            logger.info(f"Model '{model_name}' unloaded")
-        else:
-            logger.warning(f"Model '{model_name}' not found in cache")
+        with self._lock:
+            if model_name in self._models:
+                logger.info(f"Unloading model '{model_name}'")
+                del self._models[model_name]
+                gc.collect()
+                if self._device.type == 'cuda':
+                    torch.cuda.empty_cache()
+                logger.info(f"Model '{model_name}' unloaded")
+            else:
+                logger.warning(f"Model '{model_name}' not found in cache")
     
     def clear_all(self):
         """Unload all models and clear cache."""
-        logger.info("Clearing all models from cache")
-        self._models.clear()
-        gc.collect()
-        if self._device.type == 'cuda':
-            torch.cuda.empty_cache()
-        logger.info("All models cleared")
+        with self._lock:
+            logger.info("Clearing all models from cache")
+            self._models.clear()
+            gc.collect()
+            if self._device.type == 'cuda':
+                torch.cuda.empty_cache()
+            logger.info("All models cleared")
 
 
 # Global model manager instance
@@ -933,6 +935,17 @@ class QuestionGenerator:
                 pretrained=self.QG_PRETRAINED
             )
         return self._qg_model
+
+    `@property`
+    def nlp(self):
+        """Lazy load spacy model."""
+        if not hasattr(self, '_nlp') or self._nlp is None:
+            self._nlp = self.model_manager.load_model(
+                'spacy_model', 
+                'spacy', 
+                model='en_core_web_sm'
+            )
+        return self._nlp
     
     @property
     def qa_evaluator(self):
@@ -1110,7 +1123,7 @@ class QuestionGenerator:
         questions. Sentences are used as context, and entities as answers. Returns a tuple of (model inputs, answers).
         Model inputs are "answer_token <answer text> context_token <context text>"
         """
-        spacy_nlp = en_core_web_sm.load()
+        spacy_nlp = self.nlp
         docs = list(spacy_nlp.pipe(sentences, disable=["parser"]))
         inputs_from_text = []
         answers_from_text = []
