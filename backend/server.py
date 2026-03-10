@@ -8,7 +8,6 @@ import glob
 import logging
 from uuid import uuid4
 
-import logging
 
 logging.basicConfig(
     level=logging.INFO,
@@ -56,7 +55,10 @@ answer = main.AnswerPredictor()
 BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
+# TODO: Re-enable GoogleDocsService once credentials/config are finalized.
+# Disabled temporarily because Google Docs service is not configured for local development.
 # docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
