@@ -8,6 +8,13 @@ import glob
 import logging
 from uuid import uuid4
 
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s"
+)
+
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
@@ -189,25 +196,14 @@ def get_boolean_answer():
 
     return jsonify({"output": output})
 
+
+
 @app.route('/get_content', methods=['POST'])
 def get_content():
-    try:
-        data = request.get_json()
-        document_url = data.get('document_url')
-
-        if not document_url:
-            return jsonify({'error': 'Document URL is required'}), 400
-
-        # Google Docs API disabled for local development
-        text = "Google Docs service temporarily disabled in local development."
-
-        return jsonify({"content": text})
-
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    # Google Docs API disabled for local development
+    return jsonify({
+        "content": "Google Docs service temporarily disabled in local development."
+    }), 200
 
 
 
