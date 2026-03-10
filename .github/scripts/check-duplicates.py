@@ -18,13 +18,7 @@ from typing import List, Tuple
 import requests
 from datetime import datetime
 
-try:
-    from sentence_transformers import SentenceTransformer
-except ImportError:
-    print("Installing sentence-transformers...")
-    import subprocess
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "sentence-transformers"])
-    from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer
 
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
