@@ -6,6 +6,7 @@ import Text_Input from "./pages/Text_Input";
 import Output from "./pages/Output";
 import Previous from "./pages/Previous";
 import NotFound from "./pages/PageNotFound";
+import Mode_Selection from "./pages/Mode_Selection";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/question-type" element={<Question_Type />} />
         <Route path="/input" element={<Text_Input />} />
+        <Route path="/mode" element={<Mode_Selection />} />
         <Route path="/output" element={<Output />} />
         <Route path="/history" element={<Previous />} />
         <Route path="*" element={<NotFound />} />
