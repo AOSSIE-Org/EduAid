@@ -1,10 +1,12 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 from pprint import pprint
 import nltk
 import subprocess
 import os
 import glob
+import logging
+from uuid import uuid4
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -30,6 +32,15 @@ app = Flask(__name__)
 CORS(app)
 print("Starting Flask App...")
 
+@app.before_request
+def attach_request_id():
+    """
+    Generate a unique request ID for every incoming request
+    and store it in Flask global context.
+    """
+    g.request_id = str(uuid4())
+    logging.info(f"[request_id={g.request_id}] Incoming request: {request.method} {request.path}")
+
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
 
@@ -38,7 +49,7 @@ answer = main.AnswerPredictor()
 BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+# docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
@@ -178,21 +189,26 @@ def get_boolean_answer():
 
     return jsonify({"output": output})
 
-
 @app.route('/get_content', methods=['POST'])
 def get_content():
     try:
         data = request.get_json()
         document_url = data.get('document_url')
+
         if not document_url:
             return jsonify({'error': 'Document URL is required'}), 400
 
-        text = docs_service.get_document_content(document_url)
-        return jsonify(text)
+        # Google Docs API disabled for local development
+        text = "Google Docs service temporarily disabled in local development."
+
+        return jsonify({"content": text})
+
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 
 @app.route("/generate_gform", methods=["POST"])
