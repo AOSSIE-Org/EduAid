@@ -201,7 +201,7 @@ const Output = () => {
 
         setQaPairs(combinedQaPairs);  
       }
-  }, []);
+  }, [questionType]);
 
   const generateGoogleForm = async () => {
     try {
@@ -370,8 +370,14 @@ const Output = () => {
                         {qaPair.question_type === "MCQ" &&
                           quizMode === "play" &&
                           selectedAnswers[index] && (
-                            <div className="mt-2 text-green-400 font-semibold">
-                              Correct Answer: {qaPair.answer}
+                            <div className="mt-2 font-semibold">
+                              <div className="text-blue-400">
+                                Your Answer: {selectedAnswers[index]?.userAnswer}
+                              </div>
+                            
+                              <div className="mt-2 text-green-400 font-semibold">
+                                Correct Answer: {qaPair.answer}
+                              </div>
                             </div>
                         )}                      
                         {qaPair.question_type === "Boolean" && quizMode === "play" && (
