@@ -134,7 +134,7 @@ const Output = () => {
             combinedQaPairs.push({
               question: typeof qaPair === "string" ? qaPair : qaPair.question,
               question_type: "Boolean",
-              answer: qaPair.answer || "",
+              answer: qaPair.answer ?? "",
               context: qaPairsFromStorage["output_boolq"]["Text"],
             });
           }
@@ -173,7 +173,7 @@ const Output = () => {
           
           let answer = "";
           if (typeof qaPair === "object" && qaPair !== null) {
-            answer = qaPair.answer || qaPair.Answer || "";
+            answer = qaPair.answer ?? qaPair.Answer ?? "";
           }
           
           combinedQaPairs.push({
@@ -396,7 +396,11 @@ const Output = () => {
                               </div>
 
                               <div className="text-green-400">
-                                Correct Answer: {qaPair.answer?.toString().toLowerCase() === "true" ? "True" : "False"}
+                                {String(qaPair.answer).toLowerCase() === "true"
+                                  ? "Correct Answer: True"
+                                  : String(qaPair.answer).toLowerCase() === "false"
+                                  ? "Correct Answer: False"
+                                  : "Correct Answer unavailable"}
                               </div>
                             </div>                    
                         )}
@@ -415,7 +419,9 @@ const Output = () => {
                                 }
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter") {
-                                    handleSubmitAnswer(index, shortInputs[index]);
+                                    const value = shortInputs[index]?.trim();
+                                    if (!value) return;
+                                    handleSubmitAnswer(index, value);
                                   }
                                 }}
                                 placeholder="Type your answer and press Enter..."
