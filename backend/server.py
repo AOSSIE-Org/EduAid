@@ -68,6 +68,17 @@ qa_model = pipeline("question-answering")
 cache = get_cache()
 logger.info("Inference cache initialized")
 
+# Admin API token for cache management endpoints
+ADMIN_API_TOKEN = os.getenv("ADMIN_API_TOKEN", "eduaid-admin-token")
+
+
+def verify_admin():
+    """Verify admin API token from request headers"""
+    token = request.headers.get("X-API-KEY")
+    if token != ADMIN_API_TOKEN:
+        return False
+    return True
+
 
 def process_input_text(input_text, use_mediawiki):
     if use_mediawiki == 1:
@@ -77,17 +88,18 @@ def process_input_text(input_text, use_mediawiki):
 
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     original_input = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     
     # Process input for model inference
     processed_input = process_input_text(original_input, use_mediawiki)
+    cache_input = processed_input if use_mediawiki == 1 else original_input
     
     # Check cache first (using original input)
     cached_result = cache.get(
-        input_text=original_input,
+        input_text=cache_input,
         endpoint="get_mcq",
         max_questions=max_questions,
         use_mediawiki=use_mediawiki
@@ -110,7 +122,7 @@ def get_mcq():
     # Store in cache (using original input)
     cache.set(
         result=result,
-        input_text=original_input,
+        input_text=cache_input,
         endpoint="get_mcq",
         max_questions=max_questions,
         use_mediawiki=use_mediawiki
@@ -121,17 +133,18 @@ def get_mcq():
 
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     original_input = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     
     # Process input for model inference
     processed_input = process_input_text(original_input, use_mediawiki)
+    cache_input = processed_input if use_mediawiki == 1 else original_input
     
-    # Check cache first (using original input)
+    # Check cache first (using cache_input)
     cached_result = cache.get(
-        input_text=original_input,
+        input_text=cache_input,
         endpoint="get_boolq",
         max_questions=max_questions,
         use_mediawiki=use_mediawiki
@@ -151,10 +164,10 @@ def get_boolq():
     
     result = {"output": boolean_questions}
     
-    # Store in cache (using original input)
+    # Store in cache (using cache_input)
     cache.set(
         result=result,
-        input_text=original_input,
+        input_text=cache_input,
         endpoint="get_boolq",
         max_questions=max_questions,
         use_mediawiki=use_mediawiki
@@ -165,17 +178,18 @@ def get_boolq():
 
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     original_input = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     
     # Process input for model inference
     processed_input = process_input_text(original_input, use_mediawiki)
+    cache_input = processed_input if use_mediawiki == 1 else original_input
     
-    # Check cache first (using original input)
+    # Check cache first (using cache_input)
     cached_result = cache.get(
-        input_text=original_input,
+        input_text=cache_input,
         endpoint="get_shortq",
         max_questions=max_questions,
         use_mediawiki=use_mediawiki
@@ -195,10 +209,10 @@ def get_shortq():
     
     result = {"output": questions}
     
-    # Store in cache (using original input)
+    # Store in cache (using cache_input)
     cache.set(
         result=result,
-        input_text=original_input,
+        input_text=cache_input,
         endpoint="get_shortq",
         max_questions=max_questions,
         use_mediawiki=use_mediawiki
@@ -209,7 +223,7 @@ def get_shortq():
 
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     original_input = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions_mcq = data.get("max_questions_mcq", 4)
@@ -218,10 +232,11 @@ def get_problems():
     
     # Process input for model inference
     processed_input = process_input_text(original_input, use_mediawiki)
+    cache_input = processed_input if use_mediawiki == 1 else original_input
     
-    # Check cache first (using original input)
+    # Check cache first (using cache_input)
     cached_result = cache.get(
-        input_text=original_input,
+        input_text=cache_input,
         endpoint="get_problems",
         max_questions_mcq=max_questions_mcq,
         max_questions_boolq=max_questions_boolq,
@@ -252,10 +267,10 @@ def get_problems():
         "output_shortq": output3
     }
     
-    # Store in cache (using original input)
+    # Store in cache (using cache_input)
     cache.set(
         result=result,
-        input_text=original_input,
+        input_text=cache_input,
         endpoint="get_problems",
         max_questions_mcq=max_questions_mcq,
         max_questions_boolq=max_questions_boolq,
@@ -267,7 +282,7 @@ def get_problems():
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     input_options = data.get("input_options", [])
@@ -300,7 +315,7 @@ def get_mcq_answer():
 
 @app.route("/get_shortq_answer", methods=["POST"])
 def get_answer():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     answers = []
@@ -313,7 +328,7 @@ def get_answer():
 
 @app.route("/get_boolean_answer", methods=["POST"])
 def get_boolean_answer():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     output = []
@@ -333,7 +348,7 @@ def get_boolean_answer():
 @app.route('/get_content', methods=['POST'])
 def get_content():
     try:
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
         document_url = data.get('document_url')
         if not document_url:
             return jsonify({'error': 'Document URL is required'}), 400
@@ -348,7 +363,7 @@ def get_content():
 
 @app.route("/generate_gform", methods=["POST"])
 def generate_gform():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     qa_pairs = data.get("qa_pairs", "")
     question_type = data.get("question_type", "")
     SCOPES = "https://www.googleapis.com/auth/forms.body"
@@ -517,7 +532,7 @@ def generate_gform():
 
 @app.route("/get_shortq_hard", methods=["POST"])
 def get_shortq_hard():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
@@ -535,7 +550,7 @@ def get_shortq_hard():
 
 @app.route("/get_mcq_hard", methods=["POST"])
 def get_mcq_hard():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
@@ -551,7 +566,7 @@ def get_mcq_hard():
 
 @app.route("/get_boolq_hard", methods=["POST"])
 def get_boolq_hard():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
@@ -594,12 +609,16 @@ def hello():
 @app.route("/cache/stats", methods=["GET"])
 def cache_stats():
     """Endpoint to check cache statistics"""
+    if not verify_admin():
+        return jsonify({"error": "Unauthorized"}), 403
     stats = cache.get_stats()
     return jsonify(stats)
 
 @app.route("/cache/clear", methods=["POST"])
 def clear_cache():
     """Endpoint to clear the cache"""
+    if not verify_admin():
+        return jsonify({"error": "Unauthorized"}), 403
     cache.clear()
     return jsonify({"message": "Cache cleared successfully"})
 

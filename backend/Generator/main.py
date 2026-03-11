@@ -211,7 +211,7 @@ class BoolQGenerator:
         This makes the function cacheable and deterministic.
         """
         import hashlib
-        text_hash = hashlib.md5(text.encode('utf-8')).hexdigest()
+        text_hash = hashlib.sha256(text.encode('utf-8')).hexdigest()
         # Use first character of hash to determine True/False
         return int(text_hash[0], 16) % 2 == 0
     

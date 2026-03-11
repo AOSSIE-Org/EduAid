@@ -6,6 +6,7 @@ Cache keys are generated using SHA256 hashing based on input_text + endpoint + p
 """
 
 import hashlib
+import threading
 import time
 from collections import OrderedDict
 from typing import Any, Optional, Tuple
@@ -32,6 +33,7 @@ class InferenceCache:
         self.ttl_seconds = ttl_seconds
         self.cache = OrderedDict()
         self.timestamps = {}
+        self._lock = threading.RLock()
         
     def _generate_cache_key(self, input_text: str, endpoint: str, **params) -> str:
         """
@@ -81,15 +83,14 @@ class InferenceCache:
         cache_key = self._generate_cache_key(input_text, endpoint, **params)
         
         # Check if key exists and is not expired
-        if cache_key in self.cache and not self._is_expired(cache_key):
-            # Move to end (LRU)
-            self.cache.move_to_end(cache_key)
-            return self.cache[cache_key]
-        
-        # Remove expired entry
-        if cache_key in self.cache:
-            del self.cache[cache_key]
-            del self.timestamps[cache_key]
+        with self._lock:
+            if cache_key in self.cache and not self._is_expired(cache_key):
+                self.cache.move_to_end(cache_key)
+                return self.cache[cache_key]
+
+            if cache_key in self.cache:
+                self.cache.pop(cache_key, None)
+                self.timestamps.pop(cache_key, None)
         
         return None
     
@@ -105,23 +106,21 @@ class InferenceCache:
         """
         cache_key = self._generate_cache_key(input_text, endpoint, **params)
         
-        # Remove oldest entry if cache is full
-        if len(self.cache) >= self.max_size and cache_key not in self.cache:
-            oldest_key = next(iter(self.cache))
-            del self.cache[oldest_key]
-            del self.timestamps[oldest_key]
-        
-        # Store result and timestamp
-        self.cache[cache_key] = result
-        self.timestamps[cache_key] = time.time()
-        
-        # Move to end (most recently used)
-        self.cache.move_to_end(cache_key)
+        with self._lock:
+            if len(self.cache) >= self.max_size and cache_key not in self.cache:
+                oldest_key = next(iter(self.cache))
+                self.cache.pop(oldest_key, None)
+                self.timestamps.pop(oldest_key, None)
+
+            self.cache[cache_key] = result
+            self.timestamps[cache_key] = time.time()
+            self.cache.move_to_end(cache_key)
     
     def clear(self) -> None:
         """Clear all cache entries."""
-        self.cache.clear()
-        self.timestamps.clear()
+        with self._lock:
+            self.cache.clear()
+            self.timestamps.clear()
     
     def get_stats(self) -> dict:
         """
@@ -130,11 +129,12 @@ class InferenceCache:
         Returns:
             Dictionary with cache stats
         """
-        return {
-            "size": len(self.cache),
-            "max_size": self.max_size,
-            "ttl_seconds": self.ttl_seconds
-        }
+        with self._lock:
+            return {
+                "size": len(self.cache),
+                "max_size": self.max_size,
+                "ttl_seconds": self.ttl_seconds
+            }
 
 
 # Global cache instance
