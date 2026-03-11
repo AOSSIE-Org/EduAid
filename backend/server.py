@@ -161,7 +161,7 @@ def get_boolq():
     output = BoolQGen.generate_boolq(
         {"input_text": processed_input, "max_questions": max_questions}
     )
-    boolean_questions = output["Boolean_Questions"]
+    boolean_questions = output.get("Boolean_Questions", [])
     
     result = {"output": boolean_questions}
     
