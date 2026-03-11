@@ -12,7 +12,9 @@ from transformers import (
 # Optional Model Quantization
 # ------------------------------
 
-ENABLE_MODEL_QUANTIZATION = True
+import os
+
+ENABLE_MODEL_QUANTIZATION = os.getenv("MODEL_QUANTIZATION_ENABLED", "false").lower() in ("1", "true", "yes")
 
 def optimize_model(model):
     """
@@ -48,8 +50,6 @@ import en_core_web_sm
 import json
 import re
 from typing import Any, List, Mapping, Tuple
-import re
-import os
 import fitz 
 import mammoth
 
@@ -288,7 +288,8 @@ class AnswerPredictor:
         self.nli_model_name = "typeform/distilbert-base-uncased-mnli"
         self.nli_tokenizer = AutoTokenizer.from_pretrained(self.nli_model_name)
         self.nli_model = AutoModelForSequenceClassification.from_pretrained(self.nli_model_name)
-        self.nli_model = optimize_model(self.nli_model)      
+        self.nli_model = optimize_model(self.nli_model)
+        self.nli_model.to(self.device) 
         self.set_seed(42)
         
     def set_seed(self, seed):
@@ -334,6 +335,7 @@ class AnswerPredictor:
         for question in input_questions:
             hypothesis = question
             inputs = self.nli_tokenizer.encode_plus(input_text, hypothesis, return_tensors="pt")
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
             outputs = self.nli_model(**inputs)
             logits = outputs.logits
             probabilities = torch.softmax(logits, dim=1)
