@@ -22,6 +22,50 @@ import re
 import os
 import fitz 
 import mammoth
+import logging
+logger = logging.getLogger(__name__)
+# Import configuration
+try:
+    from config import ENABLE_MODEL_QUANTIZATION, MODEL_PRECISION
+except ImportError:
+    # Fallback if config.py doesn't exist
+    ENABLE_MODEL_QUANTIZATION = False
+    MODEL_PRECISION = 'int8'
+
+
+def apply_quantization(model, device):
+    """
+    Apply quantization to a transformer model based on configuration.
+    
+    Args:
+        model: The transformer model to quantize
+        device: The device the model is on (cuda or cpu)
+    
+    Returns:
+        The quantized model (or original if quantization is disabled)
+    """
+    if not ENABLE_MODEL_QUANTIZATION:
+        return model
+    
+    try:
+        if MODEL_PRECISION == 'fp16' and device.type == 'cuda':
+            # Apply FP16 precision for GPU
+            logger.info("Applying FP16 quantization for GPU inference")
+            model = model.half()
+        elif MODEL_PRECISION == 'int8' and device.type == 'cpu':
+            # Apply INT8 dynamic quantization for CPU
+            logger.info("Applying INT8 dynamic quantization for CPU inference")
+            model = torch.quantization.quantize_dynamic(
+                model,
+                {torch.nn.Linear},
+                dtype=torch.qint8
+            )
+        else:
+            logger.info(f"Quantization skipped: precision={MODEL_PRECISION}, device={device.type}")
+    except Exception as e:
+        logger.warning(f"Quantization failed, using original model. Error: {e}")
+    
+    return model
 
 class MCQGenerator:
     
@@ -30,6 +74,7 @@ class MCQGenerator:
         self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
+        self.model = apply_quantization(self.model, self.device)
         self.nlp = spacy.load('en_core_web_sm')
         self.s2v = Sense2Vec().from_disk('s2v_old')
         self.fdist = FreqDist(brown.words())
@@ -60,7 +105,10 @@ class MCQGenerator:
             text_snippet = " ".join(keyword_sentence_mapping[k][:3])
             keyword_sentence_mapping[k] = text_snippet
 
-        final_output = {}
+        final_output = {
+            "questions": [],
+            "time_taken": 0
+        }
 
         if len(keyword_sentence_mapping.keys()) == 0:
             return final_output
@@ -88,6 +136,7 @@ class ShortQGenerator:
         self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
+        self.model = apply_quantization(self.model, self.device)
         self.nlp = spacy.load('en_core_web_sm')
         self.s2v = Sense2Vec().from_disk('s2v_old')
         self.fdist = FreqDist(brown.words())
@@ -117,7 +166,9 @@ class ShortQGenerator:
             text_snippet = " ".join(keyword_sentence_mapping[k][:3])
             keyword_sentence_mapping[k] = text_snippet
 
-        final_output = {}
+        final_output = {
+            "questions": []
+        }
 
         if len(keyword_sentence_mapping.keys()) == 0:
             return final_output
@@ -139,6 +190,7 @@ class ParaphraseGenerator:
         self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
+        self.model = apply_quantization(self.model, self.device)
         self.set_seed(42)
         
     def set_seed(self, seed):
@@ -196,6 +248,7 @@ class BoolQGenerator:
         self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Boolean-Questions')
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
+        self.model = apply_quantization(self.model, self.device)
         self.set_seed(42)
         
     def set_seed(self, seed):
@@ -245,11 +298,14 @@ class AnswerPredictor:
         self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Answer-Predictor')
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
+        self.model = apply_quantization(self.model, self.device)
         
         # Load the lightweight NLI model for boolean question answering
         self.nli_model_name = "typeform/distilbert-base-uncased-mnli"
         self.nli_tokenizer = AutoTokenizer.from_pretrained(self.nli_model_name)
         self.nli_model = AutoModelForSequenceClassification.from_pretrained(self.nli_model_name)
+        self.nli_model.to(self.device)
+        self.nli_model = apply_quantization(self.nli_model, self.device)
         
         self.set_seed(42)
         
@@ -296,6 +352,7 @@ class AnswerPredictor:
         for question in input_questions:
             hypothesis = question
             inputs = self.nli_tokenizer.encode_plus(input_text, hypothesis, return_tensors="pt")
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
             outputs = self.nli_model(**inputs)
             logits = outputs.logits
             probabilities = torch.softmax(logits, dim=1)
@@ -405,6 +462,7 @@ class QuestionGenerator:
         self.qg_tokenizer = AutoTokenizer.from_pretrained(QG_PRETRAINED, use_fast=False)
         self.qg_model = AutoModelForSeq2SeqLM.from_pretrained(QG_PRETRAINED)
         self.qg_model.to(self.device)
+        self.qg_model = apply_quantization(self.qg_model, self.device)
         self.qg_model.eval()
 
         self.qa_evaluator = QAEvaluator()
@@ -713,6 +771,7 @@ class QAEvaluator:
             QAE_PRETRAINED
         )
         self.qae_model.to(self.device)
+        self.qae_model = apply_quantization(self.qae_model, self.device)
         self.qae_model.eval()
 
     def encode_qa_pairs(
