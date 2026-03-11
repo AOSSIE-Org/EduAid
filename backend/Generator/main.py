@@ -63,7 +63,7 @@ def apply_quantization(model, device):
         else:
             logger.info(f"Quantization skipped: precision={MODEL_PRECISION}, device={device.type}")
     except Exception as e:
-        print(f"Warning: Quantization failed, using original model. Error: {e}")
+        logger.warning(f"Quantization failed, using original model. Error: {e}")
     
     return model
 
