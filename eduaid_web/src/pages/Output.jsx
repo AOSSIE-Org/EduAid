@@ -247,19 +247,22 @@ const Output = () => {
 
           {/* Action Buttons - Responsive layout */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mx-4 sm:mx-auto pb-4 sm:pb-6">
-            <button
-              className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
-              onClick={generateGoogleForm}
-            >
-              Generate Google form
-              <button
-              className="bg-green-600 text-white px-6 py-2 rounded-xl"
-              onClick={calculateScore}
-              >
-              Submit Quiz
-              </button>
 
-            </button>
+           <button
+               className="bg-[#518E8E] ..."
+               onClick={generateGoogleForm}
+              >
+                Generate Google form
+                  </button>
+
+                    <button
+                        className="bg-green-600 ..."
+                        onClick={calculateScore}
+                          >
+                         Submit Quiz
+                        </button>
+
+            
             
             <div className="relative w-full sm:w-auto">
               <button
