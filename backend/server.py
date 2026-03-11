@@ -117,18 +117,17 @@ def get_mcq():
     output = MCQGen.generate_mcq(
         {"input_text": processed_input, "max_questions": max_questions}
     )
-    questions = output.get("questions", [])
-    
-    result = {"output": questions}
-    
-    # Store in cache (using original input)
-    cache.set(
-        result=result,
-        input_text=original_input,
-        endpoint="get_mcq",
-        max_questions=max_questions,
-        use_mediawiki=use_mediawiki
-    )
+    questions = output.get("questions")
+    result = {"output": questions or []}
+
+    if questions is not None:
+        cache.set(
+            result=result,
+            input_text=original_input,
+            endpoint="get_mcq",
+            max_questions=max_questions,
+            use_mediawiki=use_mediawiki
+        )
     
     return jsonify(result)
 
@@ -161,18 +160,17 @@ def get_boolq():
     output = BoolQGen.generate_boolq(
         {"input_text": processed_input, "max_questions": max_questions}
     )
-    boolean_questions = output.get("Boolean_Questions", [])
-    
-    result = {"output": boolean_questions}
-    
-    # Store in cache (using cache_input)
-    cache.set(
-        result=result,
-        input_text=original_input,
-        endpoint="get_boolq",
-        max_questions=max_questions,
-        use_mediawiki=use_mediawiki
-    )
+    questions = output.get("Boolean_Questions")
+    result = {"output": questions or []}
+
+    if questions is not None:
+        cache.set(
+            result=result,
+            input_text=original_input,
+            endpoint="get_boolq",
+            max_questions=max_questions,
+            use_mediawiki=use_mediawiki
+        )
     
     return jsonify(result)
 
@@ -205,18 +203,17 @@ def get_shortq():
     output = ShortQGen.generate_shortq(
         {"input_text": processed_input, "max_questions": max_questions}
     )
-    questions = output.get("questions", [])
-    
-    result = {"output": questions}
-    
-    # Store in cache (using cache_input)
-    cache.set(
-        result=result,
-        input_text=original_input,
-        endpoint="get_shortq",
-        max_questions=max_questions,
-        use_mediawiki=use_mediawiki
-    )
+    questions = output.get("questions")
+    result = {"output": questions or []}
+
+    if questions is not None:
+        cache.set(
+            result=result,
+            input_text=original_input,
+            endpoint="get_shortq",
+            max_questions=max_questions,
+            use_mediawiki=use_mediawiki
+        )
     
     return jsonify(result)
 
@@ -265,17 +262,17 @@ def get_problems():
         "output_boolq": output2,
         "output_shortq": output3
     }
-    
-    # Store in cache (using cache_input)
-    cache.set(
-        result=result,
-        input_text=original_input,
-        endpoint="get_problems",
-        max_questions_mcq=max_questions_mcq,
-        max_questions_boolq=max_questions_boolq,
-        max_questions_shortq=max_questions_shortq,
-        use_mediawiki=use_mediawiki
-    )
+
+    if output1 and output2 and output3:
+        cache.set(
+            result=result,
+            input_text=original_input,
+            endpoint="get_problems",
+            max_questions_mcq=max_questions_mcq,
+            max_questions_boolq=max_questions_boolq,
+            max_questions_shortq=max_questions_shortq,
+            use_mediawiki=use_mediawiki
+        )
     
     return jsonify(result)
 
