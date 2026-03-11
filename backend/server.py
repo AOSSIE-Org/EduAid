@@ -1,3 +1,17 @@
+"""
+EduAid Backend Server
+
+This Flask server provides endpoints for generating educational questions using transformer models.
+
+CACHING:
+- Content-based inference result caching is enabled to avoid repeated model computation
+- Cache keys are generated using SHA256(input_text + endpoint + parameters)
+- Cache has a 24-hour TTL and stores up to 1000 entries (LRU eviction)
+- Cache hit/miss information is logged to console
+- Use /cache/stats to view cache statistics
+- Use /cache/clear to clear the cache
+"""
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pprint import pprint
@@ -5,6 +19,7 @@ import nltk
 import subprocess
 import os
 import glob
+import logging
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -12,6 +27,7 @@ nltk.download("stopwords")
 nltk.download('punkt_tab')
 from Generator import main
 from Generator.question_filters import make_question_harder
+from cache_manager import get_cache
 import re
 import json
 import spacy
@@ -28,7 +44,12 @@ from mediawikiapi import MediaWikiAPI
 
 app = Flask(__name__)
 CORS(app)
-print("Starting Flask App...")
+
+# Configure logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+logger.info("Starting Flask App...")
 
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
@@ -43,6 +64,10 @@ file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
 
+# Initialize cache
+cache = get_cache()
+logger.info("Inference cache initialized")
+
 
 def process_input_text(input_text, use_mediawiki):
     if use_mediawiki == 1:
@@ -52,71 +77,197 @@ def process_input_text(input_text, use_mediawiki):
 
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    data = request.get_json() or {}
+    original_input = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output = MCQGen.generate_mcq(
-        {"input_text": input_text, "max_questions": max_questions}
+    
+    # Process input for model inference
+    processed_input = process_input_text(original_input, use_mediawiki)
+    
+    # Check cache first (using original input)
+    cached_result = cache.get(
+        input_text=original_input,
+        endpoint="get_mcq",
+        max_questions=max_questions,
+        use_mediawiki=use_mediawiki
     )
-    questions = output["questions"]
-    return jsonify({"output": questions})
+    
+    if cached_result is not None:
+        logger.info("CACHE HIT get_mcq")
+        return jsonify(cached_result)
+    
+    logger.info("CACHE MISS get_mcq - Running model inference")
+    
+    # Generate using processed input
+    output = MCQGen.generate_mcq(
+        {"input_text": processed_input, "max_questions": max_questions}
+    )
+    questions = output.get("questions", [])
+    
+    result = {"output": questions}
+    
+    # Store in cache (using original input)
+    cache.set(
+        result=result,
+        input_text=original_input,
+        endpoint="get_mcq",
+        max_questions=max_questions,
+        use_mediawiki=use_mediawiki
+    )
+    
+    return jsonify(result)
 
 
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    data = request.get_json() or {}
+    original_input = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
+    
+    # Process input for model inference
+    processed_input = process_input_text(original_input, use_mediawiki)
+    
+    # Check cache first (using original input)
+    cached_result = cache.get(
+        input_text=original_input,
+        endpoint="get_boolq",
+        max_questions=max_questions,
+        use_mediawiki=use_mediawiki
+    )
+    
+    if cached_result is not None:
+        logger.info("CACHE HIT get_boolq")
+        return jsonify(cached_result)
+    
+    logger.info("CACHE MISS get_boolq - Running model inference")
+    
+    # Generate using processed input
     output = BoolQGen.generate_boolq(
-        {"input_text": input_text, "max_questions": max_questions}
+        {"input_text": processed_input, "max_questions": max_questions}
     )
     boolean_questions = output["Boolean_Questions"]
-    return jsonify({"output": boolean_questions})
+    
+    result = {"output": boolean_questions}
+    
+    # Store in cache (using original input)
+    cache.set(
+        result=result,
+        input_text=original_input,
+        endpoint="get_boolq",
+        max_questions=max_questions,
+        use_mediawiki=use_mediawiki
+    )
+    
+    return jsonify(result)
 
 
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    data = request.get_json() or {}
+    original_input = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output = ShortQGen.generate_shortq(
-        {"input_text": input_text, "max_questions": max_questions}
+    
+    # Process input for model inference
+    processed_input = process_input_text(original_input, use_mediawiki)
+    
+    # Check cache first (using original input)
+    cached_result = cache.get(
+        input_text=original_input,
+        endpoint="get_shortq",
+        max_questions=max_questions,
+        use_mediawiki=use_mediawiki
     )
-    questions = output["questions"]
-    return jsonify({"output": questions})
+    
+    if cached_result is not None:
+        logger.info("CACHE HIT get_shortq")
+        return jsonify(cached_result)
+    
+    logger.info("CACHE MISS get_shortq - Running model inference")
+    
+    # Generate using processed input
+    output = ShortQGen.generate_shortq(
+        {"input_text": processed_input, "max_questions": max_questions}
+    )
+    questions = output.get("questions", [])
+    
+    result = {"output": questions}
+    
+    # Store in cache (using original input)
+    cache.set(
+        result=result,
+        input_text=original_input,
+        endpoint="get_shortq",
+        max_questions=max_questions,
+        use_mediawiki=use_mediawiki
+    )
+    
+    return jsonify(result)
 
 
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
+    data = request.get_json() or {}
+    original_input = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions_mcq = data.get("max_questions_mcq", 4)
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
+    
+    # Process input for model inference
+    processed_input = process_input_text(original_input, use_mediawiki)
+    
+    # Check cache first (using original input)
+    cached_result = cache.get(
+        input_text=original_input,
+        endpoint="get_problems",
+        max_questions_mcq=max_questions_mcq,
+        max_questions_boolq=max_questions_boolq,
+        max_questions_shortq=max_questions_shortq,
+        use_mediawiki=use_mediawiki
+    )
+    
+    if cached_result is not None:
+        logger.info("CACHE HIT get_problems")
+        return jsonify(cached_result)
+    
+    logger.info("CACHE MISS get_problems - Running model inference")
+    
+    # Generate using processed input
     output1 = MCQGen.generate_mcq(
-        {"input_text": input_text, "max_questions": max_questions_mcq}
+        {"input_text": processed_input, "max_questions": max_questions_mcq}
     )
     output2 = BoolQGen.generate_boolq(
-        {"input_text": input_text, "max_questions": max_questions_boolq}
+        {"input_text": processed_input, "max_questions": max_questions_boolq}
     )
     output3 = ShortQGen.generate_shortq(
-        {"input_text": input_text, "max_questions": max_questions_shortq}
+        {"input_text": processed_input, "max_questions": max_questions_shortq}
     )
-    return jsonify(
-        {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
+    
+    result = {
+        "output_mcq": output1,
+        "output_boolq": output2,
+        "output_shortq": output3
+    }
+    
+    # Store in cache (using original input)
+    cache.set(
+        result=result,
+        input_text=original_input,
+        endpoint="get_problems",
+        max_questions_mcq=max_questions_mcq,
+        max_questions_boolq=max_questions_boolq,
+        max_questions_shortq=max_questions_shortq,
+        use_mediawiki=use_mediawiki
     )
+    
+    return jsonify(result)
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
-    data = request.get_json()
+    data = request.get_json() or {}
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     input_options = data.get("input_options", [])
@@ -149,7 +300,7 @@ def get_mcq_answer():
 
 @app.route("/get_shortq_answer", methods=["POST"])
 def get_answer():
-    data = request.get_json()
+    data = request.get_json() or {}
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     answers = []
@@ -162,7 +313,7 @@ def get_answer():
 
 @app.route("/get_boolean_answer", methods=["POST"])
 def get_boolean_answer():
-    data = request.get_json()
+    data = request.get_json() or {}
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     output = []
@@ -182,7 +333,7 @@ def get_boolean_answer():
 @app.route('/get_content', methods=['POST'])
 def get_content():
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         document_url = data.get('document_url')
         if not document_url:
             return jsonify({'error': 'Document URL is required'}), 400
@@ -197,7 +348,7 @@ def get_content():
 
 @app.route("/generate_gform", methods=["POST"])
 def generate_gform():
-    data = request.get_json()
+    data = request.get_json() or {}
     qa_pairs = data.get("qa_pairs", "")
     question_type = data.get("question_type", "")
     SCOPES = "https://www.googleapis.com/auth/forms.body"
@@ -366,7 +517,7 @@ def generate_gform():
 
 @app.route("/get_shortq_hard", methods=["POST"])
 def get_shortq_hard():
-    data = request.get_json()
+    data = request.get_json() or {}
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
@@ -384,7 +535,7 @@ def get_shortq_hard():
 
 @app.route("/get_mcq_hard", methods=["POST"])
 def get_mcq_hard():
-    data = request.get_json()
+    data = request.get_json() or {}
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
@@ -400,7 +551,7 @@ def get_mcq_hard():
 
 @app.route("/get_boolq_hard", methods=["POST"])
 def get_boolq_hard():
-    data = request.get_json()
+    data = request.get_json() or {}
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
@@ -439,6 +590,18 @@ def upload_file():
 @app.route("/", methods=["GET"])
 def hello():
     return "The server is working fine"
+
+@app.route("/cache/stats", methods=["GET"])
+def cache_stats():
+    """Endpoint to check cache statistics"""
+    stats = cache.get_stats()
+    return jsonify(stats)
+
+@app.route("/cache/clear", methods=["POST"])
+def clear_cache():
+    """Endpoint to clear the cache"""
+    cache.clear()
+    return jsonify({"message": "Cache cleared successfully"})
 
 def clean_transcript(file_path):
     """Extracts and cleans transcript from a VTT file."""
