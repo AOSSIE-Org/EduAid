@@ -47,7 +47,13 @@ const Text_Input = () => {
   };
 
   const handleSaveToLocalStorage = async () => {
-    setLoading(true);
+    
+    if (!text && !docUrl) {
+    alert("Please upload a file or provide input before proceeding.");
+    return;
+    }
+
+   setLoading(true);
 
     // Check if a Google Doc URL is provided
     if (docUrl) {
