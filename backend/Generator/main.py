@@ -1,8 +1,38 @@
 import time
 import torch
 import random
-from transformers import T5ForConditionalGeneration, T5Tokenizer
-from transformers import AutoModelForSequenceClassification, AutoTokenizer,AutoModelForSeq2SeqLM, T5ForConditionalGeneration, T5Tokenizer
+from transformers import (
+    T5ForConditionalGeneration,
+    T5Tokenizer,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    AutoModelForSeq2SeqLM
+)
+# ------------------------------
+# Optional Model Quantization
+# ------------------------------
+
+ENABLE_MODEL_QUANTIZATION = True
+
+def optimize_model(model):
+    """
+    Apply optional model optimization:
+    - FP16 on GPU
+    - INT8 dynamic quantization on CPU
+    """
+    if not ENABLE_MODEL_QUANTIZATION:
+        return model
+
+    if torch.cuda.is_available():
+        model = model.half()
+    else:
+        model = torch.quantization.quantize_dynamic(
+            model,
+            {torch.nn.Linear},
+            dtype=torch.qint8
+        )
+
+    return model
 import numpy as np
 import spacy
 from sense2vec import Sense2Vec
@@ -28,6 +58,8 @@ class MCQGenerator:
     def __init__(self):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
         self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
+        self.model = optimize_model(self.model)
+
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
@@ -86,6 +118,7 @@ class ShortQGenerator:
     def __init__(self):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
         self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
+        self.model = optimize_model(self.model)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.nlp = spacy.load('en_core_web_sm')
@@ -137,6 +170,7 @@ class ParaphraseGenerator:
     def __init__(self):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
         self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Question-Generator')
+        self.model = optimize_model(self.model)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.set_seed(42)
@@ -193,8 +227,10 @@ class BoolQGenerator:
        
     def __init__(self):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
-        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Boolean-Questions')
+
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Boolean-Questions')
+        self.model = optimize_model(self.model)
         self.model.to(self.device)
         self.set_seed(42)
         
@@ -243,6 +279,8 @@ class AnswerPredictor:
     def __init__(self):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-large', model_max_length=512)
         self.model = T5ForConditionalGeneration.from_pretrained('Roasters/Answer-Predictor')
+        self.model = optimize_model(self.model)
+
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         
@@ -250,7 +288,7 @@ class AnswerPredictor:
         self.nli_model_name = "typeform/distilbert-base-uncased-mnli"
         self.nli_tokenizer = AutoTokenizer.from_pretrained(self.nli_model_name)
         self.nli_model = AutoModelForSequenceClassification.from_pretrained(self.nli_model_name)
-        
+        self.nli_model = optimize_model(self.nli_model)      
         self.set_seed(42)
         
     def set_seed(self, seed):
@@ -403,7 +441,10 @@ class QuestionGenerator:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.qg_tokenizer = AutoTokenizer.from_pretrained(QG_PRETRAINED, use_fast=False)
+
         self.qg_model = AutoModelForSeq2SeqLM.from_pretrained(QG_PRETRAINED)
+        self.qg_model = optimize_model(self.qg_model)
+
         self.qg_model.to(self.device)
         self.qg_model.eval()
 
