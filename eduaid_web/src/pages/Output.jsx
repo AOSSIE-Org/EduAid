@@ -10,6 +10,7 @@ const Output = () => {
     localStorage.getItem("selectedQuestionType")
   );
   const [pdfMode, setPdfMode] = useState("questions");
+  const [userAnswers, setUserAnswers] = useState({});
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -31,6 +32,23 @@ const Output = () => {
     }
     return array;
   }
+  const handleAnswerSelect = (questionIndex, option) => {
+  setUserAnswers({
+    ...userAnswers,
+    [questionIndex]: option
+    });
+  };
+  const calculateScore = () => {
+  let score = 0;
+
+  qaPairs.forEach((q, i) => {
+    if (userAnswers[i] === q.answer) {
+      score++;
+    }
+  });
+
+  alert(`Your Score: ${score} / ${qaPairs.length}`);
+};
 
   useEffect(() => {
     const qaPairsFromStorage =
@@ -205,7 +223,11 @@ const Output = () => {
                         {qaPair.options && qaPair.options.length > 0 && (
                           <div className="text-[#FFF4F4] text-sm sm:text-base mt-2 sm:mt-3">
                             {shuffledOptions.map((option, idx) => (
-                              <div key={idx} className="mb-1 sm:mb-2">
+                          <div
+                            key={idx}
+                            className="mb-1 sm:mb-2 cursor-pointer"
+                            onClick={() => handleAnswerSelect(index, option)}
+                          >
                                 <span className="text-[#E4E4E4] text-xs sm:text-sm">
                                   Option {idx + 1}:
                                 </span>{" "}
@@ -230,6 +252,13 @@ const Output = () => {
               onClick={generateGoogleForm}
             >
               Generate Google form
+              <button
+              className="bg-green-600 text-white px-6 py-2 rounded-xl"
+              onClick={calculateScore}
+              >
+              Submit Quiz
+              </button>
+
             </button>
             
             <div className="relative w-full sm:w-auto">
