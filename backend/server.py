@@ -20,6 +20,7 @@ import subprocess
 import os
 import glob
 import logging
+import hmac
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -69,13 +70,15 @@ cache = get_cache()
 logger.info("Inference cache initialized")
 
 # Admin API token for cache management endpoints
-ADMIN_API_TOKEN = os.getenv("ADMIN_API_TOKEN", "eduaid-admin-token")
+ADMIN_API_TOKEN = os.getenv("ADMIN_API_TOKEN")
 
 
 def verify_admin():
     """Verify admin API token from request headers"""
     token = request.headers.get("X-API-KEY")
-    if token != ADMIN_API_TOKEN:
+    if not ADMIN_API_TOKEN or not token:
+        return False
+    if not hmac.compare_digest(token, ADMIN_API_TOKEN):
         return False
     return True
 
@@ -93,13 +96,9 @@ def get_mcq():
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     
-    # Process input for model inference
-    processed_input = process_input_text(original_input, use_mediawiki)
-    cache_input = processed_input if use_mediawiki == 1 else original_input
-    
-    # Check cache first (using original input)
+    # Check cache first using the request content
     cached_result = cache.get(
-        input_text=cache_input,
+        input_text=original_input,
         endpoint="get_mcq",
         max_questions=max_questions,
         use_mediawiki=use_mediawiki
@@ -110,6 +109,9 @@ def get_mcq():
         return jsonify(cached_result)
     
     logger.info("CACHE MISS get_mcq - Running model inference")
+
+    # Only fetch/process external content after a miss
+    processed_input = process_input_text(original_input, use_mediawiki)
     
     # Generate using processed input
     output = MCQGen.generate_mcq(
@@ -122,7 +124,7 @@ def get_mcq():
     # Store in cache (using original input)
     cache.set(
         result=result,
-        input_text=cache_input,
+        input_text=original_input,
         endpoint="get_mcq",
         max_questions=max_questions,
         use_mediawiki=use_mediawiki
@@ -138,13 +140,9 @@ def get_boolq():
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     
-    # Process input for model inference
-    processed_input = process_input_text(original_input, use_mediawiki)
-    cache_input = processed_input if use_mediawiki == 1 else original_input
-    
-    # Check cache first (using cache_input)
+    # Check cache first using the request content
     cached_result = cache.get(
-        input_text=cache_input,
+        input_text=original_input,
         endpoint="get_boolq",
         max_questions=max_questions,
         use_mediawiki=use_mediawiki
@@ -155,6 +153,9 @@ def get_boolq():
         return jsonify(cached_result)
     
     logger.info("CACHE MISS get_boolq - Running model inference")
+
+    # Only fetch/process external content after a miss
+    processed_input = process_input_text(original_input, use_mediawiki)
     
     # Generate using processed input
     output = BoolQGen.generate_boolq(
@@ -167,7 +168,7 @@ def get_boolq():
     # Store in cache (using cache_input)
     cache.set(
         result=result,
-        input_text=cache_input,
+        input_text=original_input,
         endpoint="get_boolq",
         max_questions=max_questions,
         use_mediawiki=use_mediawiki
@@ -183,13 +184,9 @@ def get_shortq():
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
     
-    # Process input for model inference
-    processed_input = process_input_text(original_input, use_mediawiki)
-    cache_input = processed_input if use_mediawiki == 1 else original_input
-    
-    # Check cache first (using cache_input)
+    # Check cache first using the request content
     cached_result = cache.get(
-        input_text=cache_input,
+        input_text=original_input,
         endpoint="get_shortq",
         max_questions=max_questions,
         use_mediawiki=use_mediawiki
@@ -200,6 +197,9 @@ def get_shortq():
         return jsonify(cached_result)
     
     logger.info("CACHE MISS get_shortq - Running model inference")
+
+    # Only fetch/process external content after a miss
+    processed_input = process_input_text(original_input, use_mediawiki)
     
     # Generate using processed input
     output = ShortQGen.generate_shortq(
@@ -212,7 +212,7 @@ def get_shortq():
     # Store in cache (using cache_input)
     cache.set(
         result=result,
-        input_text=cache_input,
+        input_text=original_input,
         endpoint="get_shortq",
         max_questions=max_questions,
         use_mediawiki=use_mediawiki
@@ -230,13 +230,9 @@ def get_problems():
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
     
-    # Process input for model inference
-    processed_input = process_input_text(original_input, use_mediawiki)
-    cache_input = processed_input if use_mediawiki == 1 else original_input
-    
-    # Check cache first (using cache_input)
+    # Check cache first using the request content
     cached_result = cache.get(
-        input_text=cache_input,
+        input_text=original_input,
         endpoint="get_problems",
         max_questions_mcq=max_questions_mcq,
         max_questions_boolq=max_questions_boolq,
@@ -250,6 +246,9 @@ def get_problems():
     
     logger.info("CACHE MISS get_problems - Running model inference")
     
+    # Only fetch/process external content after a miss
+    processed_input = process_input_text(original_input, use_mediawiki)
+
     # Generate using processed input
     output1 = MCQGen.generate_mcq(
         {"input_text": processed_input, "max_questions": max_questions_mcq}
@@ -270,7 +269,7 @@ def get_problems():
     # Store in cache (using cache_input)
     cache.set(
         result=result,
-        input_text=cache_input,
+        input_text=original_input,
         endpoint="get_problems",
         max_questions_mcq=max_questions_mcq,
         max_questions_boolq=max_questions_boolq,

@@ -10,6 +10,8 @@ import threading
 import time
 from collections import OrderedDict
 from typing import Any, Optional, Tuple
+from functools import wraps
+from flask import request
 
 
 class InferenceCache:
@@ -29,6 +31,8 @@ class InferenceCache:
             max_size: Maximum cache size (default: 1000 entries)
             ttl_seconds: TTL in seconds (default: 86400 = 24 hours)
         """
+        if max_size < 0:
+            raise ValueError("max_size must be >= 0")
         self.max_size = max_size
         self.ttl_seconds = ttl_seconds
         self.cache = OrderedDict()
@@ -80,6 +84,8 @@ class InferenceCache:
         Returns:
             Cached result or None if cache miss
         """
+        if self.max_size == 0:
+            return None
         cache_key = self._generate_cache_key(input_text, endpoint, **params)
         
         # Check if key exists and is not expired
@@ -104,6 +110,8 @@ class InferenceCache:
             endpoint: The endpoint name
             **params: Additional parameters
         """
+        if self.max_size == 0:
+            return
         cache_key = self._generate_cache_key(input_text, endpoint, **params)
         
         with self._lock:
@@ -162,12 +170,15 @@ def cached_inference(endpoint: str):
         Decorated function with caching
     """
     def decorator(func):
+        @wraps(func)
         def wrapper(*args, **kwargs):
             cache = get_cache()
             
-            # Extract input_text and params from kwargs or request data
-            # This assumes the function receives data dict with input_text
-            data = kwargs.get('data') or (args[0] if args else {})
+            data = kwargs.get("data")
+            if data is None and args and isinstance(args[0], dict):
+                data = args[0]
+            if data is None:
+                data = request.get_json(silent=True) or {}
             
             if not isinstance(data, dict):
                 # If not a dict, call function without caching
