@@ -212,6 +212,7 @@ def get_content():
     }), 503
 
 @app.route("/generate_gform", methods=["POST"])
+@limiter.limit("5 per minute")
 def generate_gform():
     data = request.get_json()
     qa_pairs = data.get("qa_pairs", "")
