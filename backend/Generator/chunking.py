@@ -252,7 +252,7 @@ class QuestionDeduplicator:
             return questions
 
 
-def distribute_question_count(total_questions: int, num_chunks: int, chunk_sizes: List[int] = None) -> List[int]:
+def distribute_question_count(total_questions: int, num_chunks: int, chunk_sizes: List[int] | None = None) -> List[int]:
     """
     Distribute the total number of questions across chunks proportionally.
     

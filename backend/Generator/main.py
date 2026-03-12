@@ -202,8 +202,10 @@ class MCQGenerator:
                                                                     self.model,
                                                                     self.s2v,
                                                                     self.normalized_levenshtein)
+            rend_time = time.time()
             return {"statement": modified_text,
-                    "questions": generated_questions["questions"]}
+                    "questions": generated_questions["questions"],
+                    "time_taken": end_time - start_time}
 
 class ShortQGenerator:
     
@@ -559,7 +561,20 @@ class BoolQGenerator:
         except Exception as e:
             logger.error(f"Error in chunking pipeline: {e}")
             # Fallback to original method with truncated text
-            return self.generate_boolq({"input_text": text[:2000], "max_questions": max_questions}
+            # Process directly without recursing through generate_boolq to avoid infinite loop
+            truncated_text = text[:2000]
+            sentences = tokenize_into_sentences(truncated_text)
+            modified_text = " ".join(sentences)
+            answer = self.random_choice()
+            form = "truefalse: %s passage: %s </s>" % (modified_text, answer)
+            encoding = self.tokenizer.encode_plus(form, return_tensors="pt")
+            input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
+            output = beam_search_decoding(input_ids, attention_masks, self.model, self.tokenizer, max_questions)
+            return {
+                'Text': truncated_text,
+                'Count': max_questions,
+                'Boolean_Questions': output
+            }
             
 
 class AnswerPredictor:
