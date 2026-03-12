@@ -1,6 +1,10 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pprint import pprint
+
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_limiter.errors import RateLimitExceeded
 import nltk
 import subprocess
 import os
@@ -17,6 +21,7 @@ import json
 import spacy
 from transformers import pipeline
 from spacy.lang.en.stop_words import STOP_WORDS
+
 from string import punctuation
 from heapq import nlargest
 import random
@@ -30,6 +35,20 @@ app = Flask(__name__)
 CORS(app)
 print("Starting Flask App...")
 
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    default_limits=["100 per hour"]
+)
+
+limiter.init_app(app)
+
+@app.errorhandler(RateLimitExceeded)
+def rate_limit_handler(e):
+    return jsonify({
+        "error": "Rate limit exceeded",
+        "code": "rate_limit_exceeded"
+    }), 429
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
 
@@ -51,6 +70,7 @@ def process_input_text(input_text, use_mediawiki):
 
 
 @app.route("/get_mcq", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_mcq():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -65,6 +85,7 @@ def get_mcq():
 
 
 @app.route("/get_boolq", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_boolq():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -79,6 +100,7 @@ def get_boolq():
 
 
 @app.route("/get_shortq", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_shortq():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -91,8 +113,8 @@ def get_shortq():
     questions = output["questions"]
     return jsonify({"output": questions})
 
-
 @app.route("/get_problems", methods=["POST"])
+@limiter.limit("10 per minute")
 def get_problems():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -115,6 +137,7 @@ def get_problems():
     )
 
 @app.route("/get_mcq_answer", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_mcq_answer():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -148,6 +171,7 @@ def get_mcq_answer():
 
 
 @app.route("/get_shortq_answer", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_answer():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -161,6 +185,7 @@ def get_answer():
 
 
 @app.route("/get_boolean_answer", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_boolean_answer():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -181,19 +206,9 @@ def get_boolean_answer():
 
 @app.route('/get_content', methods=['POST'])
 def get_content():
-    try:
-        data = request.get_json()
-        document_url = data.get('document_url')
-        if not document_url:
-            return jsonify({'error': 'Document URL is required'}), 400
-
-        text = docs_service.get_document_content(document_url)
-        return jsonify(text)
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+    return jsonify({
+        "message": "Google Docs integration disabled for local testing"
+    })
 
 @app.route("/generate_gform", methods=["POST"])
 def generate_gform():
