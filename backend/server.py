@@ -8,7 +8,7 @@ from flask_limiter.errors import RateLimitExceeded
 import nltk
 import subprocess
 import os
-import glob
+
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -492,26 +492,43 @@ def clean_transcript(file_path):
 @limiter.limit("10 per minute")
 def get_transcript():
     video_id = request.args.get('videoId')
-    if not video_id:
-        return jsonify({"error": "No video ID provided"}), 400
 
-    subprocess.run(["yt-dlp", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
-                "--sub-format", "vtt", "-o", f"subtitles/{video_id}.vtt", f"https://www.youtube.com/watch?v={video_id}"],
-               check=True, capture_output=True, text=True)
+    # Validate video ID
+    if not video_id or not re.match(r'^[A-Za-z0-9_-]{11}$', video_id):
+        return jsonify({"error": "Invalid video ID"}), 400
 
-    # Find the latest .vtt file in the "subtitles" folder
-    subtitle_files = glob.glob("subtitles/*.vtt")
-    if not subtitle_files:
+    # Safe subtitle file path
+    subtitle_path = os.path.join("subtitles", f"{video_id}.vtt")
+
+    try:
+        subprocess.run(
+            [
+                "yt-dlp",
+                "--write-auto-sub",
+                "--sub-lang", "en",
+                "--skip-download",
+                "--sub-format", "vtt",
+                "-o", subtitle_path,
+                f"https://www.youtube.com/watch?v={video_id}"
+            ],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+    except subprocess.CalledProcessError:
+        return jsonify({"error": "Failed to fetch subtitles"}), 400
+    except FileNotFoundError:
+        return jsonify({"error": "yt-dlp is not installed on the server"}), 500
+
+    if not os.path.exists(subtitle_path):
         return jsonify({"error": "No subtitles found"}), 404
 
-    latest_subtitle = max(subtitle_files, key=os.path.getctime)
-    transcript_text = clean_transcript(latest_subtitle)
+    transcript_text = clean_transcript(subtitle_path)
 
-    # Optional: Clean up the file after reading
-    os.remove(latest_subtitle)
+    # Clean up subtitle file
+    os.remove(subtitle_path)
 
     return jsonify({"transcript": transcript_text})
-
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
     app.run()
