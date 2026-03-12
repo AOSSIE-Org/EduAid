@@ -102,8 +102,13 @@ class TextChunker:
         sentences = self.split_into_sentences(text)
         
         if not sentences:
-            logger.warning("No sentences found in text")
-            return [text]
+            logger.warning("No sentences found in text; falling back to tokenizer windows")
+            token_ids = self.tokenizer.encode(text, add_special_tokens=False)
+            step = max(1, self.max_tokens - self.overlap_tokens)
+            return [
+                self.tokenizer.decode(token_ids[i:i + self.max_tokens], skip_special_tokens=True)
+                for i in range(0, len(token_ids), step)
+            ]
         
         chunks = []
         current_chunk = []
@@ -120,8 +125,11 @@ class TextChunker:
                     current_chunk = []
                     current_token_count = 0
                 
-                # Add the long sentence as its own chunk
-                chunks.append(sentence)
+                sentence_ids = self.tokenizer.encode(sentence, add_special_tokens=False)
+                step = max(1, self.max_tokens - self.overlap_tokens)
+                for i in range(0, len(sentence_ids), step):
+                    window = sentence_ids[i:i + self.max_tokens]
+                    chunks.append(self.tokenizer.decode(window, skip_special_tokens=True))
                 logger.warning(f"Single sentence exceeds token limit: {sentence_tokens} tokens")
                 continue
             

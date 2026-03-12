@@ -116,7 +116,11 @@ class MCQGenerator:
             
             if not chunks:
                 logger.warning("No chunks created from text")
-                return {}
+                return {
+                    "statement": text,
+                    "questions": [],
+                    "time_taken": time.time() - start_time,
+                }
             
             # Calculate chunk sizes for proportional distribution
             chunk_sizes = [self.chunker.count_tokens(chunk) for chunk in chunks]
@@ -175,11 +179,17 @@ class MCQGenerator:
                 return final_output
             else:
                 logger.warning("No questions generated from any chunk")
-                return {}
+                return {
+                    "statement": text,
+                    "questions": [],
+                    "time_taken": time.time() - start_time,
+                }
                 
         except Exception as e:
             logger.error(f"Error in chunking pipeline: {e}")
-            truncated_text = text[:2000]
+            safe_limit = self.chunker.max_tokens - 50
+            token_ids = self.tokenizer.encode(text, add_special_tokens=False)[:safe_limit]
+            truncated_text = self.tokenizer.decode(token_ids, skip_special_tokens=True)
             sentences = tokenize_into_sentences(truncated_text)
             modified_text = " ".join(sentences)
             keywords = identify_keywords(self.nlp,
@@ -202,7 +212,7 @@ class MCQGenerator:
                                                                     self.model,
                                                                     self.s2v,
                                                                     self.normalized_levenshtein)
-            rend_time = time.time()
+            end_time = time.time()
             return {"statement": modified_text,
                     "questions": generated_questions["questions"],
                     "time_taken": end_time - start_time}
@@ -343,7 +353,11 @@ class ShortQGenerator:
                 return final_output
             else:
                 logger.warning("No questions generated from any chunk")
-                return {}
+                return {
+                    "statement": text,
+                    "questions": [],
+                    "time_taken": time.time() - start_time,
+                }
                 
         except Exception as e:
             logger.error(f"Error in chunking pipeline: {e}")
@@ -556,7 +570,11 @@ class BoolQGenerator:
                 return final
             else:
                 logger.warning("No questions generated from any chunk")
-                return {}
+                return {
+                    "statement": text,
+                    "questions": [],
+                    "time_taken": time.time() - start_time,
+                }
                 
         except Exception as e:
             logger.error(f"Error in chunking pipeline: {e}")
