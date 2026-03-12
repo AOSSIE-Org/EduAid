@@ -41,7 +41,7 @@ limiter = Limiter(
     default_limits=["100 per hour"]
 )
 
-limiter.init_app(app)
+
 
 @app.errorhandler(RateLimitExceeded)
 def rate_limit_handler(e):
@@ -207,8 +207,9 @@ def get_boolean_answer():
 @app.route('/get_content', methods=['POST'])
 def get_content():
     return jsonify({
-        "message": "Google Docs integration disabled for local testing"
-    })
+        "error": "Google Docs integration unavailable",
+        "code": "google_docs_disabled"
+    }), 503
 
 @app.route("/generate_gform", methods=["POST"])
 def generate_gform():
@@ -380,6 +381,7 @@ def generate_gform():
 
 
 @app.route("/get_shortq_hard", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_shortq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -398,6 +400,7 @@ def get_shortq_hard():
 
 
 @app.route("/get_mcq_hard", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_mcq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -414,6 +417,7 @@ def get_mcq_hard():
     return jsonify({"output": output})
 
 @app.route("/get_boolq_hard", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_boolq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
