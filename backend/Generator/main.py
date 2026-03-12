@@ -12,6 +12,7 @@ from nltk.corpus import brown
 from similarity.normalized_levenshtein import NormalizedLevenshtein
 from Generator.mcq import tokenize_into_sentences, identify_keywords, find_sentences_with_keywords, generate_multiple_choice_questions, generate_normal_questions
 from Generator.encoding import beam_search_decoding
+from Generator.chunking import TextChunker, QuestionDeduplicator, distribute_question_count
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import en_core_web_sm
@@ -22,6 +23,10 @@ import re
 import os
 import fitz 
 import mammoth
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 class MCQGenerator:
     
@@ -35,6 +40,10 @@ class MCQGenerator:
         self.fdist = FreqDist(brown.words())
         self.normalized_levenshtein = NormalizedLevenshtein()
         self.set_seed(42)
+        
+        # Initialize chunking components
+        self.chunker = TextChunker(self.tokenizer, max_tokens=400, overlap_tokens=50)
+        self.deduplicator = QuestionDeduplicator(similarity_threshold=0.85)
         
     def set_seed(self, seed):
         np.random.seed(seed)
@@ -50,10 +59,18 @@ class MCQGenerator:
         }
 
         text = inp['input_text']
+        max_questions = inp['max_questions']
+        
+        # Check if chunking is needed
+        if self.chunker.needs_chunking(text):
+            logger.info("Text exceeds token limit, using chunking pipeline")
+            return self._generate_mcq_with_chunking(text, max_questions, start_time)
+        
+        # Original generation logic for short texts
         sentences = tokenize_into_sentences(text)
         modified_text = " ".join(sentences)
 
-        keywords = identify_keywords(self.nlp, modified_text, inp['max_questions'], self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
+        keywords = identify_keywords(self.nlp, modified_text, max_questions, self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
         keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
 
         for k in keyword_sentence_mapping.keys():
@@ -80,6 +97,113 @@ class MCQGenerator:
                 torch.cuda.empty_cache()
                 
             return final_output
+    
+    def _generate_mcq_with_chunking(self, text: str, max_questions: int, start_time: float):
+        """
+        Generate MCQs using chunking for long documents.
+        
+        Args:
+            text: Input text to process
+            max_questions: Maximum number of questions to generate
+            start_time: Start time for performance tracking
+            
+        Returns:
+            Dictionary containing generated questions
+        """
+        try:
+            # Create chunks
+            chunks = self.chunker.create_chunks(text)
+            
+            if not chunks:
+                logger.warning("No chunks created from text")
+                return {}
+            
+            # Calculate chunk sizes for proportional distribution
+            chunk_sizes = [self.chunker.count_tokens(chunk) for chunk in chunks]
+            
+            # Distribute question count across chunks
+            questions_per_chunk = distribute_question_count(max_questions, len(chunks), chunk_sizes)
+            
+            # Generate questions from each chunk
+            all_questions = []
+            
+            for i, (chunk, num_questions) in enumerate(zip(chunks, questions_per_chunk)):
+                if num_questions == 0:
+                    continue
+                
+                logger.info(f"Processing chunk {i+1}/{len(chunks)} with {num_questions} questions")
+                
+                try:
+                    # Use original generation logic for each chunk
+                    sentences = tokenize_into_sentences(chunk)
+                    modified_text = " ".join(sentences)
+                    
+                    keywords = identify_keywords(self.nlp, modified_text, num_questions, self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
+                    keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
+                    
+                    for k in keyword_sentence_mapping.keys():
+                        text_snippet = " ".join(keyword_sentence_mapping[k][:3])
+                        keyword_sentence_mapping[k] = text_snippet
+                    
+                    if len(keyword_sentence_mapping.keys()) > 0:
+                        generated_questions = generate_multiple_choice_questions(keyword_sentence_mapping, self.device, self.tokenizer, self.model, self.s2v, self.normalized_levenshtein)
+                        all_questions.extend(generated_questions["questions"])
+                
+                except Exception as e:
+                    logger.error(f"Error generating questions for chunk {i+1}: {e}")
+                    continue
+            
+            # Deduplicate questions
+            if all_questions:
+                logger.info(f"Generated {len(all_questions)} questions before deduplication")
+                deduplicated_questions = self.deduplicator.deduplicate(all_questions)
+                
+                # Limit to requested number
+                final_questions = deduplicated_questions[:max_questions]
+                
+                end_time = time.time()
+                
+                final_output = {
+                    "statement": text[:500] + "..." if len(text) > 500 else text,
+                    "questions": final_questions,
+                    "time_taken": end_time - start_time
+                }
+                
+                if self.device.type == 'cuda':
+                    torch.cuda.empty_cache()
+                
+                return final_output
+            else:
+                logger.warning("No questions generated from any chunk")
+                return {}
+                
+        except Exception as e:
+            logger.error(f"Error in chunking pipeline: {e}")
+            truncated_text = text[:2000]
+            sentences = tokenize_into_sentences(truncated_text)
+            modified_text = " ".join(sentences)
+            keywords = identify_keywords(self.nlp,
+                                        modified_text,
+                                        max_questions,
+                                        self.s2v,
+                                        self.fdist,
+                                        self.normalized_levenshtein,
+                                        len(sentences),
+                                        )
+            keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
+            for k in keyword_sentence_mapping.keys():
+                text_snippet = " ".join(keyword_sentence_mapping[k][:3])
+                keyword_sentence_mapping[k] = text_snippet
+            if len(keyword_sentence_mapping) == 0:
+                return {}
+            generated_questions = generate_multiple_choice_questions(keyword_sentence_mapping,
+                                                                    self.device,
+                                                                    self.tokenizer,
+                                                                    self.model,
+                                                                    self.s2v,
+                                                                    self.normalized_levenshtein)
+            return {"statement": modified_text,
+                    "questions": generated_questions["questions"]}
 
 class ShortQGenerator:
     
@@ -94,6 +218,10 @@ class ShortQGenerator:
         self.normalized_levenshtein = NormalizedLevenshtein()
         self.set_seed(42)
         
+        # Initialize chunking components
+        self.chunker = TextChunker(self.tokenizer, max_tokens=400, overlap_tokens=50)
+        self.deduplicator = QuestionDeduplicator(similarity_threshold=0.85)
+        
     def set_seed(self, seed):
         np.random.seed(seed)
         torch.manual_seed(seed)
@@ -107,10 +235,18 @@ class ShortQGenerator:
         }
 
         text = inp['input_text']
+        max_questions = inp['max_questions']
+        
+        # Check if chunking is needed
+        if self.chunker.needs_chunking(text):
+            logger.info("Text exceeds token limit, using chunking pipeline for short questions")
+            return self._generate_shortq_with_chunking(text, max_questions)
+        
+        # Original generation logic for short texts
         sentences = tokenize_into_sentences(text)
         modified_text = " ".join(sentences)
 
-        keywords = identify_keywords(self.nlp, modified_text, inp['max_questions'], self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
+        keywords = identify_keywords(self.nlp, modified_text, max_questions, self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
         keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
         
         for k in keyword_sentence_mapping.keys():
@@ -131,6 +267,104 @@ class ShortQGenerator:
             torch.cuda.empty_cache()
 
         return final_output
+    
+    def _generate_shortq_with_chunking(self, text: str, max_questions: int):
+        """
+        Generate short questions using chunking for long documents.
+        
+        Args:
+            text: Input text to process
+            max_questions: Maximum number of questions to generate
+            
+        Returns:
+            Dictionary containing generated questions
+        """
+        try:
+            # Create chunks
+            chunks = self.chunker.create_chunks(text)
+            
+            if not chunks:
+                logger.warning("No chunks created from text")
+                return {}
+            
+            # Calculate chunk sizes for proportional distribution
+            chunk_sizes = [self.chunker.count_tokens(chunk) for chunk in chunks]
+            
+            # Distribute question count across chunks
+            questions_per_chunk = distribute_question_count(max_questions, len(chunks), chunk_sizes)
+            
+            # Generate questions from each chunk
+            all_questions = []
+            
+            for i, (chunk, num_questions) in enumerate(zip(chunks, questions_per_chunk)):
+                if num_questions == 0:
+                    continue
+                
+                logger.info(f"Processing chunk {i+1}/{len(chunks)} with {num_questions} questions")
+                
+                try:
+                    # Use original generation logic for each chunk
+                    sentences = tokenize_into_sentences(chunk)
+                    modified_text = " ".join(sentences)
+                    
+                    keywords = identify_keywords(self.nlp, modified_text, num_questions, self.s2v, self.fdist, self.normalized_levenshtein, len(sentences))
+                    keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
+                    
+                    for k in keyword_sentence_mapping.keys():
+                        text_snippet = " ".join(keyword_sentence_mapping[k][:3])
+                        keyword_sentence_mapping[k] = text_snippet
+                    
+                    if len(keyword_sentence_mapping.keys()) > 0:
+                        generated_questions = generate_normal_questions(keyword_sentence_mapping, self.device, self.tokenizer, self.model)
+                        all_questions.extend(generated_questions["questions"])
+                
+                except Exception as e:
+                    logger.error(f"Error generating questions for chunk {i+1}: {e}")
+                    continue
+            
+            # Deduplicate questions
+            if all_questions:
+                logger.info(f"Generated {len(all_questions)} questions before deduplication")
+                deduplicated_questions = self.deduplicator.deduplicate(all_questions)
+                
+                # Limit to requested number
+                final_questions = deduplicated_questions[:max_questions]
+                
+                final_output = {
+                    "statement": text[:500] + "..." if len(text) > 500 else text,
+                    "questions": final_questions
+                }
+                
+                if self.device.type == 'cuda':
+                    torch.cuda.empty_cache()
+                
+                return final_output
+            else:
+                logger.warning("No questions generated from any chunk")
+                return {}
+                
+        except Exception as e:
+            logger.error(f"Error in chunking pipeline: {e}")
+            truncated_text = text[:2000]
+            sentences = tokenize_into_sentences(truncated_text)
+            modified_text = " ".join(sentences)
+            keywords = identify_keywords(self.nlp,
+                                        modified_text,
+                                        max_questions,
+                                        self.s2v,
+                                        self.fdist,
+                                        self.normalized_levenshtein,
+                                        len(sentences))
+            keyword_sentence_mapping = find_sentences_with_keywords(keywords, sentences)
+            for k in keyword_sentence_mapping.keys():
+                text_snippet = " ".join(keyword_sentence_mapping[k][:3])
+                keyword_sentence_mapping[k] = text_snippet
+            generated_questions = generate_normal_questions(keyword_sentence_mapping,
+                                                           self.device,
+                                                           self.tokenizer,
+                                                           self.model)
+            return {"statement": modified_text,
+                    "questions": generated_questions["questions"]}
             
 class ParaphraseGenerator:
     
@@ -160,7 +394,7 @@ class ParaphraseGenerator:
         sentence = text
         text_to_paraphrase = "paraphrase: " + sentence + " </s>"
 
-        encoding = self.tokenizer.encode_plus(text_to_paraphrase, pad_to_max_length=True, return_tensors="pt")
+        encoding = self.tokenizer(text_to_paraphrase, padding="max_length", truncation=True, return_tensors="pt")
         input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
 
         beam_outputs = self.model.generate(
@@ -198,6 +432,10 @@ class BoolQGenerator:
         self.model.to(self.device)
         self.set_seed(42)
         
+        # Initialize chunking components
+        self.chunker = TextChunker(self.tokenizer, max_tokens=400, overlap_tokens=50)
+        self.deduplicator = QuestionDeduplicator(similarity_threshold=0.85)
+        
     def set_seed(self, seed):
         np.random.seed(seed)
         torch.manual_seed(seed)
@@ -217,7 +455,14 @@ class BoolQGenerator:
         }
 
         text = inp['input_text']
-        num= inp['max_questions']
+        num = inp['max_questions']
+        
+        # Check if chunking is needed
+        if self.chunker.needs_chunking(text):
+            logger.info("Text exceeds token limit, using chunking pipeline for boolean questions")
+            return self._generate_boolq_with_chunking(text, num, start_time)
+        
+        # Original generation logic for short texts
         sentences = tokenize_into_sentences(text)
         modified_text = " ".join(sentences)
         answer = self.random_choice()
@@ -236,6 +481,85 @@ class BoolQGenerator:
         final['Boolean_Questions']= output
             
         return final
+    
+    def _generate_boolq_with_chunking(self, text: str, max_questions: int, start_time: float):
+        """
+        Generate boolean questions using chunking for long documents.
+        
+        Args:
+            text: Input text to process
+            max_questions: Maximum number of questions to generate
+            start_time: Start time for performance tracking
+            
+        Returns:
+            Dictionary containing generated questions
+        """
+        try:
+            # Create chunks
+            chunks = self.chunker.create_chunks(text)
+            
+            if not chunks:
+                logger.warning("No chunks created from text")
+                return {}
+            
+            # Calculate chunk sizes for proportional distribution
+            chunk_sizes = [self.chunker.count_tokens(chunk) for chunk in chunks]
+            
+            # Distribute question count across chunks
+            questions_per_chunk = distribute_question_count(max_questions, len(chunks), chunk_sizes)
+            
+            # Generate questions from each chunk
+            all_questions = []
+            
+            for i, (chunk, num_questions) in enumerate(zip(chunks, questions_per_chunk)):
+                if num_questions == 0:
+                    continue
+                
+                logger.info(f"Processing chunk {i+1}/{len(chunks)} with {num_questions} questions")
+                
+                try:
+                    # Use original generation logic for each chunk
+                    sentences = tokenize_into_sentences(chunk)
+                    modified_text = " ".join(sentences)
+                    answer = self.random_choice()
+                    form = "truefalse: %s passage: %s </s>" % (modified_text, answer)
+                    
+                    encoding = self.tokenizer.encode_plus(form, return_tensors="pt")
+                    input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
+                    
+                    output = beam_search_decoding(input_ids, attention_masks, self.model, self.tokenizer, num_questions)
+                    all_questions.extend(output)
+                
+                except Exception as e:
+                    logger.error(f"Error generating questions for chunk {i+1}: {e}")
+                    continue
+            
+            # Deduplicate questions
+            if all_questions:
+                logger.info(f"Generated {len(all_questions)} questions before deduplication")
+                deduplicated_questions = self.deduplicator.deduplicate(all_questions)
+                
+                # Limit to requested number
+                final_questions = deduplicated_questions[:max_questions]
+                
+                final = {
+                    'Text': text[:500] + "..." if len(text) > 500 else text,
+                    'Count': len(final_questions),
+                    'Boolean_Questions': final_questions
+                }
+                
+                if self.device.type == 'cuda':
+                    torch.cuda.empty_cache()
+                
+                return final
+            else:
+                logger.warning("No questions generated from any chunk")
+                return {}
+                
+        except Exception as e:
+            logger.error(f"Error in chunking pipeline: {e}")
+            # Fallback to original method with truncated text
+            return self.generate_boolq({"input_text": text[:2000], "max_questions": max_questions}
             
 
 class AnswerPredictor:
