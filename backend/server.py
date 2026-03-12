@@ -44,7 +44,7 @@ limiter = Limiter(
 
 
 @app.errorhandler(RateLimitExceeded)
-def rate_limit_handler(e):
+def rate_limit_handler(_e):
     return jsonify({
         "error": "Rate limit exceeded",
         "code": "rate_limit_exceeded"
@@ -439,6 +439,7 @@ def get_boolq_hard():
     return jsonify({"output": harder_questions})
 
 @app.route('/upload', methods=['POST'])
+@limiter.limit("10 per minute")
 def upload_file():
     if 'file' not in request.files:
         return jsonify({"error": "No file part"}), 400
@@ -487,6 +488,7 @@ def clean_transcript(file_path):
     return " ".join(transcript_lines).strip()
 
 @app.route('/getTranscript', methods=['GET'])
+@limiter.limit("10 per minute")
 def get_transcript():
     video_id = request.args.get('videoId')
     if not video_id:

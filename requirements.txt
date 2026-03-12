@@ -33,4 +33,4 @@ mediawikiapi
 PyMuPDF
 textblob
 
-Flask-Limiter
+Flask-Limiter==3.5.0
