@@ -205,7 +205,11 @@ class MCQGenerator:
                 text_snippet = " ".join(keyword_sentence_mapping[k][:3])
                 keyword_sentence_mapping[k] = text_snippet
             if len(keyword_sentence_mapping) == 0:
-                return {}
+                return {
+                    "statement": modified_text,
+                    "questions": [],
+                    "time_taken": time.time() - start_time,
+                }
             generated_questions = generate_multiple_choice_questions(keyword_sentence_mapping,
                                                                     self.device,
                                                                     self.tokenizer,
@@ -297,7 +301,10 @@ class ShortQGenerator:
             
             if not chunks:
                 logger.warning("No chunks created from text")
-                return {}
+                return {
+                    "statement": text,
+                    "questions": [],
+                }
             
             # Calculate chunk sizes for proportional distribution
             chunk_sizes = [self.chunker.count_tokens(chunk) for chunk in chunks]
@@ -356,12 +363,13 @@ class ShortQGenerator:
                 return {
                     "statement": text,
                     "questions": [],
-                    "time_taken": time.time() - start_time,
                 }
                 
         except Exception as e:
             logger.error(f"Error in chunking pipeline: {e}")
-            truncated_text = text[:2000]
+            safe_limit = self.chunker.max_tokens - 50
+            token_ids = self.tokenizer.encode(text, add_special_tokens=False)[:safe_limit]
+            truncated_text = self.tokenizer.decode(token_ids, skip_special_tokens=True)
             sentences = tokenize_into_sentences(truncated_text)
             modified_text = " ".join(sentences)
             keywords = identify_keywords(self.nlp,
@@ -516,7 +524,11 @@ class BoolQGenerator:
             
             if not chunks:
                 logger.warning("No chunks created from text")
-                return {}
+                return {
+                    "Text": text,
+                    "Count": 0,
+                    "Boolean_Questions": [],
+                }
             
             # Calculate chunk sizes for proportional distribution
             chunk_sizes = [self.chunker.count_tokens(chunk) for chunk in chunks]
@@ -571,16 +583,18 @@ class BoolQGenerator:
             else:
                 logger.warning("No questions generated from any chunk")
                 return {
-                    "statement": text,
-                    "questions": [],
-                    "time_taken": time.time() - start_time,
+                    "Text": text,
+                    "Count": 0,
+                    "Boolean_Questions": [],
                 }
                 
         except Exception as e:
             logger.error(f"Error in chunking pipeline: {e}")
             # Fallback to original method with truncated text
             # Process directly without recursing through generate_boolq to avoid infinite loop
-            truncated_text = text[:2000]
+            safe_limit = self.chunker.max_tokens - 50
+            token_ids = self.tokenizer.encode(text, add_special_tokens=False)[:safe_limit]
+            truncated_text = self.tokenizer.decode(token_ids, skip_special_tokens=True)
             sentences = tokenize_into_sentences(truncated_text)
             modified_text = " ".join(sentences)
             answer = self.random_choice()

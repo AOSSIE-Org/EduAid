@@ -152,7 +152,11 @@ class TextChunker:
                             overlap_tokens += prev_tokens
                         else:
                             break
-                    
+                            
+                    while overlap_chunk and overlap_tokens + sentence_tokens > self.max_tokens:
+                        dropped_sentence = overlap_chunk.pop(0)
+                        overlap_tokens -= self.count_tokens(dropped_sentence)
+
                     current_chunk = overlap_chunk
                     current_token_count = overlap_tokens
                 else:
