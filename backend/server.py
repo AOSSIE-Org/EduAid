@@ -30,9 +30,12 @@ from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
+from werkzeug.exceptions import RequestEntityTooLarge
 
 app = Flask(__name__)
 CORS(app)
+# Limit request payload size to 2MB
+app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024
 print("Starting Flask App...")
 
 limiter = Limiter(
@@ -48,6 +51,13 @@ def rate_limit_handler(_e):
         "error": "Rate limit exceeded",
         "code": "rate_limit_exceeded"
     }), 429
+
+@app.errorhandler(RequestEntityTooLarge)
+def request_entity_too_large(e):
+    return jsonify({
+        "error": "Request payload too large",
+        "code": "payload_too_large"
+    }), 413
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
 
