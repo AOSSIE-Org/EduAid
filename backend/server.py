@@ -216,19 +216,29 @@ def get_boolean_answer():
 
 @app.route('/get_content', methods=['POST'])
 def get_content():
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"error": "Request body required"}), 400
+
+    # Accept both doc_id and document_url
+    doc_id = data.get("doc_id")
+
+    if not doc_id:
+        document_url = data.get("document_url")
+        if document_url:
+            match = re.search(r'/d/([a-zA-Z0-9_-]+)', document_url)
+            if match:
+                doc_id = match.group(1)
+
+    if not doc_id:
+        return jsonify({"error": "doc_id or document_url is required"}), 400
+
     if not docs_service:
         return jsonify({
             "error": "Google Docs integration unavailable",
             "code": "google_docs_disabled"
         }), 503
-
-    data = request.get_json()
-
-    # Validate doc_id
-    if not data or "doc_id" not in data or not data["doc_id"]:
-        return jsonify({"error": "doc_id is required"}), 400
-
-    doc_id = data["doc_id"]
 
     content = docs_service.get_document_content(doc_id)
 
