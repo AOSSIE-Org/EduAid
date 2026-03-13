@@ -8,6 +8,8 @@ from flask_limiter.errors import RateLimitExceeded
 import nltk
 import subprocess
 import os
+import tempfile
+import glob
 
 
 from sklearn.metrics.pairwise import cosine_similarity
@@ -212,13 +214,21 @@ def get_boolean_answer():
 
     return jsonify({"output": output})
 
-
 @app.route('/get_content', methods=['POST'])
 def get_content():
-    return jsonify({
-        "error": "Google Docs integration unavailable",
-        "code": "google_docs_disabled"
-    }), 503
+    if not docs_service:
+        return jsonify({
+            "error": "Google Docs integration unavailable",
+            "code": "google_docs_disabled"
+        }), 503
+
+    data = request.get_json()
+    doc_id = data.get("doc_id")
+
+    content = docs_service.get_document_content(doc_id)
+
+    return jsonify({"content": content})
+
 
 @app.route("/generate_gform", methods=["POST"])
 @limiter.limit("5 per minute")
@@ -506,25 +516,33 @@ def get_transcript():
     if not video_id or not re.match(r'^[A-Za-z0-9_-]{11}$', video_id):
         return jsonify({"error": "Invalid video ID"}), 400
 
-    # Safe subtitle path
-    subtitle_path = os.path.join("subtitles", f"{video_id}.vtt")
-
     try:
-        subprocess.run(
-            [
-                "yt-dlp",
-                "--write-auto-sub",
-                "--sub-lang", "en",
-                "--skip-download",
-                "--sub-format", "vtt",
-                "-o", subtitle_path,
-                f"https://www.youtube.com/watch?v={video_id}"
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
+        with tempfile.TemporaryDirectory() as tempdir:
+
+            subprocess.run(
+                [
+                    "yt-dlp",
+                    "--write-auto-sub",
+                    "--sub-lang", "en",
+                    "--skip-download",
+                    "--sub-format", "vtt",
+                    f"https://www.youtube.com/watch?v={video_id}"
+                ],
+                cwd=tempdir,
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            vtt_files = glob.glob(os.path.join(tempdir, "*.vtt"))
+
+            if not vtt_files:
+                return jsonify({"error": "No subtitles found"}), 404
+
+            transcript_text = clean_transcript(vtt_files[0])
+
+            return jsonify({"transcript": transcript_text})
 
     except subprocess.TimeoutExpired:
         return jsonify({"error": "Subtitle fetch timed out"}), 504
@@ -534,18 +552,7 @@ def get_transcript():
 
     except FileNotFoundError:
         return jsonify({"error": "yt-dlp is not installed on the server"}), 500
-
-    # Check if subtitle file exists
-    if not os.path.exists(subtitle_path):
-        return jsonify({"error": "No subtitles found"}), 404
-
-    # Extract transcript
-    transcript_text = clean_transcript(subtitle_path)
-
-    # Remove subtitle file after processing
-    os.remove(subtitle_path)
-
-    return jsonify({"transcript": transcript_text})
+    
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
     app.run()
