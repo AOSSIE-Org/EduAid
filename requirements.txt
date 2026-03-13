@@ -32,3 +32,5 @@ mammoth
 mediawikiapi
 PyMuPDF
 textblob
+
+Flask-Limiter==3.5.0
