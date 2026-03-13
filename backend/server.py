@@ -10,8 +10,8 @@ import subprocess
 import os
 import tempfile
 import glob
-
-
+import shutil
+YT_DLP_PATH = shutil.which("yt-dlp")
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
@@ -223,7 +223,12 @@ def get_content():
         }), 503
 
     data = request.get_json()
-    doc_id = data.get("doc_id")
+
+    # Validate doc_id
+    if not data or "doc_id" not in data or not data["doc_id"]:
+        return jsonify({"error": "doc_id is required"}), 400
+
+    doc_id = data["doc_id"]
 
     content = docs_service.get_document_content(doc_id)
 
@@ -510,6 +515,8 @@ def clean_transcript(file_path):
 @app.route('/getTranscript', methods=['GET'])
 @limiter.limit("10 per minute")
 def get_transcript():
+    if not YT_DLP_PATH:
+        return jsonify({"error": "yt-dlp is not installed on the server"}), 500
     video_id = request.args.get('videoId')
 
     # Validate video ID
@@ -521,7 +528,7 @@ def get_transcript():
 
             subprocess.run(
                 [
-                    "yt-dlp",
+                    YT_DLP_PATH,
                     "--write-auto-sub",
                     "--sub-lang", "en",
                     "--skip-download",
@@ -535,7 +542,7 @@ def get_transcript():
                 timeout=30
             )
 
-            vtt_files = glob.glob(os.path.join(tempdir, "*.vtt"))
+            vtt_files = sorted(glob.glob(os.path.join(tempdir, "*.vtt")))
 
             if not vtt_files:
                 return jsonify({"error": "No subtitles found"}), 404
