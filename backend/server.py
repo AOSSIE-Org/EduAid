@@ -38,7 +38,6 @@ print("Starting Flask App...")
 limiter = Limiter(
     key_func=get_remote_address,
     app=app,
-    default_limits=["100 per hour"]
 )
 
 
@@ -497,7 +496,7 @@ def get_transcript():
     if not video_id or not re.match(r'^[A-Za-z0-9_-]{11}$', video_id):
         return jsonify({"error": "Invalid video ID"}), 400
 
-    # Safe subtitle file path
+    # Safe subtitle path
     subtitle_path = os.path.join("subtitles", f"{video_id}.vtt")
 
     try:
@@ -513,19 +512,27 @@ def get_transcript():
             ],
             check=True,
             capture_output=True,
-            text=True
+            text=True,
+            timeout=30
         )
+
+    except subprocess.TimeoutExpired:
+        return jsonify({"error": "Subtitle fetch timed out"}), 504
+
     except subprocess.CalledProcessError:
         return jsonify({"error": "Failed to fetch subtitles"}), 400
+
     except FileNotFoundError:
         return jsonify({"error": "yt-dlp is not installed on the server"}), 500
 
+    # Check if subtitle file exists
     if not os.path.exists(subtitle_path):
         return jsonify({"error": "No subtitles found"}), 404
 
+    # Extract transcript
     transcript_text = clean_transcript(subtitle_path)
 
-    # Clean up subtitle file
+    # Remove subtitle file after processing
     os.remove(subtitle_path)
 
     return jsonify({"transcript": transcript_text})
