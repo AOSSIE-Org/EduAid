@@ -1,11 +1,17 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pprint import pprint
+
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_limiter.errors import RateLimitExceeded
 import nltk
 import subprocess
 import os
+import tempfile
 import glob
-
+import shutil
+YT_DLP_PATH = shutil.which("yt-dlp")
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
@@ -17,6 +23,7 @@ import json
 import spacy
 from transformers import pipeline
 from spacy.lang.en.stop_words import STOP_WORDS
+
 from string import punctuation
 from heapq import nlargest
 import random
@@ -25,11 +32,34 @@ from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
+from werkzeug.exceptions import RequestEntityTooLarge
 
 app = Flask(__name__)
 CORS(app)
+# Limit request payload size to 2MB
+app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024
 print("Starting Flask App...")
 
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+)
+
+
+
+@app.errorhandler(RateLimitExceeded)
+def rate_limit_handler(_e):
+    return jsonify({
+        "error": "Rate limit exceeded",
+        "code": "rate_limit_exceeded"
+    }), 429
+
+@app.errorhandler(RequestEntityTooLarge)
+def request_entity_too_large(e):
+    return jsonify({
+        "error": "Request payload too large",
+        "code": "payload_too_large"
+    }), 413
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
 
@@ -51,6 +81,7 @@ def process_input_text(input_text, use_mediawiki):
 
 
 @app.route("/get_mcq", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_mcq():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -65,6 +96,7 @@ def get_mcq():
 
 
 @app.route("/get_boolq", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_boolq():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -79,6 +111,7 @@ def get_boolq():
 
 
 @app.route("/get_shortq", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_shortq():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -91,8 +124,8 @@ def get_shortq():
     questions = output["questions"]
     return jsonify({"output": questions})
 
-
 @app.route("/get_problems", methods=["POST"])
+@limiter.limit("10 per minute")
 def get_problems():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -115,6 +148,7 @@ def get_problems():
     )
 
 @app.route("/get_mcq_answer", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_mcq_answer():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -148,6 +182,7 @@ def get_mcq_answer():
 
 
 @app.route("/get_shortq_answer", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_answer():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -161,6 +196,7 @@ def get_answer():
 
 
 @app.route("/get_boolean_answer", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_boolean_answer():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -178,24 +214,39 @@ def get_boolean_answer():
 
     return jsonify({"output": output})
 
-
 @app.route('/get_content', methods=['POST'])
 def get_content():
-    try:
-        data = request.get_json()
-        document_url = data.get('document_url')
-        if not document_url:
-            return jsonify({'error': 'Document URL is required'}), 400
+    data = request.get_json()
 
-        text = docs_service.get_document_content(document_url)
-        return jsonify(text)
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    if not data:
+        return jsonify({"error": "Request body required"}), 400
+
+    # Accept both doc_id and document_url
+    doc_id = data.get("doc_id")
+
+    if not doc_id:
+        document_url = data.get("document_url")
+        if document_url:
+            match = re.search(r'/d/([a-zA-Z0-9_-]+)', document_url)
+            if match:
+                doc_id = match.group(1)
+
+    if not doc_id:
+        return jsonify({"error": "doc_id or document_url is required"}), 400
+
+    if not docs_service:
+        return jsonify({
+            "error": "Google Docs integration unavailable",
+            "code": "google_docs_disabled"
+        }), 503
+
+    content = docs_service.get_document_content(doc_id)
+
+    return jsonify({"content": content})
 
 
 @app.route("/generate_gform", methods=["POST"])
+@limiter.limit("5 per minute")
 def generate_gform():
     data = request.get_json()
     qa_pairs = data.get("qa_pairs", "")
@@ -365,6 +416,7 @@ def generate_gform():
 
 
 @app.route("/get_shortq_hard", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_shortq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -383,6 +435,7 @@ def get_shortq_hard():
 
 
 @app.route("/get_mcq_hard", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_mcq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -399,6 +452,7 @@ def get_mcq_hard():
     return jsonify({"output": output})
 
 @app.route("/get_boolq_hard", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_boolq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
@@ -420,6 +474,7 @@ def get_boolq_hard():
     return jsonify({"output": harder_questions})
 
 @app.route('/upload', methods=['POST'])
+@limiter.limit("10 per minute")
 def upload_file():
     if 'file' not in request.files:
         return jsonify({"error": "No file part"}), 400
@@ -468,28 +523,53 @@ def clean_transcript(file_path):
     return " ".join(transcript_lines).strip()
 
 @app.route('/getTranscript', methods=['GET'])
+@limiter.limit("10 per minute")
 def get_transcript():
+    if not YT_DLP_PATH:
+        return jsonify({"error": "yt-dlp is not installed on the server"}), 500
     video_id = request.args.get('videoId')
-    if not video_id:
-        return jsonify({"error": "No video ID provided"}), 400
 
-    subprocess.run(["yt-dlp", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
-                "--sub-format", "vtt", "-o", f"subtitles/{video_id}.vtt", f"https://www.youtube.com/watch?v={video_id}"],
-               check=True, capture_output=True, text=True)
+    # Validate video ID
+    if not video_id or not re.match(r'^[A-Za-z0-9_-]{11}$', video_id):
+        return jsonify({"error": "Invalid video ID"}), 400
 
-    # Find the latest .vtt file in the "subtitles" folder
-    subtitle_files = glob.glob("subtitles/*.vtt")
-    if not subtitle_files:
-        return jsonify({"error": "No subtitles found"}), 404
+    try:
+        with tempfile.TemporaryDirectory() as tempdir:
 
-    latest_subtitle = max(subtitle_files, key=os.path.getctime)
-    transcript_text = clean_transcript(latest_subtitle)
+            subprocess.run(
+                [
+                    YT_DLP_PATH,
+                    "--write-auto-sub",
+                    "--sub-lang", "en",
+                    "--skip-download",
+                    "--sub-format", "vtt",
+                    f"https://www.youtube.com/watch?v={video_id}"
+                ],
+                cwd=tempdir,
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
 
-    # Optional: Clean up the file after reading
-    os.remove(latest_subtitle)
+            vtt_files = sorted(glob.glob(os.path.join(tempdir, "*.vtt")))
 
-    return jsonify({"transcript": transcript_text})
+            if not vtt_files:
+                return jsonify({"error": "No subtitles found"}), 404
 
+            transcript_text = clean_transcript(vtt_files[0])
+
+            return jsonify({"transcript": transcript_text})
+
+    except subprocess.TimeoutExpired:
+        return jsonify({"error": "Subtitle fetch timed out"}), 504
+
+    except subprocess.CalledProcessError:
+        return jsonify({"error": "Failed to fetch subtitles"}), 400
+
+    except FileNotFoundError:
+        return jsonify({"error": "yt-dlp is not installed on the server"}), 500
+    
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
     app.run()
