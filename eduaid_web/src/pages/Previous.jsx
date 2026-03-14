@@ -2,7 +2,7 @@ import React from "react";
 import "../index.css";
 import logoPNG from "../assets/aossie_logo_transparent.png";
 import stars from "../assets/stars.png";
-import { FaArrowRight } from "react-icons/fa";
+import { FaTrash } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useNavigate } from 'react-router-dom';
 
@@ -26,6 +26,12 @@ const Previous = () => {
     setQuizzes([]);
   };
 
+  const handleDeleteQuiz = (index) => {
+    const updatedQuizzes = quizzes.filter((_, i) => i !== index);
+    localStorage.setItem("last5Quizzes", JSON.stringify(updatedQuizzes));
+    setQuizzes(updatedQuizzes);
+  };
+  
   const handleBack = () => {
     navigate('/'); 
   };
@@ -83,7 +89,17 @@ const Previous = () => {
                     </div>
                     <div className="mt-2 text-xs md:text-sm">{quiz.date}</div>
                   </div>
-                  <FaArrowRight className="text-[#7600F2]" size={18} />
+                  <div className="flex items-center gap-3">
+                    <button
+                      aria-label="Delete quiz"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteQuiz(index);
+                      }}
+                    >
+                      <FaTrash className="text-red-400 hover:text-red-600" size={16} />
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
