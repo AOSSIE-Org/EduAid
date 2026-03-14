@@ -53,9 +53,9 @@ const Text_Input = () => {
 
     // Trim the input
     const trimmedText = text.trim();
-
+    const trimmedDocUrl = docUrl.trim();
     // Check if input is empty
-    if (!trimmedText && !docUrl) {
+    if (!trimmedText && !trimmedDocUrl) {
       setError("Please enter some text to generate the quiz.");
       setLoading(false);
       return;
@@ -64,9 +64,9 @@ const Text_Input = () => {
     }
 
     // Check if a Google Doc URL is provided
-    if (docUrl) {
+    if (trimmedDocUrl) {
       try {
-        const data = await apiClient.post("/get_content", { document_url: docUrl });
+        const data = await apiClient.post("/get_content", { document_url: trimmedDocUrl });
         setDocUrl("");
         setText(data || "Error in retrieving");
       } catch (error) {
@@ -77,12 +77,12 @@ const Text_Input = () => {
       }
     } else {
       // Proceed with existing functionality for local storage
-      localStorage.setItem("textContent", text);
+      localStorage.setItem("textContent", trimmedText);
       localStorage.setItem("difficulty", difficulty);
       localStorage.setItem("numQuestions", numQuestions);
 
       await sendToBackend(
-        text,
+        trimmedText,
         difficulty,
         localStorage.getItem("selectedQuestionType")
       );
