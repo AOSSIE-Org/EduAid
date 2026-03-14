@@ -9,6 +9,7 @@ import { Link,useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 
 const Text_Input = () => {
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const [text, setText] = useState("");
   const [difficulty, setDifficulty] = useState("Easy Difficulty");
@@ -50,10 +51,22 @@ const Text_Input = () => {
   const handleSaveToLocalStorage = async () => {
     setLoading(true);
 
+    // Trim the input
+    const trimmedText = text.trim();
+    const trimmedDocUrl = docUrl.trim();
+    // Check if input is empty
+    if (!trimmedText && !trimmedDocUrl) {
+      setError("Please enter some text to generate the quiz.");
+      setLoading(false);
+      return;
+    } else {
+      setError(""); // Clear error if valid
+    }
+
     // Check if a Google Doc URL is provided
-    if (docUrl) {
+    if (trimmedDocUrl) {
       try {
-        const data = await apiClient.post("/get_content", { document_url: docUrl });
+        const data = await apiClient.post("/get_content", { document_url: trimmedDocUrl });
         setDocUrl("");
         setText(data || "Error in retrieving");
       } catch (error) {
@@ -62,14 +75,14 @@ const Text_Input = () => {
       } finally {
         setLoading(false);
       }
-    } else if (text) {
+    } else {
       // Proceed with existing functionality for local storage
-      localStorage.setItem("textContent", text);
+      localStorage.setItem("textContent", trimmedText);
       localStorage.setItem("difficulty", difficulty);
       localStorage.setItem("numQuestions", numQuestions);
 
       await sendToBackend(
-        text,
+        trimmedText,
         difficulty,
         localStorage.getItem("selectedQuestionType")
       );
@@ -179,6 +192,8 @@ const Text_Input = () => {
           <style>{`textarea::-webkit-scrollbar { display: none; }`}</style>
         </div>
 
+        {error && <p className="text-red-500 mt-2 text-center">{error}</p>}
+        
         {/* Separator */}
         <div className="text-white text-center my-4 text-lg">or</div>
 
