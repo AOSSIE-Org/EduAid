@@ -1,15 +1,14 @@
-import React, { useState, useEffect } from "react";
-import ReactDOM from "react-dom";
+import { useState, useEffect } from "react";
 import "../../index.css";
 import logo from "../../assets/aossie_logo.webp";
 import logoPNG from "../../assets/aossie_logo.png";
+import { normalizeArrayData } from "../../utils/normalizeArrayData";
 
 function Question() {
   const [qaPairs, setQaPairs] = useState([]);
-  const [questionType, setQuestionType] = useState(
+  const [questionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
-  const [pdfMode, setPdfMode] = useState("questions");
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -39,8 +38,8 @@ function Question() {
       const combinedQaPairs = [];
 
       if (qaPairsFromStorage["output_boolq"]) {
-        qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
-          (question, index) => {
+        normalizeArrayData(qaPairsFromStorage["output_boolq"]["Boolean_Questions"]).forEach(
+          (question) => {
             combinedQaPairs.push({
               question,
               question_type: "Boolean",
@@ -51,7 +50,7 @@ function Question() {
       }
 
       if (qaPairsFromStorage["output_mcq"]) {
-        qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
+        normalizeArrayData(qaPairsFromStorage["output_mcq"]["questions"]).forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
             question_type: "MCQ",
@@ -63,7 +62,7 @@ function Question() {
       }
 
       if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+        normalizeArrayData(qaPairsFromStorage["output"]).forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
             question_type: "MCQ",
@@ -75,14 +74,14 @@ function Question() {
       }
 
       if (questionType == "get_boolq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+        normalizeArrayData(qaPairsFromStorage["output"]).forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair,
             question_type: "Boolean",
           });
         });
       } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+        normalizeArrayData(qaPairsFromStorage["output"]).forEach((qaPair) => {
           combinedQaPairs.push({
             question:
               qaPair.question || qaPair.question_statement || qaPair.Question,
@@ -96,6 +95,7 @@ function Question() {
 
       setQaPairs(combinedQaPairs);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const generateGoogleForm = async () => {
@@ -174,50 +174,55 @@ function Question() {
           <div className="font-bold text-xl text-white mt-3 mx-2">
             Generated Questions
           </div>
-          <div className="flex-1 overflow-y-auto scrollbar-hide">
-            {qaPairs &&
-              qaPairs.map((qaPair, index) => {
-                const combinedOptions = qaPair.options
-                  ? [...qaPair.options, qaPair.answer]
-                  : [qaPair.answer];
-                const shuffledOptions = shuffleArray(combinedOptions);
-                return (
-                  <div
-                    key={index}
-                    className="px-2 bg-[#d9d9d90d] border-black border my-1 mx-2 rounded-xl py-2"
-                  >
-                    <div className="text-[#E4E4E4] text-sm">
-                      Question {index + 1}
-                    </div>
-                    <div className="text-[#FFF4F4] text-[1rem] my-1">
-                      {qaPair.question}
-                    </div>
-                    {qaPair.question_type !== "Boolean" && (
-                      <>
-                        <div className="text-[#E4E4E4] text-sm">Answer</div>
-                        <div className="text-[#FFF4F4] text-[1rem]">
-                          {qaPair.answer}
-                        </div>
-                        {qaPair.options && qaPair.options.length > 0 && (
+          <ErrorBoundary fallback={<EmptyState message="Quiz failed to load." />}>
+            <div className="flex-1 overflow-y-auto scrollbar-hide">
+              {qaPairs && qaPairs.length === 0 ? (
+                <EmptyState message="No quizzes could be parse from the response. Please try again." />
+              ) : (
+                qaPairs.map((qaPair, index) => {
+                  const combinedOptions = qaPair.options
+                    ? [...qaPair.options, qaPair.answer]
+                    : [qaPair.answer];
+                  const shuffledOptions = shuffleArray(combinedOptions);
+                  return (
+                    <div
+                      key={index}
+                      className="px-2 bg-[#d9d9d90d] border-black border my-1 mx-2 rounded-xl py-2"
+                    >
+                      <div className="text-[#E4E4E4] text-sm">
+                        Question {index + 1}
+                      </div>
+                      <div className="text-[#FFF4F4] text-[1rem] my-1">
+                        {qaPair.question}
+                      </div>
+                      {qaPair.question_type !== "Boolean" && (
+                        <>
+                          <div className="text-[#E4E4E4] text-sm">Answer</div>
                           <div className="text-[#FFF4F4] text-[1rem]">
-                            {shuffledOptions.map((option, idx) => (
-                              <div key={idx}>
-                                <span className="text-[#E4E4E4] text-sm">
-                                  Option {idx + 1}:
-                                </span>{" "}
-                                <span className="text-[#FFF4F4] text-[1rem]">
-                                  {option}
-                                </span>
-                              </div>
-                            ))}
+                            {qaPair.answer}
                           </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
+                          {qaPair.options && qaPair.options.length > 0 && (
+                            <div className="text-[#FFF4F4] text-[1rem]">
+                              {shuffledOptions.map((option, idx) => (
+                                <div key={idx}>
+                                  <span className="text-[#E4E4E4] text-sm">
+                                    Option {idx + 1}:
+                                  </span>{" "}
+                                  <span className="text-[#FFF4F4] text-[1rem]">
+                                    {option}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </ErrorBoundary>
           <div className="items-center flex justify-center gap-6 mx-auto">
             <button
               className="bg-[#161E1E] my-2 text-white px-2 py-2 rounded-xl"
@@ -272,4 +277,4 @@ function Question() {
   );
 }
 
-ReactDOM.render(<Question />, document.getElementById("root"));
+export default Question;
