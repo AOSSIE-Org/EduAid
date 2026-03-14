@@ -9,6 +9,7 @@ import { Link,useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 
 const Text_Input = () => {
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const [text, setText] = useState("");
   const [difficulty, setDifficulty] = useState("Easy Difficulty");
@@ -50,6 +51,18 @@ const Text_Input = () => {
   const handleSaveToLocalStorage = async () => {
     setLoading(true);
 
+    // Trim the input
+    const trimmedText = text.trim();
+
+    // Check if input is empty
+    if (!trimmedText && !docUrl) {
+      setError("Please enter some text to generate the quiz.");
+      setLoading(false);
+      return;
+    } else {
+      setError(""); // Clear error if valid
+    }
+
     // Check if a Google Doc URL is provided
     if (docUrl) {
       try {
@@ -62,7 +75,7 @@ const Text_Input = () => {
       } finally {
         setLoading(false);
       }
-    } else if (text) {
+    } else {
       // Proceed with existing functionality for local storage
       localStorage.setItem("textContent", text);
       localStorage.setItem("difficulty", difficulty);
@@ -179,6 +192,8 @@ const Text_Input = () => {
           <style>{`textarea::-webkit-scrollbar { display: none; }`}</style>
         </div>
 
+        {error && <p className="text-red-500 mt-2 text-center">{error}</p>}
+        
         {/* Separator */}
         <div className="text-white text-center my-4 text-lg">or</div>
 
