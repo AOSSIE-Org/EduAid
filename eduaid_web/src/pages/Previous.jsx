@@ -91,7 +91,7 @@ const Previous = () => {
                   </div>
                   <div className="flex items-center gap-3">
                     <button
-                      aria-label="Delrte quiz"
+                      aria-label="Delete quiz"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteQuiz(index);
