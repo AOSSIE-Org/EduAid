@@ -44,7 +44,7 @@ const Home = () => {
     <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient overflow-auto px-4 py-6 sm:px-8 md:px-16">
         <div className="max-w-5xl mx-auto">
-          <img src={logo_trans} alt="logo" className="w-24 my-4 sm:my-6" />
+          <img src={logo_trans} alt=" EduAid logo" className="w-24 my-4 sm:my-6" />
 
           {/* Heading */}
           <h1 className="text-5xl sm:text-6xl md:text-7xl text-center font-extrabold leading-tight">
@@ -61,7 +61,7 @@ const Home = () => {
             <p>A tool that can auto-generate short quizzes</p>
             <div className="flex items-center justify-center gap-2 mt-2">
               <p>based on user input</p>
-              <img src={starsImg} width={24} height={12} alt="stars" />
+              <img src={starsImg} width={24} height={12} alt=" rating stars" />
             </div>
           </div>
 
@@ -76,7 +76,7 @@ const Home = () => {
                 key={i}
                 className="flex items-center rounded-l-2xl sm:rounded-2xl px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] gap-4 w-fit"
               >
-                <img src={starsImg} width={32} height={16} alt="" />
+                <img src={starsImg} width={32} height={16} alt="feature icon" />
                 <div className="text-white text-base sm:text-xl">{feature}</div>
               </div>
             ))}
