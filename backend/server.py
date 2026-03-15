@@ -1,3 +1,4 @@
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pprint import pprint
@@ -28,7 +29,7 @@ from spacy.lang.en.stop_words import STOP_WORDS
 from string import punctuation
 from heapq import nlargest
 import random
-import webbrowser
+
 from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
@@ -281,6 +282,7 @@ def get_boolean_answer():
     return jsonify({"output": output})
 
 @app.route('/get_content', methods=['POST'])
+@limiter.limit("10 per minute")
 def get_content():
     data = request.get_json(silent=True)
 
@@ -303,11 +305,7 @@ def get_content():
     if not doc_id:
         return jsonify({"error": "doc_id or document_url is required"}), 400
 
-    if not docs_service:
-        return jsonify({
-            "error": "Google Docs integration unavailable",
-            "code": "google_docs_disabled"
-        }), 503
+    
 
     content = docs_service.get_document_content(doc_id)
 
@@ -482,12 +480,11 @@ def generate_gform():
         formId=result["formId"],
         body=NEW_QUESTION
     ).execute()
-    
+
     return jsonify({
-    "responder_url": result["responderUri"],
-    "edit_url": f"https://docs.google.com/forms/d/{result['formId']}/edit"
-})
-    
+        "responder_url": result["responderUri"],
+        "edit_url": f"https://docs.google.com/forms/d/{result['formId']}/edit"
+    })
 
 
 @app.route("/get_shortq_hard", methods=["POST"])
@@ -507,10 +504,12 @@ def get_shortq_hard():
     input_text = process_input_text(input_text, use_mediawiki)
 
     input_questions = data.get("input_question", [])
+    num_questions = len(input_questions)
+
 
     output = qg.generate(
         article=input_text,
-        num_questions=input_questions,
+        num_questions=len(input_questions),
         answer_style="sentences"
     )
 
@@ -540,7 +539,7 @@ def get_mcq_hard():
 
     output = qg.generate(
         article=input_text,
-        num_questions=input_questions,
+        num_questions=len(input_questions),
         answer_style="multiple_choice"
     )
 
@@ -568,7 +567,7 @@ def get_boolq_hard():
 
     generated = qg.generate(
         article=input_text,
-        num_questions=input_questions,
+        num_questions=len(input_questions),
         answer_style="true_false"
     )
 
