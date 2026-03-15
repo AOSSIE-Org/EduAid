@@ -83,74 +83,128 @@ def process_input_text(input_text, use_mediawiki):
 @app.route("/get_mcq", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_mcq():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({
+            "error": "Invalid or missing JSON body",
+            "code": "invalid_request"
+        }), 400
+
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+
     input_text = process_input_text(input_text, use_mediawiki)
+
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
     )
+
     questions = output["questions"]
+
     return jsonify({"output": questions})
 
 
 @app.route("/get_boolq", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_boolq():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({
+            "error": "Invalid or missing JSON body",
+            "code": "invalid_request"
+        }), 400
+
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+
     input_text = process_input_text(input_text, use_mediawiki)
+
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
     )
+
     boolean_questions = output["Boolean_Questions"]
+
     return jsonify({"output": boolean_questions})
 
 
 @app.route("/get_shortq", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_shortq():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({
+            "error": "Invalid or missing JSON body",
+            "code": "invalid_request"
+        }), 400
+
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+
     input_text = process_input_text(input_text, use_mediawiki)
+
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
     )
+
     questions = output["questions"]
+
     return jsonify({"output": questions})
 
 @app.route("/get_problems", methods=["POST"])
 @limiter.limit("10 per minute")
 def get_problems():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({
+            "error": "Invalid or missing JSON body",
+            "code": "invalid_request"
+        }), 400
+
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions_mcq = data.get("max_questions_mcq", 4)
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
+
     input_text = process_input_text(input_text, use_mediawiki)
+
     output1 = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions_mcq}
     )
+
     output2 = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions_boolq}
     )
+
     output3 = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions_shortq}
     )
-    return jsonify(
-        {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
-    )
+
+    return jsonify({
+        "output_mcq": output1,
+        "output_boolq": output2,
+        "output_shortq": output3
+    })
 
 @app.route("/get_mcq_answer", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_mcq_answer():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({
+            "error": "Invalid or missing JSON body",
+            "code": "invalid_request"
+        }), 400
+
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     input_options = data.get("input_options", [])
@@ -175,7 +229,7 @@ def get_mcq_answer():
 
         # Return the option with the highest similarity
         best_option = options[max_similarity_index]
-        
+
         outputs.append(best_option)
 
     return jsonify({"output": outputs})
@@ -184,10 +238,18 @@ def get_mcq_answer():
 @app.route("/get_shortq_answer", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_answer():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({
+            "error": "Invalid or missing JSON body",
+            "code": "invalid_request"
+        }), 400
+
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     answers = []
+
     for question in input_questions:
         qa_response = qa_model(question=question, context=input_text)
         answers.append(qa_response["answer"])
@@ -198,7 +260,14 @@ def get_answer():
 @app.route("/get_boolean_answer", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_boolean_answer():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({
+            "error": "Invalid or missing JSON body",
+            "code": "invalid_request"
+        }), 400
+
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     output = []
@@ -207,7 +276,8 @@ def get_boolean_answer():
         qa_response = answer.predict_boolean_answer(
             {"input_text": input_text, "input_question": question}
         )
-        if(qa_response):
+
+        if qa_response:
             output.append("True")
         else:
             output.append("False")
@@ -216,10 +286,13 @@ def get_boolean_answer():
 
 @app.route('/get_content', methods=['POST'])
 def get_content():
-    data = request.get_json()
+    data = request.get_json(silent=True)
 
     if not data:
-        return jsonify({"error": "Request body required"}), 400
+        return jsonify({
+            "error": "Invalid or missing JSON body",
+            "code": "invalid_request"
+        }), 400
 
     # Accept both doc_id and document_url
     doc_id = data.get("doc_id")
@@ -244,13 +317,20 @@ def get_content():
 
     return jsonify({"content": content})
 
-
 @app.route("/generate_gform", methods=["POST"])
 @limiter.limit("5 per minute")
 def generate_gform():
-    data = request.get_json()
-    qa_pairs = data.get("qa_pairs", "")
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({
+            "error": "Invalid or missing JSON body",
+            "code": "invalid_request"
+        }), 400
+
+    qa_pairs = data.get("qa_pairs", [])
     question_type = data.get("question_type", "")
+
     SCOPES = "https://www.googleapis.com/auth/forms.body"
     DISCOVERY_DOC = "https://forms.googleapis.com/$discovery/rest?version=v1"
 
@@ -267,11 +347,13 @@ def generate_gform():
         discoveryServiceUrl=DISCOVERY_DOC,
         static_discovery=False,
     )
+
     NEW_FORM = {
         "info": {
             "title": "EduAid form",
         }
     }
+
     requests_list = []
 
     if question_type == "get_shortq":
@@ -291,23 +373,15 @@ def generate_gform():
                 }
             }
             requests_list.append(requests)
+
     elif question_type == "get_mcq":
         for index, qapair in enumerate(qa_pairs):
-            # Extract and filter the options
             options = qapair.get("options", [])
-            valid_options = [
-                opt for opt in options if opt
-            ]  # Filter out empty or None options
+            valid_options = [opt for opt in options if opt]
 
-            # Ensure the answer is included in the choices
-            choices = [qapair["answer"]] + valid_options[
-                :3
-            ]  # Include up to the first 3 options
-
-            # Randomize the order of the choices
+            choices = [qapair["answer"]] + valid_options[:3]
             random.shuffle(choices)
 
-            # Prepare the request structure
             choices_list = [{"value": choice} for choice in choices]
 
             requests = {
@@ -327,14 +401,15 @@ def generate_gform():
                     "location": {"index": index},
                 }
             }
-
             requests_list.append(requests)
+
     elif question_type == "get_boolq":
         for index, qapair in enumerate(qa_pairs):
             choices_list = [
                 {"value": "True"},
                 {"value": "False"},
             ]
+
             requests = {
                 "createItem": {
                     "item": {
@@ -352,28 +427,29 @@ def generate_gform():
                     "location": {"index": index},
                 }
             }
-
             requests_list.append(requests)
+
     else:
         for index, qapair in enumerate(qa_pairs):
             if "options" in qapair and qapair["options"]:
                 options = qapair["options"]
-                valid_options = [
-                    opt for opt in options if opt
-                ]  # Filter out empty or None options
-                choices = [qapair["answer"]] + valid_options[
-                    :3
-                ]  # Include up to the first 3 options
+                valid_options = [opt for opt in options if opt]
+
+                choices = [qapair["answer"]] + valid_options[:3]
                 random.shuffle(choices)
+
                 choices_list = [{"value": choice} for choice in choices]
+
                 question_structure = {
                     "choiceQuestion": {
                         "type": "RADIO",
                         "options": choices_list,
                     }
                 }
+
             elif "answer" in qapair:
                 question_structure = {"textQuestion": {}}
+
             else:
                 question_structure = {
                     "choiceQuestion": {
@@ -399,33 +475,49 @@ def generate_gform():
                     "location": {"index": index},
                 }
             }
+
             requests_list.append(requests)
 
     NEW_QUESTION = {"requests": requests_list}
 
     result = form_service.forms().create(body=NEW_FORM).execute()
+
     form_service.forms().batchUpdate(
-        formId=result["formId"], body=NEW_QUESTION
+        formId=result["formId"],
+        body=NEW_QUESTION
     ).execute()
 
     edit_url = jsonify(result["responderUri"])
+
     webbrowser.open_new_tab(
         "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
     )
+
     return edit_url
 
 
 @app.route("/get_shortq_hard", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_shortq_hard():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({
+            "error": "Invalid or missing JSON body",
+            "code": "invalid_request"
+        }), 400
+
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
+
+    input_text = process_input_text(input_text, use_mediawiki)
+
     input_questions = data.get("input_question", [])
 
     output = qg.generate(
-        article=input_text, num_questions=input_questions, answer_style="sentences"
+        article=input_text,
+        num_questions=input_questions,
+        answer_style="sentences"
     )
 
     for item in output:
@@ -437,24 +529,43 @@ def get_shortq_hard():
 @app.route("/get_mcq_hard", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_mcq_hard():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({
+            "error": "Invalid or missing JSON body",
+            "code": "invalid_request"
+        }), 400
+
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
+
+    input_text = process_input_text(input_text, use_mediawiki)
+
     input_questions = data.get("input_question", [])
+
     output = qg.generate(
-        article=input_text, num_questions=input_questions, answer_style="multiple_choice"
+        article=input_text,
+        num_questions=input_questions,
+        answer_style="multiple_choice"
     )
-    
+
     for q in output:
         q["question"] = make_question_harder(q["question"])
-        
+
     return jsonify({"output": output})
 
 @app.route("/get_boolq_hard", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_boolq_hard():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({
+            "error": "Invalid or missing JSON body",
+            "code": "invalid_request"
+        }), 400
+
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
