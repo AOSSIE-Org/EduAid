@@ -1,4 +1,5 @@
-import { PDFDocument, rgb } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import fontkit from '@pdf-lib/fontkit';
 
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -30,7 +31,7 @@ const wrapText = (text, maxWidth) => {
 
 // eslint-disable-next-line no-restricted-globals
 self.onmessage = async (e) => {
-  const { qaPairs, mode, logoBytes } = e.data;
+  const { qaPairs, mode, logoBytes, fontBytes } = e.data;
 
   const pageWidth = 595.28;
   const pageHeight = 841.89;
@@ -38,6 +39,23 @@ self.onmessage = async (e) => {
   const maxContentWidth = pageWidth - 2 * margin;
 
   const pdfDoc = await PDFDocument.create();
+  
+  // Register fontkit & Embed User Font for Unicode support
+  let customFont = null;
+  if (fontBytes) {
+    pdfDoc.registerFontkit(fontkit);
+    try {
+      customFont = await pdfDoc.embedFont(fontBytes);
+    } catch (err) {
+      console.error("Failed to embed font in worker:", err);
+    }
+  }
+
+  // Fallback to standard font if no custom font is provided / failed
+  if (!customFont) {
+    customFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  }
+
   let page = pdfDoc.addPage([pageWidth, pageHeight]);
   const d = new Date(Date.now());
 
@@ -65,16 +83,18 @@ self.onmessage = async (e) => {
       page.drawText("EduAid generated Quiz", {
         x: margin + logoDims.width + 10,
         y: pageHeight - margin,
-        size: 20
+        size: 20,
+        font: customFont
       });
       page.drawText("Created On: " + d.toString(), {
         x: margin + logoDims.width + 10,
         y: pageHeight - margin - 30,
-        size: 10
+        size: 10,
+        font: customFont
       });
     }
   } catch (err) {
-    page.drawText("EduAid generated Quiz", { x: margin, y: pageHeight - margin, size: 20 });
+    page.drawText("EduAid generated Quiz", { x: margin, y: pageHeight - margin, size: 20, font: customFont });
   }
 
   for (const qaPair of qaPairs) {
@@ -102,7 +122,7 @@ self.onmessage = async (e) => {
     if (mode !== 'answers') {
       for (const [i, line] of questionLines.entries()) {
         const prefix = i === 0 ? `Q${questionIndex}) ` : '    ';
-        page.drawText(`${prefix}${line}`, { x: margin, y: y - i * 20, size: 12 });
+        page.drawText(`${prefix}${line}`, { x: margin, y: y - i * 20, size: 12, font: customFont });
       }
       y -= questionLines.length * 20 + 20;
 
@@ -113,7 +133,7 @@ self.onmessage = async (e) => {
             radioGroup.addOptionToPage(option, page, {
               x: margin + 20, y, width: 15, height: 15
             });
-            page.drawText(option, { x: margin + 40, y: y + 2, size: 12 });
+            page.drawText(option, { x: margin + 40, y: y + 2, size: 12, font: customFont });
             y -= 20;
           }
         } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
@@ -129,7 +149,7 @@ self.onmessage = async (e) => {
 
             const optionLines = wrapText(option, maxContentWidth - 60);
             for (const [i, line] of optionLines.entries()) {
-              page.drawText(line, { x: margin + 40, y: y + 2 - i * 15, size: 12 });
+              page.drawText(line, { x: margin + 40, y: y + 2 - i * 15, size: 12, font: customFont });
             }
             y -= Math.max(25, optionLines.length * 20);
           }
@@ -148,7 +168,7 @@ self.onmessage = async (e) => {
       const answerLines = wrapText(`Answer ${questionIndex}: ${qaPair.answer}`, maxContentWidth);
       for (const [i, line] of answerLines.entries()) {
         page.drawText(line, {
-          x: margin, y: y - i * 15, size: 12, color: rgb(0, 0.5, 0)
+          x: margin, y: y - i * 15, size: 12, color: rgb(0, 0.5, 0), font: customFont
         });
       }
       y -= answerLines.length * 20;

@@ -4,6 +4,7 @@ import logoPNG from "../assets/aossie_logo_transparent.png";
 import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
+import fontkit from "@pdf-lib/fontkit";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
@@ -14,8 +15,25 @@ const Output = () => {
   const [editedQuestion, setEditedQuestion] = useState("");
   const [editedAnswer, setEditedAnswer] = useState("");
   const [editedOptions, setEditedOptions] = useState([]);
+  const [fontBytes, setFontBytes] = useState(null);
 
   useEffect(() => {
+    const FONT_URL = "https://github.com/AOSSIE-AISSMS/EduAid/blob/main/backend/Generator/fonts/NotoSans-Regular.ttf?raw=true"
+
+    const loadFont = async () => {
+      try {
+        const resp = await fetch(FONT_URL);
+        const arrayBuffer = await resp.arrayBuffer();   // ← note the parentheses
+        setFontBytes(arrayBuffer);
+      } catch (e) {
+        console.error("Failed to load Noto Sans font:", e);
+      }
+    };
+    loadFont();
+  }, []);
+
+  useEffect(() => {
+
     const handleClickOutside = (event) => {
       const dropdown = document.getElementById('pdfDropdown');
       if (dropdown && !dropdown.contains(event.target) &&
@@ -183,7 +201,7 @@ const Output = () => {
     const logoBytes = await loadLogoAsBytes();
     const worker = new Worker(new URL("../workers/pdfWorker.js", import.meta.url), { type: "module" });
 
-    worker.postMessage({ qaPairs, mode, logoBytes });
+    worker.postMessage({ qaPairs, mode, logoBytes, fontBytes });
 
     worker.onmessage = (e) => {
       const blob = new Blob([e.data], { type: 'application/pdf' });
@@ -203,6 +221,8 @@ const Output = () => {
       worker.terminate();
     };
   };
+
+
 
   return (
     <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
@@ -234,8 +254,8 @@ const Output = () => {
             </div>
             <button
               className={`${editingIndex !== null
-                  ? 'bg-gray-500 cursor-not-allowed'
-                  : 'bg-[#7C3AED] hover:bg-[#5A2AD9]'
+                ? 'bg-gray-500 cursor-not-allowed'
+                : 'bg-[#7C3AED] hover:bg-[#5A2AD9]'
                 } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
               onClick={handleShuffleQuestions}
               disabled={editingIndex !== null}
@@ -412,6 +432,7 @@ const Output = () => {
                   Answers Only
                 </button>
               </div>
+
             </div>
           </div>
         </div>
