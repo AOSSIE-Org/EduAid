@@ -15,22 +15,28 @@ from Generator.question_filters import make_question_harder
 import re
 import json
 import spacy
-from transformers import pipeline
+from transformers import pipeline, AutoModelForQuestionAnswering, AutoTokenizer
+import torch
 from spacy.lang.en.stop_words import STOP_WORDS
 from string import punctuation
 from heapq import nlargest
 import random
 import webbrowser
-from apiclient import discovery
-from httplib2 import Http
-from oauth2client import client, file, tools
+# FIX: oauth2client is incompatible with service_account credentials.json.
+# Original (broken - uses OAuth2 user-consent flow, needs 'installed'/'web' type credentials):
+# from apiclient import discovery
+# from httplib2 import Http
+# from oauth2client import client, file, tools
+# Fixed: use google-auth service account + googleapiclient (same as GoogleDocsService)
+from googleapiclient.discovery import build as google_build
+from google.oauth2 import service_account as sa
 from mediawikiapi import MediaWikiAPI
 
 app = Flask(__name__)
 CORS(app)
 print("Starting Flask App...")
 
-SERVICE_ACCOUNT_FILE = './service_account_key.json'
+SERVICE_ACCOUNT_FILE = './credentials.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
 
 MCQGen = main.MCQGenerator()
@@ -41,7 +47,21 @@ qg = main.QuestionGenerator()
 docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
-qa_model = pipeline("question-answering")
+class ExtractiveQA:
+    def __init__(self, model_name="deepset/roberta-base-squad2"):
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.model = AutoModelForQuestionAnswering.from_pretrained(model_name)
+    
+    def __call__(self, question, context):
+        inputs = self.tokenizer(question, context, return_tensors="pt")
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+        answer_start_index = outputs.start_logits.argmax()
+        answer_end_index = outputs.end_logits.argmax() + 1
+        predict_answer_tokens = inputs.input_ids[0, answer_start_index:answer_end_index]
+        return {"answer": self.tokenizer.decode(predict_answer_tokens, skip_special_tokens=True)}
+
+qa_model = ExtractiveQA()
 
 
 def process_input_text(input_text, use_mediawiki):
@@ -60,7 +80,7 @@ def get_mcq():
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    questions = output["questions"]
+    questions = output.get("questions", [])
     return jsonify({"output": questions})
 
 
@@ -88,7 +108,7 @@ def get_shortq():
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    questions = output["questions"]
+    questions = output.get("questions", [])
     return jsonify({"output": questions})
 
 
@@ -200,19 +220,32 @@ def generate_gform():
     data = request.get_json()
     qa_pairs = data.get("qa_pairs", "")
     question_type = data.get("question_type", "")
-    SCOPES = "https://www.googleapis.com/auth/forms.body"
+    FORMS_SCOPES = ["https://www.googleapis.com/auth/forms.body"]
     DISCOVERY_DOC = "https://forms.googleapis.com/$discovery/rest?version=v1"
 
-    store = file.Storage("token.json")
-    creds = None
-    if not creds or creds.invalid:
-        flow = client.flow_from_clientsecrets("credentials.json", SCOPES)
-        creds = tools.run_flow(flow, store)
-
-    form_service = discovery.build(
+    # FIX: Original code had two bugs:
+    # 1. Used OAuth2 user-consent flow (requires 'installed'/'web' type credentials, not service_account)
+    # 2. creds = None means token.json is never actually read — always re-authenticates
+    # Original (broken):
+    # SCOPES = "https://www.googleapis.com/auth/forms.body"
+    # store = file.Storage("token.json")
+    # creds = None                              # bug: should be creds = store.get()
+    # if not creds or creds.invalid:            # always True because creds is None
+    #     flow = client.flow_from_clientsecrets("credentials.json", SCOPES)
+    #     creds = tools.run_flow(flow, store)
+    # form_service = discovery.build(
+    #     "forms", "v1",
+    #     http=creds.authorize(Http()),
+    #     discoveryServiceUrl=DISCOVERY_DOC, static_discovery=False,
+    # )
+    # Fixed: use the same service account pattern as GoogleDocsService
+    creds = sa.Credentials.from_service_account_file(
+        SERVICE_ACCOUNT_FILE, scopes=FORMS_SCOPES
+    )
+    form_service = google_build(
         "forms",
         "v1",
-        http=creds.authorize(Http()),
+        credentials=creds,
         discoveryServiceUrl=DISCOVERY_DOC,
         static_discovery=False,
     )
