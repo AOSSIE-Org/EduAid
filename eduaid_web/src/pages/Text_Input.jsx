@@ -56,8 +56,14 @@ const Text_Input = () => {
       try {
         const data = await apiClient.post("/get_content", { document_url: docUrl });
         setDocUrl("");
-        setInputError("");
-        setText(data || "Error in retrieving");
+        
+        if (data) {
+          setInputError("");
+          setText(data);
+        } else {
+          setInputError("Error retrieving Google Doc content");
+        }
+      
       } catch (error) {
         console.error("Error:", error);
         setInputError("Error retrieving Google Doc content");
