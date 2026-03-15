@@ -11,6 +11,7 @@ import os
 import tempfile
 import glob
 import shutil
+import webbrowser
 YT_DLP_PATH = shutil.which("yt-dlp")
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -85,7 +86,7 @@ def process_input_text(input_text, use_mediawiki):
 def get_mcq():
     data = request.get_json(silent=True)
 
-    if not data:
+    if data is None or not isinstance(data, dict):
         return jsonify({
             "error": "Invalid or missing JSON body",
             "code": "invalid_request"
@@ -111,7 +112,7 @@ def get_mcq():
 def get_boolq():
     data = request.get_json(silent=True)
 
-    if not data:
+    if data is None or not isinstance(data, dict):
         return jsonify({
             "error": "Invalid or missing JSON body",
             "code": "invalid_request"
@@ -137,7 +138,7 @@ def get_boolq():
 def get_shortq():
     data = request.get_json(silent=True)
 
-    if not data:
+    if data is None or not isinstance(data, dict):
         return jsonify({
             "error": "Invalid or missing JSON body",
             "code": "invalid_request"
@@ -162,7 +163,7 @@ def get_shortq():
 def get_problems():
     data = request.get_json(silent=True)
 
-    if not data:
+    if data is None or not isinstance(data, dict):
         return jsonify({
             "error": "Invalid or missing JSON body",
             "code": "invalid_request"
@@ -193,13 +194,14 @@ def get_problems():
         "output_boolq": output2,
         "output_shortq": output3
     })
-
+    
+    
 @app.route("/get_mcq_answer", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_mcq_answer():
     data = request.get_json(silent=True)
 
-    if not data:
+    if data is None or not isinstance(data, dict):
         return jsonify({
             "error": "Invalid or missing JSON body",
             "code": "invalid_request"
@@ -214,11 +216,9 @@ def get_mcq_answer():
         return jsonify({"outputs": outputs})
 
     for question, options in zip(input_questions, input_options):
-        # Generate answer using the QA model
         qa_response = qa_model(question=question, context=input_text)
         generated_answer = qa_response["answer"]
 
-        # Calculate similarity between generated answer and each option
         options_with_answer = options + [generated_answer]
         vectorizer = TfidfVectorizer().fit_transform(options_with_answer)
         vectors = vectorizer.toarray()
@@ -227,20 +227,17 @@ def get_mcq_answer():
         similarities = cosine_similarity(vectors[:-1], generated_answer_vector).flatten()
         max_similarity_index = similarities.argmax()
 
-        # Return the option with the highest similarity
         best_option = options[max_similarity_index]
-
         outputs.append(best_option)
 
     return jsonify({"output": outputs})
-
 
 @app.route("/get_shortq_answer", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_answer():
     data = request.get_json(silent=True)
 
-    if not data:
+    if data is None or not isinstance(data, dict):
         return jsonify({
             "error": "Invalid or missing JSON body",
             "code": "invalid_request"
@@ -256,13 +253,12 @@ def get_answer():
 
     return jsonify({"output": answers})
 
-
 @app.route("/get_boolean_answer", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_boolean_answer():
     data = request.get_json(silent=True)
 
-    if not data:
+    if data is None or not isinstance(data, dict):
         return jsonify({
             "error": "Invalid or missing JSON body",
             "code": "invalid_request"
@@ -288,7 +284,7 @@ def get_boolean_answer():
 def get_content():
     data = request.get_json(silent=True)
 
-    if not data:
+    if data is None or not isinstance(data, dict):
         return jsonify({
             "error": "Invalid or missing JSON body",
             "code": "invalid_request"
@@ -322,7 +318,7 @@ def get_content():
 def generate_gform():
     data = request.get_json(silent=True)
 
-    if not data:
+    if data is None or not isinstance(data, dict):
         return jsonify({
             "error": "Invalid or missing JSON body",
             "code": "invalid_request"
@@ -486,14 +482,12 @@ def generate_gform():
         formId=result["formId"],
         body=NEW_QUESTION
     ).execute()
-
-    edit_url = jsonify(result["responderUri"])
-
-    webbrowser.open_new_tab(
-        "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
-    )
-
-    return edit_url
+    
+    return jsonify({
+    "responder_url": result["responderUri"],
+    "edit_url": f"https://docs.google.com/forms/d/{result['formId']}/edit"
+})
+    
 
 
 @app.route("/get_shortq_hard", methods=["POST"])
@@ -501,7 +495,7 @@ def generate_gform():
 def get_shortq_hard():
     data = request.get_json(silent=True)
 
-    if not data:
+    if data is None or not isinstance(data, dict):
         return jsonify({
             "error": "Invalid or missing JSON body",
             "code": "invalid_request"
@@ -531,7 +525,7 @@ def get_shortq_hard():
 def get_mcq_hard():
     data = request.get_json(silent=True)
 
-    if not data:
+    if data is None or not isinstance(data, dict):
         return jsonify({
             "error": "Invalid or missing JSON body",
             "code": "invalid_request"
@@ -560,7 +554,7 @@ def get_mcq_hard():
 def get_boolq_hard():
     data = request.get_json(silent=True)
 
-    if not data:
+    if data is None or not isinstance(data, dict):
         return jsonify({
             "error": "Invalid or missing JSON body",
             "code": "invalid_request"
@@ -572,14 +566,12 @@ def get_boolq_hard():
 
     input_text = process_input_text(input_text, use_mediawiki)
 
-    # Generate questions using the same QG model
     generated = qg.generate(
         article=input_text,
         num_questions=input_questions,
         answer_style="true_false"
     )
 
-    # Apply transformation to make each question harder
     harder_questions = [make_question_harder(q) for q in generated]
 
     return jsonify({"output": harder_questions})
