@@ -376,10 +376,10 @@ def generate_gform():
 
     elif question_type == "get_mcq":
         for index, qapair in enumerate(qa_pairs):
-            options = qapair.get("options", [])
+            options = qapair.get("options") or []
             valid_options = [opt for opt in options if opt]
+
             choices = [qapair["answer"], *valid_options[:3]]
-            
             random.shuffle(choices)
 
             choices_list = [{"value": choice} for choice in choices]
@@ -431,7 +431,7 @@ def generate_gform():
 
     else:
         for index, qapair in enumerate(qa_pairs):
-    
+
             if "options" in qapair and qapair["options"]:
                 options = qapair.get("options") or []
                 valid_options = [opt for opt in options if opt]
@@ -443,24 +443,24 @@ def generate_gform():
 
                 question_structure = {
                     "choiceQuestion": {
-                    "type": "RADIO",
-                    "options": choices_list,
+                        "type": "RADIO",
+                        "options": choices_list,
                     }
                 }
 
-                elif "answer" in qapair:
-                    question_structure = {"textQuestion": {}}
+            elif "answer" in qapair:
+                question_structure = {"textQuestion": {}}
 
-        else:
-            question_structure = {
-                "choiceQuestion": {
-                    "type": "RADIO",
-                    "options": [
-                        {"value": "True"},
-                        {"value": "False"},
-                    ],
+            else:
+                question_structure = {
+                    "choiceQuestion": {
+                        "type": "RADIO",
+                        "options": [
+                            {"value": "True"},
+                            {"value": "False"},
+                        ],
+                    }
                 }
-            }
 
             requests = {
                 "createItem": {
