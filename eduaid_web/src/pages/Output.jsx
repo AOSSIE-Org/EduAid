@@ -4,7 +4,6 @@ import logoPNG from "../assets/aossie_logo_transparent.png";
 import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
-import fontkit from "@pdf-lib/fontkit";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
@@ -22,6 +21,9 @@ const Output = () => {
       try {
         const fontModule = await import("../assets/fonts/NotoSans-Regular.ttf");
         const resp = await fetch(fontModule.default);
+        if (!resp.ok) {
+          throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+        }
         const arrayBuffer = await resp.arrayBuffer();
         setFontBytes(arrayBuffer);
       } catch (e) {
@@ -402,10 +404,19 @@ const Output = () => {
 
             <div className="relative w-full sm:w-auto">
               <button
-                className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
-                onClick={() => document.getElementById('pdfDropdown').classList.toggle('hidden')}
+                className={`${
+                  !fontBytes
+                    ? 'bg-gray-500 cursor-not-allowed'
+                    : 'bg-[#518E8E] hover:bg-[#3a6b6b]'
+                } items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base transition-colors justify-center`}
+                onClick={() => {
+                  if (fontBytes) {
+                    document.getElementById('pdfDropdown').classList.toggle('hidden');
+                  }
+                }}
+                disabled={!fontBytes}
               >
-                Generate PDF
+                {!fontBytes ? 'Loading Font...' : 'Generate PDF'}
               </button>
 
               <div
