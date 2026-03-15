@@ -9,6 +9,7 @@ import { Link,useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 
 const Text_Input = () => {
+  const [inputError, setInputError] = useState("");
   const navigate = useNavigate();
   const [text, setText] = useState("");
   const [difficulty, setDifficulty] = useState("Easy Difficulty");
@@ -55,10 +56,17 @@ const Text_Input = () => {
       try {
         const data = await apiClient.post("/get_content", { document_url: docUrl });
         setDocUrl("");
-        setText(data || "Error in retrieving");
+        
+        if (data) {
+          setInputError("");
+          setText(data);
+        } else {
+          setInputError("Error retrieving Google Doc content");
+        }
+      
       } catch (error) {
         console.error("Error:", error);
-        setText("Error retrieving Google Doc content");
+        setInputError("Error retrieving Google Doc content");
       } finally {
         setLoading(false);
       }
@@ -179,6 +187,10 @@ const Text_Input = () => {
           <style>{`textarea::-webkit-scrollbar { display: none; }`}</style>
         </div>
 
+        {inputError && (
+          <p className="mt-2 text-sm text-center text-red-300">{inputError}</p>
+        )}
+        
         {/* Separator */}
         <div className="text-white text-center my-4 text-lg">or</div>
 
