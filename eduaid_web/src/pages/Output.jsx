@@ -18,12 +18,11 @@ const Output = () => {
   const [fontBytes, setFontBytes] = useState(null);
 
   useEffect(() => {
-    const FONT_URL = "https://github.com/AOSSIE-AISSMS/EduAid/blob/main/backend/Generator/fonts/NotoSans-Regular.ttf?raw=true"
-
     const loadFont = async () => {
       try {
-        const resp = await fetch(FONT_URL);
-        const arrayBuffer = await resp.arrayBuffer();   // ← note the parentheses
+        const fontModule = await import("../assets/fonts/NotoSans-Regular.ttf");
+        const resp = await fetch(fontModule.default);
+        const arrayBuffer = await resp.arrayBuffer();
         setFontBytes(arrayBuffer);
       } catch (e) {
         console.error("Failed to load Noto Sans font:", e);
