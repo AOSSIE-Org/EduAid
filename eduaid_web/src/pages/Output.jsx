@@ -7,13 +7,13 @@ import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
-  const [questionType] = useState(
+  const[questionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
-  const [editingIndex, setEditingIndex] = useState(null);
+  const[editingIndex, setEditingIndex] = useState(null);
   const [editedQuestion, setEditedQuestion] = useState("");
   const [editedAnswer, setEditedAnswer] = useState("");
-  const [editedOptions, setEditedOptions] = useState([]);
+  const[editedOptions, setEditedOptions] = useState([]);
   const [fontBytes, setFontBytes] = useState(null);
 
   useEffect(() => {
@@ -31,21 +31,30 @@ const Output = () => {
       }
     };
     loadFont();
-  }, []);
+  },[]);
 
   useEffect(() => {
-
     const handleClickOutside = (event) => {
       const dropdown = document.getElementById('pdfDropdown');
-      if (dropdown && !dropdown.contains(event.target) &&
-        !event.target.closest('button')) {
-        dropdown.classList.add('hidden');
+      const triggerBtn = document.getElementById('pdfTriggerButton');
+
+      // Ensure target is a valid Node to prevent errors
+      if (event.target instanceof Node) {
+        // Only hide if the click is outside BOTH the dropdown and its trigger button
+        if (
+          dropdown && 
+          !dropdown.contains(event.target) &&
+          triggerBtn && 
+          !triggerBtn.contains(event.target)
+        ) {
+          dropdown.classList.add('hidden');
+        }
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  },[]);
 
   function shuffleArray(array) {
     const shuffledArray = [...array];
@@ -59,7 +68,7 @@ const Output = () => {
   const shuffledOptionsMap = useMemo(() => {
     return qaPairs.map((qaPair) => {
       const combinedOptions = qaPair.options
-        ? [...qaPair.options, qaPair.answer]
+        ?[...qaPair.options, qaPair.answer]
         : [qaPair.answer];
       return shuffleArray(combinedOptions);
     });
@@ -77,11 +86,11 @@ const Output = () => {
     setEditingIndex(index);
     setEditedQuestion(qaPairs[index].question);
     setEditedAnswer(qaPairs[index].answer || "");
-    setEditedOptions(qaPairs[index].options || []);
+    setEditedOptions(qaPairs[index].options ||[]);
   };
 
   const handleSaveQuestion = (index) => {
-    const updatedQaPairs = [...qaPairs];
+    const updatedQaPairs =[...qaPairs];
     updatedQaPairs[index] = {
       ...updatedQaPairs[index],
       question: editedQuestion,
@@ -103,7 +112,7 @@ const Output = () => {
   };
 
   const handleOptionChange = (optionIndex, value) => {
-    const updatedOptions = [...editedOptions];
+    const updatedOptions =[...editedOptions];
     updatedOptions[optionIndex] = value;
     setEditedOptions(updatedOptions);
   };
@@ -207,11 +216,13 @@ const Output = () => {
     worker.onmessage = (e) => {
       const blob = new Blob([e.data], { type: 'application/pdf' });
       const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
+      link.href = url;
       link.download = "generated_questions.pdf";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
       document.getElementById('pdfDropdown').classList.add('hidden');
       worker.terminate();
@@ -404,6 +415,7 @@ const Output = () => {
 
             <div className="relative w-full sm:w-auto">
               <button
+                id="pdfTriggerButton"
                 className={`${
                   !fontBytes
                     ? 'bg-gray-500 cursor-not-allowed'
@@ -450,6 +462,5 @@ const Output = () => {
     </div>
   );
 };
-
 
 export default Output;
