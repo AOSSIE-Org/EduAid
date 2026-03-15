@@ -307,9 +307,15 @@ def get_content():
 
     
 
-    content = docs_service.get_document_content(doc_id)
+    try:
+        content = docs_service.get_document_content(doc_id)
+        return jsonify({"content": content})
 
-    return jsonify({"content": content})
+    except Exception:
+        return jsonify({
+            "error": "Failed to retrieve document content",
+            "code": "document_fetch_error"
+        }), 400
 
 @app.route("/generate_gform", methods=["POST"])
 @limiter.limit("5 per minute")
@@ -483,6 +489,7 @@ def generate_gform():
     ).execute()
 
     return jsonify({
+        "form_link": result["responderUri"],
         "responder_url": result["responderUri"],
         "edit_url": f"https://docs.google.com/forms/d/{result['formId']}/edit"
     })
