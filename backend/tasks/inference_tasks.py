@@ -5,7 +5,7 @@ These tasks wrap the existing generator classes to run in background workers.
 import logging
 import torch
 from celery import Task
-from celery_worker import celery_app
+from backend.celery_worker import celery_app
 from Generator import main
 from mediawikiapi import MediaWikiAPI
 

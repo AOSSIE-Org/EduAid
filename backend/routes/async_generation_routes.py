@@ -7,7 +7,7 @@ from celery.result import AsyncResult
 import logging
 
 # Import Celery tasks
-from tasks.inference_tasks import (
+from backend.tasks.inference_tasks import (
     generate_mcq_task,
     generate_boolq_task,
     generate_shortq_task,
@@ -16,6 +16,23 @@ from tasks.inference_tasks import (
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+
+def _parse_bounded_int(data, key, default, min_value=1, max_value=20):
+    """
+    Parse and validate bounded integer parameters from request payload.
+    Prevents invalid or excessively large values from reaching Celery workers.
+    """
+    try:
+        value = int(data.get(key, default))
+    except (TypeError, ValueError):
+        raise ValueError(f"{key} must be an integer")
+    
+    if value < min_value or value > max_value:
+        raise ValueError(f"{key} must be between {min_value} and {max_value}")
+    
+    return value
+
 
 # Create Blueprint
 async_routes = Blueprint('async_routes', __name__)
@@ -31,7 +48,7 @@ def generate_mcq_async():
         data = request.get_json(silent=True) or {}
         input_text = data.get("input_text", "")
         use_mediawiki = data.get("use_mediawiki", 0)
-        max_questions = data.get("max_questions", 4)
+        max_questions = _parse_bounded_int(data, "max_questions", 4)
         
         if not input_text.strip():
             return jsonify({"error": "input_text is required"}), 400
@@ -46,9 +63,12 @@ def generate_mcq_async():
             "status": "queued"
         }), 202
 
+    except ValueError as e:
+        logger.warning(f"Validation error in MCQ task: {str(e)}")
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         logger.error(f"Error creating MCQ task: {str(e)}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Failed to create task"}), 500
 
 
 @async_routes.route("/generate_boolq_async", methods=["POST"])
@@ -61,7 +81,7 @@ def generate_boolq_async():
         data = request.get_json(silent=True) or {}
         input_text = data.get("input_text", "")
         use_mediawiki = data.get("use_mediawiki", 0)
-        max_questions = data.get("max_questions", 4)
+        max_questions = _parse_bounded_int(data, "max_questions", 4)
         
         if not input_text.strip():
             return jsonify({"error": "input_text is required"}), 400
@@ -76,9 +96,12 @@ def generate_boolq_async():
             "status": "queued"
         }), 202
         
+    except ValueError as e:
+        logger.warning(f"Validation error in BoolQ task: {str(e)}")
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         logger.error(f"Error creating BoolQ task: {str(e)}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Failed to create task"}), 500
 
 
 @async_routes.route("/generate_shortq_async", methods=["POST"])
@@ -91,7 +114,7 @@ def generate_shortq_async():
         data = request.get_json(silent=True) or {}
         input_text = data.get("input_text", "")
         use_mediawiki = data.get("use_mediawiki", 0)
-        max_questions = data.get("max_questions", 4)
+        max_questions = _parse_bounded_int(data, "max_questions", 4)
         
         if not input_text.strip():
             return jsonify({"error": "input_text is required"}), 400
@@ -106,9 +129,12 @@ def generate_shortq_async():
             "status": "queued"
         }), 202
 
+    except ValueError as e:
+        logger.warning(f"Validation error in ShortQ task: {str(e)}")
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         logger.error(f"Error creating ShortQ task: {str(e)}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Failed to create task"}), 500
 
 
 @async_routes.route("/generate_all_async", methods=["POST"])
@@ -121,9 +147,9 @@ def generate_all_async():
         data = request.get_json(silent=True) or {}
         input_text = data.get("input_text", "")
         use_mediawiki = data.get("use_mediawiki", 0)
-        max_questions_mcq = data.get("max_questions_mcq", 4)
-        max_questions_boolq = data.get("max_questions_boolq", 4)
-        max_questions_shortq = data.get("max_questions_shortq", 4)
+        max_questions_mcq = _parse_bounded_int(data, "max_questions_mcq", 4)
+        max_questions_boolq = _parse_bounded_int(data, "max_questions_boolq", 4)
+        max_questions_shortq = _parse_bounded_int(data, "max_questions_shortq", 4)
         
         if not input_text.strip():
             return jsonify({"error": "input_text is required"}), 400
@@ -144,9 +170,12 @@ def generate_all_async():
             "status": "queued"
         }), 202
         
+    except ValueError as e:
+        logger.warning(f"Validation error in combined task: {str(e)}")
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         logger.error(f"Error creating combined task: {str(e)}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Failed to create task"}), 500
 
 
 @async_routes.route("/task_status/<task_id>", methods=["GET"])
@@ -179,7 +208,7 @@ def get_task_status(task_id):
             response['message'] = 'Task completed successfully'
         elif task_result.state == 'FAILURE':
             response['message'] = 'Task failed'
-            response['error'] = str(task_result.info)
+            response['error'] = 'Task execution failed'
         elif task_result.state == 'REVOKED':
             response['message'] = 'Task was cancelled'
         
@@ -232,7 +261,7 @@ def get_task_result(task_id):
             return jsonify({
                 "task_id": task_id,
                 "status": "failed",
-                "error": str(task_result.info)
+                "error": "Task execution failed"
             }), 500
             
         else:
