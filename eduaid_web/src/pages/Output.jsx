@@ -58,7 +58,12 @@ const Output = () => {
   const handleEditQuestion = (index) => {
     setEditingIndex(index);
     setEditedQuestion(qaPairs[index].question);
-    setEditedAnswer(qaPairs[index].answer || "");
+    const existing = qaPairs[index].answer;
+    setEditedAnswer(
+      qaPairs[index].question_type === "Boolean"
+        ? (existing === "True" || existing === "False" ? existing : "True")
+        : (existing || "")
+    );
     setEditedOptions(qaPairs[index].options || []);
   };
 
