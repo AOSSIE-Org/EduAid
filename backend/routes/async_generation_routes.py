@@ -35,6 +35,27 @@ def _parse_bounded_int(data, key, default, min_value=1, max_value=20):
     return value
 
 
+def _parse_input_text(data, max_length=20000):
+    """
+    Parse and validate input_text from request payload.
+    Ensures type safety, non-empty content, and enforces size limits.
+    """
+    value = data.get("input_text", "")
+    
+    if not isinstance(value, str):
+        raise ValueError("input_text must be a string")
+    
+    value = value.strip()
+    
+    if not value:
+        raise ValueError("input_text is required")
+    
+    if len(value) > max_length:
+        raise ValueError(f"input_text must be <= {max_length} characters")
+    
+    return value
+
+
 # Create Blueprint
 async_routes = Blueprint('async_routes', __name__)
 
@@ -47,12 +68,9 @@ def generate_mcq_async():
     """
     try:
         data = request.get_json(silent=True) or {}
-        input_text = data.get("input_text", "")
+        input_text = _parse_input_text(data)
         use_mediawiki = 1 if data.get("use_mediawiki") in (1, True, "1") else 0
         max_questions = _parse_bounded_int(data, "max_questions", 4)
-        
-        if not input_text.strip():
-            return jsonify({"error": "input_text is required"}), 400
         
         # Send task to Celery
         task = generate_mcq_task.delay(input_text, max_questions, use_mediawiki)
@@ -80,12 +98,9 @@ def generate_boolq_async():
     """
     try:
         data = request.get_json(silent=True) or {}
-        input_text = data.get("input_text", "")
+        input_text = _parse_input_text(data)
         use_mediawiki = 1 if data.get("use_mediawiki") in (1, True, "1") else 0
         max_questions = _parse_bounded_int(data, "max_questions", 4)
-        
-        if not input_text.strip():
-            return jsonify({"error": "input_text is required"}), 400
         
         # Send task to Celery
         task = generate_boolq_task.delay(input_text, max_questions, use_mediawiki)
@@ -113,12 +128,9 @@ def generate_shortq_async():
     """
     try:
         data = request.get_json(silent=True) or {}
-        input_text = data.get("input_text", "")
+        input_text = _parse_input_text(data)
         use_mediawiki = 1 if data.get("use_mediawiki") in (1, True, "1") else 0
         max_questions = _parse_bounded_int(data, "max_questions", 4)
-        
-        if not input_text.strip():
-            return jsonify({"error": "input_text is required"}), 400
         
         # Send task to Celery
         task = generate_shortq_task.delay(input_text, max_questions, use_mediawiki)
@@ -146,14 +158,11 @@ def generate_all_async():
     """
     try:
         data = request.get_json(silent=True) or {}
-        input_text = data.get("input_text", "")
-        use_mediawiki = 1 if data.get("use_mediawiki") in (1, True, "1") else 0
+        input_text = _parse_input_text(data)
+        use_mediawiki = data.get("use_mediawiki", 0)
         max_questions_mcq = _parse_bounded_int(data, "max_questions_mcq", 4)
         max_questions_boolq = _parse_bounded_int(data, "max_questions_boolq", 4)
         max_questions_shortq = _parse_bounded_int(data, "max_questions_shortq", 4)
-        
-        if not input_text.strip():
-            return jsonify({"error": "input_text is required"}), 400
         
         # Send task to Celery
         task = generate_all_questions_task.delay(

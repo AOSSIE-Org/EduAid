@@ -56,10 +56,9 @@ def process_input_text(input_text, use_mediawiki, mediawiki_instance):
     if use_mediawiki == 1:
         logger.info(f"Fetching MediaWiki summary for: {input_text}")
         try:
-+            input_text = mediawiki_instance.summary(input_text, 8)
-+        except Exception as e:
-+            logger.warning(f"MediaWiki fetch failed, using original input: {e!s}")
-+            # Optionally re-raise or return original input_text as fallback
+            input_text = mediawiki_instance.summary(input_text, 8)
+        except Exception as e:
+            logger.warning("MediaWiki fetch failed, using original input: %s", e)
     return input_text
 
 
