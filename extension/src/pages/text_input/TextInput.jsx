@@ -14,8 +14,6 @@ const OPENAI_HARDCODED_MODELS = [
   "gpt-4o",
   "gpt-4o-mini",
   "gpt-5.1",
-  "gpt-5.2",
-  "gpt-5.3",
   "gpt-5.4",
 ];
 
@@ -568,7 +566,8 @@ function Second() {
             <select
               value={difficulty}
               onChange={handleDifficultyChange}
-              className="bg-[#202838] text-white rounded-xl px-5 py-3 appearance-none"
+              disabled={useExternalLlm}
+              className="bg-[#202838] text-white rounded-xl px-5 py-3 appearance-none disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <option>Easy Difficulty</option>
               <option>Medium Difficulty</option>

@@ -87,7 +87,7 @@ function Question() {
         });
       }
 
-      if (questionType == "get_boolq" && Array.isArray(qaPairsFromStorage["output"])) {
+      if (questionType === "get_boolq" && Array.isArray(qaPairsFromStorage["output"])) {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair,

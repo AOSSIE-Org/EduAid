@@ -170,6 +170,8 @@ def _call_llm_for_questions(
     llm_model,
     llm_api_key
 ):
+    if len(input_text) > 12000:
+        app.logger.warning("Input text truncated from %s to 12000 chars for external LLM.", len(input_text))
     trimmed_input = input_text[:12000]
     if question_type == "get_mcq":
         schema_hint = (
@@ -200,7 +202,7 @@ def _call_llm_for_questions(
     )
 
     if llm_provider == "openai":
-        from openai import OpenAI
+        from openai import OpenAI, APIError
 
         client = OpenAI(api_key=llm_api_key)
 
@@ -225,7 +227,7 @@ def _call_llm_for_questions(
                 if _mcq_quality_score(retry_sanitized) > _mcq_quality_score(sanitized):
                     return retry_sanitized
             return sanitized
-        except Exception as chat_exc:
+        except APIError as chat_exc:
             # Some OpenAI models are completion-only; fallback to completions endpoint.
             response = client.completions.create(
                 model=llm_model,
@@ -253,8 +255,8 @@ def _call_llm_for_questions(
                     if _mcq_quality_score(retry_sanitized) > _mcq_quality_score(sanitized):
                         return retry_sanitized
                 return sanitized
-            except Exception:
-                raise chat_exc
+            except (ValueError, json.JSONDecodeError, KeyError, TypeError):
+                raise chat_exc from None
 
     if llm_provider == "anthropic":
         from anthropic import Anthropic
@@ -301,7 +303,7 @@ def get_mcq():
             )
             questions = llm_output.get("questions", [])
             return jsonify({"output": questions, "llm_used": True})
-        except Exception as exc:
+        except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
             return jsonify({"error": str(exc), "llm_used": True}), 400
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
@@ -327,7 +329,7 @@ def get_boolq():
             )
             boolean_questions = llm_output.get("Boolean_Questions", [])
             return jsonify({"output": boolean_questions, "llm_used": True})
-        except Exception as exc:
+        except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
             return jsonify({"error": str(exc), "llm_used": True}), 400
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
@@ -353,7 +355,7 @@ def get_shortq():
             )
             questions = llm_output.get("questions", [])
             return jsonify({"output": questions, "llm_used": True})
-        except Exception as exc:
+        except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
             return jsonify({"error": str(exc), "llm_used": True}), 400
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
@@ -408,7 +410,7 @@ def get_problems():
                     "llm_used": True,
                 }
             )
-        except Exception as exc:
+        except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
             return jsonify({"error": str(exc), "llm_used": True}), 400
 
     output1 = MCQGen.generate_mcq(
