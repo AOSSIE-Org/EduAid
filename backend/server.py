@@ -9,7 +9,7 @@ import glob
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
-nltk.download('punkt_tab')
+nltk.download('punkt')
 from Generator import main
 from Generator.question_filters import make_question_harder
 import re
@@ -26,8 +26,15 @@ from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
 
+# Import async routes
+from routes.async_generation_routes import async_routes
+
 app = Flask(__name__)
 CORS(app)
+
+# Register async routes blueprint
+app.register_blueprint(async_routes)
+
 print("Starting Flask App...")
 
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
