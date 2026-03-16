@@ -69,6 +69,71 @@ def test_get_shortq_llm():
         assert 'answer' in qa
     print(f"  Generated {len(response['output'])} questions via Qwen3-0.6B LLM")
 
+
+def test_get_mcq_llm():
+    endpoint = '/get_mcq_llm'
+    data = {
+        'input_text': input_text,
+        'max_questions': 2
+    }
+    response = make_post_request(endpoint, data)
+    print(f'/get_mcq_llm Response: {response}')
+    assert 'output' in response
+    assert len(response['output']) > 0
+    for mcq in response['output']:
+        assert 'question' in mcq
+        assert 'options' in mcq
+        assert 'correct_answer' in mcq
+        assert len(mcq['options']) == 4  # Should have 4 options A, B, C, D
+    print(f"  Generated {len(response['output'])} MCQ questions via Qwen3-0.6B LLM")
+
+
+def test_get_boolq_llm():
+    endpoint = '/get_boolq_llm'
+    data = {
+        'input_text': input_text,
+        'max_questions': 2
+    }
+    response = make_post_request(endpoint, data)
+    print(f'/get_boolq_llm Response: {response}')
+    assert 'output' in response
+    assert len(response['output']) > 0
+    for bool_q in response['output']:
+        assert 'question' in bool_q
+        assert 'answer' in bool_q
+        assert isinstance(bool_q['answer'], bool)  # Should be boolean
+    print(f"  Generated {len(response['output'])} boolean questions via Qwen3-0.6B LLM")
+
+
+def test_get_problems_llm():
+    endpoint = '/get_problems_llm'
+    data = {
+        'input_text': input_text,
+        'max_questions_mcq': 1,
+        'max_questions_boolq': 1,
+        'max_questions_shortq': 1
+    }
+    response = make_post_request(endpoint, data)
+    print(f'/get_problems_llm Response: {response}')
+    assert 'output' in response
+    assert len(response['output']) == 3  # Should have 1 of each type
+    
+    # Check that we have all three types
+    types_found = set()
+    for item in response['output']:
+        assert 'type' in item
+        types_found.add(item['type'])
+        
+        if item['type'] == 'mcq':
+            assert 'question' in item and 'options' in item and 'correct_answer' in item
+        elif item['type'] == 'boolean':
+            assert 'question' in item and 'answer' in item
+        elif item['type'] == 'short_answer':
+            assert 'question' in item and 'answer' in item
+    
+    assert types_found == {'mcq', 'boolean', 'short_answer'}
+    print(f"  Generated mixed question set with {len(response['output'])} questions via Qwen3-0.6B LLM")
+
 def test_get_problems():
     endpoint = '/get_problems'
     data = {
@@ -126,6 +191,9 @@ def make_post_request(endpoint, data):
 
 if __name__ == '__main__':
     test_get_shortq_llm()
+    test_get_mcq_llm()
+    test_get_boolq_llm()
+    test_get_problems_llm()
     test_get_mcq()
     test_get_boolq()
     test_get_shortq()

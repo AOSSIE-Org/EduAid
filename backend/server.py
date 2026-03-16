@@ -12,7 +12,7 @@ nltk.download("stopwords")
 nltk.download('punkt_tab')
 from Generator import main
 from Generator.question_filters import make_question_harder
-from Generator.llm_generator import LLMShortAnswerGenerator
+from Generator.llm_generator import LLMQuestionGenerator
 import re
 import json
 import spacy
@@ -43,7 +43,7 @@ docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
-llm_shortq = LLMShortAnswerGenerator()
+llm_generator = LLMQuestionGenerator()
 
 
 def process_input_text(input_text, use_mediawiki):
@@ -102,10 +102,57 @@ def get_shortq_llm():
         use_mediawiki = data.get("use_mediawiki", 0)
         max_questions = data.get("max_questions", 4)
         input_text = process_input_text(input_text, use_mediawiki)
-        questions = llm_shortq.generate_short_questions(input_text, max_questions)
+        questions = llm_generator.generate_short_questions(input_text, max_questions)
         return jsonify({"output": questions})
     except Exception as e:
         app.logger.exception("Error in /get_shortq_llm: %s", e)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/get_mcq_llm", methods=["POST"])
+def get_mcq_llm():
+    try:
+        data = request.get_json()
+        input_text = data.get("input_text", "")
+        use_mediawiki = data.get("use_mediawiki", 0)
+        max_questions = data.get("max_questions", 4)
+        input_text = process_input_text(input_text, use_mediawiki)
+        questions = llm_generator.generate_mcq_questions(input_text, max_questions)
+        return jsonify({"output": questions})
+    except Exception as e:
+        app.logger.exception("Error in /get_mcq_llm: %s", e)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/get_boolq_llm", methods=["POST"])
+def get_boolq_llm():
+    try:
+        data = request.get_json()
+        input_text = data.get("input_text", "")
+        use_mediawiki = data.get("use_mediawiki", 0)
+        max_questions = data.get("max_questions", 4)
+        input_text = process_input_text(input_text, use_mediawiki)
+        questions = llm_generator.generate_boolean_questions(input_text, max_questions)
+        return jsonify({"output": questions})
+    except Exception as e:
+        app.logger.exception("Error in /get_boolq_llm: %s", e)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/get_problems_llm", methods=["POST"])
+def get_problems_llm():
+    try:
+        data = request.get_json()
+        input_text = data.get("input_text", "")
+        use_mediawiki = data.get("use_mediawiki", 0)
+        mcq_count = data.get("max_questions_mcq", 2)
+        bool_count = data.get("max_questions_boolq", 2)
+        short_count = data.get("max_questions_shortq", 2)
+        input_text = process_input_text(input_text, use_mediawiki)
+        questions = llm_generator.generate_all_questions(input_text, mcq_count, bool_count, short_count)
+        return jsonify({"output": questions})
+    except Exception as e:
+        app.logger.exception("Error in /get_problems_llm: %s", e)
         return jsonify({"error": "Internal server error"}), 500
 
 
