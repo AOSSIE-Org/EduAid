@@ -110,21 +110,3 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.action.setBadgeText({ text: "" });
   });
   
-chrome.storage.onChanged.addListener((changes, namespace) => {
-    for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
-        console.log(
-            `Storage key "${key}" in namespace "${namespace}" changed.`,
-            `Old value was "${oldValue}", new value is "${newValue}".`
-        );
-        
-        // Store the key-value pair in local storage
-        chrome.storage.local.set({ [key]: newValue }, () => {
-            if (chrome.runtime.lastError) {
-                console.error("Error storing data:", chrome.runtime.lastError);
-            } else {
-                console.log(`Stored key-value pair: { ${key}: ${newValue} }`);
-            }
-        });
-    }
-});
-
