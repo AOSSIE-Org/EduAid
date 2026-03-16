@@ -32,3 +32,5 @@ mammoth
 mediawikiapi
 PyMuPDF
 textblob
+openai>=1.0.0
+anthropic>=0.18.0

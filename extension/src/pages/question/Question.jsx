@@ -37,8 +37,11 @@ function Question() {
       JSON.parse(localStorage.getItem("qaPairs")) || {};
     if (qaPairsFromStorage) {
       const combinedQaPairs = [];
+      const hasStructuredMcq = Array.isArray(qaPairsFromStorage?.output_mcq?.questions) && qaPairsFromStorage.output_mcq.questions.length > 0;
+      const hasStructuredShort = Array.isArray(qaPairsFromStorage?.output_shortq?.questions) && qaPairsFromStorage.output_shortq.questions.length > 0;
+      const hasStructuredBool = Array.isArray(qaPairsFromStorage?.output_boolq?.Boolean_Questions) && qaPairsFromStorage.output_boolq.Boolean_Questions.length > 0;
 
-      if (qaPairsFromStorage["output_boolq"]) {
+      if (Array.isArray(qaPairsFromStorage?.output_boolq?.Boolean_Questions)) {
         qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
           (question, index) => {
             combinedQaPairs.push({
@@ -50,7 +53,7 @@ function Question() {
         );
       }
 
-      if (qaPairsFromStorage["output_mcq"]) {
+      if (Array.isArray(qaPairsFromStorage?.output_mcq?.questions)) {
         qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
@@ -62,7 +65,20 @@ function Question() {
         });
       }
 
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
+      if (Array.isArray(qaPairsFromStorage?.output_shortq?.questions)) {
+        qaPairsFromStorage["output_shortq"]["questions"].forEach((qaPair) => {
+          combinedQaPairs.push({
+            question:
+              qaPair.question || qaPair.question_statement || qaPair.Question,
+            options: qaPair.options,
+            answer: qaPair.answer || qaPair.Answer,
+            context: qaPair.context,
+            question_type: "Short",
+          });
+        });
+      }
+
+      if (!hasStructuredMcq && questionType === "get_mcq" && Array.isArray(qaPairsFromStorage["output"])) {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
@@ -74,14 +90,21 @@ function Question() {
         });
       }
 
-      if (questionType == "get_boolq") {
+      if (!hasStructuredBool && questionType === "get_boolq" && Array.isArray(qaPairsFromStorage["output"])) {
         qaPairsFromStorage["output"].forEach((qaPair) => {
+          const normalizedQuestion =
+            typeof qaPair === "string"
+              ? qaPair
+              : qaPair?.question || qaPair?.text || JSON.stringify(qaPair || "");
+          if (!normalizedQuestion) {
+            return;
+          }
           combinedQaPairs.push({
-            question: qaPair,
+            question: normalizedQuestion,
             question_type: "Boolean",
           });
         });
-      } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
+      } else if (!hasStructuredShort && Array.isArray(qaPairsFromStorage["output"]) && questionType !== "get_mcq") {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question:

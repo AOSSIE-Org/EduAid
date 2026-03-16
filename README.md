@@ -105,6 +105,9 @@ npm run build
 2. Enable "Developer mode" (top-right corner).
 3. Click on "Load Unpacked" and select the `dist` folder created in the previous step.
 
+External provider mode note:
+- If you enable external OpenAI/Anthropic mode in the extension, your API key is stored in `chrome.storage.local` and requests are sent directly from the browser extension to provider APIs.
+
 #### EduAid Web App
 In addition to the browser extension, EduAid also offers a web app that provides the same powerful features for quiz generation. The web app allows you to access EduAid's capabilities directly from your browser without needing to install any extensions. Just start the backend server locally and:
 

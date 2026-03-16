@@ -6,6 +6,16 @@ import stars from "../../assets/stars.png";
 import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
 import { FaClipboard , FaWikipediaW  } from "react-icons/fa";
+import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
+
+const OPENAI_HARDCODED_MODELS = [
+  "gpt-4",
+  "gpt-4o",
+  "gpt-4o-mini",
+  "gpt-5.1",
+  "gpt-5.4",
+];
 
 function Second() {
   const [text, setText] = useState("");
@@ -16,6 +26,54 @@ function Second() {
   const [fileContent, setFileContent] = useState('');
   const [docUrl, setDocUrl] = useState('');
   const [isToggleOn, setIsToggleOn] = useState(0);
+  const [provider, setProvider] = useState("openai");
+  const [useExternalLlm, setUseExternalLlm] = useState(false);
+  const [apiKey, setApiKey] = useState("");
+  const [modelOptions, setModelOptions] = useState([]);
+  const [selectedModel, setSelectedModel] = useState("");
+  const [modelLoading, setModelLoading] = useState(false);
+  const [modelError, setModelError] = useState("");
+  const [backendError, setBackendError] = useState("");
+  const [backendInfo, setBackendInfo] = useState("");
+
+  const getChromeStorage = (keys) =>
+    new Promise((resolve) => {
+      chrome.storage.local.get(keys, resolve);
+    });
+
+  const setChromeStorage = (data) =>
+    new Promise((resolve) => {
+      chrome.storage.local.set(data, resolve);
+    });
+
+  const getPreferredModelForProvider = (providerName, models) => {
+    if (!Array.isArray(models) || models.length === 0) {
+      return "";
+    }
+
+    if (providerName === "openai") {
+      const exact = models.find((m) => m === "gpt-4o-mini");
+      if (exact) {
+        return exact;
+      }
+    }
+
+    if (providerName === "anthropic") {
+      const exact = models.find((m) => m === "claude-sonnet-4-5");
+      if (exact) {
+        return exact;
+      }
+      const fuzzy = models.find((m) => {
+        const id = String(m || "").toLowerCase();
+        return id.includes("sonnet") && id.includes("4-5");
+      });
+      if (fuzzy) {
+        return fuzzy;
+      }
+    }
+
+    return models[0];
+  };
 
   useEffect(() => {
     chrome.storage.local.get(["selectedText"], (result) => {
@@ -26,6 +84,38 @@ function Second() {
       }
     });
   }, [])
+
+  useEffect(() => {
+    const loadLlmSettings = async () => {
+      const stored = await getChromeStorage([
+        "llmUseExternal",
+        "llmProvider",
+        "llmApiKey",
+        "llmModel",
+        "llmModelsByProvider",
+      ]);
+
+      setUseExternalLlm(Boolean(stored.llmUseExternal));
+      const storedProvider = stored.llmProvider || "openai";
+      setProvider(storedProvider);
+      setApiKey(stored.llmApiKey || "");
+
+      const modelsByProvider = stored.llmModelsByProvider || {};
+      const providerModels =
+        storedProvider === "openai"
+          ? [...OPENAI_HARDCODED_MODELS]
+          : modelsByProvider[storedProvider] || [];
+      setModelOptions(providerModels);
+
+      if (stored.llmModel && providerModels.includes(stored.llmModel)) {
+        setSelectedModel(stored.llmModel);
+      } else if (providerModels.length > 0) {
+        setSelectedModel(getPreferredModelForProvider(storedProvider, providerModels));
+      }
+    };
+
+    loadLlmSettings();
+  }, []);
 
 
   const toggleSwitch = () => {
@@ -60,8 +150,116 @@ function Second() {
     fileInputRef.current.click();
   };
 
+  const handleProviderChange = async (event) => {
+    const nextProvider = event.target.value;
+    setProvider(nextProvider);
+    setModelError("");
+
+    const stored = await getChromeStorage(["llmModelsByProvider", "llmModel"]);
+    const modelsByProvider = stored.llmModelsByProvider || {};
+    const providerModels =
+      nextProvider === "openai"
+        ? [...OPENAI_HARDCODED_MODELS]
+        : modelsByProvider[nextProvider] || [];
+    setModelOptions(providerModels);
+    const defaultModel = getPreferredModelForProvider(nextProvider, providerModels);
+    setSelectedModel(defaultModel);
+
+    await setChromeStorage({
+      llmProvider: nextProvider,
+      llmModel: defaultModel,
+    });
+  };
+
+  const handleFetchModels = async () => {
+    if (!apiKey.trim()) {
+      setModelError("Please enter an API key first.");
+      return;
+    }
+
+    setModelLoading(true);
+    setModelError("");
+
+    try {
+      let modelIds = [];
+
+      if (provider === "openai") {
+        modelIds = [...OPENAI_HARDCODED_MODELS];
+      } else {
+        const anthropic = new Anthropic({
+          apiKey: apiKey.trim(),
+          dangerouslyAllowBrowser: true,
+        });
+        const response = await anthropic.models.list();
+        if (response && Symbol.asyncIterator in response) {
+          for await (const model of response) {
+            if (model?.id) {
+              modelIds.push(model.id);
+            }
+          }
+        } else {
+          modelIds = (response?.data || [])
+            .map((model) => model?.id)
+            .filter(Boolean);
+        }
+      }
+
+      const uniqueSortedModels = Array.from(new Set(modelIds)).sort((a, b) =>
+        a.localeCompare(b)
+      );
+
+      if (uniqueSortedModels.length === 0) {
+        setModelError("No models found for this account.");
+        setModelOptions([]);
+        setSelectedModel("");
+        return;
+      }
+
+      setModelOptions(uniqueSortedModels);
+      const previous = selectedModel;
+      const nextModel =
+        previous && uniqueSortedModels.includes(previous)
+          ? previous
+          : getPreferredModelForProvider(provider, uniqueSortedModels);
+      setSelectedModel(nextModel);
+
+      const stored = await getChromeStorage(["llmModelsByProvider"]);
+      const modelsByProvider = stored.llmModelsByProvider || {};
+      modelsByProvider[provider] = uniqueSortedModels;
+
+      await setChromeStorage({
+        llmUseExternal: useExternalLlm,
+        llmProvider: provider,
+        llmApiKey: apiKey.trim(),
+        llmModel: nextModel,
+        llmModelsByProvider: modelsByProvider,
+      });
+    } catch (error) {
+      console.error("Error fetching models:", error);
+      setModelError("Could not fetch models. Please check provider and API key.");
+      setModelOptions([]);
+      setSelectedModel("");
+    } finally {
+      setModelLoading(false);
+    }
+  };
+
   const handleSaveToLocalStorage = async () => {
     setLoading(true);
+    setBackendError("");
+    setBackendInfo("");
+    const hasExternalConfig = Boolean(useExternalLlm && apiKey.trim() && selectedModel);
+
+    if (useExternalLlm && !hasExternalConfig) {
+      setBackendInfo("External config incomplete - falling back to local generation.");
+    }
+
+    await setChromeStorage({
+      llmUseExternal: useExternalLlm,
+      llmProvider: provider,
+      llmApiKey: apiKey.trim(),
+      llmModel: selectedModel,
+    });
 
     // Check if a Google Doc URL is provided
     if (docUrl) {
@@ -100,7 +298,8 @@ function Second() {
       await sendToBackend(
         text,
         difficulty,
-        localStorage.getItem("selectedQuestionType")
+        localStorage.getItem("selectedQuestionType"),
+        hasExternalConfig
       );
     }
   };
@@ -118,6 +317,10 @@ function Second() {
   };
 
   const getEndpoint = (difficulty, questionType) => {
+    // External providers are currently implemented on base endpoints.
+    if (useExternalLlm) {
+      return questionType;
+    }
     if (difficulty !== "Easy Difficulty") {
       if (questionType === "get_shortq") {
         return "get_shortq_hard";
@@ -128,14 +331,28 @@ function Second() {
     return questionType;
   };
 
-  const sendToBackend = async (data, difficulty, questionType) => {
+  const sendToBackend = async (data, difficulty, questionType, hasExternalConfig = false) => {
     const endpoint = getEndpoint(difficulty, questionType);
     try {
-      const formData = JSON.stringify({
+      const payload = {
         input_text: data,
         max_questions: numQuestions,
-        use_mediawiki: isToggleOn
-      });
+        use_mediawiki: isToggleOn,
+      };
+
+      if (questionType === "get_problems") {
+        payload.max_questions_mcq = numQuestions;
+        payload.max_questions_boolq = numQuestions;
+        payload.max_questions_shortq = numQuestions;
+      }
+
+      if (hasExternalConfig) {
+        payload.llm_provider = provider;
+        payload.llm_model = selectedModel;
+        payload.llm_api_key = apiKey.trim();
+      }
+
+      const formData = JSON.stringify(payload);
       const response = await fetch(`http://localhost:5000/${endpoint}`, {
         method: "POST",
         body: formData,
@@ -165,10 +382,21 @@ function Second() {
 
         window.location.href = "/src/pages/question/question.html";
       } else {
-        console.error("Backend request failed.");
+        let errorMessage = "Backend request failed.";
+        try {
+          const errorData = await response.json();
+          if (errorData?.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (parseError) {
+          // Keep generic message when response body is not JSON.
+        }
+        setBackendError(errorMessage);
+        console.error(errorMessage);
       }
     } catch (error) {
       console.error("Error:", error);
+      setBackendError("Could not reach backend. Ensure backend is running.");
     } finally {
       setLoading(false);
     }
@@ -258,12 +486,91 @@ function Second() {
             onChange={(e) => setDocUrl(e.target.value)}
           />
         </div>
+        <div className="mx-3 mt-3 rounded-xl border border-[#3E5063] p-3 bg-[#202838] bg-opacity-60">
+          <div className="text-white text-sm font-semibold mb-2">LLM Provider Settings</div>
+          <div className="mb-2">
+            <label className="text-white text-sm flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={useExternalLlm}
+                onChange={(e) => setUseExternalLlm(e.target.checked)}
+              />
+              Use external provider API (OpenAI / Anthropic)
+            </label>
+          </div>
+          {!useExternalLlm && (
+            <div className="text-[#AFC2D4] text-xs mb-2">
+              Local/default generation is active. Enable the checkbox to use provider models.
+            </div>
+          )}
+          {useExternalLlm && (
+            <>
+          <div className="flex gap-2 mb-2">
+            <select
+              value={provider}
+              onChange={handleProviderChange}
+              className="bg-[#101522] text-white rounded-xl px-3 py-2"
+            >
+              <option value="openai">openai</option>
+              <option value="anthropic">anthropic</option>
+            </select>
+            <input
+              type="password"
+              placeholder="Enter API key"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              className="flex-1 bg-[#101522] text-white rounded-xl px-3 py-2"
+            />
+          </div>
+          <div className="flex gap-2 mb-2">
+            <button
+              type="button"
+              onClick={handleFetchModels}
+              disabled={modelLoading}
+              className="bg-[#3e506380] text-sm rounded-xl text-white border border-[#cbd0dc80] px-4 py-2 disabled:opacity-60"
+            >
+              {modelLoading ? "Loading models..." : "Load Models"}
+            </button>
+            <select
+              value={selectedModel}
+              onChange={async (e) => {
+                const previousModel = selectedModel;
+                const model = e.target.value;
+                setSelectedModel(model);
+                try {
+                  await setChromeStorage({ llmModel: model });
+                } catch (err) {
+                  setSelectedModel(previousModel);
+                  setBackendError("Failed to save model selection. Please try again.");
+                }
+              }}
+              disabled={modelOptions.length === 0}
+              className="flex-1 bg-[#101522] text-white rounded-xl px-3 py-2 disabled:opacity-60"
+            >
+              {modelOptions.length === 0 ? (
+                <option value="">No models loaded</option>
+              ) : (
+                modelOptions.map((modelId) => (
+                  <option key={modelId} value={modelId}>
+                    {modelId}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+            </>
+          )}
+          {modelError && <div className="text-[#FF8A8A] text-xs">{modelError}</div>}
+          {backendInfo && <div className="text-[#F6E7A8] text-xs mt-1">{backendInfo}</div>}
+          {backendError && <div className="text-[#FF8A8A] text-xs mt-1">{backendError}</div>}
+        </div>
         <div className="flex justify-center gap-1 p-2">
           <div className="relative items-center">
             <select
               value={difficulty}
               onChange={handleDifficultyChange}
-              className="bg-[#202838] text-white rounded-xl px-5 py-3 appearance-none"
+              disabled={useExternalLlm}
+              className="bg-[#202838] text-white rounded-xl px-5 py-3 appearance-none disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <option>Easy Difficulty</option>
               <option>Medium Difficulty</option>

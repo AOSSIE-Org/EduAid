@@ -50,18 +50,303 @@ def process_input_text(input_text, use_mediawiki):
     return input_text
 
 
+def _extract_json_object(raw_text):
+    if not raw_text:
+        return {}
+    cleaned = raw_text.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.replace("```json", "").replace("```", "").strip()
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", cleaned, re.DOTALL)
+        if not match:
+            raise
+        return json.loads(match.group(0))
+
+
+def _norm_text(value):
+    return re.sub(r"\s+", " ", str(value or "")).strip()
+
+
+def _dedupe_preserve_order(items):
+    seen = set()
+    out = []
+    for item in items:
+        key = _norm_text(item).lower()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(_norm_text(item))
+    return out
+
+
+def _sanitize_llm_output(question_type, llm_output, max_questions):
+    target_n = max(1, int(max_questions))
+    if not isinstance(llm_output, dict):
+        if question_type == "get_boolq":
+            return {"Boolean_Questions": []}
+        return {"questions": []}
+
+    if question_type == "get_mcq":
+        cleaned_questions = []
+        seen_q = set()
+        for item in llm_output.get("questions", []):
+            q_text = _norm_text(item.get("question_statement") or item.get("question"))
+            ans = _norm_text(item.get("answer"))
+            ctx = _norm_text(item.get("context"))
+            if not q_text or not ans:
+                continue
+            q_key = q_text.lower()
+            if q_key in seen_q:
+                continue
+            seen_q.add(q_key)
+
+            # Remove duplicate/empty options and never include answer inside options.
+            raw_options = item.get("options", [])
+            option_list = raw_options if isinstance(raw_options, list) else []
+            deduped_options = _dedupe_preserve_order(option_list)
+            deduped_options = [opt for opt in deduped_options if opt.lower() != ans.lower()]
+            deduped_options = deduped_options[:3]
+
+            cleaned_questions.append(
+                {
+                    "question_statement": q_text,
+                    "answer": ans,
+                    "options": deduped_options,
+                    "context": ctx,
+                }
+            )
+            if len(cleaned_questions) >= target_n:
+                break
+
+        return {"questions": cleaned_questions}
+
+    if question_type == "get_boolq":
+        bool_questions = _dedupe_preserve_order(llm_output.get("Boolean_Questions", []))[:target_n]
+        return {"Boolean_Questions": bool_questions}
+
+    # get_shortq
+    cleaned_short = []
+    seen_q = set()
+    for item in llm_output.get("questions", []):
+        q_text = _norm_text(item.get("question") or item.get("question_statement"))
+        ans = _norm_text(item.get("answer") or item.get("Answer"))
+        ctx = _norm_text(item.get("context"))
+        if not q_text:
+            continue
+        q_key = q_text.lower()
+        if q_key in seen_q:
+            continue
+        seen_q.add(q_key)
+        cleaned_short.append({"question": q_text, "answer": ans, "context": ctx})
+        if len(cleaned_short) >= target_n:
+            break
+    return {"questions": cleaned_short}
+
+
+def _mcq_quality_score(sanitized_output):
+    questions = sanitized_output.get("questions", []) if isinstance(sanitized_output, dict) else []
+    if not isinstance(questions, list):
+        return -1
+    score = 0
+    for q in questions:
+        options = q.get("options", []) if isinstance(q, dict) else []
+        score += min(len(options), 3)
+    score += len(questions) * 2
+    return score
+
+
+def _should_retry_mcq(sanitized_output, max_questions):
+    questions = sanitized_output.get("questions", []) if isinstance(sanitized_output, dict) else []
+    if not isinstance(questions, list):
+        return True
+    if len(questions) < max(1, int(max_questions)):
+        return True
+    return any(len(q.get("options", [])) < 2 for q in questions if isinstance(q, dict))
+
+
+def _call_llm_for_questions(
+    input_text,
+    max_questions,
+    question_type,
+    llm_provider,
+    llm_model,
+    llm_api_key
+):
+    if len(input_text) > 12000:
+        app.logger.warning("Input text truncated from %s to 12000 chars for external LLM.", len(input_text))
+    trimmed_input = input_text[:12000]
+    if question_type == "get_mcq":
+        schema_hint = (
+            '{"questions":[{"question_statement":"string","options":["string","string","string"],'
+            '"answer":"string","context":"string"}]}'
+        )
+    elif question_type == "get_boolq":
+        schema_hint = '{"Boolean_Questions":["string"]}'
+    else:
+        schema_hint = '{"questions":[{"question":"string","answer":"string","context":"string"}]}'
+
+    prompt = (
+        f"Generate exactly {int(max_questions)} {question_type} items from the text below.\n"
+        "Return ONLY valid JSON (no markdown, no explanation).\n"
+        "Questions must be non-redundant, phrased differently, and test different angles.\n"
+        "For MCQ: provide exactly one correct answer; options must be distinct, plausible, and must not repeat the answer text.\n"
+        f"Required JSON schema: {schema_hint}\n\n"
+        f"Text:\n{trimmed_input}"
+    )
+    strict_mcq_prompt = (
+        f"Generate exactly {int(max_questions)} get_mcq items from the text below.\n"
+        "Return ONLY valid JSON.\n"
+        "For each MCQ: one correct answer and exactly 3 incorrect options.\n"
+        "Incorrect options must be unique, plausible, and not paraphrases of the answer.\n"
+        "Each question must test a different concept from the text and avoid repeated wording.\n"
+        f"Required JSON schema: {schema_hint}\n\n"
+        f"Text:\n{trimmed_input}"
+    )
+
+    if llm_provider == "openai":
+        from openai import (
+            OpenAI,
+            APIError,
+            OpenAIError,
+            APIConnectionError,
+            APITimeoutError,
+            RateLimitError,
+            AuthenticationError,
+            BadRequestError,
+        )
+
+        client = OpenAI(api_key=llm_api_key)
+
+        def run_openai_json(prompt_text):
+            response = client.chat.completions.create(
+                model=llm_model,
+                messages=[
+                    {"role": "system", "content": "You generate quiz data as strict JSON only."},
+                    {"role": "user", "content": prompt_text},
+                ],
+                temperature=0.2,
+                response_format={"type": "json_object"},
+            )
+            content = response.choices[0].message.content if response.choices else "{}"
+            parsed = _extract_json_object(content)
+            return _sanitize_llm_output(question_type, parsed, max_questions)
+
+        try:
+            sanitized = run_openai_json(prompt)
+            if question_type == "get_mcq" and _should_retry_mcq(sanitized, max_questions):
+                retry_sanitized = run_openai_json(strict_mcq_prompt)
+                if _mcq_quality_score(retry_sanitized) > _mcq_quality_score(sanitized):
+                    return retry_sanitized
+            return sanitized
+        except (APIError, OpenAIError, APIConnectionError, APITimeoutError, RateLimitError, AuthenticationError, BadRequestError) as chat_exc:
+            # Some OpenAI models are completion-only; fallback to completions endpoint.
+            try:
+                response = client.completions.create(
+                    model=llm_model,
+                    prompt=(
+                        "You generate quiz data as strict JSON only.\n"
+                        + prompt
+                    ),
+                    max_tokens=2048,
+                    temperature=0.2,
+                )
+                content = response.choices[0].text if response.choices else "{}"
+                parsed = _extract_json_object(content)
+                sanitized = _sanitize_llm_output(question_type, parsed, max_questions)
+                if question_type == "get_mcq" and _should_retry_mcq(sanitized, max_questions):
+                    response_retry = client.completions.create(
+                        model=llm_model,
+                        prompt=("You generate quiz data as strict JSON only.\n" + strict_mcq_prompt),
+                        max_tokens=2048,
+                        temperature=0.2,
+                    )
+                    retry_content = response_retry.choices[0].text if response_retry.choices else "{}"
+                    retry_parsed = _extract_json_object(retry_content)
+                    retry_sanitized = _sanitize_llm_output(question_type, retry_parsed, max_questions)
+                    if _mcq_quality_score(retry_sanitized) > _mcq_quality_score(sanitized):
+                        return retry_sanitized
+                return sanitized
+            except (ValueError, json.JSONDecodeError, KeyError, TypeError):
+                raise chat_exc from None
+            except (APIError, OpenAIError, APIConnectionError, APITimeoutError, RateLimitError, AuthenticationError, BadRequestError) as completion_exc:
+                raise ValueError(f"OpenAI request failed: {completion_exc}") from None
+
+    if llm_provider == "anthropic":
+        from anthropic import Anthropic
+        try:
+            from anthropic import (
+                APIError as AnthropicAPIError,
+                APIConnectionError as AnthropicAPIConnectionError,
+                APITimeoutError as AnthropicAPITimeoutError,
+                AuthenticationError as AnthropicAuthenticationError,
+                RateLimitError as AnthropicRateLimitError,
+            )
+            anthropic_errors = (
+                AnthropicAPIError,
+                AnthropicAPIConnectionError,
+                AnthropicAPITimeoutError,
+                AnthropicAuthenticationError,
+                AnthropicRateLimitError,
+            )
+        except Exception:  # Fallback if SDK version lacks these exception classes
+            anthropic_errors = (Exception,)
+
+        try:
+            client = Anthropic(api_key=llm_api_key)
+
+            def run_anthropic_json(prompt_text):
+                response = client.messages.create(
+                    model=llm_model,
+                    max_tokens=2048,
+                    temperature=0.2,
+                    system="You generate quiz data as strict JSON only.",
+                    messages=[{"role": "user", "content": prompt_text}],
+                )
+                text_chunks = [
+                    chunk.text for chunk in response.content if hasattr(chunk, "text") and chunk.text
+                ]
+                parsed = _extract_json_object("".join(text_chunks))
+                return _sanitize_llm_output(question_type, parsed, max_questions)
+
+            sanitized = run_anthropic_json(prompt)
+            if question_type == "get_mcq" and _should_retry_mcq(sanitized, max_questions):
+                retry_sanitized = run_anthropic_json(strict_mcq_prompt)
+                if _mcq_quality_score(retry_sanitized) > _mcq_quality_score(sanitized):
+                    return retry_sanitized
+            return sanitized
+        except anthropic_errors as anth_exc:
+            raise ValueError(f"Anthropic request failed: {anth_exc}") from None
+
+    raise ValueError("Unsupported llm_provider. Use 'openai' or 'anthropic'.")
+
+
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    llm_provider = data.get("llm_provider", "")
+    llm_model = data.get("llm_model", "")
+    llm_api_key = data.get("llm_api_key", "")
     input_text = process_input_text(input_text, use_mediawiki)
+    truncated = len(input_text) > 12000
+    if llm_provider and llm_model and llm_api_key:
+        try:
+            llm_output = _call_llm_for_questions(
+                input_text, max_questions, "get_mcq", llm_provider, llm_model, llm_api_key
+            )
+            questions = llm_output.get("questions", [])
+            return jsonify({"output": questions, "llm_used": True, "truncated": truncated})
+        except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+            return jsonify({"error": str(exc), "llm_used": True}), 400
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
     )
     questions = output["questions"]
-    return jsonify({"output": questions})
+    return jsonify({"output": questions, "llm_used": False})
 
 
 @app.route("/get_boolq", methods=["POST"])
@@ -70,12 +355,25 @@ def get_boolq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    llm_provider = data.get("llm_provider", "")
+    llm_model = data.get("llm_model", "")
+    llm_api_key = data.get("llm_api_key", "")
     input_text = process_input_text(input_text, use_mediawiki)
+    truncated = len(input_text) > 12000
+    if llm_provider and llm_model and llm_api_key:
+        try:
+            llm_output = _call_llm_for_questions(
+                input_text, max_questions, "get_boolq", llm_provider, llm_model, llm_api_key
+            )
+            boolean_questions = llm_output.get("Boolean_Questions", [])
+            return jsonify({"output": boolean_questions, "llm_used": True, "truncated": truncated})
+        except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+            return jsonify({"error": str(exc), "llm_used": True}), 400
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
     )
     boolean_questions = output["Boolean_Questions"]
-    return jsonify({"output": boolean_questions})
+    return jsonify({"output": boolean_questions, "llm_used": False})
 
 
 @app.route("/get_shortq", methods=["POST"])
@@ -84,12 +382,25 @@ def get_shortq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    llm_provider = data.get("llm_provider", "")
+    llm_model = data.get("llm_model", "")
+    llm_api_key = data.get("llm_api_key", "")
     input_text = process_input_text(input_text, use_mediawiki)
+    truncated = len(input_text) > 12000
+    if llm_provider and llm_model and llm_api_key:
+        try:
+            llm_output = _call_llm_for_questions(
+                input_text, max_questions, "get_shortq", llm_provider, llm_model, llm_api_key
+            )
+            questions = llm_output.get("questions", [])
+            return jsonify({"output": questions, "llm_used": True, "truncated": truncated})
+        except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+            return jsonify({"error": str(exc), "llm_used": True}), 400
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
     )
     questions = output["questions"]
-    return jsonify({"output": questions})
+    return jsonify({"output": questions, "llm_used": False})
 
 
 @app.route("/get_problems", methods=["POST"])
@@ -100,7 +411,52 @@ def get_problems():
     max_questions_mcq = data.get("max_questions_mcq", 4)
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
+    llm_provider = data.get("llm_provider", "")
+    llm_model = data.get("llm_model", "")
+    llm_api_key = data.get("llm_api_key", "")
     input_text = process_input_text(input_text, use_mediawiki)
+    truncated = len(input_text) > 12000
+    if llm_provider and llm_model and llm_api_key:
+        try:
+            output_mcq = _call_llm_for_questions(
+                input_text,
+                max_questions_mcq,
+                "get_mcq",
+                llm_provider,
+                llm_model,
+                llm_api_key,
+            )
+            output_boolq = _call_llm_for_questions(
+                input_text,
+                max_questions_boolq,
+                "get_boolq",
+                llm_provider,
+                llm_model,
+                llm_api_key,
+            )
+            output_shortq = _call_llm_for_questions(
+                input_text,
+                max_questions_shortq,
+                "get_shortq",
+                llm_provider,
+                llm_model,
+                llm_api_key,
+            )
+            return jsonify(
+                {
+                    "output_mcq": {"questions": output_mcq.get("questions", [])},
+                    "output_boolq": {
+                        "Boolean_Questions": output_boolq.get("Boolean_Questions", []),
+                        "Text": input_text,
+                    },
+                    "output_shortq": {"questions": output_shortq.get("questions", [])},
+                    "llm_used": True,
+                    "truncated": truncated,
+                }
+            )
+        except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+            return jsonify({"error": str(exc), "llm_used": True}), 400
+
     output1 = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions_mcq}
     )
@@ -111,7 +467,15 @@ def get_problems():
         {"input_text": input_text, "max_questions": max_questions_shortq}
     )
     return jsonify(
-        {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
+        {
+            "output_mcq": {"questions": output1.get("questions", [])},
+            "output_boolq": {
+                "Boolean_Questions": output2.get("Boolean_Questions", []),
+                "Text": input_text,
+            },
+            "output_shortq": {"questions": output3.get("questions", [])},
+            "llm_used": False,
+        }
     )
 
 @app.route("/get_mcq_answer", methods=["POST"])
