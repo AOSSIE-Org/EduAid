@@ -3,7 +3,6 @@ Celery tasks for asynchronous AI model inference.
 These tasks wrap the existing generator classes to run in background workers.
 """
 import logging
-import torch
 from celery import Task
 from backend.celery_worker import celery_app
 from Generator import main
@@ -12,12 +11,6 @@ from mediawikiapi import MediaWikiAPI
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Initialize generators (these will be loaded once per worker)
-MCQGen = None
-BoolQGen = None
-ShortQGen = None
-mediawikiapi = None
 
 
 class GeneratorTask(Task):
@@ -95,7 +88,7 @@ def generate_mcq_task(self, input_text, max_questions=4, use_mediawiki=0):
         return output
         
     except Exception as e:
-        logger.error(f"Error in MCQ generation: {str(e)}", exc_info=True)
+        logger.error(f"Error in MCQ generation: {e!s}", exc_info=True)
         raise
 
 
@@ -181,7 +174,7 @@ def generate_all_questions_task(self, input_text, max_questions_mcq=4, max_quest
         Dictionary containing all generated question types
     """
     try:
-        logger.info(f"Starting combined question generation task")
+        logger.info("Starting combined question generation task")
         
         # Process input text
         processed_text = process_input_text(input_text, use_mediawiki, self.mediawiki)
@@ -208,9 +201,9 @@ def generate_all_questions_task(self, input_text, max_questions_mcq=4, max_quest
             "output_shortq": output_shortq
         }
         
-        logger.info(f"Combined generation completed")
+        logger.info("Combined generation completed")
         return result
         
     except Exception as e:
-        logger.error(f"Error in combined generation: {str(e)}", exc_info=True)
+        logger.error(f"Error in combined generation: {e!s}", exc_info=True)
         raise

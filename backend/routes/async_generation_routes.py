@@ -13,6 +13,7 @@ from backend.tasks.inference_tasks import (
     generate_shortq_task,
     generate_all_questions_task
 )
+from backend.celery_worker import celery_app
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ def _parse_bounded_int(data, key, default, min_value=1, max_value=20):
     try:
         value = int(data.get(key, default))
     except (TypeError, ValueError):
-        raise ValueError(f"{key} must be an integer")
+        raise ValueError(f"{key} must be an integer") from None
     
     if value < min_value or value > max_value:
         raise ValueError(f"{key} must be between {min_value} and {max_value}")
@@ -47,7 +48,7 @@ def generate_mcq_async():
     try:
         data = request.get_json(silent=True) or {}
         input_text = data.get("input_text", "")
-        use_mediawiki = data.get("use_mediawiki", 0)
+        use_mediawiki = 1 if data.get("use_mediawiki") in (1, True, "1") else 0
         max_questions = _parse_bounded_int(data, "max_questions", 4)
         
         if not input_text.strip():
@@ -64,7 +65,7 @@ def generate_mcq_async():
         }), 202
 
     except ValueError as e:
-        logger.warning(f"Validation error in MCQ task: {str(e)}")
+        logger.warning(f"Validation error in MCQ task: {e!s}")
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         logger.error(f"Error creating MCQ task: {str(e)}", exc_info=True)
@@ -191,7 +192,6 @@ def get_task_status(task_id):
         - revoked: Task was cancelled
     """
     try:
-        from celery_worker import celery_app
         task_result = AsyncResult(task_id, app=celery_app)    
         response = {
             "task_id": task_id,
@@ -231,7 +231,6 @@ def get_task_result(task_id):
         - If failed: error message
     """
     try:
-        from celery_worker import celery_app
         task_result = AsyncResult(task_id, app=celery_app)
         
         if task_result.state == 'PENDING':
