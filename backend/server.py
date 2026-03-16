@@ -15,7 +15,9 @@ from Generator.question_filters import make_question_harder
 import re
 import json
 import spacy
-from transformers import pipeline
+from transformers import AutoModelForQuestionAnswering, AutoTokenizer
+import torch
+>>>>>>> Stashed changes
 from spacy.lang.en.stop_words import STOP_WORDS
 from string import punctuation
 from heapq import nlargest
@@ -41,7 +43,7 @@ qg = main.QuestionGenerator()
 docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
-qa_model = pipeline("question-answering")
+
 
 
 def process_input_text(input_text, use_mediawiki):
@@ -74,7 +76,7 @@ def get_boolq():
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    boolean_questions = output["Boolean_Questions"]
+    boolean_questions = output.get("Boolean_Questions", [])
     return jsonify({"output": boolean_questions})
 
 

@@ -7,14 +7,15 @@ import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
-  const[questionType] = useState(
+  const [questionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
-  const[editingIndex, setEditingIndex] = useState(null);
+  const [editingIndex, setEditingIndex] = useState(null);
   const [editedQuestion, setEditedQuestion] = useState("");
   const [editedAnswer, setEditedAnswer] = useState("");
-  const[editedOptions, setEditedOptions] = useState([]);
+  const [editedOptions, setEditedOptions] = useState([]);
   const [fontBytes, setFontBytes] = useState(null);
+  const [fontLoadError, setFontLoadError] = useState(false);
 
   useEffect(() => {
     const loadFont = async () => {
@@ -28,10 +29,11 @@ const Output = () => {
         setFontBytes(arrayBuffer);
       } catch (e) {
         console.error("Failed to load Noto Sans font:", e);
+        setFontLoadError(true);
       }
     };
     loadFont();
-  },[]);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -42,9 +44,9 @@ const Output = () => {
       if (event.target instanceof Node) {
         // Only hide if the click is outside BOTH the dropdown and its trigger button
         if (
-          dropdown && 
+          dropdown &&
           !dropdown.contains(event.target) &&
-          triggerBtn && 
+          triggerBtn &&
           !triggerBtn.contains(event.target)
         ) {
           dropdown.classList.add('hidden');
@@ -54,7 +56,7 @@ const Output = () => {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  },[]);
+  }, []);
 
   function shuffleArray(array) {
     const shuffledArray = [...array];
@@ -68,7 +70,7 @@ const Output = () => {
   const shuffledOptionsMap = useMemo(() => {
     return qaPairs.map((qaPair) => {
       const combinedOptions = qaPair.options
-        ?[...qaPair.options, qaPair.answer]
+        ? [...qaPair.options, qaPair.answer]
         : [qaPair.answer];
       return shuffleArray(combinedOptions);
     });
@@ -86,11 +88,11 @@ const Output = () => {
     setEditingIndex(index);
     setEditedQuestion(qaPairs[index].question);
     setEditedAnswer(qaPairs[index].answer || "");
-    setEditedOptions(qaPairs[index].options ||[]);
+    setEditedOptions(qaPairs[index].options || []);
   };
 
   const handleSaveQuestion = (index) => {
-    const updatedQaPairs =[...qaPairs];
+    const updatedQaPairs = [...qaPairs];
     updatedQaPairs[index] = {
       ...updatedQaPairs[index],
       question: editedQuestion,
@@ -112,7 +114,7 @@ const Output = () => {
   };
 
   const handleOptionChange = (optionIndex, value) => {
-    const updatedOptions =[...editedOptions];
+    const updatedOptions = [...editedOptions];
     updatedOptions[optionIndex] = value;
     setEditedOptions(updatedOptions);
   };
@@ -416,19 +418,24 @@ const Output = () => {
             <div className="relative w-full sm:w-auto">
               <button
                 id="pdfTriggerButton"
-                className={`${
-                  !fontBytes
+                className={`${fontLoadError
                     ? 'bg-gray-500 cursor-not-allowed'
-                    : 'bg-[#518E8E] hover:bg-[#3a6b6b]'
-                } items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base transition-colors justify-center`}
+                    : !fontBytes
+                      ? 'bg-gray-500 cursor-not-allowed'
+                      : 'bg-[#518E8E] hover:bg-[#3a6b6b]'
+                  } items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base transition-colors justify-center`}
                 onClick={() => {
                   if (fontBytes) {
                     document.getElementById('pdfDropdown').classList.toggle('hidden');
                   }
                 }}
-                disabled={!fontBytes}
+                disabled={!fontBytes || fontLoadError}
               >
-                {!fontBytes ? 'Loading Font...' : 'Generate PDF'}
+                {fontLoadError
+                  ? 'Font Load Failed'
+                  : !fontBytes
+                    ? 'Loading Font...'
+                    : 'Generate PDF'}
               </button>
 
               <div
