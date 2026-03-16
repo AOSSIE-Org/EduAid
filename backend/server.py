@@ -123,7 +123,7 @@ def get_mcq_answer():
     outputs = []
 
     if not input_questions or not input_options or len(input_questions) != len(input_options):
-        return jsonify({"outputs": outputs})
+        return jsonify({"output": outputs})
 
     for question, options in zip(input_questions, input_options):
         # Generate answer using the QA model
