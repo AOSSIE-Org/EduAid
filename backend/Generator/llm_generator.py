@@ -75,7 +75,7 @@ class LLMQuestionGenerator:
             raw = choices[0].get("message", {}).get("content", "")
             return self._parse_response(raw, max_questions)
 
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             return []
 
     def generate_mcq_questions(self, input_text, max_questions=4):
@@ -115,7 +115,7 @@ class LLMQuestionGenerator:
             raw = choices[0].get("message", {}).get("content", "")
             return self._parse_mcq_response(raw, max_questions)
 
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             return []
 
     def generate_boolean_questions(self, input_text, max_questions=4):
@@ -154,7 +154,7 @@ class LLMQuestionGenerator:
             raw = choices[0].get("message", {}).get("content", "")
             return self._parse_bool_response(raw, max_questions)
 
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             return []
 
     def generate_all_questions(self, input_text, mcq_count=2, bool_count=2, short_count=2):
@@ -168,7 +168,7 @@ class LLMQuestionGenerator:
                 "type": "mcq",
                 "question": mcq["question"],
                 "options": mcq["options"],
-                "correct_answer": mcq["correct_answer"]
+                "answer": mcq["correct_answer"]
             })
 
         # Generate Boolean questions
@@ -345,7 +345,7 @@ class LLMQuestionGenerator:
                     questions.append({
                         "question": current_q,
                         "options": options[:4],
-                        "correct_answer": "A"  # Default fallback
+                        "correct_answer": None
                     })
                 current_q = q_match.group(1).strip()
                 options = []
@@ -419,11 +419,10 @@ class LLMQuestionGenerator:
             q_match = re.match(r"(?:\d+[\.\)]\s*)?(.*\?)", line, re.IGNORECASE)
             if q_match:
                 question = q_match.group(1).strip()
-                # Simple heuristic: if question contains negation words, likely false
-                is_false = any(word in question.lower() for word in ['not', 'never', 'no', 'false', 'incorrect'])
                 questions.append({
                     "question": question,
-                    "answer": not is_false  # True if no negation, False if negation
+                    "answer": None,
+                    "parsed": False,
                 })
                 if len(questions) >= max_questions:
                     break
