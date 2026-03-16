@@ -372,16 +372,18 @@ class FileProcessor:
         file.save(file_path)
         content = ""
 
-        if file.filename.endswith('.txt'):
-            with open(file_path, 'r') as f:
-                content = f.read()
-        elif file.filename.endswith('.pdf'):
-            content = self.extract_text_from_pdf(file_path)
-        elif file.filename.endswith('.docx'):
-            content = self.extract_text_from_docx(file_path)
-
-        os.remove(file_path)
-        return content
+        try:
+            if file.filename.endswith('.txt'):
+                with open(file_path, 'r') as f:
+                    content = f.read()
+            elif file.filename.endswith('.pdf'):
+                content = self.extract_text_from_pdf(file_path)
+            elif file.filename.endswith('.docx'):
+                content = self.extract_text_from_docx(file_path)
+            return content
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
 class QuestionGenerator:
     """A transformer-based NLP system for generating reading comprehension-style questions from
