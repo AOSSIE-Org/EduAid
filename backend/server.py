@@ -290,7 +290,7 @@ def _call_llm_for_questions(
                 AnthropicAuthenticationError,
                 AnthropicRateLimitError,
             )
-        except Exception:
+        except Exception:  # Fallback if SDK version lacks these exception classes
             anthropic_errors = (Exception,)
 
         try:
@@ -332,13 +332,14 @@ def get_mcq():
     llm_model = data.get("llm_model", "")
     llm_api_key = data.get("llm_api_key", "")
     input_text = process_input_text(input_text, use_mediawiki)
+    truncated = len(input_text) > 12000
     if llm_provider and llm_model and llm_api_key:
         try:
             llm_output = _call_llm_for_questions(
                 input_text, max_questions, "get_mcq", llm_provider, llm_model, llm_api_key
             )
             questions = llm_output.get("questions", [])
-            return jsonify({"output": questions, "llm_used": True})
+            return jsonify({"output": questions, "llm_used": True, "truncated": truncated})
         except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
             return jsonify({"error": str(exc), "llm_used": True}), 400
     output = MCQGen.generate_mcq(
@@ -358,13 +359,14 @@ def get_boolq():
     llm_model = data.get("llm_model", "")
     llm_api_key = data.get("llm_api_key", "")
     input_text = process_input_text(input_text, use_mediawiki)
+    truncated = len(input_text) > 12000
     if llm_provider and llm_model and llm_api_key:
         try:
             llm_output = _call_llm_for_questions(
                 input_text, max_questions, "get_boolq", llm_provider, llm_model, llm_api_key
             )
             boolean_questions = llm_output.get("Boolean_Questions", [])
-            return jsonify({"output": boolean_questions, "llm_used": True})
+            return jsonify({"output": boolean_questions, "llm_used": True, "truncated": truncated})
         except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
             return jsonify({"error": str(exc), "llm_used": True}), 400
     output = BoolQGen.generate_boolq(
@@ -384,13 +386,14 @@ def get_shortq():
     llm_model = data.get("llm_model", "")
     llm_api_key = data.get("llm_api_key", "")
     input_text = process_input_text(input_text, use_mediawiki)
+    truncated = len(input_text) > 12000
     if llm_provider and llm_model and llm_api_key:
         try:
             llm_output = _call_llm_for_questions(
                 input_text, max_questions, "get_shortq", llm_provider, llm_model, llm_api_key
             )
             questions = llm_output.get("questions", [])
-            return jsonify({"output": questions, "llm_used": True})
+            return jsonify({"output": questions, "llm_used": True, "truncated": truncated})
         except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
             return jsonify({"error": str(exc), "llm_used": True}), 400
     output = ShortQGen.generate_shortq(
@@ -412,6 +415,7 @@ def get_problems():
     llm_model = data.get("llm_model", "")
     llm_api_key = data.get("llm_api_key", "")
     input_text = process_input_text(input_text, use_mediawiki)
+    truncated = len(input_text) > 12000
     if llm_provider and llm_model and llm_api_key:
         try:
             output_mcq = _call_llm_for_questions(
@@ -440,10 +444,14 @@ def get_problems():
             )
             return jsonify(
                 {
-                    "output_mcq": output_mcq,
-                    "output_boolq": output_boolq,
-                    "output_shortq": output_shortq,
+                    "output_mcq": {"questions": output_mcq.get("questions", [])},
+                    "output_boolq": {
+                        "Boolean_Questions": output_boolq.get("Boolean_Questions", []),
+                        "Text": input_text,
+                    },
+                    "output_shortq": {"questions": output_shortq.get("questions", [])},
                     "llm_used": True,
+                    "truncated": truncated,
                 }
             )
         except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
@@ -459,7 +467,15 @@ def get_problems():
         {"input_text": input_text, "max_questions": max_questions_shortq}
     )
     return jsonify(
-        {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3, "llm_used": False}
+        {
+            "output_mcq": {"questions": output1.get("questions", [])},
+            "output_boolq": {
+                "Boolean_Questions": output2.get("Boolean_Questions", []),
+                "Text": input_text,
+            },
+            "output_shortq": {"questions": output3.get("questions", [])},
+            "llm_used": False,
+        }
     )
 
 @app.route("/get_mcq_answer", methods=["POST"])

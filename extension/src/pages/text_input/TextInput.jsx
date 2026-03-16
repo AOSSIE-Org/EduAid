@@ -34,6 +34,7 @@ function Second() {
   const [modelLoading, setModelLoading] = useState(false);
   const [modelError, setModelError] = useState("");
   const [backendError, setBackendError] = useState("");
+  const [backendInfo, setBackendInfo] = useState("");
 
   const getChromeStorage = (keys) =>
     new Promise((resolve) => {
@@ -246,14 +247,11 @@ function Second() {
   const handleSaveToLocalStorage = async () => {
     setLoading(true);
     setBackendError("");
+    setBackendInfo("");
     const hasExternalConfig = Boolean(useExternalLlm && apiKey.trim() && selectedModel);
 
-    if (useExternalLlm && !apiKey.trim()) {
-      setBackendError("Please enter an API key.");
-    }
-
-    if (useExternalLlm && !selectedModel) {
-      setBackendError("Please select a model after loading models.");
+    if (useExternalLlm && !hasExternalConfig) {
+      setBackendInfo("External config incomplete - falling back to local generation.");
     }
 
     await setChromeStorage({
@@ -536,9 +534,15 @@ function Second() {
             <select
               value={selectedModel}
               onChange={async (e) => {
+                const previousModel = selectedModel;
                 const model = e.target.value;
                 setSelectedModel(model);
-                await setChromeStorage({ llmModel: model });
+                try {
+                  await setChromeStorage({ llmModel: model });
+                } catch (err) {
+                  setSelectedModel(previousModel);
+                  setBackendError("Failed to save model selection. Please try again.");
+                }
               }}
               disabled={modelOptions.length === 0}
               className="flex-1 bg-[#101522] text-white rounded-xl px-3 py-2 disabled:opacity-60"
@@ -557,6 +561,7 @@ function Second() {
             </>
           )}
           {modelError && <div className="text-[#FF8A8A] text-xs">{modelError}</div>}
+          {backendInfo && <div className="text-[#F6E7A8] text-xs mt-1">{backendInfo}</div>}
           {backendError && <div className="text-[#FF8A8A] text-xs mt-1">{backendError}</div>}
         </div>
         <div className="flex justify-center gap-1 p-2">
