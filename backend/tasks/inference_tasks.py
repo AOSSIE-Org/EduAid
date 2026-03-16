@@ -55,7 +55,11 @@ def process_input_text(input_text, use_mediawiki, mediawiki_instance):
     """Process input text, optionally fetching from MediaWiki."""
     if use_mediawiki == 1:
         logger.info(f"Fetching MediaWiki summary for: {input_text}")
-        input_text = mediawiki_instance.summary(input_text, 8)
+        try:
++            input_text = mediawiki_instance.summary(input_text, 8)
++        except Exception as e:
++            logger.warning(f"MediaWiki fetch failed, using original input: {e!s}")
++            # Optionally re-raise or return original input_text as fallback
     return input_text
 
 
@@ -121,7 +125,7 @@ def generate_boolq_task(self, input_text, max_questions=4, use_mediawiki=0):
         return output
         
     except Exception as e:
-        logger.error(f"Error in BoolQ generation: {str(e)}", exc_info=True)
+        logger.error(f"Error in BoolQ generation: {e!s}", exc_info=True)
         raise
 
 
@@ -154,7 +158,7 @@ def generate_shortq_task(self, input_text, max_questions=4, use_mediawiki=0):
         return output
         
     except Exception as e:
-        logger.error(f"Error in ShortQ generation: {str(e)}", exc_info=True)
+        logger.error(f"Error in ShortQ generation: {e!s}", exc_info=True)
         raise
 
 
