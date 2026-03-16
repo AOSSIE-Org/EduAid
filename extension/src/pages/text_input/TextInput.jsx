@@ -246,17 +246,14 @@ function Second() {
   const handleSaveToLocalStorage = async () => {
     setLoading(true);
     setBackendError("");
+    const hasExternalConfig = Boolean(useExternalLlm && apiKey.trim() && selectedModel);
 
     if (useExternalLlm && !apiKey.trim()) {
       setBackendError("Please enter an API key.");
-      setLoading(false);
-      return;
     }
 
     if (useExternalLlm && !selectedModel) {
       setBackendError("Please select a model after loading models.");
-      setLoading(false);
-      return;
     }
 
     await setChromeStorage({
@@ -303,7 +300,8 @@ function Second() {
       await sendToBackend(
         text,
         difficulty,
-        localStorage.getItem("selectedQuestionType")
+        localStorage.getItem("selectedQuestionType"),
+        hasExternalConfig
       );
     }
   };
@@ -335,7 +333,7 @@ function Second() {
     return questionType;
   };
 
-  const sendToBackend = async (data, difficulty, questionType) => {
+  const sendToBackend = async (data, difficulty, questionType, hasExternalConfig = false) => {
     const endpoint = getEndpoint(difficulty, questionType);
     try {
       const payload = {
@@ -350,7 +348,7 @@ function Second() {
         payload.max_questions_shortq = numQuestions;
       }
 
-      if (useExternalLlm) {
+      if (hasExternalConfig) {
         payload.llm_provider = provider;
         payload.llm_model = selectedModel;
         payload.llm_api_key = apiKey.trim();

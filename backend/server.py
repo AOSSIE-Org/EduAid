@@ -83,6 +83,10 @@ def _dedupe_preserve_order(items):
 
 def _sanitize_llm_output(question_type, llm_output, max_questions):
     target_n = max(1, int(max_questions))
+    if not isinstance(llm_output, dict):
+        if question_type == "get_boolq":
+            return {"Boolean_Questions": []}
+        return {"questions": []}
 
     if question_type == "get_mcq":
         cleaned_questions = []
@@ -202,7 +206,16 @@ def _call_llm_for_questions(
     )
 
     if llm_provider == "openai":
-        from openai import OpenAI, APIError
+        from openai import (
+            OpenAI,
+            APIError,
+            OpenAIError,
+            APIConnectionError,
+            APITimeoutError,
+            RateLimitError,
+            AuthenticationError,
+            BadRequestError,
+        )
 
         client = OpenAI(api_key=llm_api_key)
 
@@ -227,19 +240,19 @@ def _call_llm_for_questions(
                 if _mcq_quality_score(retry_sanitized) > _mcq_quality_score(sanitized):
                     return retry_sanitized
             return sanitized
-        except APIError as chat_exc:
+        except (APIError, OpenAIError, APIConnectionError, APITimeoutError, RateLimitError, AuthenticationError, BadRequestError) as chat_exc:
             # Some OpenAI models are completion-only; fallback to completions endpoint.
-            response = client.completions.create(
-                model=llm_model,
-                prompt=(
-                    "You generate quiz data as strict JSON only.\n"
-                    + prompt
-                ),
-                max_tokens=2048,
-                temperature=0.2,
-            )
-            content = response.choices[0].text if response.choices else "{}"
             try:
+                response = client.completions.create(
+                    model=llm_model,
+                    prompt=(
+                        "You generate quiz data as strict JSON only.\n"
+                        + prompt
+                    ),
+                    max_tokens=2048,
+                    temperature=0.2,
+                )
+                content = response.choices[0].text if response.choices else "{}"
                 parsed = _extract_json_object(content)
                 sanitized = _sanitize_llm_output(question_type, parsed, max_questions)
                 if question_type == "get_mcq" and _should_retry_mcq(sanitized, max_questions):
@@ -257,31 +270,54 @@ def _call_llm_for_questions(
                 return sanitized
             except (ValueError, json.JSONDecodeError, KeyError, TypeError):
                 raise chat_exc from None
+            except (APIError, OpenAIError, APIConnectionError, APITimeoutError, RateLimitError, AuthenticationError, BadRequestError) as completion_exc:
+                raise ValueError(f"OpenAI request failed: {completion_exc}") from None
 
     if llm_provider == "anthropic":
         from anthropic import Anthropic
-
-        client = Anthropic(api_key=llm_api_key)
-        def run_anthropic_json(prompt_text):
-            response = client.messages.create(
-                model=llm_model,
-                max_tokens=2048,
-                temperature=0.2,
-                system="You generate quiz data as strict JSON only.",
-                messages=[{"role": "user", "content": prompt_text}],
+        try:
+            from anthropic import (
+                APIError as AnthropicAPIError,
+                APIConnectionError as AnthropicAPIConnectionError,
+                APITimeoutError as AnthropicAPITimeoutError,
+                AuthenticationError as AnthropicAuthenticationError,
+                RateLimitError as AnthropicRateLimitError,
             )
-            text_chunks = [
-                chunk.text for chunk in response.content if hasattr(chunk, "text") and chunk.text
-            ]
-            parsed = _extract_json_object("".join(text_chunks))
-            return _sanitize_llm_output(question_type, parsed, max_questions)
+            anthropic_errors = (
+                AnthropicAPIError,
+                AnthropicAPIConnectionError,
+                AnthropicAPITimeoutError,
+                AnthropicAuthenticationError,
+                AnthropicRateLimitError,
+            )
+        except Exception:
+            anthropic_errors = (Exception,)
 
-        sanitized = run_anthropic_json(prompt)
-        if question_type == "get_mcq" and _should_retry_mcq(sanitized, max_questions):
-            retry_sanitized = run_anthropic_json(strict_mcq_prompt)
-            if _mcq_quality_score(retry_sanitized) > _mcq_quality_score(sanitized):
-                return retry_sanitized
-        return sanitized
+        try:
+            client = Anthropic(api_key=llm_api_key)
+
+            def run_anthropic_json(prompt_text):
+                response = client.messages.create(
+                    model=llm_model,
+                    max_tokens=2048,
+                    temperature=0.2,
+                    system="You generate quiz data as strict JSON only.",
+                    messages=[{"role": "user", "content": prompt_text}],
+                )
+                text_chunks = [
+                    chunk.text for chunk in response.content if hasattr(chunk, "text") and chunk.text
+                ]
+                parsed = _extract_json_object("".join(text_chunks))
+                return _sanitize_llm_output(question_type, parsed, max_questions)
+
+            sanitized = run_anthropic_json(prompt)
+            if question_type == "get_mcq" and _should_retry_mcq(sanitized, max_questions):
+                retry_sanitized = run_anthropic_json(strict_mcq_prompt)
+                if _mcq_quality_score(retry_sanitized) > _mcq_quality_score(sanitized):
+                    return retry_sanitized
+            return sanitized
+        except anthropic_errors as anth_exc:
+            raise ValueError(f"Anthropic request failed: {anth_exc}") from None
 
     raise ValueError("Unsupported llm_provider. Use 'openai' or 'anthropic'.")
 
