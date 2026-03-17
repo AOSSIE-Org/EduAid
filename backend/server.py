@@ -4,7 +4,8 @@ from pprint import pprint
 import nltk
 import subprocess
 import os
-import glob
+import sys
+import logging
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -30,6 +31,16 @@ from mediawikiapi import MediaWikiAPI
 app = Flask(__name__)
 CORS(app)
 print("Starting Flask App...")
+
+os.makedirs("subtitles", exist_ok=True)
+    
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
@@ -537,25 +548,60 @@ def clean_transcript(file_path):
 def get_transcript():
     video_id = request.args.get('videoId')
     if not video_id:
+        logger.warning("Transcript request received without video ID")
         return jsonify({"error": "No video ID provided"}), 400
 
-    subprocess.run(["yt-dlp", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
-                "--sub-format", "vtt", "-o", f"subtitles/{video_id}.vtt", f"https://www.youtube.com/watch?v={video_id}"],
-               check=True, capture_output=True, text=True)
+    # Validate video ID format (YouTube video IDs are 11 characters: alphanumeric, underscore, or hyphen)
+    video_id_pattern = re.compile(r'^[a-zA-Z0-9_-]{11}$')
+    if not video_id_pattern.match(video_id):
+        logger.warning(f"Invalid video ID format received: {video_id}")
+        return jsonify({"error": "Invalid YouTube video ID"}), 400
 
-    # Find the latest .vtt file in the "subtitles" folder
-    subtitle_files = glob.glob("subtitles/*.vtt")
-    if not subtitle_files:
-        return jsonify({"error": "No subtitles found"}), 404
+    logger.info(f"Processing transcript request for video ID: {video_id}")
+    
+    # Define the expected subtitle file path
+    subtitle_file = f"subtitles/{video_id}.en.vtt"
+    
+    try:
+        # Execute subprocess with 20-second timeout
+        subprocess.run(
+            [sys.executable, "-m", "yt_dlp", "--write-sub", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
+             "--sub-format", "vtt", "-o", f"subtitles/{video_id}", 
+             f"https://www.youtube.com/watch?v={video_id}"],
+            check=True, 
+            capture_output=True, 
+            text=True,
+            timeout=20
+        )
 
-    latest_subtitle = max(subtitle_files, key=os.path.getctime)
-    transcript_text = clean_transcript(latest_subtitle)
+        # Check if the subtitle file exists
+        if not os.path.exists(subtitle_file):
+            logger.error(f"Subtitle file not found for video ID: {video_id}")
+            return jsonify({"error": "No subtitles found"}), 404
 
-    # Optional: Clean up the file after reading
-    os.remove(latest_subtitle)
+        # Extract and clean the transcript
+        transcript_text = clean_transcript(subtitle_file)
+        logger.info(f"Successfully extracted transcript for video ID: {video_id}")
 
-    return jsonify({"transcript": transcript_text})
+        return jsonify({"transcript": transcript_text})
+
+    except subprocess.TimeoutExpired:
+        logger.exception(f"Transcript extraction timed out for video ID: {video_id}")
+        return jsonify({"error": "Transcript extraction timed out"}), 504
+    except subprocess.CalledProcessError as e:
+        logger.exception(f"Subprocess failed for video ID {video_id}")
+        return jsonify({"error": "Failed to fetch subtitles"}), 500
+    except Exception as e:
+        logger.exception(f"Unexpected error for video ID {video_id}: {e}")
+        return jsonify({"error": "Failed to fetch subtitles"}), 500
+    finally:
+        # Always clean up the subtitle file if it exists
+        if os.path.exists(subtitle_file):
+            try:
+                os.remove(subtitle_file)
+                logger.debug(f"Cleaned up subtitle file: {subtitle_file}")
+            except Exception as e:
+                logger.warning(f"Failed to clean up subtitle file {subtitle_file}: {e}")
 
 if __name__ == "__main__":
-    os.makedirs("subtitles", exist_ok=True)
     app.run()
