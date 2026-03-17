@@ -1,4 +1,4 @@
-
+import logging
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pprint import pprint
@@ -45,25 +45,34 @@ def execute_with_timeout(func, timeout, *args, **kwargs):
             result = func(*args, **kwargs)
             q.put(("success", result))
         except Exception as e:
-            q.put(("error", str(e)))
+            # ✅ Log full error (server side only)
+            logging.exception("Error occurred during execution")
+
+            # ✅ Send safe error to client
+            q.put(("error", {
+                "code": "internal_server_error",
+                "message": "An internal error occurred"
+            }))
 
     q = Queue()
     p = Process(target=wrapper, args=(q, *args), kwargs=kwargs)
     p.start()
     p.join(timeout)
 
-    # 🚨 REAL timeout handling
+    # 🚨 Timeout handling
     if p.is_alive():
         p.terminate()
         p.join()
         return None, "timeout"
 
+    # ✅ Get result
     if not q.empty():
         status, value = q.get()
+
         if status == "success":
             return value, None
         else:
-            return None, value
+            return None, value  # already safe error dict
 
     return None, "unknown_error"
 
@@ -317,7 +326,7 @@ def get_problems():
 
     (mcq_out, mcq_err), (bool_out, bool_err), (short_out, short_err) = results
 
-    # ✅ Handle errors individually (VERY IMPORTANT)
+    # ✅ Handle errors individually
     response = {}
 
     if mcq_err:
@@ -334,14 +343,21 @@ def get_problems():
         response["shortq_error"] = short_err
     else:
         response["output_shortq"] = (short_out or {}).get("questions", [])
-        
+
+    # ✅ If ALL failed → return proper error
     if mcq_err and bool_err and short_err:
+        all_errors = [mcq_err, bool_err, short_err]
+
+        status = 504 if all(e == "timeout" for e in all_errors) else 500
+        code = "timeout" if status == 504 else "all_failed"
+
         return jsonify({
-        "error": "All generators failed",
-        "code": "all_failed"
-    }), 500
+            "error": "All generators failed",
+            "code": code
+        }), status
+
+    # ✅ Partial or full success
     return jsonify(response)
-    
     
 @app.route("/get_mcq_answer", methods=["POST"])
 @limiter.limit("20 per minute")
@@ -451,18 +467,26 @@ def get_content():
     if not doc_id:
         return jsonify({"error": "doc_id or document_url is required"}), 400
 
-    
-
     try:
         document_url = f"https://docs.google.com/document/d/{doc_id}/edit"
         content = docs_service.get_document_content(document_url)
         return jsonify({"content": content})
 
-    except Exception:
+    # ✅ Client-side error
+    except ValueError:
         return jsonify({
-            "error": "Failed to retrieve document content",
-            "code": "document_fetch_error"
+            "error": "Invalid document URL",
+            "code": "invalid_request"
         }), 400
+
+    # ✅ Server-side error
+    except Exception as e:
+        logging.exception("Error fetching document content")
+
+        return jsonify({
+            "error": "Internal server error",
+            "code": "internal_server_error"
+        }), 500
 
 @app.route("/generate_gform", methods=["POST"])
 @limiter.limit("5 per minute")
