@@ -50,13 +50,39 @@ docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
-qa_evaluator = main.QAEvaluator()
+qa_evaluator = None
+
+def get_qa_evaluator():
+    global qa_evaluator
+    if qa_evaluator is None:
+        qa_evaluator = main.QAEvaluator()
+    return qa_evaluator
 
 
 def process_input_text(input_text, use_mediawiki):
     if use_mediawiki == 1:
         input_text = mediawikiapi.summary(input_text,8)
     return input_text
+
+
+def parse_max_questions(data, default=4):
+    """
+    Parse and validate max_questions parameter.
+    
+    Args:
+        data: Request data dictionary
+        default: Default value if not provided
+        
+    Returns:
+        Validated positive integer
+        
+    Raises:
+        ValueError: If max_questions is not a positive integer
+    """
+    value = data.get("max_questions", default)
+    if not isinstance(value, int) or value <= 0:
+        raise ValueError("max_questions must be a positive integer")
+    return value
 
 
 def score_and_rank_questions(questions, context):
@@ -83,22 +109,25 @@ def score_and_rank_questions(questions, context):
         question_texts = []
         answer_texts = []
         
-        for q in questions:
-            question_texts.append(q.get('question', ''))
+         for q in questions:
+            q_text = q.get("question") or q.get("question_statement") or ""
+            question_texts.append(q_text)
             # Handle different answer formats
-            if 'answer' in q and q['answer']:
-                answer_texts.append(q['answer'])
-            elif 'options' in q and q['options']:
+            if q.get("answer"):
+                answer_texts.append(q.get("answer"))
+            elif q.get("options"):
                 # fallback only if answer missing
-                answer_texts.append(q['options'][0])
+                answer_texts.append(q.get("options")[0])
             else:
                 answer_texts.append('')
         
         # Encode QA pairs
-        encoded_pairs = qa_evaluator.encode_qa_pairs(question_texts, answer_texts)
+        evaluator = get_qa_evaluator()
+        encoded_pairs = evaluator.encode_qa_pairs(question_texts, answer_texts)
+
         
         # Get scores (returns indices sorted by score)
-        sorted_indices = qa_evaluator.get_scores(encoded_pairs)
+        sorted_indices = evaluator.get_scores(encoded_pairs)
         
         # Reorder questions based on scores
         ranked_questions = [questions[i] for i in sorted_indices]
@@ -121,8 +150,13 @@ def get_mcq():
     if not isinstance(input_text, str) or not input_text.strip():
         return jsonify({"error": "input_text is required"}), 400
     
+    # Validate max_questions
+    try:
+        max_questions = parse_max_questions(data)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    
     use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
     use_scoring = data.get("use_scoring", False)
     
     input_text = process_input_text(input_text, use_mediawiki)
@@ -139,8 +173,9 @@ def get_mcq():
     if use_scoring and len(questions) >= 3:
         logger.info(f"Scoring enabled: Generated {len(questions)} questions, will rank and return top {max_questions}")
         questions = score_and_rank_questions(questions, input_text)
-        # Slice to requested number after ranking
-        questions = questions[:max_questions]
+    
+    # Always enforce requested size
+    questions = questions[:max_questions]
     
     return jsonify({"output": questions})
 
@@ -154,8 +189,13 @@ def get_boolq():
     if not isinstance(input_text, str) or not input_text.strip():
         return jsonify({"error": "input_text is required"}), 400
     
+    # Validate max_questions
+    try:
+        max_questions = parse_max_questions(data)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    
     use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
     use_scoring = data.get("use_scoring", False)
     
     input_text = process_input_text(input_text, use_mediawiki)
@@ -167,18 +207,14 @@ def get_boolq():
         {"input_text": input_text, "max_questions": generation_limit}
     )
     boolean_questions = output["Boolean_Questions"]
-    # Normalize boolean question format for scoring
-    boolean_questions = [
-        {"question": q} if isinstance(q, str) else q
-        for q in boolean_questions
-    ]
     
     # Apply scoring and ranking if enabled
     if use_scoring and len(boolean_questions) >= 3:
         logger.info(f"Scoring enabled: Generated {len(boolean_questions)} questions, will rank and return top {max_questions}")
         boolean_questions = score_and_rank_questions(boolean_questions, input_text)
-        # Slice to requested number after ranking
-        boolean_questions = boolean_questions[:max_questions]
+    
+    # Always enforce requested size
+    boolean_questions = boolean_questions[:max_questions]
     
     return jsonify({"output": boolean_questions})
 
@@ -192,8 +228,13 @@ def get_shortq():
     if not isinstance(input_text, str) or not input_text.strip():
         return jsonify({"error": "input_text is required"}), 400
     
+    # Validate max_questions
+    try:
+        max_questions = parse_max_questions(data)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    
     use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
     use_scoring = data.get("use_scoring", False)
     
     input_text = process_input_text(input_text, use_mediawiki)
@@ -210,8 +251,9 @@ def get_shortq():
     if use_scoring and len(questions) >= 3:
         logger.info(f"Scoring enabled: Generated {len(questions)} questions, will rank and return top {max_questions}")
         questions = score_and_rank_questions(questions, input_text)
-        # Slice to requested number after ranking
-        questions = questions[:max_questions]
+    
+    # Always enforce requested size
+    questions = questions[:max_questions]
     
     return jsonify({"output": questions})
 
