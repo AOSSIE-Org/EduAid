@@ -94,9 +94,15 @@ const Output = () => {
   };
 
   useEffect(() => {
-    const qaPairsFromStorage =
-      JSON.parse(localStorage.getItem("qaPairs") || "{}");
-    if (qaPairsFromStorage) {
+    let qaPairsFromStorage = {};
+
+    try {
+      qaPairsFromStorage = JSON.parse(localStorage.getItem("qaPairs") || "{}");
+    } catch (error) {
+      console.error("Invalid JSON in localStorage:", error);
+      qaPairsFromStorage = {};
+    }
+    if (Object.keys(qaPairsFromStorage).length > 0) {
       const combinedQaPairs = [];
 
       if (qaPairsFromStorage["output_boolq"]) {
@@ -390,7 +396,7 @@ const Output = () => {
               Generate Google form
             </button>
             
-            <div className="relative w-full sm:w-auto">
+            <div ref={dropdownRef} className="relative w-full sm:w-auto">
               <button
                 className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
                 onClick={() => setShowDropdown(prev => !prev)}
@@ -400,7 +406,6 @@ const Output = () => {
               
               <div
                 id="pdfDropdown"
-                ref={dropdownRef}
                 className={`${showDropdown ? 'block' : 'hidden'} absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48`}
               >
                 <button
