@@ -10,24 +10,24 @@ const Output = () => {
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
-  const [pdfMode, setPdfMode] = useState("questions");
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedQuestion, setEditedQuestion] = useState("");
   const [editedAnswer, setEditedAnswer] = useState("");
   const [editedOptions, setEditedOptions] = useState([]);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-        const dropdown = document.getElementById('pdfDropdown');
-        if (dropdown && !dropdown.contains(event.target) && 
-            !event.target.closest('button')) {
-            dropdown.classList.add('hidden');
-        }
+      const dropdown = document.getElementById('pdfDropdown');
+      if (dropdown && !dropdown.contains(event.target) &&
+        !event.target.closest('button')) {
+        dropdown.classList.add('hidden');
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-}, []);
+  }, []);
 
   function shuffleArray(array) {
     const shuffledArray = [...array];
@@ -88,6 +88,40 @@ const Output = () => {
     const updatedOptions = [...editedOptions];
     updatedOptions[optionIndex] = value;
     setEditedOptions(updatedOptions);
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+      setCopySuccess(false);
+    }
+  };
+
+  const getShareUrl = (platform) => {
+    const quizUrl = encodeURIComponent(window.location.href);
+    const shareText = encodeURIComponent('Try this quiz generated using EduAid');
+
+    switch (platform) {
+      case 'twitter':
+        return `https://twitter.com/intent/tweet?url=${quizUrl}&text=${shareText}`;
+      case 'linkedin':
+        return `https://www.linkedin.com/sharing/share-offsite/?url=${quizUrl}`;
+      case 'facebook':
+        return `https://www.facebook.com/sharer/sharer.php?u=${quizUrl}`;
+      default:
+        return '';
+    }
+  };
+
+  const handleSocialShare = (platform) => {
+    const shareUrl = getShareUrl(platform);
+    if (shareUrl) {
+      window.open(shareUrl, '_blank', 'noopener,noreferrer');
+    }
   };
 
   useEffect(() => {
@@ -180,7 +214,7 @@ const Output = () => {
     }
   };
 
-    const generatePDF = async (mode) => {
+  const generatePDF = async (mode) => {
     const logoBytes = await loadLogoAsBytes();
     const worker = new Worker(new URL("../workers/pdfWorker.js", import.meta.url), { type: "module" });
 
@@ -212,10 +246,10 @@ const Output = () => {
           {/* Header - Responsive logo and title */}
           <Link to="/">
             <div className="flex items-end gap-[2px] px-4 sm:px-6">
-              <img 
-                src={logoPNG} 
-                alt="logo" 
-                className="w-12 sm:w-16 my-4 block" 
+              <img
+                src={logoPNG}
+                alt="logo"
+                className="w-12 sm:w-16 my-4 block"
               />
               <div className="text-xl sm:text-2xl mb-3 font-extrabold">
                 <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
@@ -234,11 +268,10 @@ const Output = () => {
               Generated Questions
             </div>
             <button
-              className={`${
-                editingIndex !== null
-                  ? 'bg-gray-500 cursor-not-allowed'
-                  : 'bg-[#7C3AED] hover:bg-[#5A2AD9]'
-              } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
+              className={`${editingIndex !== null
+                ? 'bg-gray-500 cursor-not-allowed'
+                : 'bg-[#7C3AED] hover:bg-[#5A2AD9]'
+                } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
               onClick={handleShuffleQuestions}
               disabled={editingIndex !== null}
             >
@@ -253,7 +286,7 @@ const Output = () => {
               qaPairs.map((qaPair, index) => {
                 const shuffledOptions = shuffledOptionsMap[index];
                 const isEditing = editingIndex === index;
-                
+
                 return (
                   <div
                     key={index}
@@ -332,7 +365,7 @@ const Output = () => {
                           value={editedQuestion}
                           onChange={(e) => setEditedQuestion(e.target.value)}
                         />
-                        
+
                         {qaPair.question_type !== "Boolean" && (
                           <>
                             <div className="text-[#E4E4E4] text-xs sm:text-sm mt-3 mb-1">
@@ -344,7 +377,7 @@ const Output = () => {
                               value={editedAnswer}
                               onChange={(e) => setEditedAnswer(e.target.value)}
                             />
-                            
+
                             {editedOptions && editedOptions.length > 0 && (
                               <div className="mt-3">
                                 <div className="text-[#E4E4E4] text-xs sm:text-sm mb-2">
@@ -382,7 +415,7 @@ const Output = () => {
             >
               Generate Google form
             </button>
-            
+
             <div className="relative w-full sm:w-auto">
               <button
                 className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] active:scale-95 active:bg-[#2f5555] transition-all justify-center"
@@ -390,7 +423,7 @@ const Output = () => {
               >
                 Generate PDF
               </button>
-              
+
               <div
                 id="pdfDropdown"
                 className="hidden absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48"
@@ -413,6 +446,69 @@ const Output = () => {
                 >
                   Answers Only
                 </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Share Quiz Section */}
+          <div className="mx-4 sm:mx-auto pb-6 sm:pb-8">
+            <div className="text-center">
+              <div className="text-[#E4E4E4] text-sm sm:text-base font-semibold mb-3">
+                Share this Quiz
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                {/* Copy Link Button */}
+                <button
+                  className="bg-[#7C3AED] hover:bg-[#5A2AD9] text-white px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors w-full sm:w-auto flex items-center justify-center gap-2"
+                  onClick={handleCopyLink}
+                >
+                  {copySuccess ? (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Link copied!
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      Copy Quiz Link
+                    </>
+                  )}
+                </button>
+
+                {/* Social Share Buttons */}
+                <div className="flex gap-3 w-full sm:w-auto justify-center">
+                  {/* Twitter/X */}
+                  <button
+                    className="bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+                    onClick={() => handleSocialShare('twitter')}
+                  >
+                    Twitter
+                  </button>
+
+                  {/* LinkedIn */}
+                  <button
+                    className="bg-[#0077B5] hover:bg-[#005f8e] text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+                    onClick={() => handleSocialShare('linkedin')}
+                  >
+                    LinkedIn
+                  </button>
+
+                  {/* Facebook */}
+                  <button
+                    className="bg-[#1877F2] hover:bg-[#145db2] text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+                    onClick={() => handleSocialShare('facebook')}
+                  >
+                    Facebook
+                  </button>
+                </div>
+                <div className="text-xs text-gray-400 mt-3 text-center">
+                  ⚠️ Shared links work only within the same browser session because quizzes are stored locally.
+                </div>
               </div>
             </div>
           </div>
