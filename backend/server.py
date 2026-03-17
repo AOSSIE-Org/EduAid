@@ -454,7 +454,8 @@ def get_content():
     
 
     try:
-        content = docs_service.get_document_content(doc_id)
+        document_url = f"https://docs.google.com/document/d/{doc_id}/edit"
+        content = docs_service.get_document_content(document_url)
         return jsonify({"content": content})
 
     except Exception:
@@ -646,6 +647,7 @@ def generate_gform():
 def get_shortq_hard():
     data = request.get_json(silent=True)
 
+    # ✅ JSON validation
     if data is None or not isinstance(data, dict):
         return jsonify({
             "error": "Invalid or missing JSON body",
@@ -654,22 +656,50 @@ def get_shortq_hard():
 
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-
-    input_text = process_input_text(input_text, use_mediawiki)
-
     input_questions = data.get("input_question", [])
 
+    # ✅ Input validation
+    if not isinstance(input_text, str):
+        return jsonify({"error": "input_text must be string"}), 400
 
-    output = qg.generate(
+    input_text = input_text.strip()
+
+    if len(input_text) < 10:
+        return jsonify({"error": "Input too short"}), 400
+
+    if len(input_text) > 50000:
+        return jsonify({"error": "Input too long"}), 400
+
+    # ✅ Process input
+    input_text = process_input_text(input_text, use_mediawiki)
+
+    # ✅ Timeout execution (IMPORTANT FIX)
+    output, error = execute_with_timeout(
+        qg.generate,
+        60,
         article=input_text,
         num_questions=len(input_questions),
         answer_style="sentences"
     )
 
+    # ✅ Error handling
+    if error == "timeout":
+        return jsonify({"error": "Request timed out"}), 504
+
+    elif error:
+        return jsonify({"error": error}), 500
+
+    if not output:
+        return jsonify({"error": "Invalid model response"}), 500
+
+    # ✅ Make questions harder
     for item in output:
         item["question"] = make_question_harder(item["question"])
 
-    return jsonify({"output": output})
+    return jsonify({
+        "output": output,
+        "status": "success"
+    })
 
 
 @app.route("/get_mcq_hard", methods=["POST"])
@@ -677,6 +707,7 @@ def get_shortq_hard():
 def get_mcq_hard():
     data = request.get_json(silent=True)
 
+    # ✅ JSON validation
     if data is None or not isinstance(data, dict):
         return jsonify({
             "error": "Invalid or missing JSON body",
@@ -685,27 +716,57 @@ def get_mcq_hard():
 
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-
-    input_text = process_input_text(input_text, use_mediawiki)
-
     input_questions = data.get("input_question", [])
 
-    output = qg.generate(
+    # ✅ Input validation
+    if not isinstance(input_text, str):
+        return jsonify({"error": "input_text must be string"}), 400
+
+    input_text = input_text.strip()
+
+    if len(input_text) < 10:
+        return jsonify({"error": "Input too short"}), 400
+
+    if len(input_text) > 50000:
+        return jsonify({"error": "Input too long"}), 400
+
+    # ✅ Process input
+    input_text = process_input_text(input_text, use_mediawiki)
+
+    # ✅ Timeout execution
+    output, error = execute_with_timeout(
+        qg.generate,
+        60,
         article=input_text,
         num_questions=len(input_questions),
         answer_style="multiple_choice"
     )
 
+    # ✅ Error handling
+    if error == "timeout":
+        return jsonify({"error": "Request timed out"}), 504
+
+    elif error:
+        return jsonify({"error": error}), 500
+
+    if not output:
+        return jsonify({"error": "Invalid model response"}), 500
+
+    # ✅ Make questions harder
     for q in output:
         q["question"] = make_question_harder(q["question"])
 
-    return jsonify({"output": output})
+    return jsonify({
+        "output": output,
+        "status": "success"
+    })
 
 @app.route("/get_boolq_hard", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_boolq_hard():
     data = request.get_json(silent=True)
 
+    # ✅ JSON validation
     if data is None or not isinstance(data, dict):
         return jsonify({
             "error": "Invalid or missing JSON body",
@@ -716,17 +777,47 @@ def get_boolq_hard():
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
 
+    # ✅ Input validation
+    if not isinstance(input_text, str):
+        return jsonify({"error": "input_text must be string"}), 400
+
+    input_text = input_text.strip()
+
+    if len(input_text) < 10:
+        return jsonify({"error": "Input too short"}), 400
+
+    if len(input_text) > 50000:
+        return jsonify({"error": "Input too long"}), 400
+
+    # ✅ Process input
     input_text = process_input_text(input_text, use_mediawiki)
 
-    generated = qg.generate(
+    # ✅ Timeout execution
+    generated, error = execute_with_timeout(
+        qg.generate,
+        60,
         article=input_text,
         num_questions=len(input_questions),
         answer_style="true_false"
     )
 
+    # ✅ Error handling
+    if error == "timeout":
+        return jsonify({"error": "Request timed out"}), 504
+
+    elif error:
+        return jsonify({"error": error}), 500
+
+    if not generated:
+        return jsonify({"error": "Invalid model response"}), 500
+
+    # ✅ Make questions harder
     harder_questions = [make_question_harder(q) for q in generated]
 
-    return jsonify({"output": harder_questions})
+    return jsonify({
+        "output": harder_questions,
+        "status": "success"
+    })
 
 @app.route('/upload', methods=['POST'])
 @limiter.limit("10 per minute")
