@@ -6,6 +6,7 @@ import subprocess
 import os
 import glob
 import logging
+import threading
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -51,11 +52,14 @@ file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
 qa_evaluator = None
+_qa_evaluator_lock = threading.Lock()
 
 def get_qa_evaluator():
     global qa_evaluator
     if qa_evaluator is None:
-        qa_evaluator = main.QAEvaluator()
+        with _qa_evaluator_lock:
+            if qa_evaluator is None:
+                qa_evaluator = main.QAEvaluator()
     return qa_evaluator
 
 
@@ -85,14 +89,13 @@ def parse_max_questions(data, default=4):
     return value
 
 
-def score_and_rank_questions(questions, context):
+def score_and_rank_questions(questions):
     """
     Use QAEvaluator to score and rank questions based on quality.
     Returns sorted list with best questions first.
     
     Args:
         questions: List of question dictionaries
-        context: The input text context
         
     Returns:
         List of questions sorted by quality score (best first)
@@ -109,7 +112,7 @@ def score_and_rank_questions(questions, context):
         question_texts = []
         answer_texts = []
         
-         for q in questions:
+        for q in questions:
             q_text = q.get("question") or q.get("question_statement") or ""
             question_texts.append(q_text)
             # Handle different answer formats
@@ -211,6 +214,13 @@ def get_boolq():
     # Apply scoring and ranking if enabled
     if use_scoring and len(boolean_questions) >= 3:
         logger.info(f"Scoring enabled: Generated {len(boolean_questions)} questions, will rank and return top {max_questions}")
+        
+        #convert strings → dict format
+        boolean_questions = [
+            {"question": q} if isinstance(q, str) else q
+            for q in boolean_questions
+        ]
+
         boolean_questions = score_and_rank_questions(boolean_questions, input_text)
     
     # Always enforce requested size
