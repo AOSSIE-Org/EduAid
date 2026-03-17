@@ -80,19 +80,41 @@ const Answer = () => {
 
   const handleApiCall = async () => {
     setLoading(true);
+    
+    // Timeout configuration in milliseconds
+    const REQUEST_TIMEOUT = 65000; // 65 seconds to match backend 60s timeout + buffer
   
     const booleanQuestions = questions.filter((q) => q.type === "boolean").map((q) => q.question);
     const mcqQuestions = questions.filter((q) => q.type === "mcq").map((q) => ({ question: q.question, options: q.options }));
     const shortQuestions = questions.filter((q) => q.type === "single").map((q) => q.question);
   
     try {
+      // Helper function to fetch with timeout
+      const fetchWithTimeout = (url, options, timeout) => {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+        
+        return fetch(url, { ...options, signal: controller.signal })
+          .then(res => {
+            clearTimeout(id);
+            return res;
+          })
+          .catch(err => {
+            clearTimeout(id);
+            if (err.name === 'AbortError') {
+              throw new Error('Request timeout: Model inference took too long');
+            }
+            throw err;
+          });
+      };
+      
       const responses = await Promise.all([
-        fetch("http://localhost:5000/get_boolean_answer", {
+        fetchWithTimeout("http://localhost:5000/get_boolean_answer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ input_text: context, input_question: booleanQuestions }),
-        }),
-        fetch("http://localhost:5000/get_mcq_answer", {
+        }, REQUEST_TIMEOUT),
+        fetchWithTimeout("http://localhost:5000/get_mcq_answer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -100,15 +122,27 @@ const Answer = () => {
             input_question: mcqQuestions.map((q) => q.question),
             input_options: mcqQuestions.map((q) => q.options),
           }),
-        }),
-        fetch("http://localhost:5000/get_shortq_answer", {
+        }, REQUEST_TIMEOUT),
+        fetchWithTimeout("http://localhost:5000/get_shortq_answer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ input_text: context, input_question: shortQuestions }),
-        }),
+        }, REQUEST_TIMEOUT),
       ]);
   
-      const [booleanAnswers, mcqAnswers, shortAnswers] = await Promise.all(responses.map((res) => res.json()));
+      const responseData = await Promise.all(responses.map((res) => res.json()));
+      const [booleanAnswers, mcqAnswers, shortAnswers] = responseData;
+      
+      // Check for error responses from backend
+      const errors = [];
+      if (booleanAnswers?.error) errors.push(`Boolean answers: ${booleanAnswers.error}`);
+      if (mcqAnswers?.error) errors.push(`MCQ answers: ${mcqAnswers.error}`);
+      if (shortAnswers?.error) errors.push(`Short answers: ${shortAnswers.error}`);
+      
+      if (errors.length > 0) {
+        console.error("Backend errors:", errors);
+        alert("Some questions failed to process:\n" + errors.join("\n"));
+      }
   
       const allAnswers = [
         ...(booleanAnswers?.output ?? []).map((answer, index) => ({ question: booleanQuestions[index], answer })),
@@ -119,6 +153,16 @@ const Answer = () => {
       setAnswers(allAnswers);
     } catch (error) {
       console.error("Error:", error);
+      
+      // Provide user-friendly error messages
+      let userMessage = "An error occurred while processing answers.";
+      if (error.message.includes('timeout')) {
+        userMessage = "Request timeout: The AI model took too long to process. Please try again with fewer questions or shorter context.";
+      } else if (error.message.includes('Failed to fetch')) {
+        userMessage = "Network error: Could not reach the server. Please ensure the backend is running.";
+      }
+      
+      alert(userMessage);
     } finally {
       setLoading(false);
       chrome.storage.local.remove(["selectedText"], () => {
