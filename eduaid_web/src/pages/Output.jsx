@@ -377,7 +377,7 @@ const Output = () => {
           {/* Action Buttons - Responsive layout */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mx-4 sm:mx-auto pb-4 sm:pb-6">
             <button
-              className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
+              className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] active:scale-95 active:bg-[#2f5555] transition-all justify-center"
               onClick={generateGoogleForm}
             >
               Generate Google form
@@ -385,7 +385,7 @@ const Output = () => {
             
             <div className="relative w-full sm:w-auto">
               <button
-                className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
+                className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] active:scale-95 active:bg-[#2f5555] transition-all justify-center"
                 onClick={() => document.getElementById('pdfDropdown').classList.toggle('hidden')}
               >
                 Generate PDF
@@ -396,19 +396,19 @@ const Output = () => {
                 className="hidden absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48"
               >
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-t-lg text-sm sm:text-base"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 active:bg-gray-600 active:scale-95 text-sm sm:text-base"
                   onClick={() => generatePDF('questions')}
                 >
                   Questions Only
                 </button>
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 text-sm sm:text-base"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 active:bg-gray-600 active:scale-95 text-sm sm:text-base"
                   onClick={() => generatePDF('questions_answers')}
                 >
                   Questions with Answers
                 </button>
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-b-lg text-sm sm:text-base"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 active:bg-gray-600 active:scale-95 text-sm sm:text-base"
                   onClick={() => generatePDF('answers')}
                 >
                   Answers Only
