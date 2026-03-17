@@ -89,7 +89,7 @@ def parse_max_questions(data, default=4):
     return value
 
 
-def score_and_rank_questions(questions):
+def score_and_rank_questions(questions, _input_text=None):
     """
     Use QAEvaluator to score and rank questions based on quality.
     Returns sorted list with best questions first.
@@ -214,14 +214,15 @@ def get_boolq():
     # Apply scoring and ranking if enabled
     if use_scoring and len(boolean_questions) >= 3:
         logger.info(f"Scoring enabled: Generated {len(boolean_questions)} questions, will rank and return top {max_questions}")
-        
-        #convert strings → dict format
-        boolean_questions = [
-            {"question": q} if isinstance(q, str) else q
+        scoring_payload = [
+            {"question": q, "__raw_question": q} if isinstance(q, str) else q
             for q in boolean_questions
         ]
-
-        boolean_questions = score_and_rank_questions(boolean_questions, input_text)
+        ranked_payload = score_and_rank_questions(scoring_payload, input_text)
+        boolean_questions = [
+            q["__raw_question"] if isinstance(q, dict) and "__raw_question" in q else q
+            for q in ranked_payload
+        ]
     
     # Always enforce requested size
     boolean_questions = boolean_questions[:max_questions]
