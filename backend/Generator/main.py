@@ -204,9 +204,16 @@ class BoolQGenerator:
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
 
-    def random_choice(self):
-        a = random.choice([0,1])
-        return bool(a)
+    def deterministic_choice(self, text):
+        """
+        Generate a deterministic boolean choice based on input text.
+        Uses hash of the text to ensure same input always produces same output.
+        This makes the function cacheable and deterministic.
+        """
+        import hashlib
+        text_hash = hashlib.sha256(text.encode('utf-8')).hexdigest()
+        # Use first character of hash to determine True/False
+        return int(text_hash[0], 16) % 2 == 0
     
 
     def generate_boolq(self, payload):
@@ -220,7 +227,7 @@ class BoolQGenerator:
         num= inp['max_questions']
         sentences = tokenize_into_sentences(text)
         modified_text = " ".join(sentences)
-        answer = self.random_choice()
+        answer = self.deterministic_choice(modified_text)
         form = "truefalse: %s passage: %s </s>" % (modified_text, answer)
         print(form)
         encoding = self.tokenizer.encode_plus(form, return_tensors="pt")
