@@ -74,7 +74,7 @@ app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024
 print("Starting Flask App...")
 
 limiter = Limiter(
-    key_func=get_remote_address,
+    key_func=lambda: request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip(),
     app=app,
 )
 
@@ -323,17 +323,17 @@ def get_problems():
     if mcq_err:
         response["mcq_error"] = mcq_err
     else:
-        response["output_mcq"] = mcq_out.get("questions", [])
+        response["output_mcq"] = (mcq_out or {}).get("questions", [])
 
     if bool_err:
         response["boolq_error"] = bool_err
     else:
-        response["output_boolq"] = bool_out.get("Boolean_Questions", [])
+        response["output_boolq"] = (bool_out or {}).get("Boolean_Questions", [])
 
     if short_err:
         response["shortq_error"] = short_err
     else:
-        response["output_shortq"] = short_out.get("questions", [])
+        response["output_shortq"] = (short_out or {}).get("questions", [])
         
     if mcq_err and bool_err and short_err:
         return jsonify({
