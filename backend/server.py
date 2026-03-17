@@ -12,12 +12,13 @@ nltk.download("stopwords")
 nltk.download('punkt_tab')
 from Generator import main
 from Generator.question_filters import make_question_harder
+from Generator.llm_generator import LLMQuestionGenerator
 import re
 import json
 import spacy
 from transformers import AutoModelForQuestionAnswering, AutoTokenizer
 import torch
->>>>>>> Stashed changes
+
 from spacy.lang.en.stop_words import STOP_WORDS
 from string import punctuation
 from heapq import nlargest
@@ -43,7 +44,8 @@ qg = main.QuestionGenerator()
 docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
-
+qa_model = pipeline("question-answering", model=qa_model_instance, tokenizer=qa_tokenizer, device=device)
+llm_generator = LLMQuestionGenerator()
 
 
 def process_input_text(input_text, use_mediawiki):
@@ -94,6 +96,68 @@ def get_shortq():
     return jsonify({"output": questions})
 
 
+@app.route("/get_shortq_llm", methods=["POST"])
+def get_shortq_llm():
+    try:
+        data = request.get_json()
+        input_text = data.get("input_text", "")
+        use_mediawiki = data.get("use_mediawiki", 0)
+        max_questions = data.get("max_questions", 4)
+        input_text = process_input_text(input_text, use_mediawiki)
+        questions = llm_generator.generate_short_questions(input_text, max_questions)
+        return jsonify({"output": questions})
+    except Exception as e:
+        app.logger.exception("Error in /get_shortq_llm: %s", e)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/get_mcq_llm", methods=["POST"])
+def get_mcq_llm():
+    try:
+        data = request.get_json()
+        input_text = data.get("input_text", "")
+        use_mediawiki = data.get("use_mediawiki", 0)
+        max_questions = data.get("max_questions", 4)
+        input_text = process_input_text(input_text, use_mediawiki)
+        questions = llm_generator.generate_mcq_questions(input_text, max_questions)
+        return jsonify({"output": questions})
+    except Exception as e:
+        app.logger.exception("Error in /get_mcq_llm: %s", e)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/get_boolq_llm", methods=["POST"])
+def get_boolq_llm():
+    try:
+        data = request.get_json()
+        input_text = data.get("input_text", "")
+        use_mediawiki = data.get("use_mediawiki", 0)
+        max_questions = data.get("max_questions", 4)
+        input_text = process_input_text(input_text, use_mediawiki)
+        questions = llm_generator.generate_boolean_questions(input_text, max_questions)
+        return jsonify({"output": questions})
+    except Exception as e:
+        app.logger.exception("Error in /get_boolq_llm: %s", e)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/get_problems_llm", methods=["POST"])
+def get_problems_llm():
+    try:
+        data = request.get_json()
+        input_text = data.get("input_text", "")
+        use_mediawiki = data.get("use_mediawiki", 0)
+        mcq_count = data.get("max_questions_mcq", 2)
+        bool_count = data.get("max_questions_boolq", 2)
+        short_count = data.get("max_questions_shortq", 2)
+        input_text = process_input_text(input_text, use_mediawiki)
+        questions = llm_generator.generate_all_questions(input_text, mcq_count, bool_count, short_count)
+        return jsonify({"output": questions})
+    except Exception as e:
+        app.logger.exception("Error in /get_problems_llm: %s", e)
+        return jsonify({"error": "Internal server error"}), 500
+
+
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
     data = request.get_json()
@@ -125,7 +189,7 @@ def get_mcq_answer():
     outputs = []
 
     if not input_questions or not input_options or len(input_questions) != len(input_options):
-        return jsonify({"outputs": outputs})
+        return jsonify({"output": outputs})
 
     for question, options in zip(input_questions, input_options):
         # Generate answer using the QA model
@@ -192,9 +256,11 @@ def get_content():
         text = docs_service.get_document_content(document_url)
         return jsonify(text)
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        app.logger.exception("ValueError in /get_content: %s", e)
+        return jsonify({'error': 'Bad request'}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.exception("Unhandled exception in /get_content: %s", e)
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route("/generate_gform", methods=["POST"])
