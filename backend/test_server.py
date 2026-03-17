@@ -33,6 +33,17 @@ def test_get_mcq():
     print(f'/get_mcq Response: {response}')
     assert 'output' in response
 
+def test_get_mcq_with_scoring():
+    endpoint = '/get_mcq'
+    data = {
+        'input_text': input_text,
+        'max_questions': 5,
+        'use_scoring': True
+    }
+    response = make_post_request(endpoint, data)
+    print(f'/get_mcq with scoring Response: {response}')
+    assert 'output' in response
+
 def test_get_boolq():
     endpoint = '/get_boolq'
     data = {
@@ -43,6 +54,17 @@ def test_get_boolq():
     print(f'/get_boolq Response: {response}')
     assert 'output' in response
 
+def test_get_boolq_with_scoring():
+    endpoint = '/get_boolq'
+    data = {
+        'input_text': input_text,
+        'max_questions': 3,
+        'use_scoring': True
+    }
+    response = make_post_request(endpoint, data)
+    print(f'/get_boolq with scoring Response: {response}')
+    assert 'output' in response
+
 def test_get_shortq():
     endpoint = '/get_shortq'
     data = {
@@ -51,6 +73,17 @@ def test_get_shortq():
     }
     response = make_post_request(endpoint, data)
     print(f'/get_shortq Response: {response}')
+    assert 'output' in response
+
+def test_get_shortq_with_scoring():
+    endpoint = '/get_shortq'
+    data = {
+        'input_text': input_text,
+        'max_questions': 4,
+        'use_scoring': True
+    }
+    response = make_post_request(endpoint, data)
+    print(f'/get_shortq with scoring Response: {response}')
     assert 'output' in response
 
 def test_get_problems():
@@ -110,8 +143,11 @@ def make_post_request(endpoint, data):
 
 if __name__ == '__main__':
     test_get_mcq()
+    test_get_mcq_with_scoring()
     test_get_boolq()
+    test_get_boolq_with_scoring()
     test_get_shortq()
+    test_get_shortq_with_scoring()
     test_get_problems()
     test_root()
     test_get_answer()

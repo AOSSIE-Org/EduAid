@@ -5,6 +5,7 @@ import nltk
 import subprocess
 import os
 import glob
+import logging
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -26,9 +27,16 @@ from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
 CORS(app)
-print("Starting Flask App...")
+logger.info("Starting Flask App...")
 
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
@@ -42,6 +50,7 @@ docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
+qa_evaluator = main.QAEvaluator()
 
 
 def process_input_text(input_text, use_mediawiki):
@@ -50,45 +59,160 @@ def process_input_text(input_text, use_mediawiki):
     return input_text
 
 
+def score_and_rank_questions(questions, context):
+    """
+    Use QAEvaluator to score and rank questions based on quality.
+    Returns sorted list with best questions first.
+    
+    Args:
+        questions: List of question dictionaries
+        context: The input text context
+        
+    Returns:
+        List of questions sorted by quality score (best first)
+    """
+    try:
+        # Skip scoring if too few questions
+        if len(questions) < 3:
+            logger.info(f"Skipping scoring: only {len(questions)} questions (minimum 3 required)")
+            return questions
+        
+        logger.info(f"Scoring and ranking {len(questions)} questions...")
+        
+        # Extract question and answer pairs
+        question_texts = []
+        answer_texts = []
+        
+        for q in questions:
+            question_texts.append(q.get('question', ''))
+            # Handle different answer formats
+            if 'answer' in q and q['answer']:
+                answer_texts.append(q['answer'])
+            elif 'options' in q and q['options']:
+                # fallback only if answer missing
+                answer_texts.append(q['options'][0])
+            else:
+                answer_texts.append('')
+        
+        # Encode QA pairs
+        encoded_pairs = qa_evaluator.encode_qa_pairs(question_texts, answer_texts)
+        
+        # Get scores (returns indices sorted by score)
+        sorted_indices = qa_evaluator.get_scores(encoded_pairs)
+        
+        # Reorder questions based on scores
+        ranked_questions = [questions[i] for i in sorted_indices]
+        
+        logger.info(f"Successfully ranked {len(ranked_questions)} questions by quality score")
+        return ranked_questions
+        
+    except Exception as e:
+        # Fallback to original questions if scoring fails
+        logger.error(f"Scoring failed: {e}. Returning original questions.", exc_info=True)
+        return questions
+
+
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
+    
+    # Validate input_text
+    if not isinstance(input_text, str) or not input_text.strip():
+        return jsonify({"error": "input_text is required"}), 400
+    
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    use_scoring = data.get("use_scoring", False)
+    
     input_text = process_input_text(input_text, use_mediawiki)
+    
+    # If scoring is enabled, request more questions for better ranking
+    generation_limit = max_questions * 2 if use_scoring else max_questions
+    
     output = MCQGen.generate_mcq(
-        {"input_text": input_text, "max_questions": max_questions}
+        {"input_text": input_text, "max_questions": generation_limit}
     )
     questions = output["questions"]
+    
+    # Apply scoring and ranking if enabled
+    if use_scoring and len(questions) >= 3:
+        logger.info(f"Scoring enabled: Generated {len(questions)} questions, will rank and return top {max_questions}")
+        questions = score_and_rank_questions(questions, input_text)
+        # Slice to requested number after ranking
+        questions = questions[:max_questions]
+    
     return jsonify({"output": questions})
 
 
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
+    
+    # Validate input_text
+    if not isinstance(input_text, str) or not input_text.strip():
+        return jsonify({"error": "input_text is required"}), 400
+    
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    use_scoring = data.get("use_scoring", False)
+    
     input_text = process_input_text(input_text, use_mediawiki)
+    
+    # If scoring is enabled, request more questions for better ranking
+    generation_limit = max_questions * 2 if use_scoring else max_questions
+    
     output = BoolQGen.generate_boolq(
-        {"input_text": input_text, "max_questions": max_questions}
+        {"input_text": input_text, "max_questions": generation_limit}
     )
     boolean_questions = output["Boolean_Questions"]
+    # Normalize boolean question format for scoring
+    boolean_questions = [
+        {"question": q} if isinstance(q, str) else q
+        for q in boolean_questions
+    ]
+    
+    # Apply scoring and ranking if enabled
+    if use_scoring and len(boolean_questions) >= 3:
+        logger.info(f"Scoring enabled: Generated {len(boolean_questions)} questions, will rank and return top {max_questions}")
+        boolean_questions = score_and_rank_questions(boolean_questions, input_text)
+        # Slice to requested number after ranking
+        boolean_questions = boolean_questions[:max_questions]
+    
     return jsonify({"output": boolean_questions})
 
 
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     input_text = data.get("input_text", "")
+    
+    # Validate input_text
+    if not isinstance(input_text, str) or not input_text.strip():
+        return jsonify({"error": "input_text is required"}), 400
+    
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    use_scoring = data.get("use_scoring", False)
+    
     input_text = process_input_text(input_text, use_mediawiki)
+    
+    # If scoring is enabled, request more questions for better ranking
+    generation_limit = max_questions * 2 if use_scoring else max_questions
+    
     output = ShortQGen.generate_shortq(
-        {"input_text": input_text, "max_questions": max_questions}
+        {"input_text": input_text, "max_questions": generation_limit}
     )
     questions = output["questions"]
+    
+    # Apply scoring and ranking if enabled
+    if use_scoring and len(questions) >= 3:
+        logger.info(f"Scoring enabled: Generated {len(questions)} questions, will rank and return top {max_questions}")
+        questions = score_and_rank_questions(questions, input_text)
+        # Slice to requested number after ranking
+        questions = questions[:max_questions]
+    
     return jsonify({"output": questions})
 
 
