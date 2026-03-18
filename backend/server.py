@@ -44,8 +44,22 @@ qg = main.QuestionGenerator()
 docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
-qa_model = pipeline("question-answering", model=qa_model_instance, tokenizer=qa_tokenizer, device=device)
+
+
+# Adding the LLMQuestionGenerator back so your app doesn't crash!
 llm_generator = LLMQuestionGenerator()
+
+QA_MODEL_NAME = "deepset/roberta-base-squad2"
+qa_tokenizer = AutoTokenizer.from_pretrained(QA_MODEL_NAME)
+qa_model_instance = AutoModelForQuestionAnswering.from_pretrained(QA_MODEL_NAME)
+device = 0 if torch.cuda.is_available() else -1
+
+qa_model = pipeline(
+    "question-answering",
+    model=qa_model_instance,
+    tokenizer=qa_tokenizer,
+    device=device
+)
 
 
 def process_input_text(input_text, use_mediawiki):
