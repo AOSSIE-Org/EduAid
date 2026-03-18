@@ -4,6 +4,7 @@ import logoPNG from "../assets/aossie_logo_transparent.png";
 import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
+import fontkit from "@pdf-lib/fontkit";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
@@ -17,25 +18,34 @@ const Output = () => {
   const [fontBytes, setFontBytes] = useState(null);
   const [fontLoadError, setFontLoadError] = useState(false);
 
-  useEffect(() => {
+ useEffect(() => {
     const loadFont = async () => {
       try {
+       
         const fontModule = await import("../assets/fonts/NotoSans-Regular.ttf");
+        
+        
         const resp = await fetch(fontModule.default);
+        
         if (!resp.ok) {
           throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
         }
+
+       
         const arrayBuffer = await resp.arrayBuffer();
         setFontBytes(arrayBuffer);
+        setFontLoadError(false);
       } catch (e) {
         console.error("Failed to load Noto Sans font:", e);
         setFontLoadError(true);
       }
     };
+
     loadFont();
   }, []);
 
   useEffect(() => {
+
     const handleClickOutside = (event) => {
       const dropdown = document.getElementById('pdfDropdown');
       const triggerBtn = document.getElementById('pdfTriggerButton');
@@ -409,53 +419,53 @@ const Output = () => {
           {/* Action Buttons - Responsive layout */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mx-4 sm:mx-auto pb-4 sm:pb-6">
             <button
-              className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] active:scale-95 active:bg-[#2f5555] transition-all justify-center"
+              className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
               onClick={generateGoogleForm}
             >
               Generate Google form
             </button>
 
-          <div className="relative w-full sm:w-auto">
-  <button
-    id="pdfTriggerButton"
-    className={`${
-      fontLoadError || !fontBytes
-        ? 'bg-gray-500 cursor-not-allowed'
-        : 'bg-[#518E8E] hover:bg-[#3a6b6b] active:scale-95 active:bg-[#2f5555]'
-    } items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base transition-all justify-center`}
-    onClick={() => {
-      if (fontBytes && !fontLoadError) {
-        document.getElementById('pdfDropdown').classList.toggle('hidden');
-      }
-    }}
-    disabled={!fontBytes || fontLoadError}
-  >
-    {fontLoadError
-      ? 'Font Load Failed'
-      : !fontBytes
-        ? 'Loading Font...'
-        : 'Generate PDF'}
-  </button>
-</div>
+            <div className="relative w-full sm:w-auto">
+              <button
+                id="pdfTriggerButton"
+                className={`${fontLoadError
+                    ? 'bg-gray-500 cursor-not-allowed'
+                    : !fontBytes
+                      ? 'bg-gray-500 cursor-not-allowed'
+                      : 'bg-[#518E8E] hover:bg-[#3a6b6b]'
+                  } items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base transition-colors justify-center`}
+                onClick={() => {
+                  if (fontBytes) {
+                    document.getElementById('pdfDropdown').classList.toggle('hidden');
+                  }
+                }}
+                disabled={!fontBytes || fontLoadError}
+              >
+                {fontLoadError
+                  ? 'Font Load Failed'
+                  : !fontBytes
+                    ? 'Loading Font...'
+                    : 'Generate PDF'}
+              </button>
 
               <div
                 id="pdfDropdown"
                 className="hidden absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48"
               >
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 active:bg-gray-600 active:scale-95 text-sm sm:text-base"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-t-lg text-sm sm:text-base"
                   onClick={() => generatePDF('questions')}
                 >
                   Questions Only
                 </button>
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 active:bg-gray-600 active:scale-95 text-sm sm:text-base"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 text-sm sm:text-base"
                   onClick={() => generatePDF('questions_answers')}
                 >
                   Questions with Answers
                 </button>
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 active:bg-gray-600 active:scale-95 text-sm sm:text-base"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-b-lg text-sm sm:text-base"
                   onClick={() => generatePDF('answers')}
                 >
                   Answers Only
