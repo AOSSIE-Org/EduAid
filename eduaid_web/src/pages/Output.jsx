@@ -129,6 +129,12 @@ const Output = () => {
         });
       }
 
+// NOTE:
+// In normal flow, when `output_mcq` is present, questionType is expected to be "get_mcq".
+// In "all" mode, different question types (MCQ, Short, Boolean) are intentionally combined.
+// This may look like duplicate processing, but data comes from different sources
+// and is required for mixed question rendering.
+
       if (
         (qaPairsFromStorage["output_mcq"] || 
       questionType === "get_mcq") && 
