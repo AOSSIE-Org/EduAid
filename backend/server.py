@@ -47,8 +47,19 @@ llm_generator = LLMQuestionGenerator()
 
 
 def process_input_text(input_text, use_mediawiki):
+    if not input_text or not isinstance(input_text, str):
+        return ""
+    
+    input_text = input_text.strip()
+    if not input_text:
+        return ""
+        
     if use_mediawiki == 1:
-        input_text = mediawikiapi.summary(input_text,8)
+        try:
+            input_text = mediawikiapi.summary(input_text, 8)
+        except Exception as e:
+            app.logger.warning(f"MediaWiki API failed: {e}")
+            return input_text  # Return original text on failure
     return input_text
 
 
@@ -186,7 +197,14 @@ def get_mcq_answer():
     input_options = data.get("input_options", [])
     outputs = []
 
-    if not input_questions or not input_options or len(input_questions) != len(input_options):
+    if not input_questions or not input_options:
+        return jsonify({"output": outputs})
+
+    if (not isinstance(input_questions, list) or
+            not isinstance(input_options, list)):
+        return jsonify({"output": outputs})
+
+    if len(input_questions) != len(input_options):
         return jsonify({"output": outputs})
 
     for question, options in zip(input_questions, input_options):
@@ -424,9 +442,11 @@ def generate_gform():
     ).execute()
 
     edit_url = jsonify(result["responderUri"])
-    webbrowser.open_new_tab(
-        "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
-    )
+    form_id = result.get("formId")
+    if form_id:
+        webbrowser.open_new_tab(
+            f"https://docs.google.com/forms/d/{form_id}/edit"
+        )
     return edit_url
 
 
@@ -492,7 +512,7 @@ def upload_file():
 
     file = request.files['file']
 
-    if file.filename == '':
+    if not file or file.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
     content = file_processor.process_file(file)
@@ -516,6 +536,8 @@ def clean_transcript(file_path):
 
     for line in lines:
         line = line.strip()
+        if not line:
+            continue
 
         # Skip metadata lines like "Kind: captions" or "Language: en"
         if line.lower().startswith(("kind:", "language:", "webvtt")):
@@ -529,7 +551,8 @@ def clean_transcript(file_path):
         if not skip_metadata:
             # Remove formatting tags like <c>...</c> and <00:00:00.000>
             line = re.sub(r"<[^>]+>", "", line)
-            transcript_lines.append(line)
+            if line:  # Only add non-empty lines
+                transcript_lines.append(line)
 
     return " ".join(transcript_lines).strip()
 
