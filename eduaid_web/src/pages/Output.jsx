@@ -106,6 +106,7 @@ const Output = () => {
       const combinedQaPairs = [];
 
       if (qaPairsFromStorage["output_boolq"]) {
+        Array.isArray(qaPairsFromStorage["output_boolq"]?.["Boolean_Questions"]) &&
         qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
           (question, index) => {
             combinedQaPairs.push({
@@ -118,6 +119,7 @@ const Output = () => {
       }
 
       if (qaPairsFromStorage["output_mcq"]) {
+        Array.isArray(qaPairsFromStorage["output_mcq"]?.["questions"]) &&
         qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
@@ -140,6 +142,7 @@ const Output = () => {
       questionType === "get_mcq") && 
         qaPairsFromStorage["output"]
       ) {
+        Array.isArray(qaPairsFromStorage["output"]) &&
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
@@ -151,14 +154,20 @@ const Output = () => {
         });
       }
 
-      if (questionType === "get_boolq" && qaPairsFromStorage["output"]) {
+      if (
+        questionType === "get_boolq" && 
+        Array.isArray(qaPairsFromStorage["output"])
+      ) {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair,
             question_type: "Boolean",
           });
         });
-      } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
+      } else if (
+        Array.isArray(qaPairsFromStorage["output"]) && 
+        questionType !== "get_mcq"
+      ) {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question:
