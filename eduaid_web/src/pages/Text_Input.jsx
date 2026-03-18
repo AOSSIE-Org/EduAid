@@ -33,11 +33,12 @@ const Text_Input = () => {
       try {
         const data = await apiClient.postFormData("/upload", formData);
       
-        if (data.content) {
-          setError(""); 
-          setText(data.content);
+        const extracted = (data?.content || "").trim();
+      
+        if (extracted) {
+          setError("");
+          setText(extracted);
         } else {
-          setText("");
           setError("Error extracting file content");
         }
       
@@ -76,16 +77,16 @@ const Text_Input = () => {
       } 
     
     // Check if a Google Doc URL is provided
-    if (trimmedDocUrl) {
+    if (trimmedDocUrl && !trimmedText) {
       try {
         const data = await apiClient.post("/get_content", { document_url: trimmedDocUrl });
-        
-        if (data) {
+        const docContent = typeof data === "string" ? data.trim() : "";
+        if (docContent) {
           setError("");
           setDocUrl("");
-          setText(data);
+          setText(docContent);
           await sendToBackend(
-            data,
+            docContent,
             difficulty,
             localStorage.getItem("selectedQuestionType")
           );
@@ -119,10 +120,12 @@ const Text_Input = () => {
 
   const incrementQuestions = () => {
     setNumQuestions((prev) => prev + 1);
+    setError("");
   };
 
   const decrementQuestions = () => {
     setNumQuestions((prev) => (prev > 0 ? prev - 1 : 0));
+    setError("");
   };
 
   const getEndpoint = (difficulty, questionType) => {
