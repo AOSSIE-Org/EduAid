@@ -120,7 +120,7 @@ const Output = () => {
         });
       }
 
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
+      if (questionType === "get_mcq" && Array.isArray(qaPairsFromStorage["output"])) {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
@@ -195,7 +195,10 @@ const Output = () => {
       link.click();
       document.body.removeChild(link);
 
-      document.getElementById('pdfDropdown').classList.add('hidden');
+      const dropdown = document.getElementById("pdfDropdown");
+if (dropdown) {
+  dropdown.classList.add("hidden");
+}
       worker.terminate();
     };
 
