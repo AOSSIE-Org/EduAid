@@ -183,6 +183,19 @@ def test_get_boolean_answer():
     print(f'/get_boolean_answer Response: {response}')
     assert 'output' in response
 
+def test_get_mcq_answer_invalid_input_contract():
+    endpoint = '/get_mcq_answer'
+    data = {
+        'input_text': input_text,
+        'input_question': ["What is AI?", "What is deep learning?"],
+        'input_options': [["Option A", "Option B"]]
+    }
+    response = make_post_request(endpoint, data)
+    print(f'/get_mcq_answer invalid-input Response: {response}')
+    assert 'output' in response
+    assert 'outputs' not in response
+    assert response['output'] == []
+
 def make_post_request(endpoint, data):
     url = f'{BASE_URL}{endpoint}'
     headers = {'Content-Type': 'application/json'}
