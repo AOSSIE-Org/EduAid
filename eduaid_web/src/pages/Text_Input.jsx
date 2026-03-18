@@ -9,6 +9,7 @@ import { Link,useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 
 const Text_Input = () => {
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const [text, setText] = useState("");
   const [difficulty, setDifficulty] = useState("Easy Difficulty");
@@ -31,10 +32,19 @@ const Text_Input = () => {
 
       try {
         const data = await apiClient.postFormData("/upload", formData);
-        setText(data.content || data.error);
+      
+        const extracted = (data?.content || "").trim();
+      
+        if (extracted) {
+          setError("");
+          setText(extracted);
+        } else {
+          setError("Error extracting file content");
+        }
+      
       } catch (error) {
         console.error("Error uploading file:", error);
-        setText("Error uploading file");
+        setError("Error uploading file");
       }
     }
   };
@@ -48,28 +58,56 @@ const Text_Input = () => {
   };
 
   const handleSaveToLocalStorage = async () => {
+    if (numQuestions <= 0) {
+      setError("Number of questions must be greater than 0");
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
 
+     // Trim the input
+     const trimmedText = text.trim();
+     const trimmedDocUrl = docUrl.trim();
+     // Check if input is empty
+     if (!trimmedText && !trimmedDocUrl) {
+       setError("Please enter text, upload a file, or provide a Google Doc URL");
+       setLoading(false);
+       return;
+      } 
+    
     // Check if a Google Doc URL is provided
-    if (docUrl) {
+    if (trimmedDocUrl && !trimmedText) {
       try {
-        const data = await apiClient.post("/get_content", { document_url: docUrl });
-        setDocUrl("");
-        setText(data || "Error in retrieving");
+        const data = await apiClient.post("/get_content", { document_url: trimmedDocUrl });
+        const docContent = typeof data === "string" ? data.trim() : "";
+        if (docContent) {
+          setError("");
+          setDocUrl("");
+          setText(docContent);
+          await sendToBackend(
+            docContent,
+            difficulty,
+            localStorage.getItem("selectedQuestionType")
+          );
+        } else {
+          setError("Error retrieving Google Doc content");
+          setLoading(false);
+        }
       } catch (error) {
         console.error("Error:", error);
-        setText("Error retrieving Google Doc content");
-      } finally {
+        setError("Error retrieving Google Doc content");
         setLoading(false);
       }
-    } else if (text) {
+      return;
+    } else {
       // Proceed with existing functionality for local storage
-      localStorage.setItem("textContent", text);
+      localStorage.setItem("textContent", trimmedText);
       localStorage.setItem("difficulty", difficulty);
       localStorage.setItem("numQuestions", numQuestions);
 
       await sendToBackend(
-        text,
+        trimmedText,
         difficulty,
         localStorage.getItem("selectedQuestionType")
       );
@@ -82,10 +120,12 @@ const Text_Input = () => {
 
   const incrementQuestions = () => {
     setNumQuestions((prev) => prev + 1);
+    setError("");
   };
 
   const decrementQuestions = () => {
     setNumQuestions((prev) => (prev > 0 ? prev - 1 : 0));
+    setError("");
   };
 
   const getEndpoint = (difficulty, questionType) => {
@@ -130,6 +170,7 @@ const Text_Input = () => {
       navigate("/output");
     } catch (error) {
       console.error("Error:", error);
+      setError("Something went wrong while generating questions")
     } finally {
       setLoading(false);
     }
@@ -174,11 +215,17 @@ const Text_Input = () => {
             className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              setError("");
+            }}
           />
           <style>{`textarea::-webkit-scrollbar { display: none; }`}</style>
         </div>
-
+        
+        {error && (
+          <p className="mt-2 text-sm text-center text-red-300">{error}</p>
+        )}
         {/* Separator */}
         <div className="text-white text-center my-4 text-lg">or</div>
 
@@ -200,7 +247,10 @@ const Text_Input = () => {
             placeholder="Enter Google Doc URL"
             className="bg-transparent mt-4 border border-[#cbd0dc80] text-white text-lg sm:text-xl rounded-2xl px-4 py-2 w-full sm:w-2/3 outline-none"
             value={docUrl}
-            onChange={(e) => setDocUrl(e.target.value)}
+            onChange={(e) => {
+              setDocUrl(e.target.value);
+              setError("");
+            }}
           />
         </div>
 
