@@ -372,7 +372,7 @@ class FileProcessor:
         original_filename = os.path.basename(file.filename or "")
         _, ext = os.path.splitext(original_filename)
         lower_ext = ext.lower()
-        safe_filename = f"{uuid.uuid4().hex}{lower_ext}"
+        safe_filename = uuid.uuid4().hex
         file_path = os.path.join(self.upload_folder, safe_filename)
         content = ""
 
