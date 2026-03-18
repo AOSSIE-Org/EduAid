@@ -16,15 +16,16 @@ from Generator.llm_generator import LLMQuestionGenerator
 import re
 import json
 import spacy
-from transformers import pipeline
+from transformers import AutoModelForQuestionAnswering, AutoTokenizer, pipeline
+import torch
+
 from spacy.lang.en.stop_words import STOP_WORDS
 from string import punctuation
 from heapq import nlargest
 import random
 import webbrowser
-from apiclient import discovery
-from httplib2 import Http
-from oauth2client import client, file, tools
+from googleapiclient.discovery import build as google_build
+from google.oauth2 import service_account as sa
 from mediawikiapi import MediaWikiAPI
 
 app = Flask(__name__)
@@ -42,8 +43,29 @@ qg = main.QuestionGenerator()
 docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
-qa_model = pipeline("question-answering")
+
+
+# Adding the LLMQuestionGenerator back so your app doesn't crash!
 llm_generator = LLMQuestionGenerator()
+
+QA_MODEL_NAME = "deepset/roberta-base-squad2"
+device = 0 if torch.cuda.is_available() else -1
+
+qa_model = None
+qa_model_init_error = None
+
+try:
+    qa_tokenizer = AutoTokenizer.from_pretrained(QA_MODEL_NAME)
+    qa_model_instance = AutoModelForQuestionAnswering.from_pretrained(QA_MODEL_NAME)
+    qa_model = pipeline(
+        "question-answering",
+        model=qa_model_instance,
+        tokenizer=qa_tokenizer,
+        device=device
+    )
+except Exception as exc:
+    qa_model_init_error = exc
+    app.logger.exception("Failed to initialize QA model: %s", exc)
 
 
 def process_input_text(input_text, use_mediawiki):
@@ -76,7 +98,7 @@ def get_boolq():
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    boolean_questions = output["Boolean_Questions"]
+    boolean_questions = output.get("Boolean_Questions", [])
     return jsonify({"output": boolean_questions})
 
 

@@ -4,30 +4,69 @@ import logoPNG from "../assets/aossie_logo_transparent.png";
 import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
+import fontkit from "@pdf-lib/fontkit";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
-  const [questionType, setQuestionType] = useState(
+  const [questionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
-  const [pdfMode, setPdfMode] = useState("questions");
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedQuestion, setEditedQuestion] = useState("");
   const [editedAnswer, setEditedAnswer] = useState("");
   const [editedOptions, setEditedOptions] = useState([]);
+  const [fontBytes, setFontBytes] = useState(null);
+  const [fontLoadError, setFontLoadError] = useState(false);
+
+ useEffect(() => {
+    const loadFont = async () => {
+      try {
+       
+        const fontModule = await import("../assets/fonts/NotoSans-Regular.ttf");
+        
+        
+        const resp = await fetch(fontModule.default);
+        
+        if (!resp.ok) {
+          throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+        }
+
+       
+        const arrayBuffer = await resp.arrayBuffer();
+        setFontBytes(arrayBuffer);
+        setFontLoadError(false);
+      } catch (e) {
+        console.error("Failed to load Noto Sans font:", e);
+        setFontLoadError(true);
+      }
+    };
+
+    loadFont();
+  }, []);
 
   useEffect(() => {
+
     const handleClickOutside = (event) => {
-        const dropdown = document.getElementById('pdfDropdown');
-        if (dropdown && !dropdown.contains(event.target) && 
-            !event.target.closest('button')) {
-            dropdown.classList.add('hidden');
+      const dropdown = document.getElementById('pdfDropdown');
+      const triggerBtn = document.getElementById('pdfTriggerButton');
+
+      // Ensure target is a valid Node to prevent errors
+      if (event.target instanceof Node) {
+        // Only hide if the click is outside BOTH the dropdown and its trigger button
+        if (
+          dropdown &&
+          !dropdown.contains(event.target) &&
+          triggerBtn &&
+          !triggerBtn.contains(event.target)
+        ) {
+          dropdown.classList.add('hidden');
         }
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-}, []);
+  }, []);
 
   function shuffleArray(array) {
     const shuffledArray = [...array];
@@ -132,7 +171,7 @@ const Output = () => {
         });
       }
 
-      if (questionType == "get_boolq") {
+      if (questionType === "get_boolq") {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair,
@@ -154,7 +193,7 @@ const Output = () => {
 
       setQaPairs(combinedQaPairs);
     }
-  }, []);
+  }, [questionType]);
 
   const generateGoogleForm = async () => {
     try {
@@ -180,20 +219,22 @@ const Output = () => {
     }
   };
 
-    const generatePDF = async (mode) => {
+  const generatePDF = async (mode) => {
     const logoBytes = await loadLogoAsBytes();
     const worker = new Worker(new URL("../workers/pdfWorker.js", import.meta.url), { type: "module" });
 
-    worker.postMessage({ qaPairs, mode, logoBytes });
+    worker.postMessage({ qaPairs, mode, logoBytes, fontBytes });
 
     worker.onmessage = (e) => {
       const blob = new Blob([e.data], { type: 'application/pdf' });
       const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
+      link.href = url;
       link.download = "generated_questions.pdf";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
       document.getElementById('pdfDropdown').classList.add('hidden');
       worker.terminate();
@@ -205,6 +246,8 @@ const Output = () => {
     };
   };
 
+
+
   return (
     <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient">
@@ -212,10 +255,10 @@ const Output = () => {
           {/* Header - Responsive logo and title */}
           <Link to="/">
             <div className="flex items-end gap-[2px] px-4 sm:px-6">
-              <img 
-                src={logoPNG} 
-                alt="logo" 
-                className="w-12 sm:w-16 my-4 block" 
+              <img
+                src={logoPNG}
+                alt="logo"
+                className="w-12 sm:w-16 my-4 block"
               />
               <div className="text-xl sm:text-2xl mb-3 font-extrabold">
                 <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
@@ -234,11 +277,10 @@ const Output = () => {
               Generated Questions
             </div>
             <button
-              className={`${
-                editingIndex !== null
-                  ? 'bg-gray-500 cursor-not-allowed'
-                  : 'bg-[#7C3AED] hover:bg-[#5A2AD9]'
-              } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
+              className={`${editingIndex !== null
+                ? 'bg-gray-500 cursor-not-allowed'
+                : 'bg-[#7C3AED] hover:bg-[#5A2AD9]'
+                } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
               onClick={handleShuffleQuestions}
               disabled={editingIndex !== null}
             >
@@ -253,7 +295,7 @@ const Output = () => {
               qaPairs.map((qaPair, index) => {
                 const shuffledOptions = shuffledOptionsMap[index];
                 const isEditing = editingIndex === index;
-                
+
                 return (
                   <div
                     key={index}
@@ -332,7 +374,7 @@ const Output = () => {
                           value={editedQuestion}
                           onChange={(e) => setEditedQuestion(e.target.value)}
                         />
-                        
+
                         {qaPair.question_type !== "Boolean" && (
                           <>
                             <div className="text-[#E4E4E4] text-xs sm:text-sm mt-3 mb-1">
@@ -344,7 +386,7 @@ const Output = () => {
                               value={editedAnswer}
                               onChange={(e) => setEditedAnswer(e.target.value)}
                             />
-                            
+
                             {editedOptions && editedOptions.length > 0 && (
                               <div className="mt-3">
                                 <div className="text-[#E4E4E4] text-xs sm:text-sm mb-2">
@@ -377,43 +419,59 @@ const Output = () => {
           {/* Action Buttons - Responsive layout */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mx-4 sm:mx-auto pb-4 sm:pb-6">
             <button
-              className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] active:scale-95 active:bg-[#2f5555] transition-all justify-center"
+              className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] transition-colors justify-center"
               onClick={generateGoogleForm}
             >
               Generate Google form
             </button>
-            
+
             <div className="relative w-full sm:w-auto">
               <button
-                className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] active:scale-95 active:bg-[#2f5555] transition-all justify-center"
-                onClick={() => document.getElementById('pdfDropdown').classList.toggle('hidden')}
+                id="pdfTriggerButton"
+                className={`${fontLoadError
+                    ? 'bg-gray-500 cursor-not-allowed'
+                    : !fontBytes
+                      ? 'bg-gray-500 cursor-not-allowed'
+                      : 'bg-[#518E8E] hover:bg-[#3a6b6b]'
+                  } items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base transition-colors justify-center`}
+                onClick={() => {
+                  if (fontBytes) {
+                    document.getElementById('pdfDropdown').classList.toggle('hidden');
+                  }
+                }}
+                disabled={!fontBytes || fontLoadError}
               >
-                Generate PDF
+                {fontLoadError
+                  ? 'Font Load Failed'
+                  : !fontBytes
+                    ? 'Loading Font...'
+                    : 'Generate PDF'}
               </button>
-              
+
               <div
                 id="pdfDropdown"
                 className="hidden absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48"
               >
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 active:bg-gray-600 active:scale-95 text-sm sm:text-base"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-t-lg text-sm sm:text-base"
                   onClick={() => generatePDF('questions')}
                 >
                   Questions Only
                 </button>
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 active:bg-gray-600 active:scale-95 text-sm sm:text-base"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 text-sm sm:text-base"
                   onClick={() => generatePDF('questions_answers')}
                 >
                   Questions with Answers
                 </button>
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 active:bg-gray-600 active:scale-95 text-sm sm:text-base"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-500 rounded-b-lg text-sm sm:text-base"
                   onClick={() => generatePDF('answers')}
                 >
                   Answers Only
                 </button>
               </div>
+
             </div>
           </div>
         </div>
@@ -421,6 +479,5 @@ const Output = () => {
     </div>
   );
 };
-
 
 export default Output;
