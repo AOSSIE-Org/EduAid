@@ -51,18 +51,18 @@ class FileProcessor:
             os.makedirs(self.upload_folder)
 
     def _sanitize_filename(self, filename):
-        """Sanitize filename to prevent path traversal attacks."""
-        if not filename:
-            return str(uuid.uuid4())
+        """Generate safe filename to prevent path traversal attacks."""
+        # Use UUID as base filename to ensure no user-controlled data
+        safe_filename = str(uuid.uuid4())
 
-        # Remove path separators and dangerous characters
-        safe_filename = os.path.basename(filename)
-        safe_filename = re.sub(r'[<>:"/\\|?*]', '_', safe_filename)
-        safe_filename = re.sub(r'\.\.', '_', safe_filename)
+        # Extract and sanitize file extension if present
+        if filename and '.' in filename:
+            # Get the last extension and sanitize it
+            extension = filename.split('.')[-1]
+            # Only allow alphanumeric extensions
+            if re.match(r'^[a-zA-Z0-9]+$', extension):
+                safe_filename += '.' + extension.lower()
         
-        # Ensure filename is not empty after sanitization
-        if not safe_filename or safe_filename in ('.', '..'):
-            safe_filename = str(uuid.uuid4())
         return safe_filename
 
     def extract_text_from_pdf(self, file_path):
