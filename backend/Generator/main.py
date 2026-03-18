@@ -20,6 +20,7 @@ import re
 from typing import Any, List, Mapping, Tuple
 import re
 import os
+import uuid
 import fitz 
 import mammoth
 
@@ -368,22 +369,28 @@ class FileProcessor:
             return result.value
 
     def process_file(self, file):
-        file_path = os.path.join(self.upload_folder, file.filename)
-        file.save(file_path)
+        original_filename = os.path.basename(file.filename or "")
+        _, ext = os.path.splitext(original_filename)
+        lower_ext = ext.lower()
+        safe_filename = f"{uuid.uuid4().hex}{lower_ext}"
+        file_path = os.path.join(self.upload_folder, safe_filename)
         content = ""
 
         try:
-            if file.filename.endswith('.txt'):
+            file.save(file_path)
+            if lower_ext == '.txt':
                 with open(file_path, 'r') as f:
                     content = f.read()
-            elif file.filename.endswith('.pdf'):
+            elif lower_ext == '.pdf':
                 content = self.extract_text_from_pdf(file_path)
-            elif file.filename.endswith('.docx'):
+            elif lower_ext == '.docx':
                 content = self.extract_text_from_docx(file_path)
             return content
         finally:
-            if os.path.exists(file_path):
+            try:
                 os.remove(file_path)
+            except FileNotFoundError:
+                pass
 
 class QuestionGenerator:
     """A transformer-based NLP system for generating reading comprehension-style questions from
