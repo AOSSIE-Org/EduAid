@@ -58,7 +58,12 @@ const Output = () => {
   const handleEditQuestion = (index) => {
     setEditingIndex(index);
     setEditedQuestion(qaPairs[index].question);
-    setEditedAnswer(qaPairs[index].answer || "");
+    const existing = qaPairs[index].answer;
+    setEditedAnswer(
+      qaPairs[index].question_type === "Boolean"
+        ? (existing === "True" || existing === "False" ? existing : "True")
+        : (existing || "")
+    );
     setEditedOptions(qaPairs[index].options || []);
   };
 
@@ -296,6 +301,31 @@ const Output = () => {
                         <div className="text-[#FFF4F4] text-sm sm:text-base my-1 sm:my-2 leading-relaxed">
                           {qaPair.question}
                         </div>
+                        
+                        {qaPair.question_type === "Boolean" && (
+                          <>
+                            <div className="text-[#FFF4F4] text-sm sm:text-base mt-2 sm:mt-3">
+                              <div className="mb-1 sm:mb-2">
+                                <span className="text-[#E4E4E4] text-xs sm:text-sm">
+                                  Option 1:
+                                </span>{" "}
+                                <span className="text-[#FFF4F4] text-sm sm:text-base">
+                                  True
+                                </span>
+                              </div>
+
+                              <div className="mb-1 sm:mb-2">
+                                <span className="text-[#E4E4E4] text-xs sm:text-sm">
+                                  Option 2:
+                                </span>{" "}
+                                <span className="text-[#FFF4F4] text-sm sm:text-base">
+                                  False
+                                </span>
+                              </div>
+                            </div>
+                          </>
+                        )}
+
                         {qaPair.question_type !== "Boolean" && (
                           <>
                             <div className="text-[#E4E4E4] text-xs sm:text-sm mt-3 sm:mt-4">
@@ -332,6 +362,23 @@ const Output = () => {
                           value={editedQuestion}
                           onChange={(e) => setEditedQuestion(e.target.value)}
                         />
+
+                        {qaPair.question_type === "Boolean" && (
+                          <>
+                            <div className="text-[#E4E4E4] text-xs sm:text-sm mt-3 mb-1">
+                              Edit Answer
+                            </div>
+
+                            <select
+                              className="w-full bg-[#1a1a2e] text-[#FFF4F4] text-sm sm:text-base p-2 rounded border border-gray-600 focus:border-[#7600F2] focus:outline-none"
+                              value={editedAnswer}
+                              onChange={(e) => setEditedAnswer(e.target.value)}
+                            >
+                              <option value="True">True</option>
+                              <option value="False">False</option>
+                            </select>
+                          </>
+                        )}
                         
                         {qaPair.question_type !== "Boolean" && (
                           <>
