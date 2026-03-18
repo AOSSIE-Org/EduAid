@@ -209,9 +209,9 @@ const Text_Input = () => {
           {/* Question Count */}
           <div className="flex gap-2 items-center">
             <div className="text-white text-lg sm:text-xl font-bold">No. of Questions:</div>
-            <button onClick={decrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3">-</button>
+            <button onClick={decrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3 pb-1">-</button>
             <span className="text-white text-2xl">{numQuestions}</span>
-            <button onClick={incrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3">+</button>
+            <button onClick={incrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3 pb-1">+</button>
           </div>
 
           {/* Difficulty Dropdown */}
