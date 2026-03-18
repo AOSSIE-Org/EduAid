@@ -32,8 +32,15 @@ const Text_Input = () => {
 
       try {
         const data = await apiClient.postFormData("/upload", formData);
-        setText(data.content || "");
-        if (!data.content) setError("Error extracting file content");
+      
+        if (data.content) {
+          setError(""); 
+          setText(data.content);
+        } else {
+          setText("");
+          setError("Error extracting file content");
+        }
+      
       } catch (error) {
         console.error("Error uploading file:", error);
         setError("Error uploading file");
@@ -52,6 +59,7 @@ const Text_Input = () => {
   const handleSaveToLocalStorage = async () => {
     if (numQuestions <= 0) {
       setError("Number of questions must be greater than 0");
+      setLoading(false);
       return;
     }
     
@@ -71,17 +79,23 @@ const Text_Input = () => {
     if (trimmedDocUrl) {
       try {
         const data = await apiClient.post("/get_content", { document_url: trimmedDocUrl });
-        setDocUrl("");
+        
         if (data) {
           setError("");
+          setDocUrl("");
           setText(data);
+          await sendToBackend(
+            data,
+            difficulty,
+            localStorage.getItem("selectedQuestionType")
+          );
         } else {
           setError("Error retrieving Google Doc content");
+          setLoading(false);
         }
       } catch (error) {
         console.error("Error:", error);
         setError("Error retrieving Google Doc content");
-      } finally {
         setLoading(false);
       }
       return;
