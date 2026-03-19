@@ -46,15 +46,20 @@ mediawikiapi = MediaWikiAPI()
 
 
 # Adding the LLMQuestionGenerator back so your app doesn't crash!
-llm_generator = LLMQuestionGenerator()
+llm_generator = None
+try:
+    llm_generator = LLMQuestionGenerator()
+except Exception as e:
+    app.logger.exception("Failed to initialize LLMQuestionGenerator: %s", e)
 
-QA_MODEL_NAME = "deepset/roberta-base-squad2"
-device = 0 if torch.cuda.is_available() else -1
+
 
 qa_model = None
 qa_model_init_error = None
 
 try:
+    QA_MODEL_NAME = "deepset/roberta-base-squad2"
+    device = 0 if torch.cuda.is_available() else -1
     qa_tokenizer = AutoTokenizer.from_pretrained(QA_MODEL_NAME)
     qa_model_instance = AutoModelForQuestionAnswering.from_pretrained(QA_MODEL_NAME)
     qa_model = pipeline(
