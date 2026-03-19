@@ -1,3 +1,5 @@
+from unittest import result
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pprint import pprint
@@ -423,11 +425,13 @@ def generate_gform():
         formId=result["formId"], body=NEW_QUESTION
     ).execute()
 
-    edit_url = jsonify(result["responderUri"])
-    webbrowser.open_new_tab(
-        "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
-    )
-    return edit_url
+    responder_url = result.get("responderUri")
+    edit_url = "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
+
+    return jsonify({
+    "form_link": responder_url,
+    "edit_link": edit_url
+    }), 200
 
 
 @app.route("/get_shortq_hard", methods=["POST"])
