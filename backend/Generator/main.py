@@ -160,7 +160,7 @@ class ParaphraseGenerator:
         sentence = text
         text_to_paraphrase = "paraphrase: " + sentence + " </s>"
 
-        encoding = self.tokenizer.encode_plus(text_to_paraphrase, pad_to_max_length=True, return_tensors="pt")
+        encoding = self.tokenizer.encode_plus(text_to_paraphrase, padding="max_length", truncation=True, return_tensors="pt")
         input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
 
         beam_outputs = self.model.generate(
