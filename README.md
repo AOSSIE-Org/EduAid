@@ -237,7 +237,7 @@ This is the second year of the project. While some may have their own ideas on h
 ## Known Issues & FAQ
 
 **Q: scipy installation fails on Windows?**  
-Use Python 3.10 or 3.11. scipy 1.14.0 is not compatible with Python 3.9 on Windows.
+Use Python 3.10–3.13. scipy==1.14.1 requires Python 3.10 or higher on Windows. Python 3.9 is not supported on Windows for this dependency.
 
 **Q: spaCy fails on Python 3.13?**  
 EduAid currently supports Python 3.9–3.11. Python 3.13 is not yet supported.
