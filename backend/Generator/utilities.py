@@ -1,8 +1,36 @@
-import os
+import time
+import torch
+import random
+import numpy as np
+import spacy
+import en_core_web_sm
+import json
 import re
+import os
 import fitz
 import mammoth
 import uuid
+from typing import Any, List, Mapping, Tuple
+from transformers import (
+    T5ForConditionalGeneration,
+    T5Tokenizer,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    AutoModelForSeq2SeqLM,
+)
+from sense2vec import Sense2Vec
+from collections import OrderedDict
+from nltk import FreqDist
+from nltk.corpus import brown
+from similarity.normalized_levenshtein import NormalizedLevenshtein
+from Generator.mcq import (
+    tokenize_into_sentences,
+    identify_keywords,
+    find_sentences_with_keywords,
+    generate_multiple_choice_questions,
+    generate_normal_questions,
+)
+from Generator.encoding import beam_search_decoding
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
@@ -110,3 +138,43 @@ class FileProcessor:
             # Clean up the temporary file
             if os.path.exists(file_path):
                 os.remove(file_path)
+
+
+def print_qa(
+    qa_list: List[Mapping[str, str]], show_answers: bool = True
+) -> None:
+    """Formats and prints a list of generated questions and answers."""
+
+    for i in range(len(qa_list)):
+        # wider space for 2 digit q nums
+        space = " " * int(np.where(i < 9, 3, 4))
+
+        print(f"{i + 1}) Q: {qa_list[i]['question']}")
+
+        answer = qa_list[i]["answer"]
+
+        # print a list of multiple choice answers
+        if type(answer) is list:
+
+            if show_answers:
+                print(
+                    f"{space}A: 1. {answer[0]['answer']} "
+                    f"{np.where(answer[0]['correct'], '(correct)', '')}"
+                )
+                for j in range(1, len(answer)):
+                    print(
+                        f"{space + '   '}{j + 1}. {answer[j]['answer']} "
+                        f"{np.where(answer[j]['correct'], '(correct)', '')}"
+                    )
+
+            else:
+                print(f"{space}A: 1. {answer[0]['answer']}")
+                for j in range(1, len(answer)):
+                    print(f"{space + '   '}{j + 1}. {answer[j]['answer']}")
+
+            print("")
+
+        # print full sentence answers
+        else:
+            if show_answers:
+                print(f"{space}A: {answer}\n")
