@@ -151,7 +151,12 @@ class QuestionEnhancer:
                 
         # Final cleanup
         question = re.sub(r'\s+([?,!])', r'\1', question)
-        return question[0].upper() + question[1:]
+        
+        # Safe string capitalization - handle empty strings
+        if not question or len(question) == 0:
+            return question
+        
+        return question[0].upper() + question[1:] if len(question) > 1 else question[0].upper()
 
     def _enhance_lexically(self, question):
         """Enhance question through lexical substitutions"""
