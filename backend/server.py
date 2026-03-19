@@ -10,7 +10,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
 nltk.download('punkt_tab')
-from Generator import main
 from Generator.question_filters import make_question_harder
 from Generator.llm_generator import LLMQuestionGenerator
 import re
@@ -26,6 +25,10 @@ from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
+from Generator.question_generators import MCQGenerator, ShortQGenerator, BoolQGenerator
+from Generator.answer_predictor import AnswerPredictor
+from Generator.utilities import GoogleDocsService, FileProcessor
+from Generator.advanced_qa import QuestionGenerator
 
 app = Flask(__name__)
 CORS(app)
@@ -34,13 +37,13 @@ print("Starting Flask App...")
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
 
-MCQGen = main.MCQGenerator()
-answer = main.AnswerPredictor()
-BoolQGen = main.BoolQGenerator()
-ShortQGen = main.ShortQGenerator()
-qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
-file_processor = main.FileProcessor()
+MCQGen = MCQGenerator()
+answer = AnswerPredictor()
+BoolQGen = BoolQGenerator()
+ShortQGen = ShortQGenerator()
+qg = QuestionGenerator()
+docs_service = GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+file_processor = FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
 llm_generator = LLMQuestionGenerator()
