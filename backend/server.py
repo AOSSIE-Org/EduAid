@@ -86,7 +86,7 @@ def parse_max_questions(data, default=4):
         ValueError: If max_questions is not a positive integer
     """
     value = data.get("max_questions", default)
-    if not isinstance(value, int) or value <= 0:
+    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
         raise ValueError("max_questions must be a positive integer")
     return value
 

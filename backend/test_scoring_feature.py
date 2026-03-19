@@ -176,6 +176,10 @@ class TestInputValidation:
         """Invalid types raise ValueError."""
         with pytest.raises(ValueError):
             parse_max_questions({"max_questions": "5"})
+        with pytest.raises(ValueError):
+            parse_max_questions({"max_questions": True})
+        with pytest.raises(ValueError):
+            parse_max_questions({"max_questions": False})
         
         with pytest.raises(ValueError):
             parse_max_questions({"max_questions": 3.5})
@@ -219,11 +223,18 @@ class TestAPIValidation:
         """Invalid input_text returns 400."""
         response = client.post('/get_mcq', json=payload)
         assert response.status_code == 400
+        
+    def test_non_json_body_returns_400(self, client):
+        """Non-JSON body should be handled safely and return 400."""
+        response = client.post('/get_mcq', data="plain text", content_type="text/plain")
+        assert response.status_code == 400
     
     @pytest.mark.parametrize("payload", [
         {"input_text": "AI", "max_questions": "5"},  # String
         {"input_text": "AI", "max_questions": -5},  # Negative
         {"input_text": "AI", "max_questions": 0},  # Zero
+        {"input_text": "AI", "max_questions": True},  # Boolean True
+        {"input_text": "AI", "max_questions": False},  # Boolean False
     ])
     def test_invalid_max_questions(self, client, payload):
         """Invalid max_questions returns 400."""
