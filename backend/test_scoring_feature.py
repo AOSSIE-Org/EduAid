@@ -62,7 +62,7 @@ class TestRankingLogic:
     def test_ranks_questions_correctly(self, sample_questions, mock_evaluator):
         """Questions are ranked by evaluator scores."""
         with patch('server.get_qa_evaluator', return_value=mock_evaluator):
-            result = score_and_rank_questions(sample_questions, len(sample_questions), True)
+            result = score_and_rank_questions(sample_questions)
             
             # Verify order matches mock scores: [4, 2, 0, 3, 1]
             assert result[0] == sample_questions[4]  # CV (highest)
@@ -77,7 +77,7 @@ class TestRankingLogic:
     def test_returns_all_questions(self, sample_questions, mock_evaluator):
         """All questions are returned after ranking."""
         with patch('server.get_qa_evaluator', return_value=mock_evaluator):
-            result = score_and_rank_questions(sample_questions, len(sample_questions), True)
+            result = score_and_rank_questions(sample_questions)
             assert len(result) == len(sample_questions)
 
 
@@ -90,18 +90,18 @@ class TestEdgeCases:
     
     def test_empty_list(self):
         """Empty list returns empty."""
-        assert score_and_rank_questions([], 0, false) == []
+        assert score_and_rank_questions([]) == []
     
     def test_small_list_no_scoring(self):
         """Lists with < 3 questions skip scoring."""
         questions = [{"question": "Q1?", "answer": "A1"}]
-        assert score_and_rank_questions(questions, len(questions), True) == questions
+        assert score_and_rank_questions(questions) == questions
         
         questions = [
             {"question": "Q1?", "answer": "A1"},
             {"question": "Q2?", "answer": "A2"}
         ]
-        assert score_and_rank_questions(questions, len(questions), True) == questions
+        assert score_and_rank_questions(questions) == questions
     
     def test_exactly_three_triggers_scoring(self, mock_evaluator):
         """Exactly 3 questions trigger scoring."""
@@ -113,7 +113,7 @@ class TestEdgeCases:
         mock_evaluator.get_scores = Mock(return_value=[2, 0, 1])
         
         with patch('server.get_qa_evaluator', return_value=mock_evaluator):
-            result = score_and_rank_questions(questions, len(questions), True)
+            result = score_and_rank_questions(questions)
             
             assert len(result) == 3
             mock_evaluator.encode_qa_pairs.assert_called_once()
@@ -132,7 +132,7 @@ class TestFailureHandling:
         mock_eval.encode_qa_pairs = Mock(side_effect=Exception("Encoding failed"))
         
         with patch('server.get_qa_evaluator', return_value=mock_eval):
-            result = score_and_rank_questions(sample_questions, len(sample_questions), True)
+            result = score_and_rank_questions(sample_questions)
             assert result == sample_questions
     
     def test_scoring_failure_returns_original(self, sample_questions):
@@ -142,7 +142,7 @@ class TestFailureHandling:
         mock_eval.get_scores = Mock(side_effect=RuntimeError("Scoring failed"))
         
         with patch('server.get_qa_evaluator', return_value=mock_eval):
-            result = score_and_rank_questions(sample_questions, len(sample_questions), True)
+            result = score_and_rank_questions(sample_questions)
             assert result == sample_questions
     
     def test_invalid_indices_returns_original(self, sample_questions):
@@ -152,7 +152,7 @@ class TestFailureHandling:
         mock_eval.get_scores = Mock(return_value=[99, 100, 101])  # Out of range
         
         with patch('server.get_qa_evaluator', return_value=mock_eval):
-            result = score_and_rank_questions(sample_questions, len(sample_questions), True)
+            result = score_and_rank_questions(sample_questions)
             assert result == sample_questions
 
 
