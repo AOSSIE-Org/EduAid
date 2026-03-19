@@ -95,18 +95,18 @@ class FileProcessor:
             raise ValueError("Invalid file path")
 
         file.save(file_path)
-        content = ""
 
-        if safe_filename.endswith('.txt'):
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-        elif safe_filename.endswith('.pdf'):
-            content = self.extract_text_from_pdf(file_path)
-        elif safe_filename.endswith('.docx'):
-            content = self.extract_text_from_docx(file_path)
-
-        # Clean up the temporary file
-        if os.path.exists(file_path):
-            os.remove(file_path)
-
-        return content
+        try:
+            if safe_filename.endswith('.txt'):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    return f.read()
+            elif safe_filename.endswith('.pdf'):
+                return self.extract_text_from_pdf(file_path)
+            elif safe_filename.endswith('.docx'):
+                return self.extract_text_from_docx(file_path)
+            else:
+                return ""
+        finally:
+            # Clean up the temporary file
+            if os.path.exists(file_path):
+                os.remove(file_path)
