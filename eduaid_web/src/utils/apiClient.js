@@ -11,6 +11,25 @@ class ApiClient {
     this.currentDetail = "";
   }
 
+  createHttpError(status, responseBody = "") {
+    const error = new Error(`HTTP ${status}`);
+    error.isHttpError = true;
+    error.status = status;
+    error.responseBody = responseBody;
+    return error;
+  }
+
+  getConnectionFailureDetail(baseUrl = this.baseUrl) {
+    return `Cannot reach backend at ${baseUrl}. Check server and API URL.`;
+  }
+
+  getBackendErrorDetail(status) {
+    if (status) {
+      return `Backend is reachable but returned HTTP ${status}.`;
+    }
+    return "Backend is reachable but returned an unexpected response.";
+  }
+
   subscribeConnectionStatus(listener) {
     this.listeners.add(listener);
     try {
@@ -45,22 +64,23 @@ class ApiClient {
     const host = window.location.hostname;
     if (host !== "localhost" && host !== "127.0.0.1") return [];
 
-    if (this.baseUrl.includes(":5000")) return ["http://localhost:5001"];
-    if (this.baseUrl.includes(":5001")) return ["http://localhost:5000"];
+    if (this.baseUrl.includes(":5000")) return [`http://${host}:5001`];
+    if (this.baseUrl.includes(":5001")) return [`http://${host}:5000`];
     return [];
   }
 
   async parseJsonResponse(response) {
     if (!response.ok) {
       const text = await response.text().catch(() => "");
-      throw new Error(`HTTP ${response.status}: ${text || "Request Failed"}`);
+      throw this.createHttpError(response.status, text);
     }
 
     if (response.status === 204 || response.status === 205) return null;
 
     const contentLength = response.headers.get("Content-Length");
-    if (contentLength === "0") return null;
-    return response.json();
+    const contentType = response.headers.get("Content-Type");
+    if (contentLength === "0" || !contentType) return null;
+    return await response.json();
   }
 
   async fetchJson(url, options = {}) {
@@ -68,44 +88,78 @@ class ApiClient {
     return this.parseJsonResponse(response);
   }
 
-  async requestWithFallback(endpoint, options = {}) {
-    const primaryUrl = `${this.baseUrl}${endpoint}`;
+  getCandidateBaseUrls() {
+    return [this.baseUrl, ...this.getFallbackBaseUrls().filter((url) => url !== this.baseUrl)];
+  }
 
-    try {
-      const data = await this.fetchJson(primaryUrl, options);
-      this.setConnectionStatus("up");
-      return data;
-    } catch (error) {
-      const isNetworkError = error instanceof TypeError;
-      if (!isNetworkError) {
-        this.setConnectionStatus("error", error.message);
-        throw error;
+  async probeConnection(baseUrl) {
+    if (this.isElectron) {
+      const response = await window.electronAPI.makeApiRequest("/", { method: "GET" });
+      if (!response.ok) {
+        throw this.createHttpError(response.status);
       }
+      return true;
+    }
 
-      const fallbackBaseUrls = this.getFallbackBaseUrls().filter(
-        (url) => url !== this.baseUrl
-      );
+    const response = await fetch(`${baseUrl}/`, { method: "GET" });
+    if (!response.ok) {
+      throw this.createHttpError(response.status);
+    }
+    return true;
+  }
 
-      for (const fallbackBaseUrl of fallbackBaseUrls) {
-        try {
-          const data = await this.fetchJson(`${fallbackBaseUrl}${endpoint}`, options);
-          this.baseUrl = fallbackBaseUrl;
-          this.setConnectionStatus("up");
-          return data;
-        } catch (fallbackError) {
-          if (!(fallbackError instanceof TypeError)) {
-            this.setConnectionStatus("error", fallbackError.message);
-            throw fallbackError;
-          }
+  async retryConnection() {
+    const candidateBaseUrls = this.getCandidateBaseUrls();
+    let lastError = null;
+
+    for (const baseUrl of candidateBaseUrls) {
+      try {
+        await this.probeConnection(baseUrl);
+        this.baseUrl = baseUrl;
+        this.setConnectionStatus("up");
+        return true;
+      } catch (error) {
+        lastError = error;
+        if (error?.isHttpError) {
+          this.baseUrl = baseUrl;
+          this.setConnectionStatus("error", this.getBackendErrorDetail(error.status));
+          return false;
         }
       }
-
-      this.setConnectionStatus(
-        "down",
-        `Cannot reach backend at ${this.baseUrl}. Check server and REACT_APP_BASE_URL.`
-      );
-      throw error;
     }
+
+    this.setConnectionStatus("down", this.getConnectionFailureDetail());
+    if (lastError) {
+      throw lastError;
+    }
+    throw new TypeError(this.getConnectionFailureDetail());
+  }
+
+  async requestWithFallback(endpoint, options = {}) {
+    const candidateBaseUrls = this.getCandidateBaseUrls();
+    let lastError = null;
+
+    for (const baseUrl of candidateBaseUrls) {
+      try {
+        const data = await this.fetchJson(`${baseUrl}${endpoint}`, options);
+        this.baseUrl = baseUrl;
+        this.setConnectionStatus("up");
+        return data;
+      } catch (error) {
+        lastError = error;
+        if (error?.isHttpError) {
+          this.baseUrl = baseUrl;
+          this.setConnectionStatus("up");
+          throw error;
+        }
+      }
+    }
+
+    this.setConnectionStatus("down", this.getConnectionFailureDetail());
+    if (lastError) {
+      throw lastError;
+    }
+    throw new TypeError(this.getConnectionFailureDetail());
   }
 
   async makeRequest(endpoint, options = {}) {
@@ -113,9 +167,12 @@ class ApiClient {
       try {
         const response = await window.electronAPI.makeApiRequest(endpoint, options);
         if (!response.ok) {
-          const err = new Error(`API request failed with status ${response.status}`);
-          err.isHttpError = true;
-          this.setConnectionStatus("error", err.message);
+          const responseBody =
+            typeof response.data === "string"
+              ? response.data
+              : JSON.stringify(response.data ?? "");
+          const err = this.createHttpError(response.status, responseBody);
+          this.setConnectionStatus("up");
           throw err;
         }
         this.setConnectionStatus("up");
@@ -124,7 +181,7 @@ class ApiClient {
         if (error?.isHttpError) {
           throw error;
         }
-        this.setConnectionStatus("down", error?.message || "API request failed");
+        this.setConnectionStatus("down", error?.message || this.getConnectionFailureDetail());
         throw error;
       }
     }
@@ -161,8 +218,11 @@ class ApiClient {
         this.setConnectionStatus("up");
         return data;
       } catch (error) {
-        const status = error instanceof TypeError ? "down" : "error";
-        this.setConnectionStatus(status, error?.message || "API request failed");
+        if (error?.isHttpError) {
+          this.setConnectionStatus("up");
+          throw error;
+        }
+        this.setConnectionStatus("down", error?.message || this.getConnectionFailureDetail());
         throw error;
       }
     }
