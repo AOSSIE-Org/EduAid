@@ -232,3 +232,36 @@ This is the second year of the project. While some may have their own ideas on h
 3. Subscribe to our [YouTube Channel](https://www.youtube.com/@AOSSIE-Org) for project demos, GSoC tutorials, and updates!
 
 4. Follow us on [X (formerly Twitter)](https://x.com/aossie_org) for the latest open-source announcements!
+
+
+## Known Issues & FAQ
+
+**Q: scipy installation fails on Windows?**  
+Use Python 3.10–3.13. scipy==1.14.1 requires Python 3.10 or higher on Windows. Python 3.9 is not supported on Windows for this dependency.
+
+**Q: spaCy fails on Python 3.13?**  
+EduAid currently supports Python 3.9–3.11. Python 3.13 is not yet supported.
+
+**Q: The Qwen3-0.6B model download is slow or fails?**  
+The model (~397MB) downloads only on first use. Ensure a stable internet connection and at least 500MB free disk space.
+
+**Q: Flask server not starting?**  
+Make sure you are in the `backend` folder before running `python server.py`. Also confirm all dependencies are installed via `pip install -r requirements.txt`.
+
+**Q: Chrome extension not loading?**  
+Ensure you selected the `dist` folder (not the `extension` folder) when loading the unpacked extension in Chrome.
+
+## System Requirements
+
+| Component | Requirement |
+|-----------|-------------|
+| Python | 3.9 – 3.11 |
+| Node.js | 16 or higher |
+| RAM | Minimum 4GB (8GB recommended for LLM) |
+| Disk Space (core app) | 1GB free |
+| Disk Space (LLM features) | 10–50GB free (models + ML dependencies) |
+| Browser | Chrome (for extension) |
+
+## License
+
+This project is licensed under the [GPL-3.0 License](LICENSE).
