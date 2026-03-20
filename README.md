@@ -258,7 +258,8 @@ Ensure you selected the `dist` folder (not the `extension` folder) when loading 
 | Python | 3.9 – 3.11 |
 | Node.js | 16 or higher |
 | RAM | Minimum 4GB (8GB recommended for LLM) |
-| Disk Space | 1GB free (for models + dependencies) |
+| Disk Space (core app) | 1GB free |
+| Disk Space (LLM features) | 10–50GB free (models + ML dependencies) |
 | Browser | Chrome (for extension) |
 
 ## License
