@@ -35,8 +35,18 @@ jobs:
 
     - name: Run Pytest
       run: |
-        # Use working directory if backend exists
         TEST_DIR="."
         if [ -d "backend" ]; then TEST_DIR="backend"; fi
-        # Exit code 5 means no tests collected - allow that for bootstrapping
-        pytest "$TEST_DIR" --maxfail=1 --disable-warnings -v || test $? -eq 5
+        
+        # Disable immediate exit to capture the true pytest exit code
+        set +e
+        pytest "$TEST_DIR" --maxfail=1 --disable-warnings -v
+        EXIT_CODE=$?
+        set -e
+        
+        # Exit code 5 means no tests found. Treat 0 and 5 as success.
+        if [ $EXIT_CODE -ne 0 ] && [ $EXIT_CODE -ne 5 ]; then
+          echo "Pytest failed with exit code $EXIT_CODE"
+          exit $EXIT_CODE
+        fi
+        echo "Pipeline passed! (Exit code $EXIT_CODE)"
