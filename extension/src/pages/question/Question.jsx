@@ -112,7 +112,15 @@ function Question() {
 
     if (response.ok) {
       const result = await response.json();
-      const formUrl = result.form_link;
+      const formUrl =
+        (result && result.form_link) ||
+        (typeof result === "string" ? result : null);
+
+      if (!formUrl) {
+        console.error("Google Form URL missing in API response", result);
+        return;
+      }
+
       window.open(formUrl, "_blank");
     } else {
       console.error("Failed to generate Google Form");
