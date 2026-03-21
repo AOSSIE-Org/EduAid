@@ -21,7 +21,6 @@ from spacy.lang.en.stop_words import STOP_WORDS
 from string import punctuation
 from heapq import nlargest
 import random
-import webbrowser
 from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
@@ -263,9 +262,13 @@ def get_content():
 
 @app.route("/generate_gform", methods=["POST"])
 def generate_gform():
-    data = request.get_json()
-    qa_pairs = data.get("qa_pairs", "")
+    data = request.get_json() or {}
+    qa_pairs = data.get("qa_pairs", [])
     question_type = data.get("question_type", "")
+
+    if not isinstance(qa_pairs, list):
+        return jsonify({"error": "qa_pairs must be a list"}), 400
+
     SCOPES = "https://www.googleapis.com/auth/forms.body"
     DISCOVERY_DOC = "https://forms.googleapis.com/$discovery/rest?version=v1"
 
@@ -423,11 +426,9 @@ def generate_gform():
         formId=result["formId"], body=NEW_QUESTION
     ).execute()
 
-    edit_url = jsonify(result["responderUri"])
-    webbrowser.open_new_tab(
-        "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
-    )
-    return edit_url
+    form_link = result.get("responderUri")
+    edit_link = f"https://docs.google.com/forms/d/{result['formId']}/edit"
+    return jsonify({"form_link": form_link, "edit_link": edit_link})
 
 
 @app.route("/get_shortq_hard", methods=["POST"])
