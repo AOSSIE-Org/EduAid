@@ -22,22 +22,21 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
-
-    - name: Install System Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential
+        cache-dependency-path: |
+          requirements.txt
+          backend/requirements.txt
 
     - name: Install Python Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest pytest-cov
+        pip install pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
 
-    - name: Run Pytest with Coverage
+    - name: Run Pytest
       run: |
-        # Navigating to backend directory if it exists, otherwise running in root
-        if [ -d "backend" ]; then cd backend; fi
-        # We allow the pipeline to pass even if no tests are written yet (exit-zero)
-        # This establishes the infrastructure for future test-driven development.
-        pytest --maxfail=1 --disable-warnings -v || exit 0
+        # Use working directory if backend exists
+        TEST_DIR="."
+        if [ -d "backend" ]; then TEST_DIR="backend"; fi
+        # Exit code 5 means no tests collected - allow that for bootstrapping
+        pytest "$TEST_DIR" --maxfail=1 --disable-warnings -v || test $? -eq 5
