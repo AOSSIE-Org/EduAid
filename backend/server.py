@@ -128,19 +128,45 @@ def get_mcq():
     if len(input_text) > 50000:
         return jsonify({"error": "Input too long"}), 400
 
-    input_text = process_input_text(input_text, use_mediawiki)
-
-    output, error = execute_with_timeout(
-        MCQGen.generate_mcq,
-        60,
-        {"input_text": input_text, "max_questions": max_questions}
+    # ✅ MediaWiki with timeout
+    input_text, error = execute_with_timeout(
+        process_input_text,
+        10,
+        input_text=input_text,
+        use_mediawiki=use_mediawiki
     )
 
     if error == "timeout":
-        return jsonify({"error": "Request timed out", "code": "timeout"}), 504
+        return jsonify({
+            "error": "MediaWiki timeout",
+            "code": "mediawiki_timeout"
+        }), 504
 
     elif error:
-        return jsonify({"error": error, "code": "internal_error"}), 500
+        return jsonify({
+            "error": error,
+            "code": "mediawiki_error"
+        }), 500
+
+    # ✅ MCQ generation with correct args
+    output, error = execute_with_timeout(
+        MCQGen.generate_mcq,
+        60,
+        input_text=input_text,
+        max_questions=max_questions
+    )
+
+    if error == "timeout":
+        return jsonify({
+            "error": "Request timed out",
+            "code": "timeout"
+        }), 504
+
+    elif error:
+        return jsonify({
+            "error": error,
+            "code": "internal_error"
+        }), 500
 
     if not output or "questions" not in output:
         return jsonify({"error": "Invalid model response"}), 500
@@ -156,7 +182,7 @@ def get_boolq():
     data = request.get_json(silent=True)
 
     if data is None or not isinstance(data, dict):
-        return jsonify({"error": "Invalid JSON"}), 400
+        return jsonify({"error": "Invalid JSON", "code": "invalid_request"}), 400
 
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
@@ -173,19 +199,45 @@ def get_boolq():
     if len(input_text) > 50000:
         return jsonify({"error": "Input too long"}), 400
 
-    input_text = process_input_text(input_text, use_mediawiki)
-
-    output, error = execute_with_timeout(
-        BoolQGen.generate_boolq,
-        60,
-        {"input_text": input_text, "max_questions": max_questions}
+    # ✅ MediaWiki with timeout
+    input_text, error = execute_with_timeout(
+        process_input_text,
+        10,
+        input_text=input_text,
+        use_mediawiki=use_mediawiki
     )
 
     if error == "timeout":
-        return jsonify({"error": "Request timed out"}), 504
+        return jsonify({
+            "error": "MediaWiki timeout",
+            "code": "mediawiki_timeout"
+        }), 504
 
     elif error:
-        return jsonify({"error": error}), 500
+        return jsonify({
+            "error": error,
+            "code": "mediawiki_error"
+        }), 500
+
+    # ✅ Boolean generation with correct args
+    output, error = execute_with_timeout(
+        BoolQGen.generate_boolq,
+        60,
+        input_text=input_text,
+        max_questions=max_questions
+    )
+
+    if error == "timeout":
+        return jsonify({
+            "error": "Request timed out",
+            "code": "timeout"
+        }), 504
+
+    elif error:
+        return jsonify({
+            "error": error,
+            "code": "internal_error"
+        }), 500
 
     if not output or "Boolean_Questions" not in output:
         return jsonify({"error": "Invalid model response"}), 500
@@ -202,39 +254,81 @@ def get_shortq():
     data = request.get_json(silent=True)
 
     if data is None or not isinstance(data, dict):
-        return jsonify({"error": "Invalid JSON"}), 400
+        return jsonify({
+            "error": "Invalid JSON",
+            "code": "invalid_request"
+        }), 400
 
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
 
+    # ✅ Validate input_text
     if not isinstance(input_text, str):
-        return jsonify({"error": "input_text must be string"}), 400
+        return jsonify({
+            "error": "input_text must be string",
+            "code": "invalid_type"
+        }), 400
 
     input_text = input_text.strip()
 
     if len(input_text) < 10:
-        return jsonify({"error": "Input too short"}), 400
+        return jsonify({
+            "error": "Input too short",
+            "code": "too_short"
+        }), 400
 
     if len(input_text) > 50000:
-        return jsonify({"error": "Input too long"}), 400
+        return jsonify({
+            "error": "Input too long",
+            "code": "too_long"
+        }), 400
 
-    input_text = process_input_text(input_text, use_mediawiki)
-
-    output, error = execute_with_timeout(
-        ShortQGen.generate_shortq,
-        60,
-        {"input_text": input_text, "max_questions": max_questions}
+    # ✅ MediaWiki with timeout
+    input_text, error = execute_with_timeout(
+        process_input_text,
+        10,
+        input_text=input_text,
+        use_mediawiki=use_mediawiki
     )
 
     if error == "timeout":
-        return jsonify({"error": "Request timed out"}), 504
+        return jsonify({
+            "error": "MediaWiki timeout",
+            "code": "mediawiki_timeout"
+        }), 504
 
     elif error:
-        return jsonify({"error": error}), 500
+        return jsonify({
+            "error": error,
+            "code": "mediawiki_error"
+        }), 500
+
+    # ✅ Short question generation
+    output, error = execute_with_timeout(
+        ShortQGen.generate_shortq,
+        60,
+        input_text=input_text,
+        max_questions=max_questions
+    )
+
+    if error == "timeout":
+        return jsonify({
+            "error": "Request timed out",
+            "code": "timeout"
+        }), 504
+
+    elif error:
+        return jsonify({
+            "error": error,
+            "code": "internal_error"
+        }), 500
 
     if not output or "questions" not in output:
-        return jsonify({"error": "Invalid model response"}), 500
+        return jsonify({
+            "error": "Invalid model response",
+            "code": "invalid_response"
+        }), 500
 
     return jsonify({
         "output": output["questions"],
@@ -259,7 +353,7 @@ def get_problems():
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
 
-    # ✅ Validation
+    # ✅ Validate input_text
     if not isinstance(input_text, str):
         return jsonify({"error": "input_text must be string"}), 400
 
@@ -271,31 +365,52 @@ def get_problems():
     if len(input_text) > 50000:
         return jsonify({"error": "Input too long"}), 400
 
-    input_text = process_input_text(input_text, use_mediawiki)
+    # ✅ MediaWiki with timeout
+    input_text, error = execute_with_timeout(
+        process_input_text,
+        10,
+        input_text=input_text,
+        use_mediawiki=use_mediawiki
+    )
 
-    # ✅ Parallel execution with timeout wrapper
+    if error == "timeout":
+        return jsonify({
+            "error": "MediaWiki timeout",
+            "code": "mediawiki_timeout"
+        }), 504
+
+    elif error:
+        return jsonify({
+            "error": error,
+            "code": "mediawiki_error"
+        }), 500
+
+    # ✅ Parallel execution
     def run_mcq():
         return execute_with_timeout(
             MCQGen.generate_mcq,
             60,
-            {"input_text": input_text, "max_questions": max_questions_mcq}
+            input_text=input_text,
+            max_questions=max_questions_mcq
         )
 
     def run_boolq():
         return execute_with_timeout(
             BoolQGen.generate_boolq,
             60,
-            {"input_text": input_text, "max_questions": max_questions_boolq}
+            input_text=input_text,
+            max_questions=max_questions_boolq
         )
 
     def run_shortq():
         return execute_with_timeout(
             ShortQGen.generate_shortq,
             60,
-            {"input_text": input_text, "max_questions": max_questions_shortq}
+            input_text=input_text,
+            max_questions=max_questions_shortq
         )
 
-    # 🚀 PARALLEL execution
+    # 🚀 Run in parallel
     with ThreadPoolExecutor(max_workers=3) as executor:
         futures = [
             executor.submit(run_mcq),
@@ -307,7 +422,6 @@ def get_problems():
 
     (mcq_out, mcq_err), (bool_out, bool_err), (short_out, short_err) = results
 
-    # ✅ Handle errors individually
     response = {}
 
     if mcq_err:
@@ -325,7 +439,7 @@ def get_problems():
     else:
         response["output_shortq"] = (short_out or {}).get("questions", [])
 
-    # ✅ If ALL failed → return proper error
+    # ✅ If ALL failed
     if mcq_err and bool_err and short_err:
         all_errors = [mcq_err, bool_err, short_err]
 
@@ -337,7 +451,6 @@ def get_problems():
             "code": code
         }), status
 
-    # ✅ Partial or full success
     return jsonify(response)
     
 @app.route("/get_mcq_answer", methods=["POST"])
@@ -663,22 +776,62 @@ def get_shortq_hard():
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
 
-    # ✅ Input validation
+    # ✅ Validate input_question
+    if not isinstance(input_questions, list):
+        return jsonify({
+            "error": "input_question must be a list",
+            "code": "invalid_type"
+        }), 400
+
+    MAX_QUESTIONS = 20
+    if len(input_questions) > MAX_QUESTIONS:
+        return jsonify({
+            "error": f"Max {MAX_QUESTIONS} questions allowed",
+            "code": "limit_exceeded"
+        }), 400
+
+    # ✅ Validate input_text
     if not isinstance(input_text, str):
-        return jsonify({"error": "input_text must be string"}), 400
+        return jsonify({
+            "error": "input_text must be string",
+            "code": "invalid_type"
+        }), 400
 
     input_text = input_text.strip()
 
     if len(input_text) < 10:
-        return jsonify({"error": "Input too short"}), 400
+        return jsonify({
+            "error": "Input too short",
+            "code": "too_short"
+        }), 400
 
     if len(input_text) > 50000:
-        return jsonify({"error": "Input too long"}), 400
+        return jsonify({
+            "error": "Input too long",
+            "code": "too_long"
+        }), 400
 
-    # ✅ Process input
-    input_text = process_input_text(input_text, use_mediawiki)
+    # ✅ MediaWiki processing with timeout (FIXED)
+    input_text, error = execute_with_timeout(
+        process_input_text,
+        10,
+        input_text=input_text,
+        use_mediawiki=use_mediawiki
+    )
 
-    # ✅ Timeout execution (IMPORTANT FIX)
+    if error == "timeout":
+        return jsonify({
+            "error": "MediaWiki processing timed out",
+            "code": "mediawiki_timeout"
+        }), 504
+
+    elif error:
+        return jsonify({
+            "error": error,
+            "code": "mediawiki_error"
+        }), 500
+
+    # ✅ Question generation with timeout
     output, error = execute_with_timeout(
         qg.generate,
         60,
@@ -687,84 +840,34 @@ def get_shortq_hard():
         answer_style="sentences"
     )
 
-    # ✅ Error handling
     if error == "timeout":
-        return jsonify({"error": "Request timed out"}), 504
+        return jsonify({
+            "error": "Request timed out",
+            "code": "timeout"
+        }), 504
 
     elif error:
-        return jsonify({"error": error}), 500
+        return jsonify({
+            "error": error,
+            "code": "internal_error"
+        }), 500
 
-    if not output:
-        return jsonify({"error": "Invalid model response"}), 500
+    if not output or not isinstance(output, list):
+        return jsonify({
+            "error": "Invalid model response",
+            "code": "invalid_response"
+        }), 500
 
     # ✅ Make questions harder
     for item in output:
-        item["question"] = make_question_harder(item["question"])
+        if isinstance(item, dict) and "question" in item:
+            item["question"] = make_question_harder(item["question"])
 
     return jsonify({
         "output": output,
         "status": "success"
     })
 
-
-@app.route("/get_mcq_hard", methods=["POST"])
-@limiter.limit("20 per minute")
-def get_mcq_hard():
-    data = request.get_json(silent=True)
-
-    # ✅ JSON validation
-    if data is None or not isinstance(data, dict):
-        return jsonify({
-            "error": "Invalid or missing JSON body",
-            "code": "invalid_request"
-        }), 400
-
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    input_questions = data.get("input_question", [])
-
-    # ✅ Input validation
-    if not isinstance(input_text, str):
-        return jsonify({"error": "input_text must be string"}), 400
-
-    input_text = input_text.strip()
-
-    if len(input_text) < 10:
-        return jsonify({"error": "Input too short"}), 400
-
-    if len(input_text) > 50000:
-        return jsonify({"error": "Input too long"}), 400
-
-    # ✅ Process input
-    input_text = process_input_text(input_text, use_mediawiki)
-
-    # ✅ Timeout execution
-    output, error = execute_with_timeout(
-        qg.generate,
-        60,
-        article=input_text,
-        num_questions=len(input_questions),
-        answer_style="multiple_choice"
-    )
-
-    # ✅ Error handling
-    if error == "timeout":
-        return jsonify({"error": "Request timed out"}), 504
-
-    elif error:
-        return jsonify({"error": error}), 500
-
-    if not output:
-        return jsonify({"error": "Invalid model response"}), 500
-
-    # ✅ Make questions harder
-    for q in output:
-        q["question"] = make_question_harder(q["question"])
-
-    return jsonify({
-        "output": output,
-        "status": "success"
-    })
 
 @app.route("/get_boolq_hard", methods=["POST"])
 @limiter.limit("20 per minute")
@@ -782,22 +885,62 @@ def get_boolq_hard():
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
 
-    # ✅ Input validation
+    # ✅ Validate input_question
+    if not isinstance(input_questions, list):
+        return jsonify({
+            "error": "input_question must be a list",
+            "code": "invalid_type"
+        }), 400
+
+    MAX_QUESTIONS = 20
+    if len(input_questions) > MAX_QUESTIONS:
+        return jsonify({
+            "error": f"Max {MAX_QUESTIONS} questions allowed",
+            "code": "limit_exceeded"
+        }), 400
+
+    # ✅ Validate input_text
     if not isinstance(input_text, str):
-        return jsonify({"error": "input_text must be string"}), 400
+        return jsonify({
+            "error": "input_text must be string",
+            "code": "invalid_type"
+        }), 400
 
     input_text = input_text.strip()
 
     if len(input_text) < 10:
-        return jsonify({"error": "Input too short"}), 400
+        return jsonify({
+            "error": "Input too short",
+            "code": "too_short"
+        }), 400
 
     if len(input_text) > 50000:
-        return jsonify({"error": "Input too long"}), 400
+        return jsonify({
+            "error": "Input too long",
+            "code": "too_long"
+        }), 400
 
-    # ✅ Process input
-    input_text = process_input_text(input_text, use_mediawiki)
+    # ✅ MediaWiki with timeout (FIXED)
+    input_text, error = execute_with_timeout(
+        process_input_text,
+        10,
+        input_text=input_text,
+        use_mediawiki=use_mediawiki
+    )
 
-    # ✅ Timeout execution
+    if error == "timeout":
+        return jsonify({
+            "error": "MediaWiki processing timed out",
+            "code": "mediawiki_timeout"
+        }), 504
+
+    elif error:
+        return jsonify({
+            "error": error,
+            "code": "mediawiki_error"
+        }), 500
+
+    # ✅ Question generation with timeout
     generated, error = execute_with_timeout(
         qg.generate,
         60,
@@ -806,21 +949,31 @@ def get_boolq_hard():
         answer_style="true_false"
     )
 
-    # ✅ Error handling
     if error == "timeout":
-        return jsonify({"error": "Request timed out"}), 504
+        return jsonify({
+            "error": "Request timed out",
+            "code": "timeout"
+        }), 504
 
     elif error:
-        return jsonify({"error": error}), 500
+        return jsonify({
+            "error": error,
+            "code": "internal_error"
+        }), 500
 
-    if not generated:
-        return jsonify({"error": "Invalid model response"}), 500
+    if not generated or not isinstance(generated, list):
+        return jsonify({
+            "error": "Invalid model response",
+            "code": "invalid_response"
+        }), 500
 
-    # ✅ Make questions harder
-    harder_questions = [make_question_harder(q) for q in generated]
+    # ✅ Make questions harder (FIXED structure)
+    for q in generated:
+        if isinstance(q, dict) and "question" in q:
+            q["question"] = make_question_harder(q["question"])
 
     return jsonify({
-        "output": harder_questions,
+        "output": generated,
         "status": "success"
     })
 
