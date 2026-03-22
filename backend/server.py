@@ -1,4 +1,5 @@
 import logging
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pprint import pprint
@@ -37,44 +38,26 @@ from mediawikiapi import MediaWikiAPI
 from werkzeug.exceptions import RequestEntityTooLarge
 
 
-from multiprocessing import Process, Queue
-
 def execute_with_timeout(func, timeout, *args, **kwargs):
-    def wrapper(q, *args, **kwargs):
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(func, *args, **kwargs)
+
         try:
-            result = func(*args, **kwargs)
-            q.put(("success", result))
+            result = future.result(timeout=timeout)
+            return result, None
+
+        except TimeoutError:
+            return None, "timeout"
+
         except Exception as e:
             # ✅ Log full error (server side only)
             logging.exception("Error occurred during execution")
 
-            # ✅ Send safe error to client
-            q.put(("error", {
+            # ✅ Return safe error to client
+            return None, {
                 "code": "internal_server_error",
                 "message": "An internal error occurred"
-            }))
-
-    q = Queue()
-    p = Process(target=wrapper, args=(q, *args), kwargs=kwargs)
-    p.start()
-    p.join(timeout)
-
-    # 🚨 Timeout handling
-    if p.is_alive():
-        p.terminate()
-        p.join()
-        return None, "timeout"
-
-    # ✅ Get result
-    if not q.empty():
-        status, value = q.get()
-
-        if status == "success":
-            return value, None
-        else:
-            return None, value  # already safe error dict
-
-    return None, "unknown_error"
+            }
 
 app = Flask(__name__)
 CORS(app)
@@ -257,8 +240,6 @@ def get_shortq():
         "output": output["questions"],
         "status": "success"
     })
-
-from concurrent.futures import ThreadPoolExecutor
 
 @app.route("/get_problems", methods=["POST"])
 @limiter.limit("10 per minute")
