@@ -120,7 +120,7 @@ const Output = () => {
         });
       }
 
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
+      if (qaPairsFromStorage["output"]) {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
