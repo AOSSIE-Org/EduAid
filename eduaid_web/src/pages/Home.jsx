@@ -86,7 +86,13 @@ const Home = () => {
           <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-10">
             <Link to="/question-type" className="w-full sm:w-auto">
               <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
-                Let’s get Started
+                Let's get Started
+                <img src={arrow} width={24} height={24} alt="arrow" />
+              </button>
+            </Link>
+            <Link to="/choose-topic" className="w-full sm:w-auto">
+              <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
+                Try Story Feature
                 <img src={arrow} width={24} height={24} alt="arrow" />
               </button>
             </Link>
