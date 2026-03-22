@@ -5,6 +5,7 @@ import nltk
 import subprocess
 import os
 import glob
+import tempfile
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -533,28 +534,63 @@ def clean_transcript(file_path):
 
     return " ".join(transcript_lines).strip()
 
+
+YOUTUBE_VIDEO_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{11}$")
+
+
+def is_valid_youtube_video_id(video_id):
+    return bool(YOUTUBE_VIDEO_ID_PATTERN.fullmatch(video_id or ""))
+
 @app.route('/getTranscript', methods=['GET'])
 def get_transcript():
-    video_id = request.args.get('videoId')
+    video_id = (request.args.get('videoId') or '').strip()
     if not video_id:
         return jsonify({"error": "No video ID provided"}), 400
 
-    subprocess.run(["yt-dlp", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
-                "--sub-format", "vtt", "-o", f"subtitles/{video_id}.vtt", f"https://www.youtube.com/watch?v={video_id}"],
-               check=True, capture_output=True, text=True)
+    if not is_valid_youtube_video_id(video_id):
+        return jsonify({"error": "Invalid YouTube video ID format"}), 400
 
-    # Find the latest .vtt file in the "subtitles" folder
-    subtitle_files = glob.glob("subtitles/*.vtt")
-    if not subtitle_files:
-        return jsonify({"error": "No subtitles found"}), 404
+    try:
+        # Use per-request temp storage to avoid collisions across concurrent requests.
+        with tempfile.TemporaryDirectory(prefix="eduaid_subs_") as temp_dir:
+            subprocess.run(
+                [
+                    "yt-dlp",
+                    "--write-auto-sub",
+                    "--sub-lang",
+                    "en",
+                    "--skip-download",
+                    "--sub-format",
+                    "vtt",
+                    "-o",
+                    os.path.join(temp_dir, "%(id)s.%(ext)s"),
+                    f"https://www.youtube.com/watch?v={video_id}",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
 
-    latest_subtitle = max(subtitle_files, key=os.path.getctime)
-    transcript_text = clean_transcript(latest_subtitle)
+            subtitle_files = glob.glob(os.path.join(temp_dir, "*.vtt"))
+            if not subtitle_files:
+                return jsonify({"error": "No subtitles found"}), 404
 
-    # Optional: Clean up the file after reading
-    os.remove(latest_subtitle)
+            latest_subtitle = max(subtitle_files, key=os.path.getctime)
+            transcript_text = clean_transcript(latest_subtitle)
+            if not transcript_text:
+                return jsonify({"error": "Transcript is empty"}), 404
 
-    return jsonify({"transcript": transcript_text})
+            return jsonify({"transcript": transcript_text})
+    except subprocess.TimeoutExpired as err:
+        app.logger.exception("yt-dlp timeout in /getTranscript: %s", err)
+        return jsonify({"error": "Transcript extraction timed out"}), 504
+    except subprocess.CalledProcessError as err:
+        app.logger.exception("yt-dlp failed in /getTranscript: %s", err)
+        return jsonify({"error": "Failed to fetch transcript"}), 502
+    except Exception as err:
+        app.logger.exception("Unhandled exception in /getTranscript: %s", err)
+        return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
