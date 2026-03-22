@@ -15,7 +15,20 @@ const Output = () => {
   const [editedQuestion, setEditedQuestion] = useState("");
   const [editedAnswer, setEditedAnswer] = useState("");
   const [editedOptions, setEditedOptions] = useState([]);
-
+  const [quizMode, setQuizMode] = useState("generate");
+  const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [shortInputs, setShortInputs] = useState({});
+  
+  const handleSubmitAnswer = (index, answer) => {
+    setSelectedAnswers((prev) => ({
+      ...prev,
+      [index]: {
+        userAnswer: answer,
+        submitted: true,
+      },
+    }));
+  };
+  
   useEffect(() => {
     const handleClickOutside = (event) => {
         const dropdown = document.getElementById('pdfDropdown');
@@ -53,6 +66,9 @@ const Output = () => {
     }
     const shuffled = shuffleArray(qaPairs);
     setQaPairs(shuffled);
+    
+    setSelectedAnswers({});
+    setShortInputs({});
   };
 
   const handleEditQuestion = (index) => {
@@ -77,6 +93,17 @@ const Output = () => {
     setEditedOptions([]);
   };
 
+  const handleOptionClick = (index, selectedOption) => {
+    
+    setSelectedAnswers((prev) => ({
+      ...prev,
+      [index]: {
+        userAnswer: selectedOption,
+        submitted: true,
+      },
+    }));
+  };
+
   const handleCancelEdit = () => {
     setEditingIndex(null);
     setEditedQuestion("");
@@ -91,17 +118,23 @@ const Output = () => {
   };
 
   useEffect(() => {
+    const storedMode = localStorage.getItem("quizMode") || "generate";
+    setQuizMode(storedMode);  
     const qaPairsFromStorage =
       JSON.parse(localStorage.getItem("qaPairs")) || {};
     if (qaPairsFromStorage) {
       const combinedQaPairs = [];
 
-      if (qaPairsFromStorage["output_boolq"]) {
+      if (
+        qaPairsFromStorage["output_boolq"] && 
+        qaPairsFromStorage["output_boolq"]["Boolean_Questions"]  
+      ) {
         qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
-          (question, index) => {
+          (qaPair) => {
             combinedQaPairs.push({
-              question,
+              question: typeof qaPair === "string" ? qaPair : qaPair.question,
               question_type: "Boolean",
+              answer: qaPair.answer ?? "",
               context: qaPairsFromStorage["output_boolq"]["Text"],
             });
           }
@@ -120,7 +153,10 @@ const Output = () => {
         });
       }
 
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
+      if (
+        (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") && 
+        qaPairsFromStorage["output"]
+      ) {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
@@ -132,29 +168,40 @@ const Output = () => {
         });
       }
 
-      if (questionType == "get_boolq") {
+      if (questionType === "get_boolq" && qaPairsFromStorage["output"]) {
         qaPairsFromStorage["output"].forEach((qaPair) => {
+          
+          let answer = "";
+          if (typeof qaPair === "object" && qaPair !== null) {
+            answer = qaPair.answer ?? qaPair.Answer ?? "";
+          }
+          
           combinedQaPairs.push({
-            question: qaPair,
+            question: 
+              typeof qaPair === "string" 
+              ? qaPair 
+              : qaPair.question || qaPair.question_statement,
             question_type: "Boolean",
+            options: [],
+            answer: answer,
           });
         });
-      } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
+    } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
-            question:
+            question: 
               qaPair.question || qaPair.question_statement || qaPair.Question,
             options: qaPair.options,
             answer: qaPair.answer || qaPair.Answer,
             context: qaPair.context,
             question_type: "Short",
+            });
           });
-        });
-      }
+        }
 
-      setQaPairs(combinedQaPairs);
-    }
-  }, []);
+        setQaPairs(combinedQaPairs);  
+      }
+  }, [questionType]);
 
   const generateGoogleForm = async () => {
     try {
@@ -294,31 +341,107 @@ const Output = () => {
                     {!isEditing ? (
                       <>
                         <div className="text-[#FFF4F4] text-sm sm:text-base my-1 sm:my-2 leading-relaxed">
-                          {qaPair.question}
+                          {typeof qaPair.question === "object"
+                            ? qaPair.question.question
+                            : qaPair.question}
                         </div>
-                        {qaPair.question_type !== "Boolean" && (
-                          <>
-                            <div className="text-[#E4E4E4] text-xs sm:text-sm mt-3 sm:mt-4">
-                              Answer
+                        {qaPair.question_type === "MCQ" && (
+                          <div className="text-[#FFF4F4] text-sm sm:text-base mt-2 sm:mt-3">
+                            {shuffledOptions.map((option, idx) => (
+                              <div key={idx} className="mb-1 sm:mb-2">
+                                {quizMode === "play" ? (
+                                  <button
+                                    onClick={() => handleOptionClick(index, option)}
+                                    className={`w-full text-left p-2 rounded ${
+                                      selectedAnswers[index]?.userAnswer === option
+                                        ? "bg-green-600"
+                                        : "bg-[#1a1a2e] hover:bg-[#2a2a4e]"
+                                    }`}
+                                  >
+                                    {option}
+                                  </button>
+                                ) : (
+                                  <span>{option}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {qaPair.question_type === "MCQ" &&
+                          quizMode === "play" &&
+                          selectedAnswers[index] && (
+                            <div className="mt-2 font-semibold">
+                              <div className="text-blue-400">
+                                Your Answer: {selectedAnswers[index]?.userAnswer}
+                              </div>
+                            
+                              <div className="mt-2 text-green-400 font-semibold">
+                                Correct Answer: {qaPair.answer}
+                              </div>
                             </div>
-                            <div className="text-[#FFF4F4] text-sm sm:text-base leading-relaxed">
-                              {qaPair.answer}
-                            </div>
-                            {qaPair.options && qaPair.options.length > 0 && (
-                              <div className="text-[#FFF4F4] text-sm sm:text-base mt-2 sm:mt-3">
-                                {shuffledOptions.map((option, idx) => (
-                                  <div key={idx} className="mb-1 sm:mb-2">
-                                    <span className="text-[#E4E4E4] text-xs sm:text-sm">
-                                      Option {idx + 1}:
-                                    </span>{" "}
-                                    <span className="text-[#FFF4F4] text-sm sm:text-base">
-                                      {option}
-                                    </span>
-                                  </div>
-                                ))}
+                        )}                      
+                        {qaPair.question_type === "Boolean" && quizMode === "play" && (
+                          <div className="mt-3 flex gap-3">
+                            {["True", "False"].map((option, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => handleOptionClick(index, option)}
+                                className="px-4 py-2 bg-[#1a1a2e] hover:bg-[#2a2a4e] rounded"
+                              >
+                                {option}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {qaPair.question_type === "Boolean" &&
+                          quizMode === "play" &&
+                          selectedAnswers[index] && (
+                            <div className="mt-2 font-semibold">
+                              <div className="text-blue-400">
+                                Your Answer: {selectedAnswers[index].userAnswer}
+                              </div>
+
+                              <div className="text-green-400">
+                                {String(qaPair.answer).toLowerCase() === "true"
+                                  ? "Correct Answer: True"
+                                  : String(qaPair.answer).toLowerCase() === "false"
+                                  ? "Correct Answer: False"
+                                  : "Correct Answer unavailable"}
+                              </div>
+                            </div>                    
+                        )}
+                        
+                        {qaPair.question_type === "Short" && quizMode === "play" && (
+                          <div className="mt-3">
+                            {!selectedAnswers[index]?.submitted ? (
+                              <input
+                                type="text"
+                                value={shortInputs[index] || ""}
+                                onChange={(e) =>
+                                  setShortInputs((prev) => ({
+                                    ...prev,
+                                    [index]: e.target.value,
+                                  }))
+                                }
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    const value = shortInputs[index]?.trim();
+                                    if (!value) return;
+                                    handleSubmitAnswer(index, value);
+                                  }
+                                }}
+                                placeholder="Type your answer and press Enter..."
+                                className="w-full bg-[#1a1a2e] text-white p-2 rounded border border-gray-600 focus:border-[#7C3AED] focus:outline-none"
+                              />
+                            ) : (
+                              <div className="text-white">
+                                <div>Your Answer: {selectedAnswers[index].userAnswer}</div>
+                                <div className="mt-1">
+                                  Correct Answer: {qaPair.answer}
+                                </div>
                               </div>
                             )}
-                          </>
+                          </div>
                         )}
                       </>
                     ) : (
