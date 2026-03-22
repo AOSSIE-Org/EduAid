@@ -2,7 +2,7 @@ import { PDFDocument, rgb } from 'pdf-lib';
 
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = self.crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
     [array[i], array[j]] = [array[j], array[i]];
   }
   return array;

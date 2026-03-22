@@ -6,6 +6,8 @@ const reportWebVitals = onPerfEntry => {
       getFCP(onPerfEntry);
       getLCP(onPerfEntry);
       getTTFB(onPerfEntry);
+    }).catch(err => {
+      // Silently fail if web-vitals fails to load
     });
   }
 };

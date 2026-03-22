@@ -2,8 +2,8 @@
 class ApiClient {
   constructor() {
     this.isElectron = typeof window !== 'undefined' && window.electronAPI;
-    this.baseUrl = this.isElectron 
-      ? window.electronAPI.getApiConfig().baseUrl 
+    this.baseUrl = this.isElectron
+      ? window.electronAPI.getApiConfig().baseUrl
       : process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
   }
 
@@ -18,18 +18,17 @@ class ApiClient {
           throw new Error(`API request failed with status ${response.status}`);
         }
       } catch (error) {
-        console.error('Electron API request failed:', error);
         throw error;
       }
     } else {
       // Use regular fetch for web environment
       const url = `${this.baseUrl}${endpoint}`;
       const response = await fetch(url, options);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       return await response.json();
     }
   }
@@ -61,11 +60,11 @@ class ApiClient {
         method: 'POST',
         body: formData
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       return await response.json();
     } else {
       // For web, use FormData directly
@@ -75,11 +74,11 @@ class ApiClient {
         method: 'POST',
         body: formData
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       return await response.json();
     }
   }
