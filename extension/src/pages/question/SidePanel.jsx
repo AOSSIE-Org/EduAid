@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
-import ReactDOM from "react-dom";
+import { useState, useEffect } from "react";
 import { PDFDocument } from 'pdf-lib';
 import "../../index.css";
 import logo from "../../assets/aossie_logo.webp";
+import { normalizeArrayData } from "../../utils/normalizeArrayData";
 
 function SidePanel() {
   const [qaPairs, setQaPairs] = useState([]);
-  const [questionType, setQuestionType] = useState(
+  const [questionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
 
@@ -25,8 +25,8 @@ function SidePanel() {
       const combinedQaPairs = [];
 
       if (qaPairsFromStorage["output_boolq"]) {
-        qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
-          (question, index) => {
+        normalizeArrayData(qaPairsFromStorage["output_boolq"]["Boolean_Questions"]).forEach(
+          (question) => {
             combinedQaPairs.push({
               question,
               question_type: "Boolean",
@@ -37,7 +37,7 @@ function SidePanel() {
       }
 
       if (qaPairsFromStorage["output_mcq"]) {
-        qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
+        normalizeArrayData(qaPairsFromStorage["output_mcq"]["questions"]).forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
             question_type: "MCQ",
@@ -49,7 +49,7 @@ function SidePanel() {
       }
 
       if (qaPairsFromStorage["output_shortq"]) {
-        qaPairsFromStorage["output_shortq"]["questions"].forEach((qaPair) => {
+        normalizeArrayData(qaPairsFromStorage["output_shortq"]["questions"]).forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.Question,
             question_type: "Short",
@@ -60,7 +60,7 @@ function SidePanel() {
       }
 
       if (questionType === "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+        normalizeArrayData(qaPairsFromStorage["output"]).forEach((qaPair) => {
           const options = qaPair.answer
             .filter((ans) => !ans.correct)
             .map((ans) => ans.answer);
@@ -78,14 +78,14 @@ function SidePanel() {
       }
 
       if (questionType == "get_boolq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+        normalizeArrayData(qaPairsFromStorage["output"]).forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair,
             question_type: "Boolean",
           });
         });
       } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
+        normalizeArrayData(qaPairsFromStorage["output"]).forEach((qaPair) => {
           combinedQaPairs.push({
             question:
               qaPair.question || qaPair.question_statement || qaPair.Question,
@@ -99,6 +99,7 @@ function SidePanel() {
 
       setQaPairs(combinedQaPairs);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const generateGoogleForm = async () => {
@@ -132,7 +133,7 @@ function SidePanel() {
     let y = 700; // Starting y position for content
     let questionIndex = 1;
 
-    qaPairs.forEach((qaPair) => {
+    normalizeArrayData(qaPairs).forEach((qaPair) => {
         if (y < 50) {
             page = pdfDoc.addPage();
             y = 700;
@@ -144,7 +145,7 @@ function SidePanel() {
         if (qaPair.question_type === "Boolean") {
             // Create radio buttons for True/False
             const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
-            const drawRadioButton = (text, selected) => {
+            const drawRadioButton = (text) => {
                 const options = {
                     x: 70,
                     y,
@@ -157,8 +158,8 @@ function SidePanel() {
                 y -= 20;
             };
 
-            drawRadioButton('True', false);
-            drawRadioButton('False', false);
+            drawRadioButton('True');
+            drawRadioButton('False');
         } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
             // Shuffle options including qaPair.answer
             const options = [...qaPair.options, qaPair.answer]; // Include correct answer in options
@@ -166,8 +167,8 @@ function SidePanel() {
 
             const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
 
-            options.forEach((option, index) => {
-                const drawRadioButton = (text, selected) => {
+            options.forEach((option) => {
+                const drawRadioButton = (text) => {
                     const radioOptions = {
                         x: 70,
                         y,
@@ -178,7 +179,7 @@ function SidePanel() {
                     page.drawText(text, { x: 90, y: y + 2, size: 12 });
                     y -= 20;
                 };
-                drawRadioButton(option, false);
+                drawRadioButton(option);
             });
         } else if (qaPair.question_type === "Short") {
             // Text field for Short answer
@@ -221,52 +222,57 @@ function SidePanel() {
           <div className="font-bold text-xl text-white mt-3 mx-2">
             Generated Questions
           </div>
-          <div className="flex-1 overflow-y-auto scrollbar-hide">
-            {qaPairs &&
-              qaPairs.map((qaPair, index) => {
-                const combinedOptions = qaPair.options
-                  ? [...qaPair.options, qaPair.answer]
-                  : [qaPair.answer];
-                const shuffledOptions = shuffleArray(combinedOptions);
-                return (
-                  <div
-                    key={index}
-                    className="px-2 bg-[#d9d9d90d] border-dotted border-2 border-[#7600F2] my-2 mx-2 rounded-xl py-2"
-                  >
-                    <div className="text-white font-bold text-sm">
-                      Question {index + 1}
-                    </div>
-                    <div className="text-white text-[1rem] my-1">
-                      {qaPair.question}
-                    </div>
-                    {qaPair.options && (
-                      <div className="text-[#FFF4F4] text-[1rem] my-1">
-                        {shuffledOptions.map((option, idx) => (
-                          <div key={idx} className="flex items-center">
-                            <input
-                              type="radio"
-                              name={`question${index}`}
-                              value={option}
-                              className="mr-2"
-                            />
-                            <span>{option}</span>
-                          </div>
-                        ))}
+          <ErrorBoundary fallback={<EmptyState message="Quiz failed to load." />}>
+            <div className="flex-1 overflow-y-auto scrollbar-hide">
+              {qaPairs && qaPairs.length === 0 ? (
+                <EmptyState message="No quizzes could be parse from the response. Please try again." />
+              ) : (
+                qaPairs.map((qaPair, index) => {
+                  const combinedOptions = qaPair.options
+                    ? [...qaPair.options, qaPair.answer]
+                    : [qaPair.answer];
+                  const shuffledOptions = shuffleArray(combinedOptions);
+                  return (
+                    <div
+                      key={index}
+                      className="px-2 bg-[#d9d9d90d] border-dotted border-2 border-[#7600F2] my-2 mx-2 rounded-xl py-2"
+                    >
+                      <div className="text-white font-bold text-sm">
+                        Question {index + 1}
                       </div>
-                    )}
-                    {!qaPair.options && (
-                      <div className="my-2">
-                        <input
-                          type="text"
-                          placeholder="Enter your answer"
-                          className="bg-[#161E1E] text-white p-2 rounded-lg w-full"
-                        />
+                      <div className="text-white text-[1rem] my-1">
+                        {qaPair.question}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
+                      {qaPair.options && (
+                        <div className="text-[#FFF4F4] text-[1rem] my-1">
+                          {shuffledOptions.map((option, idx) => (
+                            <div key={idx} className="flex items-center">
+                              <input
+                                type="radio"
+                                name={`question${index}`}
+                                value={option}
+                                className="mr-2"
+                              />
+                              <span>{option}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {!qaPair.options && (
+                        <div className="my-2">
+                          <input
+                            type="text"
+                            placeholder="Enter your answer"
+                            className="bg-[#161E1E] text-white p-2 rounded-lg w-full"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </ErrorBoundary>
           <div className="items-center flex justify-center gap-6 mx-auto">
           <button
               className="bg-[#161E1E] my-2 text-white px-2 py-2 rounded-xl"
@@ -295,4 +301,4 @@ function SidePanel() {
   );
 }
 
-ReactDOM.render(<SidePanel />, document.getElementById("root"));
+export default SidePanel;
