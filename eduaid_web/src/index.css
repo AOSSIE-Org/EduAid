@@ -16,6 +16,42 @@ code {
     monospace;
 }
 
+/* ============================= */
+/* Button Border Gradient */
+/* ============================= */
+.border-gradient {
+  border-width: 2px;
+  border-style: solid;
+  border-image: linear-gradient(to right, #ff005c, #7600f2, #00cbe7);
+  border-image-slice: 1;
+  border-radius: 2rem;
+}
+/* ============================= */
+/* Gradient Text (Electron Safe) */
+/* ============================= */
+/* Primary Gradient (Edu) */
+.gradient-text {
+  background: linear-gradient(to right, #FF005C, #7600F2);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  /* Electron rendering fix */
+  display: inline-block;
+  transform: translateZ(0);
+}
+/* Secondary Gradient (Aid) */
+.gradient-text-2 {
+  background: linear-gradient(to right, #7600F2, #00CBE7);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  /* Electron rendering fix */
+  display: inline-block;
+  transform: translateZ(0);
+}
+
 .border-gradient {
   border-width: 2px; 
   border-style: solid;

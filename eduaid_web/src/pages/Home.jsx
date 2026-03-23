@@ -48,12 +48,8 @@ const Home = () => {
 
           {/* Heading */}
           <h1 className="text-5xl sm:text-6xl md:text-7xl text-center font-extrabold leading-tight">
-            <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-              Edu
-            </span>
-            <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-              Aid
-            </span>
+            <span className="gradient-text">Edu</span>
+            <span className="gradient-text-2">Aid</span>
           </h1>
 
           {/* Subtitle */}
