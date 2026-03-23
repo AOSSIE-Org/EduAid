@@ -94,6 +94,8 @@ const Text_Input = () => {
         return "get_shortq_hard";
       } else if (questionType === "get_mcq") {
         return "get_mcq_hard";
+      } else if (questionType === "get_boolq") {
+        return "get_boolq_hard";
       }
     }
     return questionType;
@@ -106,6 +108,7 @@ const Text_Input = () => {
         input_text: data,
         max_questions: numQuestions,
         use_mediawiki: isToggleOn,
+        difficulty: difficulty,
       };
 
       const responseData = await apiClient.post(`/${endpoint}`, requestData);
