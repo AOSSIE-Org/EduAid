@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import "../../index.css";
 import logo from "../../assets/aossie_logo.webp";
 import logoPNG from "../../assets/aossie_logo.png";
+import AddQuestionModal from "./AddQuestionModal";
 
 function Question() {
   const [qaPairs, setQaPairs] = useState([]);
@@ -10,6 +11,7 @@ function Question() {
     localStorage.getItem("selectedQuestionType")
   );
   const [pdfMode, setPdfMode] = useState("questions");
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -90,6 +92,17 @@ function Question() {
             answer: qaPair.answer || qaPair.Answer,
             context: qaPair.context,
             question_type: "Short",
+          });
+        });
+      }
+
+      if (qaPairsFromStorage["output_shortq"]) {
+        qaPairsFromStorage["output_shortq"]["questions"].forEach((qaPair) => {
+          combinedQaPairs.push({
+            question: qaPair.Question,
+            question_type: "Short",
+            answer: qaPair.Answer,
+            context: qaPair.context,
           });
         });
       }
@@ -233,6 +246,12 @@ function Question() {
             >
               Generate Google form
             </button>
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-[#518E8E] items-center flex gap-1 my-2 font-semibold text-white px-2 py-2 rounded-xl"
+            >
+              Add Question Manually
+            </button>
             
             <div className="relative">
               <button
@@ -266,6 +285,9 @@ function Question() {
               </div>
             </div>
           </div>
+          {showModal && (
+            <AddQuestionModal handleCloseModal={() => setShowModal(false)} />
+          )}
         </div>
       </div>
     </div>
