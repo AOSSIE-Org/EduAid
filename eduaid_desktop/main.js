@@ -1,28 +1,28 @@
 const { app, BrowserWindow, Menu, shell, dialog, ipcMain } = require('electron');
+
+// 🔥 Fix Electron rendering glitch (safe & stable)
+app.disableHardwareAcceleration();
+
 const path = require('path');
-const fs = require('fs');
 const config = require('./config');
 const https = require('https');
 const http = require('http');
 
-// Keep a global reference of the window object
 let mainWindow;
 
 function createWindow() {
-  // Create the browser window using configuration
   mainWindow = new BrowserWindow({
     ...config.windowOptions,
     icon: config.window.icon,
     webPreferences: config.window.webPreferences,
-    show: false, // Don't show until ready
+    show: false,
     titleBarStyle: config.window.titleBarStyle
   });
 
-  // Determine which URL to load based on environment
+  // Load correct URL
   if (!app.isPackaged) {
-    // In development, load from the dev server
     mainWindow.loadURL(config.webUrl);
-    // Open DevTools in development
+
     if (config.devTools) {
       mainWindow.webContents.openDevTools();
     }
@@ -30,36 +30,26 @@ function createWindow() {
     mainWindow.loadFile(config.webPath);
   }
 
-  // Show window when ready to prevent visual flash
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
-    
-    // Focus on the window
-    if (config.isDevelopment) {
-      mainWindow.focus();
-    }
   });
 
-  // Handle window closed
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
 
-  // Handle external links
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
   });
 
-  // Prevent navigation to external URLs
   mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
     const parsedUrl = new URL(navigationUrl);
-    
-    // Check if the URL is in our allowed origins
-    const isAllowed = config.security.allowedOrigins.some(origin => 
+
+    const isAllowed = config.security.allowedOrigins.some(origin =>
       parsedUrl.origin === origin || navigationUrl.startsWith(origin)
     );
-    
+
     if (!isAllowed) {
       event.preventDefault();
       shell.openExternal(navigationUrl);
@@ -67,7 +57,6 @@ function createWindow() {
   });
 }
 
-// Create application menu
 function createMenu() {
   const template = [
     {
@@ -86,9 +75,7 @@ function createMenu() {
         {
           label: 'Quit',
           accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
-          click: () => {
-            app.quit();
-          }
+          click: () => app.quit()
         }
       ]
     },
@@ -135,7 +122,8 @@ function createMenu() {
               type: 'info',
               title: 'About EduAid',
               message: 'EduAid Desktop',
-              detail: 'An AI-powered educational question generator by AOSSIE.\n\nVersion: 1.0.0'
+              detail:
+                'An AI-powered educational question generator by AOSSIE.\n\nVersion: 1.0.0'
             });
           }
         },
@@ -149,7 +137,6 @@ function createMenu() {
     }
   ];
 
-  // macOS specific menu adjustments
   if (process.platform === 'darwin') {
     template.unshift({
       label: app.getName(),
@@ -165,28 +152,17 @@ function createMenu() {
         { role: 'quit' }
       ]
     });
-
-    // Window menu
-    template[4].submenu = [
-      { role: 'close' },
-      { role: 'minimize' },
-      { role: 'zoom' },
-      { type: 'separator' },
-      { role: 'front' }
-    ];
   }
 
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 }
 
-// App event handlers
 app.whenReady().then(() => {
   createWindow();
   createMenu();
 
   app.on('activate', () => {
-    // On macOS, re-create window when dock icon is clicked
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
@@ -194,35 +170,15 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  // On macOS, keep app running even when all windows are closed
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
-// Security: Prevent new window creation
-app.on('web-contents-created', (event, contents) => {
-  contents.on('new-window', (event, navigationUrl) => {
-    event.preventDefault();
-    shell.openExternal(navigationUrl);
-  });
-});
-
-// Handle certificate errors
-app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
-  if (url.startsWith('http://localhost:')) {
-    // Allow localhost in development
-    event.preventDefault();
-    callback(true);
-  } else {
-    callback(false);
-  }
-});
-
-// API request handler for the renderer process
 ipcMain.handle('api-request', async (event, { endpoint, options }) => {
   return new Promise((resolve, reject) => {
     const apiUrl = new URL(endpoint, config.apiUrl);
+
     const requestOptions = {
       method: options.method || 'GET',
       headers: {
@@ -232,14 +188,14 @@ ipcMain.handle('api-request', async (event, { endpoint, options }) => {
     };
 
     const protocol = apiUrl.protocol === 'https:' ? https : http;
-    
-    const req = protocol.request(apiUrl, requestOptions, (res) => {
+
+    const req = protocol.request(apiUrl, requestOptions, res => {
       let data = '';
-      
-      res.on('data', (chunk) => {
+
+      res.on('data', chunk => {
         data += chunk;
       });
-      
+
       res.on('end', () => {
         try {
           const jsonData = JSON.parse(data);
@@ -248,7 +204,7 @@ ipcMain.handle('api-request', async (event, { endpoint, options }) => {
             status: res.statusCode,
             data: jsonData
           });
-        } catch (error) {
+        } catch {
           resolve({
             ok: res.statusCode >= 200 && res.statusCode < 300,
             status: res.statusCode,
@@ -258,9 +214,7 @@ ipcMain.handle('api-request', async (event, { endpoint, options }) => {
       });
     });
 
-    req.on('error', (error) => {
-      reject(error);
-    });
+    req.on('error', error => reject(error));
 
     if (options.body) {
       req.write(options.body);
