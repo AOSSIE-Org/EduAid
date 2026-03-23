@@ -1,19 +1,21 @@
 const { contextBridge, ipcRenderer } = require("electron");
-const config = require("./config");
+const path = require("path");
 
-// Expose protected methods that allow the renderer process to use
-// the ipcRenderer without exposing the entire object
+// 🔥 FIXED: Absolute path for config
+const config = require(path.join(__dirname, "config.js"));
+
+// Expose protected methods
 contextBridge.exposeInMainWorld("electronAPI", {
   // Platform information
   platform: process.platform,
 
-  // API Configuration (NEW)
+  // API Configuration
   getApiConfig: () => ({
     baseUrl: config.apiUrl,
     env: config.env,
   }),
 
-  // Secure API Proxy (NEW)
+  // Secure API Proxy
   makeApiRequest: async (endpoint, options) => {
     return ipcRenderer.invoke("api-request", {
       endpoint,
@@ -36,7 +38,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return process.env.npm_package_version || "1.0.0";
   },
 
-  // File operations (if needed in the future)
+  // File operations
   openFile: () => {
     return ipcRenderer.invoke("dialog:openFile");
   },
@@ -46,24 +48,22 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
 });
 
-// DOM Content Loaded event
+// DOM Ready
 window.addEventListener("DOMContentLoaded", () => {
-  // Add any initialization code here
   console.log("EduAid Desktop App loaded");
 
-  // Add desktop-specific styling or behavior
   document.body.classList.add("electron-app");
 
-  // Handle keyboard shortcuts
   document.addEventListener("keydown", (event) => {
-    // Prevent default browser shortcuts that don't make sense in desktop app
     const isMod = event.ctrlKey || event.metaKey;
     if (!isMod) return;
+
     const key = event.key.toLowerCase();
     const blockShortcuts = {
       r: !event.shiftKey,
       w: true,
     };
+
     if (blockShortcuts[key]) {
       event.preventDefault();
     }
