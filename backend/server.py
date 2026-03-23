@@ -39,7 +39,16 @@ answer = main.AnswerPredictor()
 BoolQGen = main.BoolQGenerator()
 ShortQGen = main.ShortQGenerator()
 qg = main.QuestionGenerator()
-docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+try:
+    docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
+except Exception as e:
+    docs_service = None
+    print(
+        "Warning: Google Docs service could not be initialized.\n"
+        "Google Docs integration will be unavailable.\n"
+        "Ensure service_account_key.json contains valid credentials.\n"
+        f"Original error: {e}"
+    )
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = pipeline("question-answering")
