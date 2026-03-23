@@ -155,7 +155,7 @@ def test_root():
     assert response.status_code == 200
 
 def test_get_answer():
-    endpoint = '/get_answer'
+    endpoint = '/get_shortq_answer'
     data = {
         'input_text': input_text,
         'input_question': [
@@ -166,7 +166,7 @@ def test_get_answer():
         ]
     }
     response = make_post_request(endpoint, data)
-    print(f'/get_answer Response: {response}')
+    print(f'{endpoint} Response: {response}')
     assert 'output' in response
 
 def test_get_boolean_answer():
