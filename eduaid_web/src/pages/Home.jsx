@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../index.css";
-import logo_trans from "../assets/aossie_logo_transparent.png"
+import logo_trans from "../assets/aossie_logo_transparent.png";
 import starsImg from "../assets/stars.png";
 import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
@@ -12,9 +12,21 @@ const Home = () => {
   const [error, setError] = useState("");
 
   async function fetchGitHubStars() {
-    const response = await fetch("https://api.github.com/repos/AOSSIE-Org/EduAid");
-    if (!response.ok) throw new Error("Failed to fetch stars");
+    const response = await fetch(
+      "https://api.github.com/repos/AOSSIE-Org/EduAid"
+    );
+
     const data = await response.json();
+
+    if (
+      !response.ok ||
+      !data ||
+      typeof data.stargazers_count !== "number"
+    ) {
+      console.error("Invalid GitHub API response:", data);
+      throw new Error("Invalid GitHub response");
+    }
+
     return data.stargazers_count;
   }
 
@@ -27,24 +39,36 @@ const Home = () => {
     const storedStars = localStorage.getItem("stars");
     const storedTime = localStorage.getItem("fetchTime");
 
-    if (storedStars && storedTime && !isMoreThanOneDayOld(parseInt(storedTime))) {
-      setStars(parseInt(storedStars));
-    } else {
-      fetchGitHubStars()
-        .then((starCount) => {
-          setStars(starCount);
-          localStorage.setItem("stars", starCount);
-          localStorage.setItem("fetchTime", Date.now().toString());
-        })
-        .catch(() => setError("Failed to fetch stars"));
+    if (storedStars !== null && storedTime !== null) {
+      const cachedStars = Number(storedStars);
+      const cachedTime = Number(storedTime);
+
+      if (
+        Number.isFinite(cachedStars) &&
+        Number.isFinite(cachedTime) &&
+        !isMoreThanOneDayOld(cachedTime)
+      ) {
+        setStars(cachedStars);
+        return;
+      }
     }
+
+    fetchGitHubStars()
+      .then((starCount) => {
+        setStars(starCount);
+        localStorage.setItem("stars", String(starCount));
+        localStorage.setItem("fetchTime", Date.now().toString());
+      })
+      .catch(() => setError("Failed to fetch stars"));
   }, []);
 
   return (
-    <div className="popup w-screen h-screen bg-[#02000F] flex justify-center items-center">
+    <div className="popup w-screen min-h-screen bg-[#02000F] flex justify-center items-start">
       <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient overflow-auto px-4 py-6 sm:px-8 md:px-16">
-        <div className="max-w-5xl mx-auto">
-          <img src={logo_trans} alt="logo" className="w-24 my-4 sm:my-6" />
+        <div className="max-w-5xl mx-auto text-white">
+
+          {/* Logo */}
+          <img src={logo_trans} alt="EduAid Logo" className="w-24 my-6" />
 
           {/* Heading */}
           <h1 className="text-5xl sm:text-6xl md:text-7xl text-center font-extrabold leading-tight">
@@ -57,44 +81,108 @@ const Home = () => {
           </h1>
 
           {/* Subtitle */}
-          <div className="text-white text-lg sm:text-xl text-center mt-4 mb-6">
-            <p>A tool that can auto-generate short quizzes</p>
-            <div className="flex items-center justify-center gap-2 mt-2">
-              <p>based on user input</p>
-              <img src={starsImg} width={24} height={12} alt="stars" />
-            </div>
+          <div className="text-center mt-6 mb-10 text-lg sm:text-xl">
+            <p>Turn your notes into interactive quizzes in seconds.</p>
+            <p className="mt-2 text-gray-300">
+              Upload your PDF or DOC file and start practicing instantly.
+            </p>
           </div>
 
-          {/* Features */}
-          <div className="flex flex-col items-end sm:items-center sm:flex-row sm:justify-between gap-4 mt-8">
+          {/* Feature Highlights */}
+          <div className="flex flex-col items-center sm:flex-row sm:justify-between gap-4 mt-8">
             {[
-              "Doc/Audio Input",
-              "In-depth questions gen",
-              "Dynamic Google Form Integration",
+              "PDF / DOC Upload",
+              "AI-powered Quiz Generation",
+              "Instant Practice Mode",
             ].map((feature, i) => (
               <div
                 key={i}
-                className="flex items-center rounded-l-2xl sm:rounded-2xl px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] gap-4 w-fit"
+                className="flex items-center rounded-2xl px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] gap-4"
               >
                 <img src={starsImg} width={32} height={16} alt="" />
-                <div className="text-white text-base sm:text-xl">{feature}</div>
+                <div className="text-white text-base sm:text-lg">
+                  {feature}
+                </div>
               </div>
             ))}
           </div>
 
-          {/* Buttons */}
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-10">
-            <Link to="/question-type" className="w-full sm:w-auto">
-              <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
-                Let’s get Started
-                <img src={arrow} width={24} height={24} alt="arrow" />
-              </button>
+          {/* Primary Buttons */}
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-12">
+
+            <Link
+              to="/question-type"
+              className="w-full sm:w-auto flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300"
+            >
+              <span>Upload & Generate Quiz</span>
+              <img src={arrow} width={24} height={24} alt="" aria-hidden="true" />
             </Link>
-            <Link to="/history" className="w-full sm:w-auto">
-              <button className="w-full sm:w-auto items-center text-lg flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300">
-                Your previous Work!
-                <img src={arrow} width={24} height={24} alt="arrow" />
-              </button>
+
+            <Link
+              to="/history"
+              className="w-full sm:w-auto flex justify-center gap-3 text-white px-6 py-3 border-gradient hover:wave-effect rounded-md transition-all duration-300"
+            >
+              <span>View Previous Work</span>
+              <img src={arrow} width={24} height={24} alt="" aria-hidden="true" />
+            </Link>
+
+          </div>
+
+          {/* How It Works */}
+          <div className="mt-20 text-center">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-10">
+              How It Works
+            </h2>
+
+            <div className="flex flex-col sm:flex-row justify-center gap-8">
+              {[
+                "Upload your PDF or DOC file",
+                "AI generates quiz questions instantly",
+                "Start practicing and test your knowledge",
+              ].map((step, i) => (
+                <div
+                  key={i}
+                  className="bg-[#1a1a2e] p-6 rounded-xl w-full sm:w-1/3"
+                >
+                  <h3 className="text-xl font-semibold mb-3">
+                    Step {i + 1}
+                  </h3>
+                  <p className="text-gray-300">{step}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Why EduAid */}
+          <div className="mt-20 text-center">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-10">
+              Why EduAid?
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {[
+                "Saves hours of manual question creation",
+                "Encourages active recall learning",
+                "Instant feedback improves retention",
+                "Perfect for exams and revision",
+              ].map((point, i) => (
+                <div
+                  key={i}
+                  className="bg-[#1a1a2e] p-6 rounded-xl"
+                >
+                  <p className="text-gray-300">{point}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Final CTA */}
+          <div className="mt-20 text-center">
+            <Link
+              to="/question-type"
+              className="inline-flex text-white text-lg px-8 py-4 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] rounded-xl hover:opacity-90 transition-all duration-300"
+            >
+              Turn Your Notes Into a Quiz Now
             </Link>
           </div>
 
@@ -103,7 +191,7 @@ const Home = () => {
             href="https://github.com/AOSSIE-Org/EduAid"
             target="_blank"
             rel="noopener noreferrer"
-            className="group block mt-10"
+            className="group block mt-16"
           >
             <div className="bg-[#45454599] hover:bg-[#5a5a5a99] transition-colors duration-300 w-fit mx-auto px-4 py-3 rounded-xl flex gap-4 items-center">
               <img src={gitStar} width={28} height={12} alt="GitHub Star" />
@@ -119,6 +207,7 @@ const Home = () => {
               </div>
             </div>
           </a>
+
         </div>
       </div>
     </div>
