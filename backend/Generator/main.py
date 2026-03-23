@@ -494,6 +494,19 @@ class QuestionGenerator:
             inputs.extend(prepped_inputs)
             answers.extend(prepped_answers)
 
+        if answer_style == "fill_in_blank":
+            sentences = self._split_text(text)
+            for sentence in sentences:
+                words = sentence.split()
+                if len(words) > 5:
+                    blank_index = random.randint(0, len(words) - 2)
+                    answer = words[blank_index]
+                    words[blank_index] = "_____"
+                    question = " ".join(words)
+                    inputs.append(f"{self.ANSWER_TOKEN} {answer} {self.CONTEXT_TOKEN} {sentence}")
+                    answers.append({"question": question, "answer": answer})
+                    answers.append(answer)
+
         return inputs, answers
 
     def generate_questions_from_inputs(self, qg_inputs: List) -> List[str]:

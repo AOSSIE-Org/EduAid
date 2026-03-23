@@ -226,6 +226,19 @@ const Text_Input = () => {
             </select>
           </div>
 
+        {/* Question Type Dropdown */}
+        <div className="text-center">
+          <select
+            value={questionType}
+            onChange={(e) => setQuestionType(e.target.value)}
+            className="bg-[#3e5063] text-white text-lg rounded-xl p-2 outline-none"
+          >
+            <option value="get_mcq">MCQ</option>
+            <option value="get_shortq">Short Answer</option>
+            <option value="get_fillintheblank">Fill in the Blank</option>
+          </select>
+        </div>
+
           {/* Wikipedia Toggle */}
           <div className="flex items-center gap-2">
             <span className="text-white text-lg sm:text-xl font-bold">Use Wikipedia:</span>
