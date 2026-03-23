@@ -22,6 +22,8 @@ import re
 import os
 import fitz 
 import mammoth
+from pptx import Presentation
+from utils.text_processor import TextProcessor
 
 class MCQGenerator:
     
@@ -352,6 +354,7 @@ class GoogleDocsService:
 class FileProcessor:
     def __init__(self, upload_folder='uploads/'):
         self.upload_folder = upload_folder
+        self.text_processor = TextProcessor()
         if not os.path.exists(self.upload_folder):
             os.makedirs(self.upload_folder)
 
@@ -367,6 +370,29 @@ class FileProcessor:
             result = mammoth.extract_raw_text(docx_file)
             return result.value
 
+    def extract_text_from_pptx(self, file_path):
+        """Extract text from a .pptx PowerPoint file.
+
+        Iterates over every slide and shape, pulling text from text-frames
+        (titles, body placeholders, free text-boxes) and table cells.
+        """
+        prs = Presentation(file_path)
+        text_parts = []
+        for slide in prs.slides:
+            for shape in slide.shapes:
+                if shape.has_text_frame:
+                    for paragraph in shape.text_frame.paragraphs:
+                        para_text = paragraph.text.strip()
+                        if para_text:
+                            text_parts.append(para_text)
+                if shape.has_table:
+                    for row in shape.table.rows:
+                        for cell in row.cells:
+                            cell_text = cell.text.strip()
+                            if cell_text:
+                                text_parts.append(cell_text)
+        return "\n".join(text_parts)
+
     def process_file(self, file):
         file_path = os.path.join(self.upload_folder, file.filename)
         file.save(file_path)
@@ -379,9 +405,35 @@ class FileProcessor:
             content = self.extract_text_from_pdf(file_path)
         elif file.filename.endswith('.docx'):
             content = self.extract_text_from_docx(file_path)
+        elif file.filename.endswith('.pptx'):
+            content = self.extract_text_from_pptx(file_path)
+        elif file.filename.endswith('.ppt'):
+            import logging
+            logging.warning(
+                "Legacy .ppt format is not supported. "
+                "Please convert to .pptx and try again."
+            )
 
         os.remove(file_path)
         return content
+
+    def process_file_chunked(self, file, chunk_size=1000, chunk_overlap=200):
+        """Process file and return chunked text for large documents.
+
+        Returns a list of chunk dicts (see TextProcessor.chunk_document).
+        Falls back to an empty list when the file type is unsupported or
+        the extracted text is empty.
+        """
+        content = self.process_file(file)
+        if not content:
+            return []
+
+        # Determine source type from filename
+        ext = os.path.splitext(file.filename)[1].lstrip('.').lower()
+        return self.text_processor.chunk_document(
+            content, source_type=ext or "unknown",
+            chunk_size=chunk_size, chunk_overlap=chunk_overlap,
+        )
 
 class QuestionGenerator:
     """A transformer-based NLP system for generating reading comprehension-style questions from
