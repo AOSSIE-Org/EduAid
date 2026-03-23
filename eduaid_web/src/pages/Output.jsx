@@ -217,14 +217,10 @@ const Output = () => {
                 alt="logo" 
                 className="w-12 sm:w-16 my-4 block" 
               />
-              <div className="text-xl sm:text-2xl mb-3 font-extrabold">
-                <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
-                  Edu
-                </span>
-                <span className="bg-gradient-to-r from-[#7600F2] to-[#00CBE7] text-transparent bg-clip-text">
-                  Aid
-                </span>
-              </div>
+              <h1 className="text-xl sm:text-2xl mb-3 font-extrabold flex gap-1">
+                <span className="gradient-text-base gradient-text">Edu</span>
+                <span className="gradient-text-base gradient-text-2">Aid</span>
+              </h1>
             </div>
           </Link>
 
