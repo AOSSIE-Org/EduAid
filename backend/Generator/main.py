@@ -369,19 +369,36 @@ class FileProcessor:
 
     def process_file(self, file):
         file_path = os.path.join(self.upload_folder, file.filename)
-        file.save(file_path)
+
+        try:
+            file.save(file_path)
+        except Exception as e:
+            return None
+
         content = ""
+        filename_lower = file.filename.lower()
 
-        if file.filename.endswith('.txt'):
-            with open(file_path, 'r') as f:
-                content = f.read()
-        elif file.filename.endswith('.pdf'):
-            content = self.extract_text_from_pdf(file_path)
-        elif file.filename.endswith('.docx'):
-            content = self.extract_text_from_docx(file_path)
+        try:
+            if filename_lower.endswith('.txt'):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+            elif filename_lower.endswith('.pdf'):
+                content = self.extract_text_from_pdf(file_path)
+            elif filename_lower.endswith('.docx'):
+                content = self.extract_text_from_docx(file_path)
+            else:
+                content = None
+        except Exception as e:
+            content = None
+        finally:
+            # Clean up the temporary file
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
-        os.remove(file_path)
-        return content
+        # Return None if content is empty or just whitespace
+        if content and content.strip():
+            return content.strip()
+        return None
 
 class QuestionGenerator:
     """A transformer-based NLP system for generating reading comprehension-style questions from
