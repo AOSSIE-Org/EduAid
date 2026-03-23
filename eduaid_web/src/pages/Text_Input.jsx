@@ -3,7 +3,7 @@ import "../index.css";
 import logo_trans from "../assets/aossie_logo_transparent.png"
 import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
-import { FaClipboard } from "react-icons/fa";
+import { FaClipboard, FaTrash } from "react-icons/fa";
 import Switch from "react-switch";
 import { Link,useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
@@ -21,6 +21,21 @@ const Text_Input = () => {
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
+  };
+
+  const handleClear = () => {
+    if (window.confirm("Are you sure you want to clear the text?")) {
+      setText("");
+    }
+  };
+
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setText((prev) => prev + text);
+    } catch (error) {
+      console.error("Failed to paste:", error);
+    }
   };
 
   const handleFileUpload = async (event) => {
@@ -167,9 +182,20 @@ const Text_Input = () => {
 
         {/* Textarea */}
         <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
-            <FaClipboard className="h-[24px] w-[24px]" />
-          </button>
+          <div className="absolute top-0 left-0 flex z-10">
+            <button
+              className="p-2 text-white focus:outline-none cursor-pointer"
+              onClick={handlePaste}
+            >
+              <FaClipboard className="h-[24px] w-[24px]" />
+            </button>
+            <button
+              className="p-2 text-white focus:outline-none cursor-pointer"
+              onClick={handleClear}
+            >
+              <FaTrash className="h-[24px] w-[24px]" />
+            </button>
+          </div>
           <textarea
             className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}

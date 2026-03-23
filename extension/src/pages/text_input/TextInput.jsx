@@ -5,7 +5,7 @@ import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
 import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
-import { FaClipboard , FaWikipediaW  } from "react-icons/fa";
+import { FaClipboard, FaTrash, FaWikipediaW } from "react-icons/fa";
 
 function Second() {
   const [text, setText] = useState("");
@@ -27,6 +27,20 @@ function Second() {
     });
   }, [])
 
+  const handleClear = () => {
+    if (window.confirm("Are you sure you want to clear the text?")) {
+      setText("");
+    }
+  };
+
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setText((prev) => prev + text);
+    } catch (error) {
+      console.error("Failed to paste:", error);
+    }
+  };
 
   const toggleSwitch = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
@@ -212,9 +226,20 @@ function Second() {
         </div>
 
         <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-28">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
-            <FaClipboard className="h-[20px] w-[20px]" />
-          </button>
+          <div className="absolute top-0 left-0 flex z-10">
+            <button
+              className="p-2 text-white focus:outline-none cursor-pointer"
+              onClick={handlePaste}
+            >
+              <FaClipboard className="h-[20px] w-[20px]" />
+            </button>
+            <button
+              className="p-2 text-white focus:outline-none cursor-pointer"
+              onClick={handleClear}
+            >
+              <FaTrash className="h-[20px] w-[20px]" />
+            </button>
+          </div>
           <textarea
             className="absolute inset-0 p-8 pt-2 bg-[#83b6cc40] text-lg rounded-xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -331,4 +356,3 @@ function Second() {
 }
 
 ReactDOM.render(<Second />, document.getElementById("root"));
-
