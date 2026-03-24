@@ -499,6 +499,11 @@ def system_diagnostics():
     Requires zero external dependencies. Assists maintainers in debugging
     contributor setup failures (e.g., missing PyTorch wheels on Windows).
     """
+    # Security: Ensure this endpoint is not publicly exposed in production
+    # Maintainers/students can set ENABLE_DIAGNOSTICS=true in their local .env
+    if os.getenv("ENABLE_DIAGNOSTICS", "false").lower() != "true":
+        return jsonify({"error": "Diagnostics disabled. Set ENABLE_DIAGNOSTICS=true in environment to access."}), 403
+
     diagnostics = {
         "status": "healthy",
         "system": {
@@ -511,18 +516,23 @@ def system_diagnostics():
         "ml_environment": {
             "pytorch_available": False,
             "cuda_available": False,
-            "torch_version": None
+            "torch_version": None,
+            "error_log": None
         }
     }
 
-    # Safely check PyTorch status without hard crashing if missing
+    # Safely check PyTorch status catching all underlying C++ / OS level crashes
     try:
         import torch
         diagnostics["ml_environment"]["pytorch_available"] = True
         diagnostics["ml_environment"]["torch_version"] = torch.__version__
         diagnostics["ml_environment"]["cuda_available"] = torch.cuda.is_available()
-    except ImportError:
+    except ModuleNotFoundError:
         diagnostics["status"] = "degraded (pytorch missing)"
+        diagnostics["ml_environment"]["error_log"] = "ModuleNotFoundError"
+    except Exception as e:
+        diagnostics["status"] = "degraded (pytorch broken install)"
+        diagnostics["ml_environment"]["error_log"] = str(e)
 
     return jsonify(diagnostics), 200
 
