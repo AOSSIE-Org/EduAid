@@ -1,3 +1,5 @@
+import platform
+import sys
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pprint import pprint
@@ -489,6 +491,40 @@ def get_transcript():
     os.remove(latest_subtitle)
 
     return jsonify({"transcript": transcript_text})
+
+@app.route('/api/diagnostics', methods=['GET'])
+def system_diagnostics():
+    """
+    Lightweight endpoint to diagnose local environment bottlenecks.
+    Requires zero external dependencies. Assists maintainers in debugging
+    contributor setup failures (e.g., missing PyTorch wheels on Windows).
+    """
+    diagnostics = {
+        "status": "healthy",
+        "system": {
+            "os": platform.system(),
+            "release": platform.release(),
+            "architecture": platform.machine(),
+            "python_version": sys.version.split(' ')[0],
+            "cpu_count": os.cpu_count()
+        },
+        "ml_environment": {
+            "pytorch_available": False,
+            "cuda_available": False,
+            "torch_version": None
+        }
+    }
+
+    # Safely check PyTorch status without hard crashing if missing
+    try:
+        import torch
+        diagnostics["ml_environment"]["pytorch_available"] = True
+        diagnostics["ml_environment"]["torch_version"] = torch.__version__
+        diagnostics["ml_environment"]["cuda_available"] = torch.cuda.is_available()
+    except ImportError:
+        diagnostics["status"] = "degraded (pytorch missing)"
+
+    return jsonify(diagnostics), 200
 
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
