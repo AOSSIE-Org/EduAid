@@ -100,13 +100,8 @@ qg = None
 docs_service = None
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
-<<<<<<< HEAD
 qa_model = None
-=======
-qa_model = pipeline("question-answering")
-llm_generator = LLMQuestionGenerator()
-
->>>>>>> main
+llm_generator = None
 
 def process_input_text(input_text, use_mediawiki):
     if use_mediawiki == 1:
@@ -598,7 +593,6 @@ def get_content():
             "code": "invalid_request"
         }), 400
 
-    # Accept both doc_id and document_url
     doc_id = data.get("doc_id")
 
     if not doc_id:
@@ -613,34 +607,21 @@ def get_content():
 
     try:
         document_url = f"https://docs.google.com/document/d/{doc_id}/edit"
-        content = docs_service.get_document_content(document_url)
-        return jsonify({"content": content})
+        text = docs_service.get_document_content(document_url)
+        return jsonify({"content": text})
 
-<<<<<<< HEAD
-    # ✅ Client-side error
     except ValueError:
+        app.logger.exception("Invalid document URL")
         return jsonify({
             "error": "Invalid document URL",
             "code": "invalid_request"
         }), 400
 
-    # ✅ Server-side error
     except Exception as e:
-        logging.exception("Error fetching document content")
-=======
-        text = docs_service.get_document_content(document_url)
-        return jsonify(text)
-    except ValueError as e:
-        app.logger.exception("ValueError in /get_content: %s", e)
-        return jsonify({'error': 'Bad request'}), 400
-    except Exception as e:
-        app.logger.exception("Unhandled exception in /get_content: %s", e)
-        return jsonify({'error': 'Internal server error'}), 500
->>>>>>> main
-
+        app.logger.exception("Error fetching document content: %s", e)
         return jsonify({
             "error": "Internal server error",
-            "code": "internal_server_error"
+            "code": "server_error"
         }), 500
 
 @app.route("/generate_gform", methods=["POST"])
