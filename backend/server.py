@@ -6,7 +6,6 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_limiter.util import get_remote_address
 from flask_limiter import Limiter
 from flask_limiter.errors import RateLimitExceeded
-from concurrent.futures import ThreadPoolExecutor
 import nltk
 import subprocess
 import os
@@ -39,23 +38,28 @@ from mediawikiapi import MediaWikiAPI
 from werkzeug.exceptions import RequestEntityTooLarge
 
 
-from concurrent.futures import ProcessPoolExecutor, TimeoutError as FuturesTimeoutError
 
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 def execute_with_timeout(func, timeout, *args, **kwargs):
-    with ProcessPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(func, *args, **kwargs)
-        try:
-            result = future.result(timeout=timeout)
-            return result, None
-        except FuturesTimeoutError:
-            return None, "timeout"
-        except Exception:
-            logging.exception("Error occurred during execution")
-            return None, {
-                "code": "internal_server_error",
-                "message": "An internal error occurred"
-            }
+    executor = ThreadPoolExecutor(max_workers=1)
+    future = executor.submit(func, *args, **kwargs)
 
+    try:
+        result = future.result(timeout=timeout)
+        executor.shutdown(wait=False)  # ✅ FIX
+        return result, None
+
+    except FuturesTimeoutError:
+        executor.shutdown(wait=False)  # ✅ FIX
+        return None, "timeout"
+
+    except Exception:
+        executor.shutdown(wait=False)
+        logging.exception("Error occurred during execution")
+        return None, {
+            "code": "internal_server_error",
+            "message": "An internal error occurred"
+        }
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 CORS(app)
@@ -252,6 +256,11 @@ def get_boolq():
 @app.route("/get_shortq", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_shortq():
+    if ShortQGen is None:
+        return jsonify({
+            "error": "Generator not initialized",
+            "code": "service_unavailable"
+        }), 500
     data = request.get_json(silent=True)
 
     # ✅ JSON validation
@@ -503,6 +512,7 @@ def get_problems():
 
     return jsonify(response)
     
+
 @app.route("/get_mcq_answer", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_mcq_answer():
@@ -517,6 +527,20 @@ def get_mcq_answer():
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     input_options = data.get("input_options", [])
+
+    # ✅ FIXED VALIDATION
+    if not isinstance(input_text, str) or not isinstance(input_questions, list) or not isinstance(input_options, list):
+        return jsonify({
+            "error": "Invalid input types",
+            "code": "invalid_request"
+        }), 400
+
+    if not all(isinstance(q, str) for q in input_questions):
+        return jsonify({"error": "Invalid questions format"}), 400
+
+    if not all(isinstance(opt, list) and all(isinstance(o, str) for o in opt) for opt in input_options):
+        return jsonify({"error": "Invalid options format"}), 400
+
     outputs = []
 
     if not input_questions or not input_options or len(input_questions) != len(input_options):
@@ -1084,3 +1108,4 @@ def get_transcript():
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
     app.run()
+
