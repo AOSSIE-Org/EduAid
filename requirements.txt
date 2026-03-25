@@ -32,9 +32,7 @@ mammoth
 mediawikiapi
 PyMuPDF
 textblob
-<<<<<<< HEAD
 Flask-Limiter==3.5.0
 yt-dlp
-=======
 llama-cpp-python
->>>>>>> main
+strsimpy

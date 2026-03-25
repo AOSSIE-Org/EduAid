@@ -1,5 +1,4 @@
 import logging
-from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pprint import pprint
@@ -7,6 +6,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_limiter.util import get_remote_address
 from flask_limiter import Limiter
 from flask_limiter.errors import RateLimitExceeded
+from concurrent.futures import ThreadPoolExecutor
 import nltk
 import subprocess
 import os
@@ -39,27 +39,22 @@ from mediawikiapi import MediaWikiAPI
 from werkzeug.exceptions import RequestEntityTooLarge
 
 
+from concurrent.futures import ProcessPoolExecutor, TimeoutError as FuturesTimeoutError
+
 def execute_with_timeout(func, timeout, *args, **kwargs):
-    executor = ThreadPoolExecutor(max_workers=1)
-    future = executor.submit(func, *args, **kwargs)
-
-    try:
-        result = future.result(timeout=timeout)
-        executor.shutdown(wait=False)
-        return result, None
-
-    except TimeoutError:
-        future.cancel()
-        executor.shutdown(wait=False)
-        return None, "timeout"
-
-    except Exception:
-        logging.exception("Error occurred during execution")
-        executor.shutdown(wait=False)
-        return None, {
-            "code": "internal_server_error",
-            "message": "An internal error occurred"
-        }
+    with ProcessPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(func, *args, **kwargs)
+        try:
+            result = future.result(timeout=timeout)
+            return result, None
+        except FuturesTimeoutError:
+            return None, "timeout"
+        except Exception:
+            logging.exception("Error occurred during execution")
+            return None, {
+                "code": "internal_server_error",
+                "message": "An internal error occurred"
+            }
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
@@ -97,7 +92,6 @@ answer = None
 BoolQGen = None
 ShortQGen = None
 qg = None
-docs_service = None
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 qa_model = None
@@ -108,10 +102,14 @@ def process_input_text(input_text, use_mediawiki):
         input_text = mediawikiapi.summary(input_text,8)
     return input_text
 
-
 @app.route("/get_mcq", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_mcq():
+    if MCQGen is None:
+        return jsonify({
+            "error": "Generator not initialized",
+            "code": "service_unavailable"
+        }), 500
     data = request.get_json(silent=True)
 
     # ✅ JSON validation
@@ -181,15 +179,25 @@ def get_mcq():
 
     return jsonify({
         "output": questions,
-        "status": "success"
+        "status": "success",
+        "mock_mode": True,
+        "warning": "Mock questions used, generation disabled"   
     })
     
+
 @app.route("/get_boolq", methods=["POST"])
 @limiter.limit("20 per minute")
 def get_boolq():
+
+    # ✅ Step 7 FIX
+    if BoolQGen is None:
+        return jsonify({
+            "error": "Generator not initialized",
+            "code": "service_unavailable"
+        }), 500
+
     data = request.get_json(silent=True)
 
-    # ✅ JSON validation
     if data is None or not isinstance(data, dict):
         return jsonify({
             "error": "Invalid JSON",
@@ -199,7 +207,6 @@ def get_boolq():
     input_text = data.get("input_text", "")
     max_questions = data.get("max_questions", 4)
 
-    # ✅ Validate max_questions
     if not isinstance(max_questions, int):
         return jsonify({
             "error": "max_questions must be integer",
@@ -212,7 +219,6 @@ def get_boolq():
             "code": "invalid_range"
         }), 400
 
-    # ✅ Validate input_text
     if not isinstance(input_text, str):
         return jsonify({
             "error": "input_text must be string",
@@ -227,21 +233,21 @@ def get_boolq():
             "code": "too_short"
         }), 400
 
-    # 🚀 MOCK BOOLEAN QUESTIONS (SAFE)
+    # 🚀 MOCK BOOLEAN
     questions = [
         {"question": "AI is useful?", "answer": "True"},
         {"question": "Machine Learning is part of AI?", "answer": "True"},
         {"question": "Python is a database?", "answer": "False"}
     ]
 
-    # limit output
     questions = questions[:max_questions]
 
     return jsonify({
         "output": questions,
-        "status": "success"
+        "status": "success",
+        "mock_mode": True,
+        "warning": "Mock questions used, generation disabled"
     })
-
 
 @app.route("/get_shortq", methods=["POST"])
 @limiter.limit("20 per minute")
@@ -299,7 +305,9 @@ def get_shortq():
 
     return jsonify({
         "output": questions,
-        "status": "success"
+        "status": "success",
+        "mock_mode": True,
+        "warning": "Mock questions used, generation disabled"
     })
 
 @app.route("/get_shortq_llm", methods=["POST"])
@@ -433,24 +441,21 @@ def get_problems():
         return execute_with_timeout(
             MCQGen.generate_mcq,
             60,
-            input_text=input_text,
-            max_questions=max_questions_mcq
+            {"input_text": input_text, "max_questions": max_questions_mcq}
         )
 
     def run_boolq():
         return execute_with_timeout(
             BoolQGen.generate_boolq,
             60,
-            input_text=input_text,
-            max_questions=max_questions_boolq
+            {"input_text": input_text, "max_questions": max_questions_boolq}
         )
 
     def run_shortq():
         return execute_with_timeout(
             ShortQGen.generate_shortq,
             60,
-            input_text=input_text,
-            max_questions=max_questions_shortq
+            {"input_text": input_text, "max_questions": max_questions_shortq}
         )
 
     # 🚀 Run in parallel
@@ -582,47 +587,7 @@ def get_boolean_answer():
 
     return jsonify({"output": output})
 
-@app.route('/get_content', methods=['POST'])
-@limiter.limit("10 per minute")
-def get_content():
-    data = request.get_json(silent=True)
 
-    if data is None or not isinstance(data, dict):
-        return jsonify({
-            "error": "Invalid or missing JSON body",
-            "code": "invalid_request"
-        }), 400
-
-    doc_id = data.get("doc_id")
-
-    if not doc_id:
-        document_url = data.get("document_url")
-        if document_url:
-            match = re.search(r'/d/([a-zA-Z0-9_-]+)', document_url)
-            if match:
-                doc_id = match.group(1)
-
-    if not doc_id:
-        return jsonify({"error": "doc_id or document_url is required"}), 400
-
-    try:
-        document_url = f"https://docs.google.com/document/d/{doc_id}/edit"
-        text = docs_service.get_document_content(document_url)
-        return jsonify({"content": text})
-
-    except ValueError:
-        app.logger.exception("Invalid document URL")
-        return jsonify({
-            "error": "Invalid document URL",
-            "code": "invalid_request"
-        }), 400
-
-    except Exception as e:
-        app.logger.exception("Error fetching document content: %s", e)
-        return jsonify({
-            "error": "Internal server error",
-            "code": "server_error"
-        }), 500
 
 @app.route("/generate_gform", methods=["POST"])
 @limiter.limit("5 per minute")
