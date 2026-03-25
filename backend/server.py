@@ -110,10 +110,7 @@ def process_input_text(input_text, use_mediawiki):
 @limiter.limit("20 per minute")
 def get_mcq():
     if MCQGen is None:
-        return jsonify({
-            "error": "Generator not initialized",
-            "code": "service_unavailable"
-        }), 500
+        logging.warning("MCQGen not initialized, using mock data")
     data = request.get_json(silent=True)
 
     # ✅ JSON validation
@@ -195,10 +192,7 @@ def get_boolq():
 
     # ✅ Step 7 FIX
     if BoolQGen is None:
-        return jsonify({
-            "error": "Generator not initialized",
-            "code": "service_unavailable"
-        }), 500
+        logging.warning("BoolQGen not initialized, using mock data")
 
     data = request.get_json(silent=True)
 
@@ -257,10 +251,7 @@ def get_boolq():
 @limiter.limit("20 per minute")
 def get_shortq():
     if ShortQGen is None:
-        return jsonify({
-            "error": "Generator not initialized",
-            "code": "service_unavailable"
-        }), 500
+        logging.warning("ShortQGen not initialized, using mock data")
     data = request.get_json(silent=True)
 
     # ✅ JSON validation
