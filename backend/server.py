@@ -371,7 +371,6 @@ def get_problems_llm():
         app.logger.exception("Error in /get_problems_llm: %s", e)
         return jsonify({"error": "Internal server error"}), 500
 
-
 @app.route("/get_problems", methods=["POST"])
 @limiter.limit("10 per minute")
 def get_problems():
@@ -436,26 +435,44 @@ def get_problems():
             "code": "mediawiki_error"
         }), 500
 
-    # ✅ Run generators safely
+    # ✅ SAFE GENERATOR CALLS (FIXED WITH LAMBDA)
     def run_mcq():
+        if MCQGen is None:
+            logging.warning("MCQGen not initialized")
+            return None, "not_available"
+
         return execute_with_timeout(
-            MCQGen.generate_mcq,
-            60,
-            {"input_text": input_text, "max_questions": max_questions_mcq}
+            lambda: MCQGen.generate_mcq(
+                input_text=input_text,
+                max_questions=max_questions_mcq
+            ),
+            60
         )
 
     def run_boolq():
+        if BoolQGen is None:
+            logging.warning("BoolQGen not initialized")
+            return None, "not_available"
+
         return execute_with_timeout(
-            BoolQGen.generate_boolq,
-            60,
-            {"input_text": input_text, "max_questions": max_questions_boolq}
+            lambda: BoolQGen.generate_boolq(
+                input_text=input_text,
+                max_questions=max_questions_boolq
+            ),
+            60
         )
 
     def run_shortq():
+        if ShortQGen is None:
+            logging.warning("ShortQGen not initialized")
+            return None, "not_available"
+
         return execute_with_timeout(
-            ShortQGen.generate_shortq,
-            60,
-            {"input_text": input_text, "max_questions": max_questions_shortq}
+            lambda: ShortQGen.generate_shortq(
+                input_text=input_text,
+                max_questions=max_questions_shortq
+            ),
+            60
         )
 
     # 🚀 Run in parallel
@@ -470,7 +487,7 @@ def get_problems():
 
     (mcq_out, mcq_err), (bool_out, bool_err), (short_out, short_err) = results
 
-    # ✅ FINAL SAFE RESPONSE (MAIN FIX 🔥)
+    # ✅ FINAL SAFE RESPONSE
     response = {
         "output_mcq": [],
         "output_boolq": [],
@@ -502,7 +519,6 @@ def get_problems():
         }), status
 
     return jsonify(response)
-    
 
 @app.route("/get_mcq_answer", methods=["POST"])
 @limiter.limit("20 per minute")
