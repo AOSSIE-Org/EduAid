@@ -259,6 +259,11 @@ def predict_mcq_answer_task(self, input_text, input_questions, input_options):
         
         outputs = []
         for question, options in zip(input_questions, input_options, strict=True):
+            if not options:
+                logger.warning(f"Empty options for question: {question[:50]}...")
+                outputs.append(None)
+                continue
+            
             # Generate answer using the QA model
             qa_response = self.qa_model(question=question, context=input_text)
             generated_answer = qa_response["answer"]
