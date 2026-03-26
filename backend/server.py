@@ -288,7 +288,7 @@ def get_mcq_answer():
             generated_answer = qa_response["answer"]
 
             # Calculate similarity between generated answer and each option
-            options_with_answer = options + [generated_answer]
+            options_with_answer = [*options, generated_answer]
             vectorizer = TfidfVectorizer().fit_transform(options_with_answer)
             vectors = vectorizer.toarray()
             generated_answer_vector = vectors[-1].reshape(1, -1)

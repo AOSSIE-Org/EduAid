@@ -264,7 +264,7 @@ def predict_mcq_answer_task(self, input_text, input_questions, input_options):
             generated_answer = qa_response["answer"]
 
             # Calculate similarity between generated answer and each option
-            options_with_answer = options + [generated_answer]
+            options_with_answer = [*options, generated_answer]
             vectorizer = TfidfVectorizer().fit_transform(options_with_answer)
             vectors = vectorizer.toarray()
             generated_answer_vector = vectors[-1].reshape(1, -1)
@@ -330,9 +330,9 @@ def predict_boolean_answer_task(self, input_text, input_questions):
         output = []
         for question in input_questions:
             qa_response = self.answer_predictor.predict_boolean_answer(
-                {"input_text": input_text, "input_question": question}
+                {"input_text": input_text, "input_question": [question]}
             )
-            if qa_response:
+            if qa_response and qa_response[0]:
                 output.append("True")
             else:
                 output.append("False")
