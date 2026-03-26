@@ -23,7 +23,10 @@ def test_endpoint(endpoint, payload, include_context=False):
         if response.status_code == 200:
             data = response.json()
             size = len(json.dumps(data))
-            compressed_size = len(response.content)
+            # Use Content-Length header for on-wire compressed size.
+            # Note: Content-Length may be absent with chunked transfer encoding.
+            content_length = response.headers.get("Content-Length")
+            compressed_size = int(content_length) if content_length else len(response.content)
             
             print(f"\n{'='*60}")
             print(f"Endpoint: {endpoint}")
@@ -56,14 +59,14 @@ def test_endpoint(endpoint, payload, include_context=False):
                                 print(f"  {key}: {list(items[0].keys())}")
                             else:
                                 print(f"  {key}: [string items]")
-                
-                # Check for removed fields (once, outside the loop)
-                removed_fields = ["statement", "Text", "time_taken", "options_algorithm", "extra_options", "Count"]
-                found_removed = [f for f in removed_fields if f in str(data)]
-                if found_removed:
-                    print(f"  ⚠️  WARNING: Found removed fields: {found_removed}")
-                else:
-                    print("  ✅ No unnecessary fields found")
+            
+            # Check for removed fields (applies to all response types)
+            removed_fields = ["statement", "Text", "time_taken", "options_algorithm", "extra_options", "Count"]
+            found_removed = [f for f in removed_fields if f in str(data)]
+            if found_removed:
+                print(f"  ⚠️  WARNING: Found removed fields: {found_removed}")
+            else:
+                print("  ✅ No unnecessary fields found")
             
             return True
         else:
