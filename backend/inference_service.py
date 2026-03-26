@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 # Task timeout for Celery operations (in seconds)
 TASK_TIMEOUT_SECONDS = 600  # 10 minutes
 
-# Import Celery tasks
+# Import Celery tasks (local-module style)
 try:
-    from backend.tasks.inference_tasks import (
+    from tasks.inference_tasks import (
         generate_mcq_task,
         generate_boolq_task,
         generate_shortq_task,

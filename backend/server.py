@@ -13,6 +13,7 @@ nltk.download('punkt')
 from Generator import main
 from Generator.question_filters import make_question_harder
 from Generator.llm_generator import LLMQuestionGenerator
+from transformers import pipeline
 import re
 import random
 import webbrowser
@@ -89,9 +90,6 @@ docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 
-if not USE_CELERY_INFERENCE:
-    qa_model = pipeline("question-answering")
-    
 llm_generator = LLMQuestionGenerator()
 
 def process_input_text(input_text, use_mediawiki):
@@ -106,13 +104,15 @@ def get_mcq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
     
     if USE_CELERY_INFERENCE:
         # Use Celery worker for inference (memory-efficient)
+        # Worker will handle MediaWiki preprocessing
         output = generate_mcq_sync(input_text, max_questions, use_mediawiki)
     else:
         # Use direct model inference (legacy mode)
+        # Preprocess locally before calling model
+        input_text = process_input_text(input_text, use_mediawiki)
         output = MCQGen.generate_mcq(
             {"input_text": input_text, "max_questions": max_questions}
         )
@@ -127,13 +127,15 @@ def get_boolq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
     
     if USE_CELERY_INFERENCE:
         # Use Celery worker for inference (memory-efficient)
+        # Worker will handle MediaWiki preprocessing
         output = generate_boolq_sync(input_text, max_questions, use_mediawiki)
     else:
         # Use direct model inference (legacy mode)
+        # Preprocess locally before calling model
+        input_text = process_input_text(input_text, use_mediawiki)
         output = BoolQGen.generate_boolq(
             {"input_text": input_text, "max_questions": max_questions}
         )
@@ -148,13 +150,15 @@ def get_shortq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
     
     if USE_CELERY_INFERENCE:
         # Use Celery worker for inference (memory-efficient)
+        # Worker will handle MediaWiki preprocessing
         output = generate_shortq_sync(input_text, max_questions, use_mediawiki)
     else:
         # Use direct model inference (legacy mode)
+        # Preprocess locally before calling model
+        input_text = process_input_text(input_text, use_mediawiki)
         output = ShortQGen.generate_shortq(
             {"input_text": input_text, "max_questions": max_questions}
         )
@@ -233,10 +237,10 @@ def get_problems():
     max_questions_mcq = data.get("max_questions_mcq", 4)
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
     
     if USE_CELERY_INFERENCE:
         # Use Celery worker for inference (memory-efficient)
+        # Worker will handle MediaWiki preprocessing
         result = generate_all_questions_sync(
             input_text,
             max_questions_mcq,
@@ -247,6 +251,8 @@ def get_problems():
         return jsonify(result)
     else:
         # Use direct model inference (legacy mode)
+        # Preprocess locally before calling model
+        input_text = process_input_text(input_text, use_mediawiki)
         output1 = MCQGen.generate_mcq(
             {"input_text": input_text, "max_questions": max_questions_mcq}
         )
@@ -533,14 +539,16 @@ def get_shortq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text, use_mediawiki)
     input_questions = data.get("input_question", [])
 
     if USE_CELERY_INFERENCE:
         # Use Celery worker for inference (memory-efficient)
+        # Worker will handle MediaWiki preprocessing
         output = generate_hard_shortq_sync(input_text, input_questions, use_mediawiki)
     else:
         # Use direct model inference (legacy mode)
+        # Preprocess locally before calling model
+        input_text = process_input_text(input_text, use_mediawiki)
         output = qg.generate(
             article=input_text, num_questions=input_questions, answer_style="sentences"
         )
@@ -555,14 +563,16 @@ def get_mcq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text, use_mediawiki)
     input_questions = data.get("input_question", [])
     
     if USE_CELERY_INFERENCE:
         # Use Celery worker for inference (memory-efficient)
+        # Worker will handle MediaWiki preprocessing
         output = generate_hard_mcq_sync(input_text, input_questions, use_mediawiki)
     else:
         # Use direct model inference (legacy mode)
+        # Preprocess locally before calling model
+        input_text = process_input_text(input_text, use_mediawiki)
         output = qg.generate(
             article=input_text, num_questions=input_questions, answer_style="multiple_choice"
         )
@@ -577,13 +587,15 @@ def get_boolq_hard():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
-    input_text = process_input_text(input_text, use_mediawiki)
 
     if USE_CELERY_INFERENCE:
         # Use Celery worker for inference (memory-efficient)
+        # Worker will handle MediaWiki preprocessing
         output = generate_hard_boolq_sync(input_text, input_questions, use_mediawiki)
     else:
         # Use direct model inference (legacy mode)
+        # Preprocess locally before calling model
+        input_text = process_input_text(input_text, use_mediawiki)
         output = qg.generate(
             article=input_text,
             num_questions=input_questions,

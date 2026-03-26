@@ -7,14 +7,14 @@ from celery.result import AsyncResult
 import logging
 import os
 
-# Import Celery tasks
-from backend.tasks.inference_tasks import (
+# Import Celery tasks (local-module style)
+from tasks.inference_tasks import (
     generate_mcq_task,
     generate_boolq_task,
     generate_shortq_task,
     generate_all_questions_task
 )
-from backend.celery_worker import celery_app
+from celery_worker import celery_app
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -199,7 +199,7 @@ def generate_all_async():
     try:
         data = request.get_json(silent=True) or {}
         input_text = _parse_input_text(data)
-        use_mediawiki = data.get("use_mediawiki", 0)
+        use_mediawiki = 1 if data.get("use_mediawiki") in (1, True, "1") else 0
         max_questions_mcq = _parse_bounded_int(data, "max_questions_mcq", 4)
         max_questions_boolq = _parse_bounded_int(data, "max_questions_boolq", 4)
         max_questions_shortq = _parse_bounded_int(data, "max_questions_shortq", 4)

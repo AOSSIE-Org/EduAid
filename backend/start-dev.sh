@@ -51,7 +51,7 @@ if [ "$USE_CELERY" = "true" ]; then
     # Check if Celery worker is running
     echo ""
     echo "⚠️  Make sure Celery worker is running in another terminal:"
-    echo "  celery -A celery_worker.celery_app worker --loglevel=info"
+    echo "  celery -A celery_worker.celery_app worker --pool=solo --concurrency=1 --loglevel=info"
     echo ""
     echo "Or use Docker Compose to start everything:"
     echo "  docker-compose up"

@@ -4,7 +4,7 @@ These tasks wrap the existing generator classes to run in background workers.
 """
 import logging
 from celery import Task
-from backend.celery_worker import celery_app
+from celery_worker import celery_app
 from Generator import main
 from Generator.question_filters import make_question_harder
 from mediawikiapi import MediaWikiAPI
