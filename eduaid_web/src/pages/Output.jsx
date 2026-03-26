@@ -20,7 +20,7 @@ const Output = () => {
     const handleClickOutside = (event) => {
       const dropdown = document.getElementById('pdfDropdown');
       if (dropdown && !dropdown.contains(event.target) && 
-        !event.target.closest('button')) {
+        !event.target.closest('#pdfToggle')) {
         dropdown.classList.add('hidden');
       }
     };
@@ -127,7 +127,8 @@ const Output = () => {
       });
     });
 
-    // 🔵 MCQ Questions
+    // 🔵 MCQ Questions (only when needed)
+    if (questionType === "get_mcq") {
     outputMcqQuestions.forEach((qaPair) => {
       combinedQaPairs.push({
         question: qaPair.question_statement,
@@ -135,47 +136,48 @@ const Output = () => {
         options: qaPair.options,
         answer: qaPair.answer,
         context: qaPair.context,
+        });
       });
-    });
+    }
 
     // 🔴 General Output (MCQ / Short)
     if (questionType === "get_boolq") {
-      output.forEach((qaPair) => {
-        combinedQaPairs.push({
-          question: qaPair,
-          question_type: "Boolean",
-        });
-      });
-    } else if (questionType !== "get_mcq") {
-      output.forEach((qaPair) => {
-        combinedQaPairs.push({
-          question:
-            qaPair.question ||
-            qaPair.question_statement ||
-            qaPair.Question,
-          options: qaPair.options,
-          answer: qaPair.answer || qaPair.Answer,
-          context: qaPair.context,
-          question_type: "Short",
-        });
-      });
-    }
+  output.forEach((qaPair) => {
+    combinedQaPairs.push({
+      question: qaPair,
+      question_type: "Boolean",
+    });
+  });
 
-    // 🟢 Short Questions (only when needed)
-    if (questionType !== "get_mcq") {
-      outputShortqQuestions.forEach((qaPair) => {
-        combinedQaPairs.push({
-          question:
-            qaPair.question ||
-            qaPair.question_statement ||
-            qaPair.Question,
-          options: qaPair.options,
-          answer: qaPair.answer || qaPair.Answer,
-          context: qaPair.context,
-          question_type: "Short",
-        });
-      });
-    }
+} else if (questionType === "get_mcq") {
+  // FIX: include MCQ from output also
+  output.forEach((qaPair) => {
+    combinedQaPairs.push({
+      question:
+        qaPair.question ||
+        qaPair.question_statement ||
+        qaPair.Question,
+      options: qaPair.options,
+      answer: qaPair.answer || qaPair.Answer,
+      context: qaPair.context,
+      question_type: "MCQ",
+    });
+  });
+
+} else {
+  output.forEach((qaPair) => {
+    combinedQaPairs.push({
+      question:
+        qaPair.question ||
+        qaPair.question_statement ||
+        qaPair.Question,
+      options: qaPair.options,
+      answer: qaPair.answer || qaPair.Answer,
+      context: qaPair.context,
+      question_type: "Short",
+    });
+  });
+}
 
     setQaPairs(combinedQaPairs);
   }, [questionType]);
@@ -409,6 +411,7 @@ const Output = () => {
             
             <div className="relative w-full sm:w-auto">
               <button
+                id="pdfToggle"
                 className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] active:scale-95 active:bg-[#2f5555] transition-all justify-center"
                 onClick={() => document.getElementById('pdfDropdown').classList.toggle('hidden')}
               >
