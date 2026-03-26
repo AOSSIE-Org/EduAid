@@ -18,16 +18,16 @@ const Output = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-        const dropdown = document.getElementById('pdfDropdown');
-        if (dropdown && !dropdown.contains(event.target) && 
-            !event.target.closest('button')) {
-            dropdown.classList.add('hidden');
-        }
+      const dropdown = document.getElementById('pdfDropdown');
+      if (dropdown && !dropdown.contains(event.target) && 
+        !event.target.closest('button')) {
+        dropdown.classList.add('hidden');
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-}, []);
+  }, []);
 
   function shuffleArray(array) {
     const shuffledArray = [...array];
@@ -91,70 +91,94 @@ const Output = () => {
   };
 
   useEffect(() => {
-    const qaPairsFromStorage =
-      JSON.parse(localStorage.getItem("qaPairs")) || {};
-    if (qaPairsFromStorage) {
-      const combinedQaPairs = [];
+    let qaPairsFromStorage = {};
 
-      if (qaPairsFromStorage["output_boolq"]) {
-        qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
-          (question, index) => {
-            combinedQaPairs.push({
-              question,
-              question_type: "Boolean",
-              context: qaPairsFromStorage["output_boolq"]["Text"],
-            });
-          }
-        );
-      }
-
-      if (qaPairsFromStorage["output_mcq"]) {
-        qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
-          });
-        });
-      }
-
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
-          });
-        });
-      }
-
-      if (questionType == "get_boolq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair,
-            question_type: "Boolean",
-          });
-        });
-      } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question:
-              qaPair.question || qaPair.question_statement || qaPair.Question,
-            options: qaPair.options,
-            answer: qaPair.answer || qaPair.Answer,
-            context: qaPair.context,
-            question_type: "Short",
-          });
-        });
-      }
-
-      setQaPairs(combinedQaPairs);
+    // ✅ Safe parsing
+    try {
+      const storedData = localStorage.getItem("qaPairs");
+      qaPairsFromStorage = storedData ? JSON.parse(storedData) : {};
+    } catch (error) {
+      console.error("Error parsing qaPairs:", error);
+      qaPairsFromStorage = {};
     }
-  }, []);
+
+    // ✅ Helper to avoid undefined.forEach crash
+    const normalizeArray = (arr) => (Array.isArray(arr) ? arr : []);
+
+    const output = normalizeArray(qaPairsFromStorage?.output);
+    const outputMcqQuestions = normalizeArray(
+      qaPairsFromStorage?.output_mcq?.questions
+    );
+    const outputBoolQuestions = normalizeArray(
+      qaPairsFromStorage?.output_boolq?.Boolean_Questions
+    );
+    const outputShortqQuestions = normalizeArray(
+      qaPairsFromStorage?.output_shortq?.questions
+    );
+
+    const combinedQaPairs = [];
+
+    // 🟡 Boolean Questions
+    outputBoolQuestions.forEach((question) => {
+      combinedQaPairs.push({
+        question,
+        question_type: "Boolean",
+        context: qaPairsFromStorage?.output_boolq?.Text || "",
+      });
+    });
+
+    // 🔵 MCQ Questions
+    outputMcqQuestions.forEach((qaPair) => {
+      combinedQaPairs.push({
+        question: qaPair.question_statement,
+        question_type: "MCQ",
+        options: qaPair.options,
+        answer: qaPair.answer,
+        context: qaPair.context,
+      });
+    });
+
+    // 🔴 General Output (MCQ / Short)
+    if (questionType === "get_boolq") {
+      output.forEach((qaPair) => {
+        combinedQaPairs.push({
+          question: qaPair,
+          question_type: "Boolean",
+        });
+      });
+    } else if (questionType !== "get_mcq") {
+      output.forEach((qaPair) => {
+        combinedQaPairs.push({
+          question:
+            qaPair.question ||
+            qaPair.question_statement ||
+            qaPair.Question,
+          options: qaPair.options,
+          answer: qaPair.answer || qaPair.Answer,
+          context: qaPair.context,
+          question_type: "Short",
+        });
+      });
+    }
+
+    // 🟢 Short Questions (only when needed)
+    if (questionType !== "get_mcq") {
+      outputShortqQuestions.forEach((qaPair) => {
+        combinedQaPairs.push({
+          question:
+            qaPair.question ||
+            qaPair.question_statement ||
+            qaPair.Question,
+          options: qaPair.options,
+          answer: qaPair.answer || qaPair.Answer,
+          context: qaPair.context,
+          question_type: "Short",
+        });
+      });
+    }
+
+    setQaPairs(combinedQaPairs);
+  }, [questionType]);
 
   const generateGoogleForm = async () => {
     try {
@@ -180,7 +204,7 @@ const Output = () => {
     }
   };
 
-    const generatePDF = async (mode) => {
+  const generatePDF = async (mode) => {
     const logoBytes = await loadLogoAsBytes();
     const worker = new Worker(new URL("../workers/pdfWorker.js", import.meta.url), { type: "module" });
 
@@ -421,6 +445,5 @@ const Output = () => {
     </div>
   );
 };
-
 
 export default Output;
