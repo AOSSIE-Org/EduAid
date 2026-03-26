@@ -1,0 +1,92 @@
+version: "3.8"
+
+services:
+  # Redis service for Celery message broker and result backend
+  redis:
+    image: redis:7-alpine
+    container_name: eduaid-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - eduaid-network
+
+  # Celery worker for ML inference
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: eduaid-celery-worker
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend:/app/backend
+      - ./requirements.txt:/app/requirements.txt
+    working_dir: /app/backend
+    command: celery -A celery_worker.celery_app worker --loglevel=info --concurrency=2
+    networks:
+      - eduaid-network
+    mem_limit: 4G
+    mem_reservation: 2G
+
+  # Flask backend server
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: eduaid-backend
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "celery", "-A", "celery_worker.celery_app", "inspect", "ping", "-d", "celery@$$HOSTNAME"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+      celery-worker:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - USE_CELERY_INFERENCE=true
+      - USE_ASYNC=true
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend:/app/backend
+      - ./requirements.txt:/app/requirements.txt
+    working_dir: /app/backend
+    command: python server.py
+    networks:
+      - eduaid-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  eduaid-network:
+    driver: bridge

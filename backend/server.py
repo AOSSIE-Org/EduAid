@@ -1,25 +1,20 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from pprint import pprint
 import nltk
 import subprocess
 import os
 import glob
+import logging
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download("stopwords")
-nltk.download('punkt_tab')
+nltk.download('punkt')
 from Generator import main
 from Generator.question_filters import make_question_harder
 from Generator.llm_generator import LLMQuestionGenerator
-import re
-import json
-import spacy
 from transformers import pipeline
-from spacy.lang.en.stop_words import STOP_WORDS
-from string import punctuation
-from heapq import nlargest
+import re
 import random
 import webbrowser
 from apiclient import discovery
@@ -27,24 +22,75 @@ from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
 
+# Import async routes
+from routes.async_generation_routes import async_routes
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
 CORS(app)
+
+# Register async routes blueprint
+app.register_blueprint(async_routes)
+
 print("Starting Flask App...")
 
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
 
-MCQGen = main.MCQGenerator()
-answer = main.AnswerPredictor()
-BoolQGen = main.BoolQGenerator()
-ShortQGen = main.ShortQGenerator()
-qg = main.QuestionGenerator()
+# Check if we should use Celery for inference (memory-efficient mode)
+USE_CELERY_INFERENCE = os.getenv('USE_CELERY_INFERENCE', 'false').lower() in ('true', '1', 'yes')
+
+# Initialize models only if NOT using Celery inference
+# This prevents memory duplication when Celery workers are available
+if USE_CELERY_INFERENCE:
+    logger.info("🚀 Running in CELERY INFERENCE mode - models will be loaded in workers only")
+    MCQGen = None
+    answer = None
+    BoolQGen = None
+    ShortQGen = None
+    qg = None
+    qa_model = None
+    
+    # Import inference service for sync calls to Celery
+    try:
+        from inference_service import (
+            generate_mcq_sync,
+            generate_boolq_sync,
+            generate_shortq_sync,
+            generate_all_questions_sync,
+            predict_mcq_answer_sync,
+            predict_shortq_answer_sync,
+            predict_boolean_answer_sync,
+            generate_hard_shortq_sync,
+            generate_hard_mcq_sync,
+            generate_hard_boolq_sync
+        )
+        logger.info("✅ Inference service imported successfully")
+    except ImportError as e:
+        logger.error(f"❌ Failed to import inference service: {e}")
+        logger.error("Falling back to direct model loading...")
+        USE_CELERY_INFERENCE = False
+
+# Load models directly if not using Celery inference (backward compatibility)
+if not USE_CELERY_INFERENCE:
+    logger.info("⚠️  Running in LEGACY mode - loading models directly in Flask process")
+    logger.info("   This uses more memory. Consider setting USE_CELERY_INFERENCE=true")
+    MCQGen = main.MCQGenerator()
+    answer = main.AnswerPredictor()
+    BoolQGen = main.BoolQGenerator()
+    ShortQGen = main.ShortQGenerator()
+    qg = main.QuestionGenerator()
+    qa_model = pipeline("question-answering")
+
+# These services don't use heavy ML models, so always initialize them
 docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
-qa_model = pipeline("question-answering")
-llm_generator = LLMQuestionGenerator()
 
+llm_generator = LLMQuestionGenerator()
 
 def process_input_text(input_text, use_mediawiki):
     if use_mediawiki == 1:
@@ -58,11 +104,20 @@ def get_mcq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output = MCQGen.generate_mcq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    questions = output["questions"]
+    
+    if USE_CELERY_INFERENCE:
+        # Use Celery worker for inference (memory-efficient)
+        # Worker will handle MediaWiki preprocessing
+        output = generate_mcq_sync(input_text, max_questions, use_mediawiki)
+    else:
+        # Use direct model inference (legacy mode)
+        # Preprocess locally before calling model
+        input_text = process_input_text(input_text, use_mediawiki)
+        output = MCQGen.generate_mcq(
+            {"input_text": input_text, "max_questions": max_questions}
+        )
+    
+    questions = output.get("questions", [])
     return jsonify({"output": questions})
 
 
@@ -72,11 +127,20 @@ def get_boolq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output = BoolQGen.generate_boolq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    boolean_questions = output["Boolean_Questions"]
+    
+    if USE_CELERY_INFERENCE:
+        # Use Celery worker for inference (memory-efficient)
+        # Worker will handle MediaWiki preprocessing
+        output = generate_boolq_sync(input_text, max_questions, use_mediawiki)
+    else:
+        # Use direct model inference (legacy mode)
+        # Preprocess locally before calling model
+        input_text = process_input_text(input_text, use_mediawiki)
+        output = BoolQGen.generate_boolq(
+            {"input_text": input_text, "max_questions": max_questions}
+        )
+    
+    boolean_questions = output.get("Boolean_Questions", [])
     return jsonify({"output": boolean_questions})
 
 
@@ -86,11 +150,20 @@ def get_shortq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output = ShortQGen.generate_shortq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    questions = output["questions"]
+    
+    if USE_CELERY_INFERENCE:
+        # Use Celery worker for inference (memory-efficient)
+        # Worker will handle MediaWiki preprocessing
+        output = generate_shortq_sync(input_text, max_questions, use_mediawiki)
+    else:
+        # Use direct model inference (legacy mode)
+        # Preprocess locally before calling model
+        input_text = process_input_text(input_text, use_mediawiki)
+        output = ShortQGen.generate_shortq(
+            {"input_text": input_text, "max_questions": max_questions}
+        )
+    
+    questions = output.get("questions", [])
     return jsonify({"output": questions})
 
 
@@ -164,19 +237,34 @@ def get_problems():
     max_questions_mcq = data.get("max_questions_mcq", 4)
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output1 = MCQGen.generate_mcq(
-        {"input_text": input_text, "max_questions": max_questions_mcq}
-    )
-    output2 = BoolQGen.generate_boolq(
-        {"input_text": input_text, "max_questions": max_questions_boolq}
-    )
-    output3 = ShortQGen.generate_shortq(
-        {"input_text": input_text, "max_questions": max_questions_shortq}
-    )
-    return jsonify(
-        {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
-    )
+    
+    if USE_CELERY_INFERENCE:
+        # Use Celery worker for inference (memory-efficient)
+        # Worker will handle MediaWiki preprocessing
+        result = generate_all_questions_sync(
+            input_text,
+            max_questions_mcq,
+            max_questions_boolq,
+            max_questions_shortq,
+            use_mediawiki
+        )
+        return jsonify(result)
+    else:
+        # Use direct model inference (legacy mode)
+        # Preprocess locally before calling model
+        input_text = process_input_text(input_text, use_mediawiki)
+        output1 = MCQGen.generate_mcq(
+            {"input_text": input_text, "max_questions": max_questions_mcq}
+        )
+        output2 = BoolQGen.generate_boolq(
+            {"input_text": input_text, "max_questions": max_questions_boolq}
+        )
+        output3 = ShortQGen.generate_shortq(
+            {"input_text": input_text, "max_questions": max_questions_shortq}
+        )
+        return jsonify(
+            {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
+        )
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
@@ -189,24 +277,29 @@ def get_mcq_answer():
     if not input_questions or not input_options or len(input_questions) != len(input_options):
         return jsonify({"output": outputs})
 
-    for question, options in zip(input_questions, input_options):
-        # Generate answer using the QA model
-        qa_response = qa_model(question=question, context=input_text)
-        generated_answer = qa_response["answer"]
+    if USE_CELERY_INFERENCE:
+        # Use Celery worker for inference (memory-efficient)
+        outputs = predict_mcq_answer_sync(input_text, input_questions, input_options)
+    else:
+        # Use direct model inference (legacy mode)
+        for question, options in zip(input_questions, input_options, strict=True):
+            # Generate answer using the QA model
+            qa_response = qa_model(question=question, context=input_text)
+            generated_answer = qa_response["answer"]
 
-        # Calculate similarity between generated answer and each option
-        options_with_answer = options + [generated_answer]
-        vectorizer = TfidfVectorizer().fit_transform(options_with_answer)
-        vectors = vectorizer.toarray()
-        generated_answer_vector = vectors[-1].reshape(1, -1)
+            # Calculate similarity between generated answer and each option
+            options_with_answer = [*options, generated_answer]
+            vectorizer = TfidfVectorizer().fit_transform(options_with_answer)
+            vectors = vectorizer.toarray()
+            generated_answer_vector = vectors[-1].reshape(1, -1)
 
-        similarities = cosine_similarity(vectors[:-1], generated_answer_vector).flatten()
-        max_similarity_index = similarities.argmax()
+            similarities = cosine_similarity(vectors[:-1], generated_answer_vector).flatten()
+            max_similarity_index = similarities.argmax()
 
-        # Return the option with the highest similarity
-        best_option = options[max_similarity_index]
-        
-        outputs.append(best_option)
+            # Return the option with the highest similarity
+            best_option = options[max_similarity_index]
+            
+            outputs.append(best_option)
 
     return jsonify({"output": outputs})
 
@@ -216,10 +309,16 @@ def get_answer():
     data = request.get_json()
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
-    answers = []
-    for question in input_questions:
-        qa_response = qa_model(question=question, context=input_text)
-        answers.append(qa_response["answer"])
+    
+    if USE_CELERY_INFERENCE:
+        # Use Celery worker for inference (memory-efficient)
+        answers = predict_shortq_answer_sync(input_text, input_questions)
+    else:
+        # Use direct model inference (legacy mode)
+        answers = []
+        for question in input_questions:
+            qa_response = qa_model(question=question, context=input_text)
+            answers.append(qa_response["answer"])
 
     return jsonify({"output": answers})
 
@@ -229,16 +328,21 @@ def get_boolean_answer():
     data = request.get_json()
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
-    output = []
 
-    for question in input_questions:
-        qa_response = answer.predict_boolean_answer(
-            {"input_text": input_text, "input_question": question}
-        )
-        if(qa_response):
-            output.append("True")
-        else:
-            output.append("False")
+    if USE_CELERY_INFERENCE:
+        # Use Celery worker for inference (memory-efficient)
+        output = predict_boolean_answer_sync(input_text, input_questions)
+    else:
+        # Use direct model inference (legacy mode)
+        output = []
+        for question in input_questions:
+            qa_response = answer.predict_boolean_answer(
+                {"input_text": input_text, "input_question": question}
+            )
+            if(qa_response):
+                output.append("True")
+            else:
+                output.append("False")
 
     return jsonify({"output": output})
 
@@ -435,15 +539,21 @@ def get_shortq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
     input_questions = data.get("input_question", [])
 
-    output = qg.generate(
-        article=input_text, num_questions=input_questions, answer_style="sentences"
-    )
-
-    for item in output:
-        item["question"] = make_question_harder(item["question"])
+    if USE_CELERY_INFERENCE:
+        # Use Celery worker for inference (memory-efficient)
+        # Worker will handle MediaWiki preprocessing
+        output = generate_hard_shortq_sync(input_text, input_questions, use_mediawiki)
+    else:
+        # Use direct model inference (legacy mode)
+        # Preprocess locally before calling model
+        input_text = process_input_text(input_text, use_mediawiki)
+        output = qg.generate(
+            article=input_text, num_questions=input_questions, answer_style="sentences"
+        )
+        for item in output:
+            item["question"] = make_question_harder(item["question"])
 
     return jsonify({"output": output})
 
@@ -453,14 +563,21 @@ def get_mcq_hard():
     data = request.get_json()
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
     input_questions = data.get("input_question", [])
-    output = qg.generate(
-        article=input_text, num_questions=input_questions, answer_style="multiple_choice"
-    )
     
-    for q in output:
-        q["question"] = make_question_harder(q["question"])
+    if USE_CELERY_INFERENCE:
+        # Use Celery worker for inference (memory-efficient)
+        # Worker will handle MediaWiki preprocessing
+        output = generate_hard_mcq_sync(input_text, input_questions, use_mediawiki)
+    else:
+        # Use direct model inference (legacy mode)
+        # Preprocess locally before calling model
+        input_text = process_input_text(input_text, use_mediawiki)
+        output = qg.generate(
+            article=input_text, num_questions=input_questions, answer_style="multiple_choice"
+        )
+        for q in output:
+            q["question"] = make_question_harder(q["question"])
         
     return jsonify({"output": output})
 
@@ -471,19 +588,24 @@ def get_boolq_hard():
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
 
-    input_text = process_input_text(input_text, use_mediawiki)
+    if USE_CELERY_INFERENCE:
+        # Use Celery worker for inference (memory-efficient)
+        # Worker will handle MediaWiki preprocessing
+        output = generate_hard_boolq_sync(input_text, input_questions, use_mediawiki)
+    else:
+        # Use direct model inference (legacy mode)
+        # Preprocess locally before calling model
+        input_text = process_input_text(input_text, use_mediawiki)
+        output = qg.generate(
+            article=input_text,
+            num_questions=input_questions,
+            answer_style="true_false"
+        )
+        # Make questions harder
+        for item in output:
+            item["question"] = make_question_harder(item["question"])
 
-    # Generate questions using the same QG model
-    generated = qg.generate(
-        article=input_text,
-        num_questions=input_questions,
-        answer_style="true_false"
-    )
-
-    # Apply transformation to make each question harder
-    harder_questions = [make_question_harder(q) for q in generated]
-
-    return jsonify({"output": harder_questions})
+    return jsonify({"output": output})
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -505,6 +627,28 @@ def upload_file():
 @app.route("/", methods=["GET"])
 def hello():
     return "The server is working fine"
+
+@app.route("/health", methods=["GET"])
+def health_check():
+    """Health check endpoint for monitoring and container orchestration."""
+    health_status = {
+        "status": "healthy",
+        "mode": "celery_inference" if USE_CELERY_INFERENCE else "legacy",
+        "async_enabled": os.getenv('USE_ASYNC', 'false').lower() in ('true', '1', 'yes'),
+        "services": {
+            "flask": "running"
+        }
+    }
+    
+    if USE_CELERY_INFERENCE:
+        # Check if Celery is accessible
+        try:
+            from inference_service import CELERY_AVAILABLE
+            health_status["services"]["celery"] = "available" if CELERY_AVAILABLE else "unavailable"
+        except ImportError:
+            health_status["services"]["celery"] = "unavailable"
+    
+    return jsonify(health_status)
 
 def clean_transcript(file_path):
     """Extracts and cleans transcript from a VTT file."""
