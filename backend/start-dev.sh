@@ -19,7 +19,9 @@ fi
 
 # Load environment variables
 if [ -f .env ]; then
-    export $(cat .env | grep -v '^#' | xargs)
+    set -a
+    source <(grep -v '^#' .env | grep -v '^$')
+    set +a
 fi
 
 # Check USE_CELERY_INFERENCE setting

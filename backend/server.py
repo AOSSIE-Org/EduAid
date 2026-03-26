@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from pprint import pprint
 import nltk
 import subprocess
 import os
@@ -15,12 +14,6 @@ from Generator import main
 from Generator.question_filters import make_question_harder
 from Generator.llm_generator import LLMQuestionGenerator
 import re
-import json
-import spacy
-from transformers import pipeline
-from spacy.lang.en.stop_words import STOP_WORDS
-from string import punctuation
-from heapq import nlargest
 import random
 import webbrowser
 from apiclient import discovery
@@ -96,7 +89,9 @@ docs_service = main.GoogleDocsService(SERVICE_ACCOUNT_FILE, SCOPES)
 file_processor = main.FileProcessor()
 mediawikiapi = MediaWikiAPI()
 
-qa_model = pipeline("question-answering")
+if not USE_CELERY_INFERENCE:
+    qa_model = pipeline("question-answering")
+    
 llm_generator = LLMQuestionGenerator()
 
 def process_input_text(input_text, use_mediawiki):
@@ -281,7 +276,7 @@ def get_mcq_answer():
         outputs = predict_mcq_answer_sync(input_text, input_questions, input_options)
     else:
         # Use direct model inference (legacy mode)
-        for question, options in zip(input_questions, input_options):
+        for question, options in zip(input_questions, input_options, strict=True):
             # Generate answer using the QA model
             qa_response = qa_model(question=question, context=input_text)
             generated_answer = qa_response["answer"]
@@ -586,17 +581,19 @@ def get_boolq_hard():
 
     if USE_CELERY_INFERENCE:
         # Use Celery worker for inference (memory-efficient)
-        harder_questions = generate_hard_boolq_sync(input_text, input_questions, use_mediawiki)
+        output = generate_hard_boolq_sync(input_text, input_questions, use_mediawiki)
     else:
         # Use direct model inference (legacy mode)
-        generated = qg.generate(
+        output = qg.generate(
             article=input_text,
             num_questions=input_questions,
             answer_style="true_false"
         )
-        harder_questions = [make_question_harder(q) for q in generated]
+        # Make questions harder
+        for item in output:
+            item["question"] = make_question_harder(item["question"])
 
-    return jsonify({"output": harder_questions})
+    return jsonify({"output": output})
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -636,7 +633,7 @@ def health_check():
         try:
             from inference_service import CELERY_AVAILABLE
             health_status["services"]["celery"] = "available" if CELERY_AVAILABLE else "unavailable"
-        except:
+        except ImportError:
             health_status["services"]["celery"] = "unavailable"
     
     return jsonify(health_status)

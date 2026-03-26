@@ -1,6 +1,6 @@
 """
 Inference service layer that routes requests to Celery workers.
-This module provides a unified interface for both sync and async inference.
+This module provides a unified interface for sync inference via Celery.
 """
 import os
 import logging
@@ -8,8 +8,8 @@ from typing import Dict, Any, List
 
 logger = logging.getLogger(__name__)
 
-# Check if async mode is enabled
-USE_ASYNC = os.getenv('USE_ASYNC', 'false').lower() in ('true', '1', 'yes')
+# Task timeout for Celery operations (in seconds)
+TASK_TIMEOUT_SECONDS = 600  # 10 minutes
 
 # Import Celery tasks
 try:
@@ -26,7 +26,7 @@ try:
         generate_hard_boolq_task
     )
     CELERY_AVAILABLE = True
-    logger.info(f"Celery tasks imported successfully. USE_ASYNC={USE_ASYNC}")
+    logger.info("Celery tasks imported successfully")
 except ImportError as e:
     CELERY_AVAILABLE = False
     logger.warning(f"Celery tasks not available: {e}. Running in sync-only mode.")
@@ -51,7 +51,7 @@ def generate_mcq_sync(input_text: str, max_questions: int = 4, use_mediawiki: in
     result = generate_mcq_task.apply_async(
         args=[input_text, max_questions, use_mediawiki]
     )
-    return result.get(timeout=600)  # 10 minute timeout
+    return result.get(timeout=TASK_TIMEOUT_SECONDS)
 
 
 def generate_boolq_sync(input_text: str, max_questions: int = 4, use_mediawiki: int = 0) -> Dict[str, Any]:
@@ -72,7 +72,7 @@ def generate_boolq_sync(input_text: str, max_questions: int = 4, use_mediawiki: 
     result = generate_boolq_task.apply_async(
         args=[input_text, max_questions, use_mediawiki]
     )
-    return result.get(timeout=600)
+    return result.get(timeout=TASK_TIMEOUT_SECONDS)
 
 
 def generate_shortq_sync(input_text: str, max_questions: int = 4, use_mediawiki: int = 0) -> Dict[str, Any]:
@@ -93,7 +93,7 @@ def generate_shortq_sync(input_text: str, max_questions: int = 4, use_mediawiki:
     result = generate_shortq_task.apply_async(
         args=[input_text, max_questions, use_mediawiki]
     )
-    return result.get(timeout=600)
+    return result.get(timeout=TASK_TIMEOUT_SECONDS)
 
 
 def generate_all_questions_sync(
@@ -122,7 +122,7 @@ def generate_all_questions_sync(
     result = generate_all_questions_task.apply_async(
         args=[input_text, max_questions_mcq, max_questions_boolq, max_questions_shortq, use_mediawiki]
     )
-    return result.get(timeout=600)
+    return result.get(timeout=TASK_TIMEOUT_SECONDS)
 
 
 
@@ -144,7 +144,7 @@ def predict_mcq_answer_sync(input_text: str, input_questions: List[str], input_o
     result = predict_mcq_answer_task.apply_async(
         args=[input_text, input_questions, input_options]
     )
-    return result.get(timeout=600)
+    return result.get(timeout=TASK_TIMEOUT_SECONDS)
 
 
 def predict_shortq_answer_sync(input_text: str, input_questions: List[str]) -> List[str]:
@@ -164,7 +164,7 @@ def predict_shortq_answer_sync(input_text: str, input_questions: List[str]) -> L
     result = predict_shortq_answer_task.apply_async(
         args=[input_text, input_questions]
     )
-    return result.get(timeout=600)
+    return result.get(timeout=TASK_TIMEOUT_SECONDS)
 
 
 def predict_boolean_answer_sync(input_text: str, input_questions: List[str]) -> List[str]:
@@ -184,7 +184,7 @@ def predict_boolean_answer_sync(input_text: str, input_questions: List[str]) -> 
     result = predict_boolean_answer_task.apply_async(
         args=[input_text, input_questions]
     )
-    return result.get(timeout=600)
+    return result.get(timeout=TASK_TIMEOUT_SECONDS)
 
 
 def generate_hard_shortq_sync(input_text: str, num_questions: int, use_mediawiki: int = 0) -> List[Dict[str, Any]]:
@@ -205,7 +205,7 @@ def generate_hard_shortq_sync(input_text: str, num_questions: int, use_mediawiki
     result = generate_hard_shortq_task.apply_async(
         args=[input_text, num_questions, use_mediawiki]
     )
-    return result.get(timeout=600)
+    return result.get(timeout=TASK_TIMEOUT_SECONDS)
 
 
 def generate_hard_mcq_sync(input_text: str, num_questions: int, use_mediawiki: int = 0) -> List[Dict[str, Any]]:
@@ -226,10 +226,10 @@ def generate_hard_mcq_sync(input_text: str, num_questions: int, use_mediawiki: i
     result = generate_hard_mcq_task.apply_async(
         args=[input_text, num_questions, use_mediawiki]
     )
-    return result.get(timeout=600)
+    return result.get(timeout=TASK_TIMEOUT_SECONDS)
 
 
-def generate_hard_boolq_sync(input_text: str, num_questions: int, use_mediawiki: int = 0) -> List[str]:
+def generate_hard_boolq_sync(input_text: str, num_questions: int, use_mediawiki: int = 0) -> List[Dict[str, Any]]:
     """
     Generate hard boolean questions synchronously using Celery worker.
     
@@ -247,4 +247,4 @@ def generate_hard_boolq_sync(input_text: str, num_questions: int, use_mediawiki:
     result = generate_hard_boolq_task.apply_async(
         args=[input_text, num_questions, use_mediawiki]
     )
-    return result.get(timeout=600)
+    return result.get(timeout=TASK_TIMEOUT_SECONDS)

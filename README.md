@@ -205,7 +205,7 @@ These scripts will:
 
 ### Troubleshooting
 
-<<<<<<< HEAD
+
 - If the script fails to run, ensure that you have execution permissions:
   ```bash
   chmod +x script.sh
@@ -231,7 +231,6 @@ The backend now includes support for AI-powered short-answer question generation
     "use_mediawiki": 0
   }
   ```
-=======
 **Issue**: "Celery is not available" error
 
 - **Solution**: Make sure Redis and Celery worker are running, or set `USE_CELERY_INFERENCE=false` in `.env`
@@ -285,7 +284,6 @@ EduAid provides two types of endpoints:
 - Easier to implement (no polling needed)
 
 ---
->>>>>>> 8b154d5 (improve async pipeline with memory optimization, docker setup, and safe rollout toggle)
 
 ### 3. Configure Google APIs
 

@@ -39,12 +39,8 @@ services:
     command: celery -A celery_worker.celery_app worker --loglevel=info --concurrency=2
     networks:
       - eduaid-network
-    deploy:
-      resources:
-        limits:
-          memory: 4G
-        reservations:
-          memory: 2G
+    mem_limit: 4G
+    mem_reservation: 2G
 
   # Flask backend server
   backend:
@@ -55,8 +51,14 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "celery", "-A", "celery_worker.celery_app", "inspect", "ping", "-d", "celery@$$HOSTNAME"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
       celery-worker:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "5000:5000"
     environment:

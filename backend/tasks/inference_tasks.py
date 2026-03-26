@@ -258,7 +258,7 @@ def predict_mcq_answer_task(self, input_text, input_questions, input_options):
         logger.info(f"Starting MCQ answer prediction. Questions: {len(input_questions)}")
         
         outputs = []
-        for question, options in zip(input_questions, input_options):
+        for question, options in zip(input_questions, input_options, strict=True):
             # Generate answer using the QA model
             qa_response = self.qa_model(question=question, context=input_text)
             generated_answer = qa_response["answer"]
@@ -271,7 +271,7 @@ def predict_mcq_answer_task(self, input_text, input_questions, input_options):
 
             similarities = cosine_similarity(vectors[:-1], generated_answer_vector).flatten()
             max_similarity_index = similarities.argmax()
-
+            
             # Return the option with the highest similarity
             best_option = options[max_similarity_index]
             outputs.append(best_option)
@@ -441,17 +441,18 @@ def generate_hard_boolq_task(self, input_text, num_questions, use_mediawiki=0):
         processed_text = process_input_text(input_text, use_mediawiki, self.mediawiki)
         
         # Generate questions
-        generated = self.question_gen.generate(
+        output = self.question_gen.generate(
             article=processed_text,
             num_questions=num_questions,
             answer_style="true_false"
         )
         
         # Make questions harder
-        harder_questions = [make_question_harder(q) for q in generated]
+        for item in output:
+            item["question"] = make_question_harder(item["question"])
         
-        logger.info(f"Hard boolean generation completed. Generated {len(harder_questions)} questions")
-        return harder_questions
+        logger.info(f"Hard boolean generation completed. Generated {len(output)} questions")
+        return output
         
     except Exception as e:
         logger.error(f"Error in hard boolean generation: {e!s}", exc_info=True)
