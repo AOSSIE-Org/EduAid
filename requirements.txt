@@ -18,7 +18,7 @@ sentencepiece==0.2.0
 spacy
 flask
 flask_cors
-flask-compress
+flask-compress==1.15
 nltk
 git+https://github.com/boudinfl/pke.git
 google-api-python-client==2.113.0

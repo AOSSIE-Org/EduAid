@@ -67,13 +67,12 @@ def optimize_shortq_response(output, include_context=False):
     return {"output": optimized_questions}
 
 
-def optimize_boolq_response(output, include_context=False):
+def optimize_boolq_response(output):
     """
     Optimize Boolean Question response by removing unused fields.
     
     Args:
         output: Original BoolQ generator output
-        include_context: Not used for boolean questions
     
     Returns:
         Optimized response dictionary
@@ -193,9 +192,9 @@ def optimize_combined_response(output_mcq, output_boolq, output_shortq, include_
         Optimized combined response dictionary
     """
     return {
-        "output_mcq": optimize_mcq_response(output_mcq, include_context),
-        "output_boolq": optimize_boolq_response(output_boolq, include_context),
-        "output_shortq": optimize_shortq_response(output_shortq, include_context),
+        "output_mcq": {"questions": optimize_mcq_response(output_mcq, include_context)["output"]},
+        "output_boolq": {"Boolean_Questions": [q["question"] for q in optimize_boolq_response(output_boolq)["output"]]},
+        "output_shortq": {"questions": optimize_shortq_response(output_shortq, include_context)["output"]},
     }
 
 
@@ -218,13 +217,16 @@ def optimize_llm_combined_response(questions, include_context=False):
         q_type = q.get("type", "")
         
         if q_type == "mcq":
-            optimized.append({
+            optimized_q = {
                 "type": "mcq",
                 "question": q.get("question", ""),
                 "options": q.get("options", []),
                 "answer": q.get("answer", ""),
                 "question_type": "MCQ",
-            })
+            }
+            if include_context and "context" in q:
+                optimized_q["context"] = q["context"]
+            optimized.append(optimized_q)
         elif q_type == "boolean":
             optimized.append({
                 "type": "boolean",

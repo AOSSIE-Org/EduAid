@@ -8,17 +8,17 @@ import json
 
 BASE_URL = "http://localhost:5000"
 
-def test_endpoint(endpoint, payload, minimal=False):
+def test_endpoint(endpoint, payload, include_context=False):
     """Test an endpoint and show response size."""
     url = f"{BASE_URL}{endpoint}"
-    if minimal:
-        url += "?minimal=true"
+    if include_context:
+        url += "?include_context=true"
     
     try:
         response = requests.post(url, json=payload, headers={
             "Content-Type": "application/json",
             "Accept-Encoding": "gzip"
-        })
+        }, timeout=30)
         
         if response.status_code == 200:
             data = response.json()
@@ -28,7 +28,7 @@ def test_endpoint(endpoint, payload, minimal=False):
             print(f"\n{'='*60}")
             print(f"Endpoint: {endpoint}")
             print(f"Minimal Mode: {minimal}")
-            print(f"Status: ✅ SUCCESS")
+            print("Status: ✅ SUCCESS")
             print(f"Uncompressed Size: {size} bytes ({size/1024:.2f} KB)")
             print(f"Compressed Size: {compressed_size} bytes ({compressed_size/1024:.2f} KB)")
             print(f"Compression Ratio: {(1 - compressed_size/size)*100:.1f}%")
@@ -38,8 +38,16 @@ def test_endpoint(endpoint, payload, minimal=False):
             if "output" in data:
                 output = data["output"]
                 if isinstance(output, list) and len(output) > 0:
-                    print(f"\nSample Question Fields:")
-                    print(f"  {list(output[0].keys())}")
+                    print("\nSample Question Fields:")
+                    print(f"  {list(output[0].keys())}")  
+            elif "output_mcq" in data:
+                # Handle combined endpoint response
+                print(f"\nCombined Response Structure:")
+                for key in ["output_mcq", "output_boolq", "output_shortq"]:
+                    if key in data and "output" in data[key]:
+                        output = data[key]["output"]
+                        if output:
+                            print(f"  {key}: {list(output[0].keys())}")
                     
                     # Check for removed fields
                     removed_fields = ["statement", "Text", "time_taken", "options_algorithm", "extra_options", "Count"]
@@ -47,7 +55,7 @@ def test_endpoint(endpoint, payload, minimal=False):
                     if found_removed:
                         print(f"  ⚠️  WARNING: Found removed fields: {found_removed}")
                     else:
-                        print(f"  ✅ No unnecessary fields found")
+                        print("  ✅ No unnecessary fields found")
             
             return True
         else:
@@ -60,7 +68,7 @@ def test_endpoint(endpoint, payload, minimal=False):
         print("Make sure the Flask server is running: python server.py")
         return False
     except Exception as e:
-        print(f"\n❌ ERROR testing {endpoint}: {str(e)}")
+        print(f"\n❌ ERROR testing {endpoint}: {type(e).__name__}: {e!r}")
         return False
 
 
