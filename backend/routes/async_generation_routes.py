@@ -5,6 +5,7 @@ Provides non-blocking endpoints for AI question generation.
 from flask import Blueprint, request, jsonify
 from celery.result import AsyncResult
 import logging
+import os
 
 # Import Celery tasks
 from backend.tasks.inference_tasks import (
@@ -17,6 +18,14 @@ from backend.celery_worker import celery_app
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+# Check if async endpoints should be enabled
+USE_ASYNC = os.getenv('USE_ASYNC', 'false').lower() in ('true', '1', 'yes')
+
+if USE_ASYNC:
+    logger.info("🚀 Async endpoints ENABLED - frontend can use async generation")
+else:
+    logger.info("⚠️  Async endpoints DISABLED - use USE_ASYNC=true to enable")
 
 
 def _parse_bounded_int(data, key, default, min_value=1, max_value=20):
@@ -60,12 +69,28 @@ def _parse_input_text(data, max_length=20000):
 async_routes = Blueprint('async_routes', __name__)
 
 
+def _check_async_enabled():
+    """Check if async endpoints are enabled, return error response if not."""
+    if not USE_ASYNC:
+        return jsonify({
+            "error": "Async endpoints are disabled",
+            "message": "Set USE_ASYNC=true in environment to enable async generation",
+            "hint": "Use synchronous endpoints instead: /get_mcq, /get_boolq, /get_shortq"
+        }), 503
+    return None
+
+
 @async_routes.route("/generate_mcq_async", methods=["POST"])
 def generate_mcq_async():
     """
     Async endpoint for MCQ generation.
     Accepts payload and returns task_id immediately.
     """
+    # Check if async is enabled
+    error_response = _check_async_enabled()
+    if error_response:
+        return error_response
+    
     try:
         data = request.get_json(silent=True) or {}
         input_text = _parse_input_text(data)
@@ -96,6 +121,11 @@ def generate_boolq_async():
     Async endpoint for Boolean question generation.
     Accepts payload and returns task_id immediately.
     """
+    # Check if async is enabled
+    error_response = _check_async_enabled()
+    if error_response:
+        return error_response
+    
     try:
         data = request.get_json(silent=True) or {}
         input_text = _parse_input_text(data)
@@ -126,6 +156,11 @@ def generate_shortq_async():
     Async endpoint for short answer question generation.
     Accepts payload and returns task_id immediately.
     """
+    # Check if async is enabled
+    error_response = _check_async_enabled()
+    if error_response:
+        return error_response
+    
     try:
         data = request.get_json(silent=True) or {}
         input_text = _parse_input_text(data)
@@ -156,6 +191,11 @@ def generate_all_async():
     Async endpoint for generating all question types.
     Accepts payload and returns task_id immediately.
     """
+    # Check if async is enabled
+    error_response = _check_async_enabled()
+    if error_response:
+        return error_response
+    
     try:
         data = request.get_json(silent=True) or {}
         input_text = _parse_input_text(data)
@@ -200,6 +240,11 @@ def get_task_status(task_id):
         - failure: Task failed with an error
         - revoked: Task was cancelled
     """
+    # Check if async is enabled
+    error_response = _check_async_enabled()
+    if error_response:
+        return error_response
+    
     try:
         task_result = AsyncResult(task_id, app=celery_app)    
         response = {
@@ -239,6 +284,11 @@ def get_task_result(task_id):
         - If pending/processing: status message
         - If failed: error message
     """
+    # Check if async is enabled
+    error_response = _check_async_enabled()
+    if error_response:
+        return error_response
+    
     try:
         task_result = AsyncResult(task_id, app=celery_app)
         

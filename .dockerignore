@@ -1,0 +1,79 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Node modules (for extension/web app)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Extension build
+extension/dist/
+extension/build/
+
+# Web app build
+eduaid_web/build/
+eduaid_web/node_modules/
+
+# Desktop app
+eduaid_desktop/dist/
+eduaid_desktop/node_modules/
+
+# Backend specific
+backend/uploads/*
+backend/subtitles/*
+backend/token.json
+backend/credentials.json
+backend/service_account_key.json
+backend/.env
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentation
+*.md
+!README.md
+
+# Model files (will be downloaded in container)
+backend/s2v_reddit_2015_md.tar.gz
+
+# Logs
+*.log
