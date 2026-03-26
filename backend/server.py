@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_compress import Compress
 from pprint import pprint
 import nltk
 import subprocess
@@ -13,6 +14,16 @@ nltk.download('punkt_tab')
 from Generator import main
 from Generator.question_filters import make_question_harder
 from Generator.llm_generator import LLMQuestionGenerator
+from response_optimizer import (
+    optimize_mcq_response,
+    optimize_shortq_response,
+    optimize_boolq_response,
+    optimize_llm_shortq_response,
+    optimize_llm_mcq_response,
+    optimize_llm_boolq_response,
+    optimize_combined_response,
+    optimize_llm_combined_response
+)
 import re
 import json
 import spacy
@@ -29,6 +40,11 @@ from mediawikiapi import MediaWikiAPI
 
 app = Flask(__name__)
 CORS(app)
+
+# Enable gzip compression for all responses
+compress = Compress()
+compress.init_app(app)
+
 print("Starting Flask App...")
 
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
@@ -58,12 +74,16 @@ def get_mcq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    include_context = request.args.get("include_context", "false").lower() == "true"
+    
     input_text = process_input_text(input_text, use_mediawiki)
     output = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    questions = output["questions"]
-    return jsonify({"output": questions})
+    
+    # Optimize response to remove unused fields
+    optimized_output = optimize_mcq_response(output, include_context=include_context)
+    return jsonify(optimized_output)
 
 
 @app.route("/get_boolq", methods=["POST"])
@@ -72,12 +92,16 @@ def get_boolq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    include_context = request.args.get("include_context", "false").lower() == "true"
+    
     input_text = process_input_text(input_text, use_mediawiki)
     output = BoolQGen.generate_boolq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    boolean_questions = output["Boolean_Questions"]
-    return jsonify({"output": boolean_questions})
+    
+    # Optimize response to remove unused fields
+    optimized_output = optimize_boolq_response(output, include_context=include_context)
+    return jsonify(optimized_output)
 
 
 @app.route("/get_shortq", methods=["POST"])
@@ -86,12 +110,16 @@ def get_shortq():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
+    include_context = request.args.get("include_context", "false").lower() == "true"
+    
     input_text = process_input_text(input_text, use_mediawiki)
     output = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions}
     )
-    questions = output["questions"]
-    return jsonify({"output": questions})
+    
+    # Optimize response to remove unused fields
+    optimized_output = optimize_shortq_response(output, include_context=include_context)
+    return jsonify(optimized_output)
 
 
 @app.route("/get_shortq_llm", methods=["POST"])
@@ -101,9 +129,14 @@ def get_shortq_llm():
         input_text = data.get("input_text", "")
         use_mediawiki = data.get("use_mediawiki", 0)
         max_questions = data.get("max_questions", 4)
+        include_context = request.args.get("include_context", "false").lower() == "true"
+        
         input_text = process_input_text(input_text, use_mediawiki)
         questions = llm_generator.generate_short_questions(input_text, max_questions)
-        return jsonify({"output": questions})
+        
+        # Optimize response
+        optimized = optimize_llm_shortq_response(questions, include_context=include_context)
+        return jsonify({"output": optimized})
     except Exception as e:
         app.logger.exception("Error in /get_shortq_llm: %s", e)
         return jsonify({"error": "Internal server error"}), 500
@@ -116,9 +149,14 @@ def get_mcq_llm():
         input_text = data.get("input_text", "")
         use_mediawiki = data.get("use_mediawiki", 0)
         max_questions = data.get("max_questions", 4)
+        include_context = request.args.get("include_context", "false").lower() == "true"
+        
         input_text = process_input_text(input_text, use_mediawiki)
         questions = llm_generator.generate_mcq_questions(input_text, max_questions)
-        return jsonify({"output": questions})
+        
+        # Optimize response
+        optimized = optimize_llm_mcq_response(questions, include_context=include_context)
+        return jsonify({"output": optimized})
     except Exception as e:
         app.logger.exception("Error in /get_mcq_llm: %s", e)
         return jsonify({"error": "Internal server error"}), 500
@@ -131,9 +169,14 @@ def get_boolq_llm():
         input_text = data.get("input_text", "")
         use_mediawiki = data.get("use_mediawiki", 0)
         max_questions = data.get("max_questions", 4)
+        include_context = request.args.get("include_context", "false").lower() == "true"
+        
         input_text = process_input_text(input_text, use_mediawiki)
         questions = llm_generator.generate_boolean_questions(input_text, max_questions)
-        return jsonify({"output": questions})
+        
+        # Optimize response
+        optimized = optimize_llm_boolq_response(questions, include_context=include_context)
+        return jsonify({"output": optimized})
     except Exception as e:
         app.logger.exception("Error in /get_boolq_llm: %s", e)
         return jsonify({"error": "Internal server error"}), 500
@@ -148,9 +191,14 @@ def get_problems_llm():
         mcq_count = data.get("max_questions_mcq", 2)
         bool_count = data.get("max_questions_boolq", 2)
         short_count = data.get("max_questions_shortq", 2)
+        include_context = request.args.get("include_context", "false").lower() == "true"
+        
         input_text = process_input_text(input_text, use_mediawiki)
         questions = llm_generator.generate_all_questions(input_text, mcq_count, bool_count, short_count)
-        return jsonify({"output": questions})
+        
+        # Optimize response to remove any unnecessary fields
+        optimized = optimize_llm_combined_response(questions, include_context=include_context)
+        return jsonify({"output": optimized})
     except Exception as e:
         app.logger.exception("Error in /get_problems_llm: %s", e)
         return jsonify({"error": "Internal server error"}), 500
@@ -164,6 +212,8 @@ def get_problems():
     max_questions_mcq = data.get("max_questions_mcq", 4)
     max_questions_boolq = data.get("max_questions_boolq", 4)
     max_questions_shortq = data.get("max_questions_shortq", 4)
+    include_context = request.args.get("include_context", "false").lower() == "true"
+    
     input_text = process_input_text(input_text, use_mediawiki)
     output1 = MCQGen.generate_mcq(
         {"input_text": input_text, "max_questions": max_questions_mcq}
@@ -174,9 +224,10 @@ def get_problems():
     output3 = ShortQGen.generate_shortq(
         {"input_text": input_text, "max_questions": max_questions_shortq}
     )
-    return jsonify(
-        {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
-    )
+    
+    # Optimize combined response to remove redundant fields
+    optimized = optimize_combined_response(output1, output2, output3, include_context=include_context)
+    return jsonify(optimized)
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
