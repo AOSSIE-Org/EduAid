@@ -27,7 +27,7 @@ def test_endpoint(endpoint, payload, include_context=False):
             
             print(f"\n{'='*60}")
             print(f"Endpoint: {endpoint}")
-            print(f"Minimal Mode: {minimal}")
+            print(f"Include Context: {include_context}")
             print("Status: ✅ SUCCESS")
             print(f"Uncompressed Size: {size} bytes ({size/1024:.2f} KB)")
             print(f"Compressed Size: {compressed_size} bytes ({compressed_size/1024:.2f} KB)")
@@ -42,20 +42,28 @@ def test_endpoint(endpoint, payload, include_context=False):
                     print(f"  {list(output[0].keys())}")  
             elif "output_mcq" in data:
                 # Handle combined endpoint response
-                print(f"\nCombined Response Structure:")
+                print("\nCombined Response Structure:")
                 for key in ["output_mcq", "output_boolq", "output_shortq"]:
-                    if key in data and "output" in data[key]:
-                        output = data[key]["output"]
-                        if output:
-                            print(f"  {key}: {list(output[0].keys())}")
-                    
-                    # Check for removed fields
-                    removed_fields = ["statement", "Text", "time_taken", "options_algorithm", "extra_options", "Count"]
-                    found_removed = [f for f in removed_fields if f in str(data)]
-                    if found_removed:
-                        print(f"  ⚠️  WARNING: Found removed fields: {found_removed}")
-                    else:
-                        print("  ✅ No unnecessary fields found")
+                    if key not in data:
+                        continue
+                    section = data[key]
+                    # Check for "questions" (MCQ, ShortQ) or "Boolean_Questions" (BoolQ)
+                    nested_key = "questions" if "questions" in section else "Boolean_Questions"
+                    if nested_key in section:
+                        items = section[nested_key]
+                        if items and isinstance(items, list):
+                            if isinstance(items[0], dict):
+                                print(f"  {key}: {list(items[0].keys())}")
+                            else:
+                                print(f"  {key}: [string items]")
+                
+                # Check for removed fields (once, outside the loop)
+                removed_fields = ["statement", "Text", "time_taken", "options_algorithm", "extra_options", "Count"]
+                found_removed = [f for f in removed_fields if f in str(data)]
+                if found_removed:
+                    print(f"  ⚠️  WARNING: Found removed fields: {found_removed}")
+                else:
+                    print("  ✅ No unnecessary fields found")
             
             return True
         else:
@@ -88,7 +96,7 @@ def main():
     test_endpoint("/get_mcq", {
         "input_text": test_text,
         "max_questions": 2
-    }, minimal=True)
+    }, include_context=True)
     
     # Test Short Q endpoint
     test_endpoint("/get_shortq", {
