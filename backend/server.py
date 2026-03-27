@@ -13,6 +13,7 @@ nltk.download('punkt_tab')
 from Generator import main
 from Generator.question_filters import make_question_harder
 from Generator.llm_generator import LLMQuestionGenerator
+from validators import InputValidator, ValidationError, create_error_response
 import re
 import json
 import spacy
@@ -54,453 +55,578 @@ def process_input_text(input_text, use_mediawiki):
 
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output = MCQGen.generate_mcq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    questions = output["questions"]
-    return jsonify({"output": questions})
+    try:
+        data = request.get_json()
+        InputValidator.validate_request_data(data, required_fields=["input_text"])
+        
+        input_text = InputValidator.validate_input_text(data.get("input_text"))
+        use_mediawiki = InputValidator.validate_use_mediawiki(data.get("use_mediawiki", 0))
+        max_questions = InputValidator.validate_max_questions(data.get("max_questions", 4))
+        
+        input_text = process_input_text(input_text, use_mediawiki)
+        output = MCQGen.generate_mcq(
+            {"input_text": input_text, "max_questions": max_questions}
+        )
+        questions = output.get("questions", [])
+        return jsonify({"output": questions})
+    except ValidationError as e:
+        return create_error_response(str(e))
+    except Exception as e:
+        app.logger.exception("Error in /get_mcq: %s", e)
+        return create_error_response("Internal server error", 500)
 
 
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output = BoolQGen.generate_boolq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    boolean_questions = output["Boolean_Questions"]
-    return jsonify({"output": boolean_questions})
+    try:
+        data = request.get_json()
+        InputValidator.validate_request_data(data, required_fields=["input_text"])
+        
+        input_text = InputValidator.validate_input_text(data.get("input_text"))
+        use_mediawiki = InputValidator.validate_use_mediawiki(data.get("use_mediawiki", 0))
+        max_questions = InputValidator.validate_max_questions(data.get("max_questions", 4))
+        
+        input_text = process_input_text(input_text, use_mediawiki)
+        output = BoolQGen.generate_boolq(
+            {"input_text": input_text, "max_questions": max_questions}
+        )
+        boolean_questions = output.get("Boolean_Questions", [])
+        return jsonify({"output": boolean_questions})
+    except ValidationError as e:
+        return create_error_response(str(e))
+    except Exception as e:
+        app.logger.exception("Error in /get_boolq: %s", e)
+        return create_error_response("Internal server error", 500)
 
 
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output = ShortQGen.generate_shortq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    questions = output["questions"]
-    return jsonify({"output": questions})
+    try:
+        data = request.get_json()
+        InputValidator.validate_request_data(data, required_fields=["input_text"])
+        
+        input_text = InputValidator.validate_input_text(data.get("input_text"))
+        use_mediawiki = InputValidator.validate_use_mediawiki(data.get("use_mediawiki", 0))
+        max_questions = InputValidator.validate_max_questions(data.get("max_questions", 4))
+        
+        input_text = process_input_text(input_text, use_mediawiki)
+        output = ShortQGen.generate_shortq(
+            {"input_text": input_text, "max_questions": max_questions}
+        )
+        questions = output.get("questions", [])
+        return jsonify({"output": questions})
+    except ValidationError as e:
+        return create_error_response(str(e))
+    except Exception as e:
+        app.logger.exception("Error in /get_shortq: %s", e)
+        return create_error_response("Internal server error", 500)
 
 
 @app.route("/get_shortq_llm", methods=["POST"])
 def get_shortq_llm():
     try:
         data = request.get_json()
-        input_text = data.get("input_text", "")
-        use_mediawiki = data.get("use_mediawiki", 0)
-        max_questions = data.get("max_questions", 4)
+        InputValidator.validate_request_data(data, required_fields=["input_text"])
+        
+        input_text = InputValidator.validate_input_text(data.get("input_text"))
+        use_mediawiki = InputValidator.validate_use_mediawiki(data.get("use_mediawiki", 0))
+        max_questions = InputValidator.validate_max_questions(data.get("max_questions", 4))
+        
         input_text = process_input_text(input_text, use_mediawiki)
         questions = llm_generator.generate_short_questions(input_text, max_questions)
         return jsonify({"output": questions})
+    except ValidationError as e:
+        return create_error_response(str(e))
     except Exception as e:
         app.logger.exception("Error in /get_shortq_llm: %s", e)
-        return jsonify({"error": "Internal server error"}), 500
+        return create_error_response("Internal server error", 500)
 
 
 @app.route("/get_mcq_llm", methods=["POST"])
 def get_mcq_llm():
     try:
         data = request.get_json()
-        input_text = data.get("input_text", "")
-        use_mediawiki = data.get("use_mediawiki", 0)
-        max_questions = data.get("max_questions", 4)
+        InputValidator.validate_request_data(data, required_fields=["input_text"])
+        
+        input_text = InputValidator.validate_input_text(data.get("input_text"))
+        use_mediawiki = InputValidator.validate_use_mediawiki(data.get("use_mediawiki", 0))
+        max_questions = InputValidator.validate_max_questions(data.get("max_questions", 4))
+        
         input_text = process_input_text(input_text, use_mediawiki)
         questions = llm_generator.generate_mcq_questions(input_text, max_questions)
         return jsonify({"output": questions})
+    except ValidationError as e:
+        return create_error_response(str(e))
     except Exception as e:
         app.logger.exception("Error in /get_mcq_llm: %s", e)
-        return jsonify({"error": "Internal server error"}), 500
+        return create_error_response("Internal server error", 500)
 
 
 @app.route("/get_boolq_llm", methods=["POST"])
 def get_boolq_llm():
     try:
         data = request.get_json()
-        input_text = data.get("input_text", "")
-        use_mediawiki = data.get("use_mediawiki", 0)
-        max_questions = data.get("max_questions", 4)
+        InputValidator.validate_request_data(data, required_fields=["input_text"])
+        
+        input_text = InputValidator.validate_input_text(data.get("input_text"))
+        use_mediawiki = InputValidator.validate_use_mediawiki(data.get("use_mediawiki", 0))
+        max_questions = InputValidator.validate_max_questions(data.get("max_questions", 4))
+        
         input_text = process_input_text(input_text, use_mediawiki)
         questions = llm_generator.generate_boolean_questions(input_text, max_questions)
         return jsonify({"output": questions})
+    except ValidationError as e:
+        return create_error_response(str(e))
     except Exception as e:
         app.logger.exception("Error in /get_boolq_llm: %s", e)
-        return jsonify({"error": "Internal server error"}), 500
+        return create_error_response("Internal server error", 500)
 
 
 @app.route("/get_problems_llm", methods=["POST"])
 def get_problems_llm():
     try:
         data = request.get_json()
-        input_text = data.get("input_text", "")
-        use_mediawiki = data.get("use_mediawiki", 0)
-        mcq_count = data.get("max_questions_mcq", 2)
-        bool_count = data.get("max_questions_boolq", 2)
-        short_count = data.get("max_questions_shortq", 2)
+        InputValidator.validate_request_data(data, required_fields=["input_text"])
+        
+        input_text = InputValidator.validate_input_text(data.get("input_text"))
+        use_mediawiki = InputValidator.validate_use_mediawiki(data.get("use_mediawiki", 0))
+        mcq_count = InputValidator.validate_max_questions(data.get("max_questions_mcq", 2))
+        bool_count = InputValidator.validate_max_questions(data.get("max_questions_boolq", 2))
+        short_count = InputValidator.validate_max_questions(data.get("max_questions_shortq", 2))
+        
         input_text = process_input_text(input_text, use_mediawiki)
         questions = llm_generator.generate_all_questions(input_text, mcq_count, bool_count, short_count)
         return jsonify({"output": questions})
+    except ValidationError as e:
+        return create_error_response(str(e))
     except Exception as e:
         app.logger.exception("Error in /get_problems_llm: %s", e)
-        return jsonify({"error": "Internal server error"}), 500
+        return create_error_response("Internal server error", 500)
 
 
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    max_questions_mcq = data.get("max_questions_mcq", 4)
-    max_questions_boolq = data.get("max_questions_boolq", 4)
-    max_questions_shortq = data.get("max_questions_shortq", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output1 = MCQGen.generate_mcq(
-        {"input_text": input_text, "max_questions": max_questions_mcq}
-    )
-    output2 = BoolQGen.generate_boolq(
-        {"input_text": input_text, "max_questions": max_questions_boolq}
-    )
-    output3 = ShortQGen.generate_shortq(
-        {"input_text": input_text, "max_questions": max_questions_shortq}
-    )
-    return jsonify(
-        {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
-    )
+    try:
+        data = request.get_json()
+        InputValidator.validate_request_data(data, required_fields=["input_text"])
+        
+        input_text = InputValidator.validate_input_text(data.get("input_text"))
+        use_mediawiki = InputValidator.validate_use_mediawiki(data.get("use_mediawiki", 0))
+        max_questions_mcq = InputValidator.validate_max_questions(data.get("max_questions_mcq", 4))
+        max_questions_boolq = InputValidator.validate_max_questions(data.get("max_questions_boolq", 4))
+        max_questions_shortq = InputValidator.validate_max_questions(data.get("max_questions_shortq", 4))
+        
+        input_text = process_input_text(input_text, use_mediawiki)
+        output1 = MCQGen.generate_mcq(
+            {"input_text": input_text, "max_questions": max_questions_mcq}
+        )
+        output2 = BoolQGen.generate_boolq(
+            {"input_text": input_text, "max_questions": max_questions_boolq}
+        )
+        output3 = ShortQGen.generate_shortq(
+            {"input_text": input_text, "max_questions": max_questions_shortq}
+        )
+        return jsonify(
+            {"output_mcq": output1, "output_boolq": output2, "output_shortq": output3}
+        )
+    except ValidationError as e:
+        return create_error_response(str(e))
+    except Exception as e:
+        app.logger.exception("Error in /get_problems: %s", e)
+        return create_error_response("Internal server error", 500)
 
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    input_questions = data.get("input_question", [])
-    input_options = data.get("input_options", [])
-    outputs = []
-
-    if not input_questions or not input_options or len(input_questions) != len(input_options):
-        return jsonify({"output": outputs})
-
-    for question, options in zip(input_questions, input_options):
-        # Generate answer using the QA model
-        qa_response = qa_model(question=question, context=input_text)
-        generated_answer = qa_response["answer"]
-
-        # Calculate similarity between generated answer and each option
-        options_with_answer = options + [generated_answer]
-        vectorizer = TfidfVectorizer().fit_transform(options_with_answer)
-        vectors = vectorizer.toarray()
-        generated_answer_vector = vectors[-1].reshape(1, -1)
-
-        similarities = cosine_similarity(vectors[:-1], generated_answer_vector).flatten()
-        max_similarity_index = similarities.argmax()
-
-        # Return the option with the highest similarity
-        best_option = options[max_similarity_index]
+    try:
+        data = request.get_json()
+        InputValidator.validate_request_data(data, required_fields=["input_text", "input_question", "input_options"])
         
-        outputs.append(best_option)
+        input_text = InputValidator.validate_input_text(data.get("input_text"))
+        input_questions = InputValidator.validate_question_list(data.get("input_question"))
+        input_options = InputValidator.validate_options_list(data.get("input_options"))
+        
+        if len(input_questions) != len(input_options):
+            raise ValidationError("Number of questions and options must match")
+        
+        outputs = []
+        for question, options in zip(input_questions, input_options):
+            # Generate answer using the QA model
+            qa_response = qa_model(question=question, context=input_text)
+            generated_answer = qa_response["answer"]
 
-    return jsonify({"output": outputs})
+            # Calculate similarity between generated answer and each option
+            options_with_answer = options + [generated_answer]
+            vectorizer = TfidfVectorizer().fit_transform(options_with_answer)
+            vectors = vectorizer.toarray()
+            generated_answer_vector = vectors[-1].reshape(1, -1)
+
+            similarities = cosine_similarity(vectors[:-1], generated_answer_vector).flatten()
+            max_similarity_index = similarities.argmax()
+
+            # Return the option with the highest similarity
+            best_option = options[max_similarity_index]
+            
+            outputs.append(best_option)
+
+        return jsonify({"output": outputs})
+    except ValidationError as e:
+        return create_error_response(str(e))
+    except Exception as e:
+        app.logger.exception("Error in /get_mcq_answer: %s", e)
+        return create_error_response("Internal server error", 500)
 
 
 @app.route("/get_shortq_answer", methods=["POST"])
 def get_answer():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    input_questions = data.get("input_question", [])
-    answers = []
-    for question in input_questions:
-        qa_response = qa_model(question=question, context=input_text)
-        answers.append(qa_response["answer"])
+    try:
+        data = request.get_json()
+        InputValidator.validate_request_data(data, required_fields=["input_text", "input_question"])
+        
+        input_text = InputValidator.validate_input_text(data.get("input_text"))
+        input_questions = InputValidator.validate_question_list(data.get("input_question"))
+        
+        answers = []
+        for question in input_questions:
+            qa_response = qa_model(question=question, context=input_text)
+            answers.append(qa_response["answer"])
 
-    return jsonify({"output": answers})
+        return jsonify({"output": answers})
+    except ValidationError as e:
+        return create_error_response(str(e))
+    except Exception as e:
+        app.logger.exception("Error in /get_shortq_answer: %s", e)
+        return create_error_response("Internal server error", 500)
 
 
 @app.route("/get_boolean_answer", methods=["POST"])
 def get_boolean_answer():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    input_questions = data.get("input_question", [])
-    output = []
+    try:
+        data = request.get_json()
+        InputValidator.validate_request_data(data, required_fields=["input_text", "input_question"])
+        
+        input_text = InputValidator.validate_input_text(data.get("input_text"))
+        input_questions = InputValidator.validate_question_list(data.get("input_question"))
+        
+        output = []
+        for question in input_questions:
+            qa_response = answer.predict_boolean_answer(
+                {"input_text": input_text, "input_question": question}
+            )
+            if(qa_response):
+                output.append("True")
+            else:
+                output.append("False")
 
-    for question in input_questions:
-        qa_response = answer.predict_boolean_answer(
-            {"input_text": input_text, "input_question": question}
-        )
-        if(qa_response):
-            output.append("True")
-        else:
-            output.append("False")
-
-    return jsonify({"output": output})
+        return jsonify({"output": output})
+    except ValidationError as e:
+        return create_error_response(str(e))
+    except Exception as e:
+        app.logger.exception("Error in /get_boolean_answer: %s", e)
+        return create_error_response("Internal server error", 500)
 
 
 @app.route('/get_content', methods=['POST'])
 def get_content():
     try:
         data = request.get_json()
-        document_url = data.get('document_url')
-        if not document_url:
-            return jsonify({'error': 'Document URL is required'}), 400
-
+        InputValidator.validate_request_data(data, required_fields=['document_url'])
+        
+        document_url = InputValidator.validate_document_url(data.get('document_url'))
         text = docs_service.get_document_content(document_url)
         return jsonify(text)
+    except ValidationError as e:
+        return create_error_response(str(e))
     except ValueError as e:
         app.logger.exception("ValueError in /get_content: %s", e)
-        return jsonify({'error': 'Bad request'}), 400
+        return create_error_response('Bad request', 400)
     except Exception as e:
         app.logger.exception("Unhandled exception in /get_content: %s", e)
-        return jsonify({'error': 'Internal server error'}), 500
+        return create_error_response('Internal server error', 500)
 
 
 @app.route("/generate_gform", methods=["POST"])
 def generate_gform():
-    data = request.get_json()
-    qa_pairs = data.get("qa_pairs", "")
-    question_type = data.get("question_type", "")
-    SCOPES = "https://www.googleapis.com/auth/forms.body"
-    DISCOVERY_DOC = "https://forms.googleapis.com/$discovery/rest?version=v1"
+    try:
+        data = request.get_json()
+        InputValidator.validate_request_data(data, required_fields=["qa_pairs", "question_type"])
+        
+        qa_pairs = InputValidator.validate_qa_pairs(data.get("qa_pairs"))
+        question_type = InputValidator.validate_question_type(data.get("question_type"))
+        
+        SCOPES = "https://www.googleapis.com/auth/forms.body"
+        DISCOVERY_DOC = "https://forms.googleapis.com/$discovery/rest?version=v1"
 
-    store = file.Storage("token.json")
-    creds = None
-    if not creds or creds.invalid:
-        flow = client.flow_from_clientsecrets("credentials.json", SCOPES)
-        creds = tools.run_flow(flow, store)
+        store = file.Storage("token.json")
+        creds = None
+        if not creds or creds.invalid:
+            flow = client.flow_from_clientsecrets("credentials.json", SCOPES)
+            creds = tools.run_flow(flow, store)
 
-    form_service = discovery.build(
-        "forms",
-        "v1",
-        http=creds.authorize(Http()),
-        discoveryServiceUrl=DISCOVERY_DOC,
-        static_discovery=False,
-    )
-    NEW_FORM = {
-        "info": {
-            "title": "EduAid form",
+        form_service = discovery.build(
+            "forms",
+            "v1",
+            http=creds.authorize(Http()),
+            discoveryServiceUrl=DISCOVERY_DOC,
+            static_discovery=False,
+        )
+        NEW_FORM = {
+            "info": {
+                "title": "EduAid form",
+            }
         }
-    }
-    requests_list = []
+        requests_list = []
 
-    if question_type == "get_shortq":
-        for index, qapair in enumerate(qa_pairs):
-            requests = {
-                "createItem": {
-                    "item": {
-                        "title": qapair["question"],
-                        "questionItem": {
-                            "question": {
-                                "required": True,
-                                "textQuestion": {},
-                            }
+        if question_type == "get_shortq":
+            for index, qapair in enumerate(qa_pairs):
+                requests = {
+                    "createItem": {
+                        "item": {
+                            "title": qapair["question"],
+                            "questionItem": {
+                                "question": {
+                                    "required": True,
+                                    "textQuestion": {},
+                                }
+                            },
                         },
-                    },
-                    "location": {"index": index},
+                        "location": {"index": index},
+                    }
                 }
-            }
-            requests_list.append(requests)
-    elif question_type == "get_mcq":
-        for index, qapair in enumerate(qa_pairs):
-            # Extract and filter the options
-            options = qapair.get("options", [])
-            valid_options = [
-                opt for opt in options if opt
-            ]  # Filter out empty or None options
-
-            # Ensure the answer is included in the choices
-            choices = [qapair["answer"]] + valid_options[
-                :3
-            ]  # Include up to the first 3 options
-
-            # Randomize the order of the choices
-            random.shuffle(choices)
-
-            # Prepare the request structure
-            choices_list = [{"value": choice} for choice in choices]
-
-            requests = {
-                "createItem": {
-                    "item": {
-                        "title": qapair["question"],
-                        "questionItem": {
-                            "question": {
-                                "required": True,
-                                "choiceQuestion": {
-                                    "type": "RADIO",
-                                    "options": choices_list,
-                                },
-                            }
-                        },
-                    },
-                    "location": {"index": index},
-                }
-            }
-
-            requests_list.append(requests)
-    elif question_type == "get_boolq":
-        for index, qapair in enumerate(qa_pairs):
-            choices_list = [
-                {"value": "True"},
-                {"value": "False"},
-            ]
-            requests = {
-                "createItem": {
-                    "item": {
-                        "title": qapair["question"],
-                        "questionItem": {
-                            "question": {
-                                "required": True,
-                                "choiceQuestion": {
-                                    "type": "RADIO",
-                                    "options": choices_list,
-                                },
-                            }
-                        },
-                    },
-                    "location": {"index": index},
-                }
-            }
-
-            requests_list.append(requests)
-    else:
-        for index, qapair in enumerate(qa_pairs):
-            if "options" in qapair and qapair["options"]:
-                options = qapair["options"]
+                requests_list.append(requests)
+        elif question_type == "get_mcq":
+            for index, qapair in enumerate(qa_pairs):
+                # Extract and filter the options
+                options = qapair.get("options", [])
                 valid_options = [
                     opt for opt in options if opt
                 ]  # Filter out empty or None options
+
+                # Ensure the answer is included in the choices
                 choices = [qapair["answer"]] + valid_options[
                     :3
                 ]  # Include up to the first 3 options
+
+                # Randomize the order of the choices
                 random.shuffle(choices)
+
+                # Prepare the request structure
                 choices_list = [{"value": choice} for choice in choices]
-                question_structure = {
-                    "choiceQuestion": {
-                        "type": "RADIO",
-                        "options": choices_list,
-                    }
-                }
-            elif "answer" in qapair:
-                question_structure = {"textQuestion": {}}
-            else:
-                question_structure = {
-                    "choiceQuestion": {
-                        "type": "RADIO",
-                        "options": [
-                            {"value": "True"},
-                            {"value": "False"},
-                        ],
-                    }
-                }
 
-            requests = {
-                "createItem": {
-                    "item": {
-                        "title": qapair["question"],
-                        "questionItem": {
-                            "question": {
-                                "required": True,
-                                **question_structure,
-                            }
+                requests = {
+                    "createItem": {
+                        "item": {
+                            "title": qapair["question"],
+                            "questionItem": {
+                                "question": {
+                                    "required": True,
+                                    "choiceQuestion": {
+                                        "type": "RADIO",
+                                        "options": choices_list,
+                                    },
+                                }
+                            },
                         },
-                    },
-                    "location": {"index": index},
+                        "location": {"index": index},
+                    }
                 }
-            }
-            requests_list.append(requests)
 
-    NEW_QUESTION = {"requests": requests_list}
+                requests_list.append(requests)
+        elif question_type == "get_boolq":
+            for index, qapair in enumerate(qa_pairs):
+                choices_list = [
+                    {"value": "True"},
+                    {"value": "False"},
+                ]
+                requests = {
+                    "createItem": {
+                        "item": {
+                            "title": qapair["question"],
+                            "questionItem": {
+                                "question": {
+                                    "required": True,
+                                    "choiceQuestion": {
+                                        "type": "RADIO",
+                                        "options": choices_list,
+                                    },
+                                }
+                            },
+                        },
+                        "location": {"index": index},
+                    }
+                }
 
-    result = form_service.forms().create(body=NEW_FORM).execute()
-    form_service.forms().batchUpdate(
-        formId=result["formId"], body=NEW_QUESTION
-    ).execute()
+                requests_list.append(requests)
+        else:
+            for index, qapair in enumerate(qa_pairs):
+                if "options" in qapair and qapair["options"]:
+                    options = qapair["options"]
+                    valid_options = [
+                        opt for opt in options if opt
+                    ]  # Filter out empty or None options
+                    choices = [qapair["answer"]] + valid_options[
+                        :3
+                    ]  # Include up to the first 3 options
+                    random.shuffle(choices)
+                    choices_list = [{"value": choice} for choice in choices]
+                    question_structure = {
+                        "choiceQuestion": {
+                            "type": "RADIO",
+                            "options": choices_list,
+                        }
+                    }
+                elif "answer" in qapair:
+                    question_structure = {"textQuestion": {}}
+                else:
+                    question_structure = {
+                        "choiceQuestion": {
+                            "type": "RADIO",
+                            "options": [
+                                {"value": "True"},
+                                {"value": "False"},
+                            ],
+                        }
+                    }
 
-    edit_url = jsonify(result["responderUri"])
-    webbrowser.open_new_tab(
-        "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
-    )
-    return edit_url
+                requests = {
+                    "createItem": {
+                        "item": {
+                            "title": qapair["question"],
+                            "questionItem": {
+                                "question": {
+                                    "required": True,
+                                    **question_structure,
+                                }
+                            },
+                        },
+                        "location": {"index": index},
+                    }
+                }
+                requests_list.append(requests)
+
+        NEW_QUESTION = {"requests": requests_list}
+
+        result = form_service.forms().create(body=NEW_FORM).execute()
+        form_service.forms().batchUpdate(
+            formId=result["formId"], body=NEW_QUESTION
+        ).execute()
+
+        edit_url = jsonify(result["responderUri"])
+        webbrowser.open_new_tab(
+            "https://docs.google.com/forms/d/" + result["formId"] + "/edit"
+        )
+        return edit_url
+    except ValidationError as e:
+        return create_error_response(str(e))
+    except Exception as e:
+        app.logger.exception("Error in /generate_gform: %s", e)
+        return create_error_response("Internal server error", 500)
 
 
 @app.route("/get_shortq_hard", methods=["POST"])
 def get_shortq_hard():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
+    try:
+        data = request.get_json()
+        InputValidator.validate_request_data(data, required_fields=["input_text"])
+        
+        input_text = InputValidator.validate_input_text(data.get("input_text"))
+        use_mediawiki = InputValidator.validate_use_mediawiki(data.get("use_mediawiki", 0))
+        input_questions = InputValidator.validate_question_list(data.get("input_question", []), allow_empty=True)
 
-    output = qg.generate(
-        article=input_text, num_questions=input_questions, answer_style="sentences"
-    )
+        input_text = process_input_text(input_text, use_mediawiki)
+        output = qg.generate(
+            article=input_text, num_questions=input_questions, answer_style="sentences"
+        )
 
-    for item in output:
-        item["question"] = make_question_harder(item["question"])
+        for item in output:
+            item["question"] = make_question_harder(item["question"])
 
-    return jsonify({"output": output})
+        return jsonify({"output": output})
+    except ValidationError as e:
+        return create_error_response(str(e))
+    except Exception as e:
+        app.logger.exception("Error in /get_shortq_hard: %s", e)
+        return create_error_response("Internal server error", 500)
 
 
 @app.route("/get_mcq_hard", methods=["POST"])
 def get_mcq_hard():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    input_text = process_input_text(input_text,use_mediawiki)
-    input_questions = data.get("input_question", [])
-    output = qg.generate(
-        article=input_text, num_questions=input_questions, answer_style="multiple_choice"
-    )
-    
-    for q in output:
-        q["question"] = make_question_harder(q["question"])
+    try:
+        data = request.get_json()
+        InputValidator.validate_request_data(data, required_fields=["input_text"])
         
-    return jsonify({"output": output})
+        input_text = InputValidator.validate_input_text(data.get("input_text"))
+        use_mediawiki = InputValidator.validate_use_mediawiki(data.get("use_mediawiki", 0))
+        input_questions = InputValidator.validate_question_list(data.get("input_question", []), allow_empty=True)
+        
+        input_text = process_input_text(input_text, use_mediawiki)
+        output = qg.generate(
+            article=input_text, num_questions=input_questions, answer_style="multiple_choice"
+        )
+        
+        for q in output:
+            q["question"] = make_question_harder(q["question"])
+            
+        return jsonify({"output": output})
+    except ValidationError as e:
+        return create_error_response(str(e))
+    except Exception as e:
+        app.logger.exception("Error in /get_mcq_hard: %s", e)
+        return create_error_response("Internal server error", 500)
 
 @app.route("/get_boolq_hard", methods=["POST"])
 def get_boolq_hard():
-    data = request.get_json()
-    input_text = data.get("input_text", "")
-    use_mediawiki = data.get("use_mediawiki", 0)
-    input_questions = data.get("input_question", [])
+    try:
+        data = request.get_json()
+        InputValidator.validate_request_data(data, required_fields=["input_text"])
+        
+        input_text = InputValidator.validate_input_text(data.get("input_text"))
+        use_mediawiki = InputValidator.validate_use_mediawiki(data.get("use_mediawiki", 0))
+        input_questions = InputValidator.validate_question_list(data.get("input_question", []), allow_empty=True)
 
-    input_text = process_input_text(input_text, use_mediawiki)
+        input_text = process_input_text(input_text, use_mediawiki)
 
-    # Generate questions using the same QG model
-    generated = qg.generate(
-        article=input_text,
-        num_questions=input_questions,
-        answer_style="true_false"
-    )
+        # Generate questions using the same QG model
+        generated = qg.generate(
+            article=input_text,
+            num_questions=input_questions,
+            answer_style="true_false"
+        )
 
-    # Apply transformation to make each question harder
-    harder_questions = [make_question_harder(q) for q in generated]
+        # Apply transformation to make each question harder
+        harder_questions = [make_question_harder(q) for q in generated]
 
-    return jsonify({"output": harder_questions})
+        return jsonify({"output": harder_questions})
+    except ValidationError as e:
+        return create_error_response(str(e))
+    except Exception as e:
+        app.logger.exception("Error in /get_boolq_hard: %s", e)
+        return create_error_response("Internal server error", 500)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
+    try:
+        if 'file' not in request.files:
+            return create_error_response("No file part")
 
-    file = request.files['file']
+        file = request.files['file']
 
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
+        if file.filename == '':
+            return create_error_response("No selected file")
 
-    content = file_processor.process_file(file)
-    
-    if content:
-        return jsonify({"content": content})
-    else:
-        return jsonify({"error": "Unsupported file type or error processing file"}), 400
+        # Validate file type
+        allowed_extensions = {'pdf', 'txt', 'docx', 'doc'}
+        if not ('.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
+            return create_error_response("Unsupported file type. Allowed types: pdf, txt, docx, doc")
+
+        content = file_processor.process_file(file)
+        
+        if content:
+            return jsonify({"content": content})
+        else:
+            return create_error_response("Error processing file", 400)
+    except Exception as e:
+        app.logger.exception("Error in /upload: %s", e)
+        return create_error_response("Internal server error", 500)
 
 @app.route("/", methods=["GET"])
 def hello():
