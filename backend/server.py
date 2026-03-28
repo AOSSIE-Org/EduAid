@@ -6,6 +6,7 @@ import subprocess
 import os
 import glob
 import signal
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from functools import wraps
 
 from sklearn.metrics.pairwise import cosine_similarity
@@ -79,8 +80,15 @@ def with_timeout(timeout_seconds=ML_TIMEOUT_SECONDS):
                     signal.signal(signal.SIGALRM, old_handler)
                 return result
             else:
-                # Windows fallback: no signal-based timeout, just run normally
-                return f(*args, **kwargs)
+                # Windows fallback: use ThreadPoolExecutor for timeout
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(f, *args, **kwargs)
+                    try:
+                        return future.result(timeout=timeout_seconds)
+                    except FuturesTimeoutError:
+                        raise MLTimeoutError(
+                            f"Operation timed out after {timeout_seconds} seconds"
+                        )
         return wrapper
     return decorator
 
@@ -109,8 +117,8 @@ def get_mcq():
         return jsonify({"output": questions})
     except MLTimeoutError:
         return jsonify({"error": "Request timed out. The model took too long to respond."}), 504
-    except Exception as e:
-        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+    except Exception:
+        return jsonify({"error": "An internal server error occurred."}), 500
 
 
 @app.route("/get_boolq", methods=["POST"])
@@ -131,22 +139,30 @@ def get_boolq():
         return jsonify({"output": boolean_questions})
     except MLTimeoutError:
         return jsonify({"error": "Request timed out. The model took too long to respond."}), 504
-    except Exception as e:
-        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+    except Exception:
+        return jsonify({"error": "An internal server error occurred."}), 500
 
 
 @app.route("/get_shortq", methods=["POST"])
+@with_timeout()
 def get_shortq():
     data = request.get_json()
+    if not data or not data.get("input_text"):
+        return jsonify({"error": "input_text is required"}), 400
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output = ShortQGen.generate_shortq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    questions = output["questions"]
-    return jsonify({"output": questions})
+    try:
+        input_text = process_input_text(input_text, use_mediawiki)
+        output = ShortQGen.generate_shortq(
+            {"input_text": input_text, "max_questions": max_questions}
+        )
+        questions = output["questions"]
+        return jsonify({"output": questions})
+    except MLTimeoutError:
+        return jsonify({"error": "Request timed out. The model took too long to respond."}), 504
+    except Exception:
+        return jsonify({"error": "An internal server error occurred."}), 500
 
 
 @app.route("/get_shortq_llm", methods=["POST"])
