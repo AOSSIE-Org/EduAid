@@ -5,6 +5,8 @@ import nltk
 import subprocess
 import os
 import glob
+import signal
+from functools import wraps
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -46,6 +48,43 @@ qa_model = pipeline("question-answering")
 llm_generator = LLMQuestionGenerator()
 
 
+ML_TIMEOUT_SECONDS = 120
+
+
+class MLTimeoutError(Exception):
+    """Raised when an ML operation exceeds the timeout."""
+    pass
+
+
+def with_timeout(timeout_seconds=ML_TIMEOUT_SECONDS):
+    """Decorator that adds timeout protection to ML endpoint functions.
+
+    Returns HTTP 504 if the operation exceeds the timeout.
+    On Windows, uses a simple try/except wrapper (signal.alarm not available).
+    """
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if hasattr(signal, 'SIGALRM'):
+                def handler(signum, frame):
+                    raise MLTimeoutError(
+                        f"Operation timed out after {timeout_seconds} seconds"
+                    )
+                old_handler = signal.signal(signal.SIGALRM, handler)
+                signal.alarm(timeout_seconds)
+                try:
+                    result = f(*args, **kwargs)
+                finally:
+                    signal.alarm(0)
+                    signal.signal(signal.SIGALRM, old_handler)
+                return result
+            else:
+                # Windows fallback: no signal-based timeout, just run normally
+                return f(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 def process_input_text(input_text, use_mediawiki):
     if use_mediawiki == 1:
         input_text = mediawikiapi.summary(input_text,8)
@@ -53,31 +92,47 @@ def process_input_text(input_text, use_mediawiki):
 
 
 @app.route("/get_mcq", methods=["POST"])
+@with_timeout()
 def get_mcq():
     data = request.get_json()
+    if not data or not data.get("input_text"):
+        return jsonify({"error": "input_text is required"}), 400
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output = MCQGen.generate_mcq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    questions = output["questions"]
-    return jsonify({"output": questions})
+    try:
+        input_text = process_input_text(input_text, use_mediawiki)
+        output = MCQGen.generate_mcq(
+            {"input_text": input_text, "max_questions": max_questions}
+        )
+        questions = output["questions"]
+        return jsonify({"output": questions})
+    except MLTimeoutError:
+        return jsonify({"error": "Request timed out. The model took too long to respond."}), 504
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 
 @app.route("/get_boolq", methods=["POST"])
+@with_timeout()
 def get_boolq():
     data = request.get_json()
+    if not data or not data.get("input_text"):
+        return jsonify({"error": "input_text is required"}), 400
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
-    input_text = process_input_text(input_text, use_mediawiki)
-    output = BoolQGen.generate_boolq(
-        {"input_text": input_text, "max_questions": max_questions}
-    )
-    boolean_questions = output["Boolean_Questions"]
-    return jsonify({"output": boolean_questions})
+    try:
+        input_text = process_input_text(input_text, use_mediawiki)
+        output = BoolQGen.generate_boolq(
+            {"input_text": input_text, "max_questions": max_questions}
+        )
+        boolean_questions = output["Boolean_Questions"]
+        return jsonify({"output": boolean_questions})
+    except MLTimeoutError:
+        return jsonify({"error": "Request timed out. The model took too long to respond."}), 504
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 
 @app.route("/get_shortq", methods=["POST"])
