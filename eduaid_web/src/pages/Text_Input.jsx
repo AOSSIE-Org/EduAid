@@ -185,9 +185,9 @@ const Text_Input = () => {
         {/* File Upload Section */}
         <div className="w-full max-w-2xl mx-auto border-[3px] rounded-2xl text-center px-6 py-6 border-dotted border-[#3E5063] mt-6">
           <img className="mx-auto mb-2" height={32} width={32} src={cloud} alt="cloud" />
-          <p className="text-white text-lg">Choose a file (PDF, MP3 supported)</p>
+          <p className="text-white text-lg">Choose a file (TXT, PDF, DOCX supported)</p>
 
-          <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} />
+          <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".txt,.pdf,.docx" style={{ display: "none" }} />
           <button
             className="bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2"
             onClick={handleClick}
