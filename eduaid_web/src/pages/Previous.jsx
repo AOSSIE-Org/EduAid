@@ -10,11 +10,14 @@ const Previous = () => {
   const navigate = useNavigate();
 
   const getQuizzesFromLocalStorage = () => {
-    const quizzes = localStorage.getItem("last5Quizzes");
+    const quizzes = localStorage.getItem("allQuizzes");
     return quizzes ? JSON.parse(quizzes) : [];
   };
 
   const [quizzes, setQuizzes] = React.useState(getQuizzesFromLocalStorage());
+
+  const [showAll, setShowAll] = React.useState(false);
+  const displayedQuizzes = showAll ? quizzes : quizzes.slice(0, 5);
 
   const handleQuizClick = (quiz) => {
     localStorage.setItem("qaPairs", JSON.stringify(quiz.qaPair));
@@ -22,7 +25,7 @@ const Previous = () => {
   };
 
   const handleClearQuizzes = () => {
-    localStorage.removeItem("last5Quizzes");
+    localStorage.removeItem("allQuizzes");
     setQuizzes([]);
   };
 
@@ -71,7 +74,7 @@ const Previous = () => {
             <div className="text-center text-white text-sm">No quizzes available</div>
           ) : (
             <ul className="space-y-2">
-              {quizzes.map((quiz, index) => (
+              {displayedQuizzes.map((quiz, index) => (
                 <li
                   key={index}
                   className="bg-[#202838] p-4 rounded-lg text-white cursor-pointer border-dotted border-2 border-[#7600F2] flex justify-between items-center"
@@ -89,6 +92,28 @@ const Previous = () => {
             </ul>
           )}
         </div>
+
+        {quizzes.length > 5 && !showAll && (
+          <div className="flex justify-center mt-3">
+            <button
+              onClick={() => setShowAll(true)}
+              className="bg-black text-white px-5 py-2 text-sm md:text-base border-gradient"
+            >
+              Show More
+            </button>
+          </div>
+        )}
+
+        {showAll && (
+          <div className="flex justify-center mt-3">
+            <button
+              onClick={() => setShowAll(false)}
+              className="bg-black text-white px-5 py-2 text-sm md:text-base border-gradient"
+            >
+              Show Less
+            </button>
+          </div>
+        )}
 
         {/* Buttons */}
         <div className="flex flex-wrap justify-center gap-4">
