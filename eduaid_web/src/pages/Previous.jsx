@@ -5,33 +5,14 @@ import stars from "../assets/stars.png";
 import { FaArrowRight } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useNavigate } from 'react-router-dom';
+import { clearQuizHistory, readQuizHistory } from "../utils/quizHistoryStorage";
 
 const DEFAULT_VISIBLE_QUIZZES = 5;
 
 const Previous = () => {
   const navigate = useNavigate();
 
-  const getQuizzesFromLocalStorage = () => {
-    const quizzes = localStorage.getItem("last5Quizzes");
-    if (!quizzes) {
-      return [];
-    }
-
-    try {
-      const parsedQuizzes = JSON.parse(quizzes);
-      if (Array.isArray(parsedQuizzes)) {
-        return parsedQuizzes;
-      }
-
-      localStorage.removeItem("last5Quizzes");
-      return [];
-    } catch {
-      localStorage.removeItem("last5Quizzes");
-      return [];
-    }
-  };
-
-  const [quizzes, setQuizzes] = React.useState(getQuizzesFromLocalStorage());
+  const [quizzes, setQuizzes] = React.useState(() => readQuizHistory());
   const [showAllQuizzes, setShowAllQuizzes] = React.useState(false);
 
   const quizzesToDisplay = showAllQuizzes
@@ -44,7 +25,7 @@ const Previous = () => {
   };
 
   const handleClearQuizzes = () => {
-    localStorage.removeItem("last5Quizzes");
+    clearQuizHistory();
     setQuizzes([]);
     setShowAllQuizzes(false);
   };

@@ -7,6 +7,7 @@ import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
 import { Link,useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
+import { appendQuizHistory } from "../utils/quizHistoryStorage";
 
 const Text_Input = () => {
   const navigate = useNavigate();
@@ -99,26 +100,6 @@ const Text_Input = () => {
     return questionType;
   };
 
-  const getQuizHistoryFromLocalStorage = () => {
-    const storedQuizzes = localStorage.getItem("last5Quizzes");
-    if (!storedQuizzes) {
-      return [];
-    }
-
-    try {
-      const parsedQuizzes = JSON.parse(storedQuizzes);
-      if (Array.isArray(parsedQuizzes)) {
-        return parsedQuizzes;
-      }
-
-      localStorage.removeItem("last5Quizzes");
-      return [];
-    } catch {
-      localStorage.removeItem("last5Quizzes");
-      return [];
-    }
-  };
-
   const sendToBackend = async (data, difficulty, questionType) => {
     const endpoint = getEndpoint(difficulty, questionType);
     try {
@@ -139,9 +120,10 @@ const Text_Input = () => {
         qaPair: responseData,
       };
 
-      const quizHistory = getQuizHistoryFromLocalStorage();
-      quizHistory.push(quizDetails);
-      localStorage.setItem("last5Quizzes", JSON.stringify(quizHistory));
+      const historyPersisted = appendQuizHistory(quizDetails);
+      if (!historyPersisted) {
+        console.warn("Quiz generated but history could not be fully persisted.");
+      }
 
       navigate("/output");
     } catch (error) {
