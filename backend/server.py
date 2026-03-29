@@ -88,7 +88,7 @@ llm_generator = LLMQuestionGenerator()
 def _validate_input_text(input_text):
     """Validate that input_text is a non-empty string within length limits.
 
-    Returns (cleaned_text, error_response) – if error_response is not None the
+    Returns (cleaned_text, error_response) - if error_response is not None the
     caller should return it immediately.
     """
     if input_text is None or not isinstance(input_text, str):
@@ -207,63 +207,87 @@ def get_shortq():
 
 @app.route("/get_shortq_llm", methods=["POST"])
 def get_shortq_llm():
+    """Generate short-answer questions using the LLM generator."""
+    data = request.get_json(silent=True) or {}
+    input_text = data.get("input_text", "")
+    use_mediawiki = data.get("use_mediawiki", 0)
+    max_questions = _validate_max_questions(data.get("max_questions", 4))
+
+    input_text, err = _validate_input_text(input_text)
+    if err:
+        return err
+
     try:
-        data = request.get_json()
-        input_text = data.get("input_text", "")
-        use_mediawiki = data.get("use_mediawiki", 0)
-        max_questions = data.get("max_questions", 4)
         input_text = process_input_text(input_text, use_mediawiki)
         questions = llm_generator.generate_short_questions(input_text, max_questions)
         return jsonify({"output": questions})
     except Exception as e:
-        app.logger.exception("Error in /get_shortq_llm: %s", e)
+        logger.exception("Error in /get_shortq_llm: %s", e)
         return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route("/get_mcq_llm", methods=["POST"])
 def get_mcq_llm():
+    """Generate multiple-choice questions using the LLM generator."""
+    data = request.get_json(silent=True) or {}
+    input_text = data.get("input_text", "")
+    use_mediawiki = data.get("use_mediawiki", 0)
+    max_questions = _validate_max_questions(data.get("max_questions", 4))
+
+    input_text, err = _validate_input_text(input_text)
+    if err:
+        return err
+
     try:
-        data = request.get_json()
-        input_text = data.get("input_text", "")
-        use_mediawiki = data.get("use_mediawiki", 0)
-        max_questions = data.get("max_questions", 4)
         input_text = process_input_text(input_text, use_mediawiki)
         questions = llm_generator.generate_mcq_questions(input_text, max_questions)
         return jsonify({"output": questions})
     except Exception as e:
-        app.logger.exception("Error in /get_mcq_llm: %s", e)
+        logger.exception("Error in /get_mcq_llm: %s", e)
         return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route("/get_boolq_llm", methods=["POST"])
 def get_boolq_llm():
+    """Generate boolean (true/false) questions using the LLM generator."""
+    data = request.get_json(silent=True) or {}
+    input_text = data.get("input_text", "")
+    use_mediawiki = data.get("use_mediawiki", 0)
+    max_questions = _validate_max_questions(data.get("max_questions", 4))
+
+    input_text, err = _validate_input_text(input_text)
+    if err:
+        return err
+
     try:
-        data = request.get_json()
-        input_text = data.get("input_text", "")
-        use_mediawiki = data.get("use_mediawiki", 0)
-        max_questions = data.get("max_questions", 4)
         input_text = process_input_text(input_text, use_mediawiki)
         questions = llm_generator.generate_boolean_questions(input_text, max_questions)
         return jsonify({"output": questions})
     except Exception as e:
-        app.logger.exception("Error in /get_boolq_llm: %s", e)
+        logger.exception("Error in /get_boolq_llm: %s", e)
         return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route("/get_problems_llm", methods=["POST"])
 def get_problems_llm():
+    """Generate a combined set of questions using the LLM generator."""
+    data = request.get_json(silent=True) or {}
+    input_text = data.get("input_text", "")
+    use_mediawiki = data.get("use_mediawiki", 0)
+    mcq_count = _validate_max_questions(data.get("max_questions_mcq", 2))
+    bool_count = _validate_max_questions(data.get("max_questions_boolq", 2))
+    short_count = _validate_max_questions(data.get("max_questions_shortq", 2))
+
+    input_text, err = _validate_input_text(input_text)
+    if err:
+        return err
+
     try:
-        data = request.get_json()
-        input_text = data.get("input_text", "")
-        use_mediawiki = data.get("use_mediawiki", 0)
-        mcq_count = data.get("max_questions_mcq", 2)
-        bool_count = data.get("max_questions_boolq", 2)
-        short_count = data.get("max_questions_shortq", 2)
         input_text = process_input_text(input_text, use_mediawiki)
         questions = llm_generator.generate_all_questions(input_text, mcq_count, bool_count, short_count)
         return jsonify({"output": questions})
     except Exception as e:
-        app.logger.exception("Error in /get_problems_llm: %s", e)
+        logger.exception("Error in /get_problems_llm: %s", e)
         return jsonify({"error": "Internal server error"}), 500
 
 
@@ -321,7 +345,7 @@ def get_mcq_answer():
 
     try:
         outputs = []
-        for question, options in zip(input_questions, input_options):
+        for question, options in zip(input_questions, input_options, strict=True):
             if not options:
                 outputs.append("")
                 continue
@@ -675,16 +699,14 @@ def get_boolq_hard():
 
     try:
         input_text = process_input_text(input_text, use_mediawiki)
-        generated = qg.generate(
-            article=input_text,
-            num_questions=len(input_questions) if input_questions else 5,
-            answer_style="sentences",
-            use_evaluator=True,
+        output = BoolQGen.generate_boolq(
+            {"input_text": input_text, "max_questions": len(input_questions) if input_questions else 5}
         )
-        for item in generated:
+        boolean_questions = output.get("Boolean_Questions", [])
+        for item in boolean_questions:
             item["question"] = make_question_harder(item["question"])
-        logger.info("Generated %d hard boolean questions", len(generated))
-        return jsonify({"output": generated})
+        logger.info("Generated %d hard boolean questions", len(boolean_questions))
+        return jsonify({"output": boolean_questions})
     except Exception:
         logger.exception("Error generating hard boolean questions")
         return jsonify({"error": "Failed to generate hard boolean questions"}), 500
