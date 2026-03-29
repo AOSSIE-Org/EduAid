@@ -55,6 +55,8 @@ def process_input_text(input_text, use_mediawiki):
 @app.route("/get_mcq", methods=["POST"])
 def get_mcq():
     data = request.get_json()
+    if not data or "input_text" not in data or not data["input_text"].strip():
+        return jsonify({"error": "input_text cannot be empty"}), 400
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
@@ -69,6 +71,8 @@ def get_mcq():
 @app.route("/get_boolq", methods=["POST"])
 def get_boolq():
     data = request.get_json()
+    if not data or "input_text" not in data or not data["input_text"].strip():
+        return jsonify({"error": "input_text cannot be empty"}), 400
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
@@ -83,6 +87,8 @@ def get_boolq():
 @app.route("/get_shortq", methods=["POST"])
 def get_shortq():
     data = request.get_json()
+    if not data or "input_text" not in data or not data["input_text"].strip():
+        return jsonify({"error": "input_text cannot be empty"}), 400
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions = data.get("max_questions", 4)
@@ -98,6 +104,8 @@ def get_shortq():
 def get_shortq_llm():
     try:
         data = request.get_json()
+        if not data or "input_text" not in data or not data["input_text"].strip():
+            return jsonify({"error": "input_text cannot be empty"}), 400
         input_text = data.get("input_text", "")
         use_mediawiki = data.get("use_mediawiki", 0)
         max_questions = data.get("max_questions", 4)
@@ -113,6 +121,8 @@ def get_shortq_llm():
 def get_mcq_llm():
     try:
         data = request.get_json()
+        if not data or "input_text" not in data or not data["input_text"].strip():
+            return jsonify({"error": "input_text cannot be empty"}), 400
         input_text = data.get("input_text", "")
         use_mediawiki = data.get("use_mediawiki", 0)
         max_questions = data.get("max_questions", 4)
@@ -128,6 +138,8 @@ def get_mcq_llm():
 def get_boolq_llm():
     try:
         data = request.get_json()
+        if not data or "input_text" not in data or not data["input_text"].strip():
+            return jsonify({"error": "input_text cannot be empty"}), 400
         input_text = data.get("input_text", "")
         use_mediawiki = data.get("use_mediawiki", 0)
         max_questions = data.get("max_questions", 4)
@@ -143,6 +155,8 @@ def get_boolq_llm():
 def get_problems_llm():
     try:
         data = request.get_json()
+        if not data or "input_text" not in data or not data["input_text"].strip():
+            return jsonify({"error": "input_text cannot be empty"}), 400
         input_text = data.get("input_text", "")
         use_mediawiki = data.get("use_mediawiki", 0)
         mcq_count = data.get("max_questions_mcq", 2)
@@ -159,6 +173,8 @@ def get_problems_llm():
 @app.route("/get_problems", methods=["POST"])
 def get_problems():
     data = request.get_json()
+    if not data or "input_text" not in data or not data["input_text"].strip():
+        return jsonify({"error": "input_text cannot be empty"}), 400
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     max_questions_mcq = data.get("max_questions_mcq", 4)
@@ -181,6 +197,8 @@ def get_problems():
 @app.route("/get_mcq_answer", methods=["POST"])
 def get_mcq_answer():
     data = request.get_json()
+    if not data or "input_text" not in data or not data["input_text"].strip():
+        return jsonify({"error": "input_text cannot be empty"}), 400
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     input_options = data.get("input_options", [])
@@ -214,6 +232,8 @@ def get_mcq_answer():
 @app.route("/get_shortq_answer", methods=["POST"])
 def get_answer():
     data = request.get_json()
+    if not data or "input_text" not in data or not data["input_text"].strip():
+        return jsonify({"error": "input_text cannot be empty"}), 400
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     answers = []
@@ -227,6 +247,8 @@ def get_answer():
 @app.route("/get_boolean_answer", methods=["POST"])
 def get_boolean_answer():
     data = request.get_json()
+    if not data or "input_text" not in data or not data["input_text"].strip():
+        return jsonify({"error": "input_text cannot be empty"}), 400
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
     output = []
@@ -247,6 +269,8 @@ def get_boolean_answer():
 def get_content():
     try:
         data = request.get_json()
+        if not data or "document_url" not in data or not data["document_url"].strip():
+            return jsonify({'error': 'Document URL is required'}), 400
         document_url = data.get('document_url')
         if not document_url:
             return jsonify({'error': 'Document URL is required'}), 400
@@ -264,6 +288,8 @@ def get_content():
 @app.route("/generate_gform", methods=["POST"])
 def generate_gform():
     data = request.get_json()
+    if not data or "qa_pairs" not in data or not data["qa_pairs"]:
+        return jsonify({"error": "qa_pairs cannot be empty"}), 400
     qa_pairs = data.get("qa_pairs", "")
     question_type = data.get("question_type", "")
     SCOPES = "https://www.googleapis.com/auth/forms.body"
@@ -433,6 +459,8 @@ def generate_gform():
 @app.route("/get_shortq_hard", methods=["POST"])
 def get_shortq_hard():
     data = request.get_json()
+    if not data or "input_text" not in data or not data["input_text"].strip():
+        return jsonify({"error": "input_text cannot be empty"}), 400
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
@@ -451,6 +479,8 @@ def get_shortq_hard():
 @app.route("/get_mcq_hard", methods=["POST"])
 def get_mcq_hard():
     data = request.get_json()
+    if not data or "input_text" not in data or not data["input_text"].strip():
+        return jsonify({"error": "input_text cannot be empty"}), 400
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_text = process_input_text(input_text,use_mediawiki)
@@ -467,6 +497,8 @@ def get_mcq_hard():
 @app.route("/get_boolq_hard", methods=["POST"])
 def get_boolq_hard():
     data = request.get_json()
+    if not data or "input_text" not in data or not data["input_text"].strip():
+        return jsonify({"error": "input_text cannot be empty"}), 400
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
