@@ -35,17 +35,14 @@ const Question_Type = () => {
             </span>
           </div>
         </Link>
-
+              <button
+                type="button"
         {/* Title */}
         <div className="text-center">
           <h2 className="text-white text-3xl sm:text-4xl font-extrabold">
             What’s on your Mind?
           </h2>
-          <p className="text-white text-lg sm:text-xl font-medium mt-2">
-            Choose one
-          </p>
-        </div>
-
+                aria-pressed={selectedOption === option.id}
         {/* Options */}
         <div className="flex flex-col items-center mt-8 gap-4 w-full">
           {[
@@ -76,29 +73,32 @@ const Question_Type = () => {
               <div className="text-white text-xl sm:text-2xl font-medium">
                 {option.label}
               </div>
-            </div>
+            </button>
           ))}
         </div>
 
         {/* Action Button */}
         <div className="text-center mt-10">
           {selectedOption ? (
-            <Link to="/input">
-              <button
-                onClick={handleSaveToLocalStorage}
-                className="rounded-2xl text-xl sm:text-2xl text-white px-6 sm:px-8 font-bold py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:brightness-110 transition-all"
-              >
-                Fire Up 🚀
-              </button>
+            <Link
+              to="/input"
+              onClick={handleSaveToLocalStorage}
+              className="inline-block rounded-2xl text-xl sm:text-2xl text-white px-6 sm:px-8 font-bold py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] hover:brightness-110 transition-all"
+            >
+              Fire Up 🚀
             </Link>
           ) : (
             <button
-              onClick={() => alert("Please select a question type.")}
+              type="button"
               className="rounded-2xl text-xl sm:text-2xl text-white px-6 sm:px-8 font-bold py-3 bg-gray-500 cursor-not-allowed"
               disabled
+              aria-disabled="true"
             >
               Fire Up 🚀
             </button>
+          )}
+          {!selectedOption && (
+            <p className="text-white text-sm mt-3">Select a question type to continue.</p>
           )}
         </div>
       </div>

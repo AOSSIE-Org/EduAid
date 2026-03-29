@@ -6,38 +6,18 @@ import arrow from "../assets/arrow.png";
 import gitStar from "../assets/gitStar.png";
 import { FaGithub } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { getCachedGithubStars } from "../utils/githubStars";
 
 const Home = () => {
   const [stars, setStars] = useState(null);
   const [error, setError] = useState("");
 
-  async function fetchGitHubStars() {
-    const response = await fetch("https://api.github.com/repos/AOSSIE-Org/EduAid");
-    if (!response.ok) throw new Error("Failed to fetch stars");
-    const data = await response.json();
-    return data.stargazers_count;
-  }
-
-  function isMoreThanOneDayOld(timestamp) {
-    const oneDay = 24 * 60 * 60 * 1000;
-    return Date.now() - timestamp > oneDay;
-  }
-
   useEffect(() => {
-    const storedStars = localStorage.getItem("stars");
-    const storedTime = localStorage.getItem("fetchTime");
-
-    if (storedStars && storedTime && !isMoreThanOneDayOld(parseInt(storedTime))) {
-      setStars(parseInt(storedStars));
-    } else {
-      fetchGitHubStars()
-        .then((starCount) => {
-          setStars(starCount);
-          localStorage.setItem("stars", starCount);
-          localStorage.setItem("fetchTime", Date.now().toString());
-        })
-        .catch(() => setError("Failed to fetch stars"));
-    }
+    getCachedGithubStars()
+      .then((starCount) => {
+        setStars(starCount);
+      })
+      .catch(() => setError("Failed to fetch stars"));
   }, []);
 
   return (

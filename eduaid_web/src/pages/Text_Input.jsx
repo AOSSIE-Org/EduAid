@@ -7,6 +7,7 @@ import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
 import { Link,useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
+import { getEndpointForQuestionType, saveQuizHistory } from "../utils/quizUtils";
 
 const Text_Input = () => {
   const navigate = useNavigate();
@@ -73,6 +74,8 @@ const Text_Input = () => {
         difficulty,
         localStorage.getItem("selectedQuestionType")
       );
+    } else {
+      setLoading(false);
     }
   };
 
@@ -88,19 +91,8 @@ const Text_Input = () => {
     setNumQuestions((prev) => (prev > 0 ? prev - 1 : 0));
   };
 
-  const getEndpoint = (difficulty, questionType) => {
-    if (difficulty !== "Easy Difficulty") {
-      if (questionType === "get_shortq") {
-        return "get_shortq_hard";
-      } else if (questionType === "get_mcq") {
-        return "get_mcq_hard";
-      }
-    }
-    return questionType;
-  };
-
   const sendToBackend = async (data, difficulty, questionType) => {
-    const endpoint = getEndpoint(difficulty, questionType);
+    const endpoint = getEndpointForQuestionType(difficulty, questionType);
     try {
       const requestData = {
         input_text: data,
@@ -110,22 +102,7 @@ const Text_Input = () => {
 
       const responseData = await apiClient.post(`/${endpoint}`, requestData);
       localStorage.setItem("qaPairs", JSON.stringify(responseData));
-
-      // Save quiz details to local storage
-      const quizDetails = {
-        difficulty,
-        numQuestions,
-        date: new Date().toLocaleDateString(),
-        qaPair: responseData,
-      };
-
-      let last5Quizzes =
-        JSON.parse(localStorage.getItem("last5Quizzes")) || [];
-      last5Quizzes.push(quizDetails);
-      if (last5Quizzes.length > 5) {
-        last5Quizzes.shift(); // Keep only the last 5 quizzes
-      }
-      localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
+      saveQuizHistory({ difficulty, numQuestions, qaPair: responseData });
 
       navigate("/output");
     } catch (error) {
@@ -167,10 +144,11 @@ const Text_Input = () => {
 
         {/* Textarea */}
         <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
+          <span className="absolute top-0 left-0 p-2 text-white" aria-hidden="true">
             <FaClipboard className="h-[24px] w-[24px]" />
-          </button>
+          </span>
           <textarea
+            aria-label="Content input"
             className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
@@ -187,8 +165,10 @@ const Text_Input = () => {
           <img className="mx-auto mb-2" height={32} width={32} src={cloud} alt="cloud" />
           <p className="text-white text-lg">Choose a file (PDF, MP3 supported)</p>
 
-          <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} />
+          <input type="file" accept=".pdf,.mp3,.wav,.txt" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} />
           <button
+            type="button"
+            aria-label="Browse and upload a file"
             className="bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2"
             onClick={handleClick}
           >
@@ -209,9 +189,9 @@ const Text_Input = () => {
           {/* Question Count */}
           <div className="flex gap-2 items-center">
             <div className="text-white text-lg sm:text-xl font-bold">No. of Questions:</div>
-            <button onClick={decrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3">-</button>
+            <button type="button" aria-label="Decrease number of questions" onClick={decrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3">-</button>
             <span className="text-white text-2xl">{numQuestions}</span>
-            <button onClick={incrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3">+</button>
+            <button type="button" aria-label="Increase number of questions" onClick={incrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3">+</button>
           </div>
 
           {/* Difficulty Dropdown */}
@@ -246,6 +226,7 @@ const Text_Input = () => {
             <button className="bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient rounded-xl w-full sm:w-auto">Back</button>
           </Link>
           <button
+            type="button"
             onClick={handleSaveToLocalStorage}
             className="bg-black text-white text-lg sm:text-xl px-4 py-2 border-gradient flex justify-center items-center rounded-xl w-full sm:w-auto"
           >
