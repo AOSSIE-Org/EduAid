@@ -26,6 +26,7 @@ from apiclient import discovery
 from httplib2 import Http
 from oauth2client import client, file, tools
 from mediawikiapi import MediaWikiAPI
+from Generator.match_columns import generate_match_columns
 
 app = Flask(__name__)
 CORS(app)
@@ -555,6 +556,23 @@ def get_transcript():
     os.remove(latest_subtitle)
 
     return jsonify({"transcript": transcript_text})
+
+    
+@app.route("/get_match_columns", methods=["POST"])
+def get_match_columns():
+    data = request.get_json()
+    input_text = data.get("input_text", "")
+    use_mediawiki = data.get("use_mediawiki", 0)
+    max_questions = data.get("max_questions", 6)
+    input_text = process_input_text(input_text, use_mediawiki)
+    
+    result = generate_match_columns({
+        "input_text": input_text,
+        "max_questions": max_questions
+    })
+    
+    return jsonify(result)
+
 
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
