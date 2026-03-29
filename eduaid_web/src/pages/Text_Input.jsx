@@ -210,7 +210,30 @@ const Text_Input = () => {
           <div className="flex gap-2 items-center">
             <div className="text-white text-lg sm:text-xl font-bold">No. of Questions:</div>
             <button onClick={decrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3">-</button>
-            <span className="text-white text-2xl">{numQuestions}</span>
+            <input
+              type="number"
+              value={numQuestions}
+              min={1}
+              onChange={(e) => {
+                const value = e.target.value;
+
+                if (value === "") {
+                  setNumQuestions("");
+                  return;
+                }
+
+                const parsed = Number(value);
+                if (!isNaN(parsed) && parsed >= 1) {
+                  setNumQuestions(parsed);
+                }
+              }}
+              onBlur={() => {
+                if (!numQuestions || numQuestions < 1) {
+                  setNumQuestions(1);
+                }
+              }}
+              className="w-16 text-center bg-transparent border-2 border-[#6e8a9f] text-white text-lg rounded-lg outline-none"
+            />
             <button onClick={incrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3">+</button>
           </div>
 
