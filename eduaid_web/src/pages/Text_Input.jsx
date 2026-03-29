@@ -66,7 +66,10 @@ const Text_Input = () => {
       // Proceed with existing functionality for local storage
       localStorage.setItem("textContent", text);
       localStorage.setItem("difficulty", difficulty);
-      localStorage.setItem("numQuestions", numQuestions);
+      localStorage.setItem(
+        "numQuestions",
+        parseInt(numQuestions, 10) >= 1 ? parseInt(numQuestions, 10) : 1
+      );
 
       await sendToBackend(
         text,
@@ -104,7 +107,7 @@ const Text_Input = () => {
     try {
       const requestData = {
         input_text: data,
-        max_questions: numQuestions,
+        max_questions: parseInt(numQuestions, 10) >= 1 ? parseInt(numQuestions, 10) : 1,
         use_mediawiki: isToggleOn,
       };
 
