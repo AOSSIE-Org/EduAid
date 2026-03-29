@@ -119,13 +119,12 @@ const Text_Input = () => {
         qaPair: responseData,
       };
 
-      let last5Quizzes =
-        JSON.parse(localStorage.getItem("last5Quizzes")) || [];
-      last5Quizzes.push(quizDetails);
-      if (last5Quizzes.length > 5) {
-        last5Quizzes.shift(); // Keep only the last 5 quizzes
-      }
-      localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
+      const allQuizzes =
+        JSON.parse(localStorage.getItem("allQuizzes")) || [];
+
+      const updatedQuizzes = [quizDetails, ...allQuizzes];
+
+      localStorage.setItem("allQuizzes", JSON.stringify(updatedQuizzes));
 
       navigate("/output");
     } catch (error) {
