@@ -11,7 +11,22 @@ const Previous = () => {
 
   const getQuizzesFromLocalStorage = () => {
     const quizzes = localStorage.getItem("last5Quizzes");
-    return quizzes ? JSON.parse(quizzes) : [];
+    if (!quizzes) {
+      return [];
+    }
+
+    try {
+      const parsedQuizzes = JSON.parse(quizzes);
+      if (!Array.isArray(parsedQuizzes)) {
+        localStorage.removeItem("last5Quizzes");
+        return [];
+      }
+
+      return parsedQuizzes;
+    } catch (error) {
+      localStorage.removeItem("last5Quizzes");
+      return [];
+    }
   };
 
   const [quizzes, setQuizzes] = React.useState(getQuizzesFromLocalStorage());
