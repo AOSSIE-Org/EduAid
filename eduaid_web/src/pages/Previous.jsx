@@ -6,15 +6,37 @@ import { FaArrowRight } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useNavigate } from 'react-router-dom';
 
+const DEFAULT_VISIBLE_QUIZZES = 5;
+
 const Previous = () => {
   const navigate = useNavigate();
 
   const getQuizzesFromLocalStorage = () => {
     const quizzes = localStorage.getItem("last5Quizzes");
-    return quizzes ? JSON.parse(quizzes) : [];
+    if (!quizzes) {
+      return [];
+    }
+
+    try {
+      const parsedQuizzes = JSON.parse(quizzes);
+      if (Array.isArray(parsedQuizzes)) {
+        return parsedQuizzes;
+      }
+
+      localStorage.removeItem("last5Quizzes");
+      return [];
+    } catch {
+      localStorage.removeItem("last5Quizzes");
+      return [];
+    }
   };
 
   const [quizzes, setQuizzes] = React.useState(getQuizzesFromLocalStorage());
+  const [showAllQuizzes, setShowAllQuizzes] = React.useState(false);
+
+  const quizzesToDisplay = showAllQuizzes
+    ? quizzes
+    : quizzes.slice(Math.max(quizzes.length - DEFAULT_VISIBLE_QUIZZES, 0));
 
   const handleQuizClick = (quiz) => {
     localStorage.setItem("qaPairs", JSON.stringify(quiz.qaPair));
@@ -24,6 +46,7 @@ const Previous = () => {
   const handleClearQuizzes = () => {
     localStorage.removeItem("last5Quizzes");
     setQuizzes([]);
+    setShowAllQuizzes(false);
   };
 
   const handleBack = () => {
@@ -71,7 +94,7 @@ const Previous = () => {
             <div className="text-center text-white text-sm">No quizzes available</div>
           ) : (
             <ul className="space-y-2">
-              {quizzes.map((quiz, index) => (
+              {quizzesToDisplay.map((quiz, index) => (
                 <li
                   key={index}
                   className="bg-[#202838] p-4 rounded-lg text-white cursor-pointer border-dotted border-2 border-[#7600F2] flex justify-between items-center"
@@ -92,6 +115,14 @@ const Previous = () => {
 
         {/* Buttons */}
         <div className="flex flex-wrap justify-center gap-4">
+          {quizzes.length > DEFAULT_VISIBLE_QUIZZES && (
+            <button
+              onClick={() => setShowAllQuizzes((previous) => !previous)}
+              className="bg-black text-white px-5 py-2 text-sm md:text-base border-gradient"
+            >
+              {showAllQuizzes ? "Show Less" : "Show More"}
+            </button>
+          )}
           <button
             onClick={handleBack}
             className="bg-black text-white px-5 py-2 text-sm md:text-base border-gradient"

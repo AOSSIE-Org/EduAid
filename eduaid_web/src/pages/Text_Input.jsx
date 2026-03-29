@@ -99,6 +99,26 @@ const Text_Input = () => {
     return questionType;
   };
 
+  const getQuizHistoryFromLocalStorage = () => {
+    const storedQuizzes = localStorage.getItem("last5Quizzes");
+    if (!storedQuizzes) {
+      return [];
+    }
+
+    try {
+      const parsedQuizzes = JSON.parse(storedQuizzes);
+      if (Array.isArray(parsedQuizzes)) {
+        return parsedQuizzes;
+      }
+
+      localStorage.removeItem("last5Quizzes");
+      return [];
+    } catch {
+      localStorage.removeItem("last5Quizzes");
+      return [];
+    }
+  };
+
   const sendToBackend = async (data, difficulty, questionType) => {
     const endpoint = getEndpoint(difficulty, questionType);
     try {
@@ -119,13 +139,9 @@ const Text_Input = () => {
         qaPair: responseData,
       };
 
-      let last5Quizzes =
-        JSON.parse(localStorage.getItem("last5Quizzes")) || [];
-      last5Quizzes.push(quizDetails);
-      if (last5Quizzes.length > 5) {
-        last5Quizzes.shift(); // Keep only the last 5 quizzes
-      }
-      localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
+      const quizHistory = getQuizHistoryFromLocalStorage();
+      quizHistory.push(quizDetails);
+      localStorage.setItem("last5Quizzes", JSON.stringify(quizHistory));
 
       navigate("/output");
     } catch (error) {
