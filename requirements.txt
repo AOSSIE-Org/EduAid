@@ -32,3 +32,4 @@ mammoth
 mediawikiapi
 PyMuPDF
 textblob
+llama-cpp-python
