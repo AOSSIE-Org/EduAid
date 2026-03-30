@@ -195,8 +195,8 @@ const Output = () => {
   No quiz available. Please generate a quiz first.
   <br />
   <Link to="/input" className="text-blue-400 underline">
-    Go to input page
-  </Link>
+    Go to input page // test change
+   </Link>
 </div>
         </div>
       </div>
