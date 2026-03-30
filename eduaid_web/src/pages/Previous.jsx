@@ -27,6 +27,7 @@ const Previous = () => {
   const handleClearQuizzes = () => {
     localStorage.removeItem("allQuizzes");
     setQuizzes([]);
+    setShowAll(false);
   };
 
   const handleBack = () => {
