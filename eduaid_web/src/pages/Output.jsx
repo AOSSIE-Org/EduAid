@@ -7,6 +7,7 @@ import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
@@ -18,16 +19,16 @@ const Output = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-        const dropdown = document.getElementById('pdfDropdown');
-        if (dropdown && !dropdown.contains(event.target) && 
-            !event.target.closest('button')) {
-            dropdown.classList.add('hidden');
-        }
+      const dropdown = document.getElementById("pdfDropdown");
+      if (dropdown && !dropdown.contains(event.target) &&
+          !event.target.closest("button")) {
+        dropdown.classList.add("hidden");
+      }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-}, []);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   function shuffleArray(array) {
     const shuffledArray = [...array];
@@ -91,12 +92,23 @@ const Output = () => {
   };
 
   useEffect(() => {
-    const qaPairsFromStorage =
-      JSON.parse(localStorage.getItem("qaPairs")) || {};
+    setLoading(true);
+    let qaPairsFromStorage = {};
+
+    try {
+      qaPairsFromStorage = JSON.parse(localStorage.getItem("qaPairs")) || {};
+    } catch (error) {
+      console.error("Failed to parse qaPairs from localStorage:", error);
+      qaPairsFromStorage = {};
+    }
+
     if (qaPairsFromStorage) {
       const combinedQaPairs = [];
 
-      if (qaPairsFromStorage["output_boolq"]) {
+      if (
+        qaPairsFromStorage["output_boolq"] &&
+        qaPairsFromStorage["output_boolq"]["Boolean_Questions"]
+      ) {
         qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
           (question, index) => {
             combinedQaPairs.push({
@@ -108,7 +120,10 @@ const Output = () => {
         );
       }
 
-      if (qaPairsFromStorage["output_mcq"]) {
+      if (
+        qaPairsFromStorage["output_mcq"] &&
+        qaPairsFromStorage["output_mcq"]["questions"]
+      ) {
         qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
@@ -120,7 +135,10 @@ const Output = () => {
         });
       }
 
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
+      if (
+        (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") &&
+        qaPairsFromStorage["output"]
+      ) {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair.question_statement,
@@ -132,7 +150,7 @@ const Output = () => {
         });
       }
 
-      if (questionType == "get_boolq") {
+      if (questionType === "get_boolq" && qaPairsFromStorage["output"]) {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair,
@@ -154,7 +172,36 @@ const Output = () => {
 
       setQaPairs(combinedQaPairs);
     }
+    setLoading(false);
   }, []);
+
+  if (loading) {
+    return (
+      <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
+        <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient flex items-center justify-center px-4">
+          <div className="text-white text-base sm:text-lg font-semibold text-center">
+            Loading quiz...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!qaPairs || qaPairs.length === 0) {
+    return (
+      <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
+        <div className="w-full h-full bg-cust bg-opacity-50 bg-custom-gradient flex items-center justify-center px-4">
+          <div className="text-white text-base sm:text-lg font-semibold text-center">
+  No quiz available. Please generate a quiz first.
+  <br />
+  <Link to="/input" className="text-blue-400 underline">
+    Go to input page
+  </Link>
+</div>
+        </div>
+      </div>
+    );
+  }
 
   const generateGoogleForm = async () => {
     try {
@@ -166,6 +213,7 @@ const Output = () => {
       window.open(formUrl, "_blank");
     } catch (error) {
       console.error("Failed to generate Google Form:", error);
+      alert("Failed to generate Google Form. Please try again.");
     }
   };
 
@@ -175,27 +223,27 @@ const Output = () => {
       const arrayBuffer = await response.arrayBuffer();
       return new Uint8Array(arrayBuffer);
     } catch (error) {
-      console.error('Error loading logo:', error);
+      console.error("Error loading logo:", error);
       return null;
     }
   };
 
-    const generatePDF = async (mode) => {
+  const generatePDF = async (mode) => {
     const logoBytes = await loadLogoAsBytes();
     const worker = new Worker(new URL("../workers/pdfWorker.js", import.meta.url), { type: "module" });
 
     worker.postMessage({ qaPairs, mode, logoBytes });
 
     worker.onmessage = (e) => {
-      const blob = new Blob([e.data], { type: 'application/pdf' });
-      const link = document.createElement('a');
+      const blob = new Blob([e.data], { type: "application/pdf" });
+      const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = "generated_questions.pdf";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
-      document.getElementById('pdfDropdown').classList.add('hidden');
+      document.getElementById("pdfDropdown").classList.add("hidden");
       worker.terminate();
     };
 
@@ -212,10 +260,10 @@ const Output = () => {
           {/* Header - Responsive logo and title */}
           <Link to="/">
             <div className="flex items-end gap-[2px] px-4 sm:px-6">
-              <img 
-                src={logoPNG} 
-                alt="logo" 
-                className="w-12 sm:w-16 my-4 block" 
+              <img
+                src={logoPNG}
+                alt="logo"
+                className="w-12 sm:w-16 my-4 block"
               />
               <div className="text-xl sm:text-2xl mb-3 font-extrabold">
                 <span className="bg-gradient-to-r from-[#FF005C] to-[#7600F2] text-transparent bg-clip-text">
@@ -236,8 +284,8 @@ const Output = () => {
             <button
               className={`${
                 editingIndex !== null
-                  ? 'bg-gray-500 cursor-not-allowed'
-                  : 'bg-[#7C3AED] hover:bg-[#5A2AD9]'
+                  ? "bg-gray-500 cursor-not-allowed"
+                  : "bg-[#7C3AED] hover:bg-[#5A2AD9]"
               } text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2`}
               onClick={handleShuffleQuestions}
               disabled={editingIndex !== null}
@@ -253,7 +301,7 @@ const Output = () => {
               qaPairs.map((qaPair, index) => {
                 const shuffledOptions = shuffledOptionsMap[index];
                 const isEditing = editingIndex === index;
-                
+
                 return (
                   <div
                     key={index}
@@ -332,7 +380,7 @@ const Output = () => {
                           value={editedQuestion}
                           onChange={(e) => setEditedQuestion(e.target.value)}
                         />
-                        
+
                         {qaPair.question_type !== "Boolean" && (
                           <>
                             <div className="text-[#E4E4E4] text-xs sm:text-sm mt-3 mb-1">
@@ -344,7 +392,7 @@ const Output = () => {
                               value={editedAnswer}
                               onChange={(e) => setEditedAnswer(e.target.value)}
                             />
-                            
+
                             {editedOptions && editedOptions.length > 0 && (
                               <div className="mt-3">
                                 <div className="text-[#E4E4E4] text-xs sm:text-sm mb-2">
@@ -382,34 +430,34 @@ const Output = () => {
             >
               Generate Google form
             </button>
-            
+
             <div className="relative w-full sm:w-auto">
               <button
                 className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] active:scale-95 active:bg-[#2f5555] transition-all justify-center"
-                onClick={() => document.getElementById('pdfDropdown').classList.toggle('hidden')}
+                onClick={() => document.getElementById("pdfDropdown").classList.toggle("hidden")}
               >
                 Generate PDF
               </button>
-              
+
               <div
                 id="pdfDropdown"
                 className="hidden absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48"
               >
                 <button
                   className="block w-full text-left px-4 py-2 hover:bg-gray-500 active:bg-gray-600 active:scale-95 text-sm sm:text-base"
-                  onClick={() => generatePDF('questions')}
+                  onClick={() => generatePDF("questions")}
                 >
                   Questions Only
                 </button>
                 <button
                   className="block w-full text-left px-4 py-2 hover:bg-gray-500 active:bg-gray-600 active:scale-95 text-sm sm:text-base"
-                  onClick={() => generatePDF('questions_answers')}
+                  onClick={() => generatePDF("questions_answers")}
                 >
                   Questions with Answers
                 </button>
                 <button
                   className="block w-full text-left px-4 py-2 hover:bg-gray-500 active:bg-gray-600 active:scale-95 text-sm sm:text-base"
-                  onClick={() => generatePDF('answers')}
+                  onClick={() => generatePDF("answers")}
                 >
                   Answers Only
                 </button>
@@ -421,6 +469,5 @@ const Output = () => {
     </div>
   );
 };
-
 
 export default Output;
