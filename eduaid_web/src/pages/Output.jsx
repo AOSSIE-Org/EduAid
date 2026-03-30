@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import "../index.css";
 import logoPNG from "../assets/aossie_logo_transparent.png";
 import { Link } from "react-router-dom";
@@ -11,20 +11,22 @@ const Output = () => {
   const [questionType, setQuestionType] = useState(
     localStorage.getItem("selectedQuestionType")
   );
+
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedQuestion, setEditedQuestion] = useState("");
   const [editedAnswer, setEditedAnswer] = useState("");
   const [editedOptions, setEditedOptions] = useState([]);
 
+  const pdfDropdownRef = useRef(null);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
-      const dropdown = document.getElementById("pdfDropdown");
       if (
-        dropdown &&
-        !dropdown.contains(event.target) &&
+        pdfDropdownRef.current &&
+        !pdfDropdownRef.current.contains(event.target) &&
         !event.target.closest("button")
       ) {
-        dropdown.classList.add("hidden");
+        pdfDropdownRef.current.classList.add("hidden");
       }
     };
 
@@ -33,32 +35,26 @@ const Output = () => {
   }, []);
 
   function shuffleArray(array) {
-    const shuffledArray = [...array];
-    for (let i = shuffledArray.length - 1; i > 0; i--) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [shuffledArray[i], shuffledArray[j]] = [
-        shuffledArray[j],
-        shuffledArray[i],
-      ];
+      [arr[i], arr[j]] = [arr[j], arr[i]];
     }
-    return shuffledArray;
+    return arr;
   }
 
   const shuffledOptionsMap = useMemo(() => {
     return qaPairs.map((qaPair) => {
-      const combinedOptions = qaPair.options
+      const options = qaPair.options
         ? [...qaPair.options, qaPair.answer]
         : [qaPair.answer];
-      return shuffleArray(combinedOptions);
+      return shuffleArray(options);
     });
   }, [qaPairs]);
 
   const handleShuffleQuestions = () => {
-    if (editingIndex !== null) {
-      handleCancelEdit();
-    }
-    const shuffled = shuffleArray(qaPairs);
-    setQaPairs(shuffled);
+    if (editingIndex !== null) return;
+    setQaPairs(shuffleArray(qaPairs));
   };
 
   const handleEditQuestion = (index) => {
@@ -69,18 +65,19 @@ const Output = () => {
   };
 
   const handleSaveQuestion = (index) => {
-    const updatedQaPairs = [...qaPairs];
-    updatedQaPairs[index] = {
-      ...updatedQaPairs[index],
+    const updated = [...qaPairs];
+    const original = updated[index];
+
+    updated[index] = {
+      ...original,
       question: editedQuestion,
-      answer: editedAnswer,
-      options: editedOptions,
+      answer: editedAnswer !== "" ? editedAnswer : original.answer,
+      options:
+        editedOptions.length > 0 ? editedOptions : original.options,
     };
-    setQaPairs(updatedQaPairs);
-    setEditingIndex(null);
-    setEditedQuestion("");
-    setEditedAnswer("");
-    setEditedOptions([]);
+
+    setQaPairs(updated);
+    handleCancelEdit();
   };
 
   const handleCancelEdit = () => {
@@ -90,108 +87,93 @@ const Output = () => {
     setEditedOptions([]);
   };
 
-  const handleOptionChange = (optionIndex, value) => {
-    const updatedOptions = [...editedOptions];
-    updatedOptions[optionIndex] = value;
-    setEditedOptions(updatedOptions);
+  const handleOptionChange = (i, value) => {
+    const updated = [...editedOptions];
+    updated[i] = value;
+    setEditedOptions(updated);
   };
 
   useEffect(() => {
     setLoading(true);
-    let qaPairsFromStorage = {};
 
+    let data = {};
     try {
-      qaPairsFromStorage =
-        JSON.parse(localStorage.getItem("qaPairs")) || {};
-    } catch (error) {
-      console.error("Failed to parse qaPairs:", error);
-      qaPairsFromStorage = {};
+      data = JSON.parse(localStorage.getItem("qaPairs")) || {};
+    } catch {
+      data = {};
     }
 
-    const combinedQaPairs = [];
+    const combined = [];
 
+    // Boolean
     if (
-      qaPairsFromStorage["output_boolq"] &&
-      qaPairsFromStorage["output_boolq"]["Boolean_Questions"]
+      data.output_boolq &&
+      data.output_boolq.Boolean_Questions
     ) {
-      qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
-        (question) => {
-          combinedQaPairs.push({
-            question,
-            question_type: "Boolean",
-            context: qaPairsFromStorage["output_boolq"]["Text"],
-          });
-        }
-      );
-    }
-
-    else if (
-      questionType === "get_mcq" &&
-      qaPairsFromStorage["output"]
-    ) {
-      qaPairsFromStorage["output"].forEach((qaPair) => {
-        combinedQaPairs.push({
-          question: qaPair.question_statement,
-          question_type: "MCQ",
-          options: qaPair.options,
-          answer: qaPair.answer,
-          context: qaPair.context,
+      data.output_boolq.Boolean_Questions.forEach((q) => {
+        combined.push({
+          question: q,
+          question_type: "Boolean",
+          context: data.output_boolq.Text,
         });
       });
     }
 
-    else if (
-      questionType === "get_boolq" &&
-      qaPairsFromStorage["output"]
-    ) {
-      qaPairsFromStorage["output"].forEach((qaPair) => {
-        combinedQaPairs.push({
-          question: qaPair,
+    // MCQ
+    if (data.output_mcq && data.output_mcq.questions) {
+      data.output_mcq.questions.forEach((q) => {
+        combined.push({
+          question: q.question_statement,
+          question_type: "MCQ",
+          options: q.options,
+          answer: q.answer,
+          context: q.context,
+        });
+      });
+    }
+
+    // MCQ via output
+    if (questionType === "get_mcq" && data.output) {
+      data.output.forEach((q) => {
+        combined.push({
+          question: q.question_statement,
+          question_type: "MCQ",
+          options: q.options,
+          answer: q.answer,
+          context: q.context,
+        });
+      });
+    }
+
+    // Boolean via output
+    if (questionType === "get_boolq" && data.output) {
+      data.output.forEach((q) => {
+        combined.push({
+          question: q,
           question_type: "Boolean",
         });
       });
     }
 
-    else if (qaPairsFromStorage["output"]) {
-      qaPairsFromStorage["output"].forEach((qaPair) => {
-        combinedQaPairs.push({
+    // Short
+    if (data.output && questionType !== "get_mcq") {
+      data.output.forEach((q) => {
+        combined.push({
           question:
-            qaPair.question ||
-            qaPair.question_statement ||
-            qaPair.Question,
-          options: qaPair.options,
-          answer: qaPair.answer || qaPair.Answer,
-          context: qaPair.context,
+            q.question ||
+            q.question_statement ||
+            q.Question,
+          options: q.options,
+          answer: q.answer || q.Answer,
+          context: q.context,
           question_type: "Short",
         });
       });
     }
 
-    setQaPairs(combinedQaPairs);
+    setQaPairs(combined);
     setLoading(false);
   }, [questionType]);
-
-  if (loading) {
-    return (
-      <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
-        <div className="text-white text-lg">Loading quiz...</div>
-      </div>
-    );
-  }
-
-  if (!qaPairs || qaPairs.length === 0) {
-    return (
-      <div className="popup w-full h-full bg-[#02000F] flex justify-center items-center">
-        <div className="text-white text-center">
-          No quiz available. Please generate a quiz first.
-          <br />
-          <Link to="/input" className="text-blue-400 underline">
-            Go to input page
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   const generateGoogleForm = async () => {
     try {
@@ -199,94 +181,77 @@ const Output = () => {
         qa_pairs: qaPairs,
         question_type: questionType,
       });
-      window.open(result.form_link, "_blank");
-    } catch (error) {
-      console.error(error);
+
+      const link =
+        typeof result === "string" ? result : result?.form_link;
+
+      if (!link) throw new Error("No form link");
+
+      window.open(link, "_blank", "noopener,noreferrer");
+    } catch (e) {
+      console.error(e);
       alert("Failed to generate Google Form");
     }
   };
 
-  return (
-    <div className="popup w-full h-full bg-[#02000F]">
-      <div className="flex flex-col h-full">
+  if (loading) return <div>Loading...</div>;
 
-        <Link to="/">
-          <div className="flex items-end gap-2 px-4">
-            <img src={logoPNG} alt="logo" className="w-12 my-4" />
-            <div className="text-xl font-bold text-white">EduAid</div>
-          </div>
-        </Link>
-
-        <div className="flex justify-between px-4">
-          <div className="text-white font-bold">Generated Questions</div>
-          <button
-            onClick={handleShuffleQuestions}
-            className="bg-purple-600 text-white px-3 py-1 rounded"
-          >
-            <FiShuffle />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-4">
-          {qaPairs.map((qaPair, index) => {
-            const isEditing = editingIndex === index;
-            const shuffledOptions = shuffledOptionsMap[index];
-
-            return (
-              <div key={index} className="bg-gray-800 p-3 my-2 rounded">
-
-                {!isEditing ? (
-                  <>
-                    <div className="text-white">{qaPair.question}</div>
-
-                    {qaPair.question_type !== "Boolean" && (
-                      <>
-                        <div className="text-gray-300 mt-2">
-                          Answer: {qaPair.answer}
-                        </div>
-
-                        {qaPair.options && (
-                          <div className="mt-2 text-gray-200">
-                            {shuffledOptions.map((opt, i) => (
-                              <div key={i}>Option {i + 1}: {opt}</div>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    )}
-
-                    <button
-                      onClick={() => handleEditQuestion(index)}
-                      className="mt-2 text-blue-400"
-                    >
-                      Edit
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <textarea
-                      value={editedQuestion}
-                      onChange={(e) => setEditedQuestion(e.target.value)}
-                      className="w-full"
-                    />
-                    <button onClick={() => handleSaveQuestion(index)}>Save</button>
-                    <button onClick={handleCancelEdit}>Cancel</button>
-                  </>
-                )}
-
-              </div>
-            );
-          })}
-        </div>
-
-        <button
-          onClick={generateGoogleForm}
-          className="bg-green-600 text-white p-2 m-4 rounded"
-        >
-          Generate Google Form
-        </button>
-
+  if (!qaPairs.length) {
+    return (
+      <div>
+        No quiz available. Please generate a quiz first.
+        <br />
+        <Link to="/input">Go to input page</Link>
       </div>
+    );
+  }
+
+  return (
+    <div>
+      <h2>Generated Questions</h2>
+
+      <button
+        onClick={handleShuffleQuestions}
+        aria-label="Shuffle questions"
+      >
+        <FiShuffle />
+      </button>
+
+      {qaPairs.map((qa, i) => {
+        const isEditing = editingIndex === i;
+
+        return (
+          <div key={i}>
+            {!isEditing ? (
+              <>
+                <p>{qa.question}</p>
+                <button onClick={() => handleEditQuestion(i)}>
+                  <FiEdit2 />
+                </button>
+              </>
+            ) : (
+              <>
+                <textarea
+                  value={editedQuestion}
+                  onChange={(e) =>
+                    setEditedQuestion(e.target.value)
+                  }
+                />
+                <button onClick={() => handleSaveQuestion(i)}>
+                  <FiCheck />
+                </button>
+                <button onClick={handleCancelEdit}>
+                  <FiX />
+                </button>
+              </>
+            )}
+          </div>
+        );
+      })}
+
+      <button onClick={generateGoogleForm}>
+        Generate Google Form
+      </button>
     </div>
   );
 };
