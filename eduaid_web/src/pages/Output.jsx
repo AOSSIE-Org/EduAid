@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import "../index.css";
-import logoPNG from "../assets/aossie_logo_transparent.png";
 import { Link } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
@@ -14,25 +13,6 @@ const Output = () => {
 
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedQuestion, setEditedQuestion] = useState("");
-  const [editedAnswer, setEditedAnswer] = useState("");
-  const [editedOptions, setEditedOptions] = useState([]);
-
-  const pdfDropdownRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        pdfDropdownRef.current &&
-        !pdfDropdownRef.current.contains(event.target) &&
-        !event.target.closest("button")
-      ) {
-        pdfDropdownRef.current.classList.add("hidden");
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   function shuffleArray(array) {
     const arr = [...array];
@@ -43,15 +23,6 @@ const Output = () => {
     return arr;
   }
 
-  const shuffledOptionsMap = useMemo(() => {
-    return qaPairs.map((qaPair) => {
-      const options = qaPair.options
-        ? [...qaPair.options, qaPair.answer]
-        : [qaPair.answer];
-      return shuffleArray(options);
-    });
-  }, [qaPairs]);
-
   const handleShuffleQuestions = () => {
     if (editingIndex !== null) return;
     setQaPairs(shuffleArray(qaPairs));
@@ -60,8 +31,6 @@ const Output = () => {
   const handleEditQuestion = (index) => {
     setEditingIndex(index);
     setEditedQuestion(qaPairs[index].question);
-    setEditedAnswer(qaPairs[index].answer || "");
-    setEditedOptions(qaPairs[index].options || []);
   };
 
   const handleSaveQuestion = (index) => {
@@ -71,9 +40,6 @@ const Output = () => {
     updated[index] = {
       ...original,
       question: editedQuestion,
-      answer: editedAnswer !== "" ? editedAnswer : original.answer,
-      options:
-        editedOptions.length > 0 ? editedOptions : original.options,
     };
 
     setQaPairs(updated);
@@ -83,14 +49,6 @@ const Output = () => {
   const handleCancelEdit = () => {
     setEditingIndex(null);
     setEditedQuestion("");
-    setEditedAnswer("");
-    setEditedOptions([]);
-  };
-
-  const handleOptionChange = (i, value) => {
-    const updated = [...editedOptions];
-    updated[i] = value;
-    setEditedOptions(updated);
   };
 
   useEffect(() => {
@@ -105,11 +63,8 @@ const Output = () => {
 
     const combined = [];
 
-    // Boolean
-    if (
-      data.output_boolq &&
-      data.output_boolq.Boolean_Questions
-    ) {
+    // Boolean (separate source)
+    if (data.output_boolq?.Boolean_Questions) {
       data.output_boolq.Boolean_Questions.forEach((q) => {
         combined.push({
           question: q,
@@ -119,8 +74,8 @@ const Output = () => {
       });
     }
 
-    // MCQ
-    if (data.output_mcq && data.output_mcq.questions) {
+    // MCQ (separate source)
+    if (data.output_mcq?.questions) {
       data.output_mcq.questions.forEach((q) => {
         combined.push({
           question: q.question_statement,
@@ -132,43 +87,40 @@ const Output = () => {
       });
     }
 
-    // MCQ via output
-    if (questionType === "get_mcq" && data.output) {
-      data.output.forEach((q) => {
-        combined.push({
-          question: q.question_statement,
-          question_type: "MCQ",
-          options: q.options,
-          answer: q.answer,
-          context: q.context,
+    // Generic output (based on type)
+    if (data.output) {
+      if (questionType === "get_mcq") {
+        data.output.forEach((q) => {
+          combined.push({
+            question: q.question_statement,
+            question_type: "MCQ",
+            options: q.options,
+            answer: q.answer,
+            context: q.context,
+          });
         });
-      });
-    }
-
-    // Boolean via output
-    if (questionType === "get_boolq" && data.output) {
-      data.output.forEach((q) => {
-        combined.push({
-          question: q,
-          question_type: "Boolean",
+      } else if (questionType === "get_boolq") {
+        data.output.forEach((q) => {
+          combined.push({
+            question: q,
+            question_type: "Boolean",
+          });
         });
-      });
-    }
-
-    // Short
-    if (data.output && questionType !== "get_mcq") {
-      data.output.forEach((q) => {
-        combined.push({
-          question:
-            q.question ||
-            q.question_statement ||
-            q.Question,
-          options: q.options,
-          answer: q.answer || q.Answer,
-          context: q.context,
-          question_type: "Short",
+      } else {
+        // Short questions only
+        data.output.forEach((q) => {
+          combined.push({
+            question:
+              q.question ||
+              q.question_statement ||
+              q.Question,
+            options: q.options,
+            answer: q.answer || q.Answer,
+            context: q.context,
+            question_type: "Short",
+          });
         });
-      });
+      }
     }
 
     setQaPairs(combined);
@@ -194,25 +146,35 @@ const Output = () => {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  // ✅ Styled loading state
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen text-white">
+        <p className="text-lg">Loading quiz...</p>
+      </div>
+    );
+  }
 
+  // ✅ Styled empty state
   if (!qaPairs.length) {
     return (
-      <div>
-        No quiz available. Please generate a quiz first.
-        <br />
-        <Link to="/input">Go to input page</Link>
+      <div className="flex flex-col justify-center items-center h-screen text-white gap-4">
+        <p className="text-lg">No quiz available</p>
+        <Link to="/input" className="text-blue-400 underline">
+          Go to input page
+        </Link>
       </div>
     );
   }
 
   return (
-    <div>
-      <h2>Generated Questions</h2>
+    <div className="p-4 text-white">
+      <h2 className="text-xl font-bold mb-4">Generated Questions</h2>
 
       <button
         onClick={handleShuffleQuestions}
         aria-label="Shuffle questions"
+        className="mb-4 bg-purple-600 px-3 py-1 rounded"
       >
         <FiShuffle />
       </button>
@@ -221,11 +183,37 @@ const Output = () => {
         const isEditing = editingIndex === i;
 
         return (
-          <div key={i}>
+          <div key={i} className="mb-4 border p-3 rounded">
             {!isEditing ? (
               <>
-                <p>{qa.question}</p>
-                <button onClick={() => handleEditQuestion(i)}>
+                <p className="font-semibold">{qa.question}</p>
+
+                <p className="text-sm text-gray-400">
+                  Type: {qa.question_type}
+                </p>
+
+                {qa.options && (
+                  <ul className="ml-4 list-disc">
+                    {qa.options.map((opt, idx) => (
+                      <li key={idx}>
+                        {opt}{" "}
+                        {opt === qa.answer && "(Correct)"}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {qa.context && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {qa.context}
+                  </p>
+                )}
+
+                <button
+                  onClick={() => handleEditQuestion(i)}
+                  aria-label="Edit question"
+                  className="mt-2"
+                >
                   <FiEdit2 />
                 </button>
               </>
@@ -236,20 +224,33 @@ const Output = () => {
                   onChange={(e) =>
                     setEditedQuestion(e.target.value)
                   }
+                  className="w-full text-black p-1"
                 />
-                <button onClick={() => handleSaveQuestion(i)}>
-                  <FiCheck />
-                </button>
-                <button onClick={handleCancelEdit}>
-                  <FiX />
-                </button>
+
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => handleSaveQuestion(i)}
+                    aria-label="Save changes"
+                  >
+                    <FiCheck />
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    aria-label="Cancel editing"
+                  >
+                    <FiX />
+                  </button>
+                </div>
               </>
             )}
           </div>
         );
       })}
 
-      <button onClick={generateGoogleForm}>
+      <button
+        onClick={generateGoogleForm}
+        className="mt-4 bg-green-600 px-4 py-2 rounded"
+      >
         Generate Google Form
       </button>
     </div>
