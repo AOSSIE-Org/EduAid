@@ -61,7 +61,7 @@ const Home = () => {
             <p>A tool that can auto-generate short quizzes</p>
             <div className="flex items-center justify-center gap-2 mt-2">
               <p>based on user input</p>
-              <img src={starsImg} width={24} height={12} alt=" rating stars" />
+              <img src={starsImg} width={24} height={12} alt="rating stars" />
             </div>
           </div>
 
@@ -76,7 +76,7 @@ const Home = () => {
                 key={i}
                 className="flex items-center rounded-l-2xl sm:rounded-2xl px-6 py-3 bg-gradient-to-r from-[#FF005C] via-[#7600F2] to-[#00CBE7] gap-4 w-fit"
               >
-                <img src={starsImg} width={32} height={16} alt="feature icon" />
+                <img src={starsImg} width={32} height={16} alt="" />
                 <div className="text-white text-base sm:text-xl">{feature}</div>
               </div>
             ))}
