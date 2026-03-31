@@ -115,7 +115,7 @@ function SidePanel() {
 
     if (response.ok) {
       const result = await response.json();
-      const formUrl = result.form_link;
+      const formUrl = result.edit_link || result.form_link;
       window.open(formUrl, "_blank");
     } else {
       console.error("Failed to generate Google Form");

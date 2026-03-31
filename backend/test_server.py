@@ -1,203 +1,278 @@
-import requests
-import json
+import os
+import sys
+import unittest
 
-BASE_URL = 'http://localhost:5000'
+sys.path.insert(0, os.path.dirname(__file__))
 
-# Shared input text for all endpoints
-input_text = '''
-    Artificial intelligence (AI) is the simulation of human intelligence processes 
-    by machines, especially computer systems. These processes include learning 
-    (the acquisition of information and rules for using the information), reasoning 
-    (using rules to reach approximate or definite conclusions), and self-correction.
-    
-    AI applications include speech recognition, natural language processing, 
-    machine vision, expert systems, and robotics. Machine learning, a subset of AI, 
-    focuses on the development of algorithms that can learn from and make predictions 
-    or decisions based on data.
-    
-    Deep learning, a technique within machine learning, involves neural networks 
-    with many layers (hence the term "deep"). It has revolutionized AI by enabling 
-    complex pattern recognition and data processing tasks.
-    
-    Ethical considerations in AI include issues of bias in algorithms, privacy concerns 
-    with data collection, and the impact of AI on jobs and society as a whole.
-'''
-
-def test_get_mcq():
-    endpoint = '/get_mcq'
-    data = {
-        'input_text': input_text,
-        'max_questions': 5
-    }
-    response = make_post_request(endpoint, data)
-    print(f'/get_mcq Response: {response}')
-    assert 'output' in response
-
-def test_get_boolq():
-    endpoint = '/get_boolq'
-    data = {
-        'input_text': input_text,
-        'max_questions': 3
-    }
-    response = make_post_request(endpoint, data)
-    print(f'/get_boolq Response: {response}')
-    assert 'output' in response
-
-def test_get_shortq():
-    endpoint = '/get_shortq'
-    data = {
-        'input_text': input_text,
-        'max_questions': 4
-    }
-    response = make_post_request(endpoint, data)
-    print(f'/get_shortq Response: {response}')
-    assert 'output' in response
+from server import create_app
 
 
-def test_get_shortq_llm():
-    endpoint = '/get_shortq_llm'
-    data = {
-        'input_text': input_text,
-        'max_questions': 3
-    }
-    response = make_post_request(endpoint, data)
-    print(f'/get_shortq_llm Response: {response}')
-    assert 'output' in response
-    assert len(response['output']) > 0
-    for qa in response['output']:
-        assert 'question' in qa
-        assert 'answer' in qa
-    print(f"  Generated {len(response['output'])} questions via Qwen3-0.6B LLM")
+INPUT_TEXT = """
+Artificial intelligence (AI) is the simulation of human intelligence processes
+by machines, especially computer systems. These processes include learning,
+reasoning, and self-correction. Machine learning is a subset of AI, and deep
+learning is a technique within machine learning.
+""".strip()
 
 
-def test_get_mcq_llm():
-    endpoint = '/get_mcq_llm'
-    data = {
-        'input_text': input_text,
-        'max_questions': 2
-    }
-    response = make_post_request(endpoint, data)
-    print(f'/get_mcq_llm Response: {response}')
-    assert 'output' in response
-    assert len(response['output']) > 0
-    for mcq in response['output']:
-        assert 'question' in mcq
-        assert 'options' in mcq
-        assert 'correct_answer' in mcq
-        assert len(mcq['options']) == 4  # Should have 4 options A, B, C, D
-    print(f"  Generated {len(response['output'])} MCQ questions via Qwen3-0.6B LLM")
+class StubMCQGenerator:
+    def generate_mcq(self, payload):
+        return {
+            "questions": [
+                {
+                    "question_statement": "What is AI?",
+                    "answer": "Artificial intelligence",
+                    "options": ["Artistic input", "Applied internet", "Analog interface"],
+                    "context": payload["input_text"],
+                }
+            ]
+        }
 
 
-def test_get_boolq_llm():
-    endpoint = '/get_boolq_llm'
-    data = {
-        'input_text': input_text,
-        'max_questions': 2
-    }
-    response = make_post_request(endpoint, data)
-    print(f'/get_boolq_llm Response: {response}')
-    assert 'output' in response
-    assert len(response['output']) > 0
-    for bool_q in response['output']:
-        assert 'question' in bool_q
-        assert 'answer' in bool_q
-        assert isinstance(bool_q['answer'], bool)  # Should be boolean
-    print(f"  Generated {len(response['output'])} boolean questions via Qwen3-0.6B LLM")
+class StubShortQGenerator:
+    def generate_shortq(self, payload):
+        return {
+            "questions": [
+                {
+                    "Question": "What is deep learning?",
+                    "Answer": "A technique within machine learning",
+                    "context": payload["input_text"],
+                }
+            ]
+        }
 
 
-def test_get_problems_llm():
-    endpoint = '/get_problems_llm'
-    data = {
-        'input_text': input_text,
-        'max_questions_mcq': 1,
-        'max_questions_boolq': 1,
-        'max_questions_shortq': 1
-    }
-    response = make_post_request(endpoint, data)
-    print(f'/get_problems_llm Response: {response}')
-    assert 'output' in response
-    assert len(response['output']) == 3  # Should have 1 of each type
-    
-    # Check that we have all three types
-    types_found = set()
-    for item in response['output']:
-        assert 'type' in item
-        types_found.add(item['type'])
-        
-        if item['type'] == 'mcq':
-            assert 'question' in item and 'options' in item and 'correct_answer' in item
-        elif item['type'] == 'boolean':
-            assert 'question' in item and 'answer' in item
-        elif item['type'] == 'short_answer':
-            assert 'question' in item and 'answer' in item
-    
-    assert types_found == {'mcq', 'boolean', 'short_answer'}
-    print(f"  Generated mixed question set with {len(response['output'])} questions via Qwen3-0.6B LLM")
+class StubBoolQGenerator:
+    def generate_boolq(self, payload):
+        count = payload["max_questions"]
+        return {
+            "Boolean_Questions": [f"Boolean question {index + 1}?" for index in range(count)],
+            "Text": payload["input_text"],
+        }
 
-def test_get_problems():
-    endpoint = '/get_problems'
-    data = {
-        'input_text': input_text,
-        'max_questions_mcq': 3,
-        'max_questions_boolq': 2,
-        'max_questions_shortq': 4
-    }
-    response = make_post_request(endpoint, data)
-    print(f'/get_problems Response: {response}')
-    assert 'output_mcq' in response
-    assert 'output_boolq' in response
-    assert 'output_shortq' in response
 
-def test_root():
-    endpoint = '/'
-    response = requests.get(f'{BASE_URL}{endpoint}')
-    print(f'Root Endpoint Response: {response.text}')
-    assert response.status_code == 200
+class StubAnswerPredictor:
+    def predict_boolean_answer(self, payload):
+        return [True, False][: len(payload["input_question"])]
 
-def test_get_answer():
-    endpoint = '/get_answer'
-    data = {
-        'input_text': input_text,
-        'input_question': [
-            "What is artificial intelligence?",
-            "What does AI include?",
-            "What is deep learning?",
-            "What are the ethical considerations in AI?"
+
+class StubQuestionGenerator:
+    def generate(self, article, answer_style):
+        if answer_style == "multiple_choice":
+            return [
+                {
+                    "question": "Original MCQ one?",
+                    "answer": [
+                        {"answer": "Correct 1", "correct": True},
+                        {"answer": "Wrong 1", "correct": False},
+                    ],
+                },
+                {
+                    "question": "Original MCQ two?",
+                    "answer": [
+                        {"answer": "Correct 2", "correct": True},
+                        {"answer": "Wrong 2", "correct": False},
+                    ],
+                },
+                {
+                    "question": "Original MCQ three?",
+                    "answer": [
+                        {"answer": "Correct 3", "correct": True},
+                        {"answer": "Wrong 3", "correct": False},
+                    ],
+                },
+            ]
+
+        return [
+            {"question": "Original short one?", "answer": "A1"},
+            {"question": "Original short two?", "answer": "A2"},
+            {"question": "Original short three?", "answer": "A3"},
         ]
-    }
-    response = make_post_request(endpoint, data)
-    print(f'/get_answer Response: {response}')
-    assert 'output' in response
 
-def test_get_boolean_answer():
-    endpoint = '/get_boolean_answer'
-    data = {
-        'input_text': input_text,
-        'input_question': [
-            "Artificial intelligence is the simulation of human intelligence.",
-            "Deep learning does not involve neural networks.",
-            "AI applications do not include speech recognition."
+
+class StubLLMGenerator:
+    def generate_short_questions(self, input_text, max_questions):
+        return [{"question": "Short?", "answer": "Yes"}][:max_questions]
+
+    def generate_mcq_questions(self, input_text, max_questions):
+        return [
+            {
+                "question": "MCQ?",
+                "options": ["A", "B", "C", "D"],
+                "correct_answer": "A",
+            }
+        ][:max_questions]
+
+    def generate_boolean_questions(self, input_text, max_questions):
+        return [{"question": "Boolean?", "answer": True}][:max_questions]
+
+    def generate_all_questions(self, input_text, mcq_count, bool_count, short_count):
+        return [
+            {"type": "mcq", "question": "MCQ?", "options": ["A", "B"], "answer": "A"},
+            {"type": "boolean", "question": "Boolean?", "answer": True},
+            {"type": "short_answer", "question": "Short?", "answer": "Answer"},
         ]
-    }
-    response = make_post_request(endpoint, data)
-    print(f'/get_boolean_answer Response: {response}')
-    assert 'output' in response
 
-def make_post_request(endpoint, data):
-    url = f'{BASE_URL}{endpoint}'
-    headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-    return response.json()
 
-if __name__ == '__main__':
-    test_get_shortq_llm()
-    test_get_mcq_llm()
-    test_get_boolq_llm()
-    test_get_problems_llm()
-    test_get_mcq()
-    test_get_boolq()
-    test_get_shortq()
-    test_get_problems()
-    test_root()
-    test_get_answer()
-    test_get_boolean_answer()
+class StubQAModel:
+    def __call__(self, question, context):
+        return {"answer": "Artificial intelligence"}
+
+
+class StubDocsService:
+    def get_document_content(self, document_url):
+        return "Document body"
+
+
+class StubMediaWiki:
+    def summary(self, topic, sentences):
+        return f"Summary for {topic}"
+
+
+class StubFileProcessor:
+    def process_file(self, uploaded_file):
+        return "Processed file content"
+
+
+class StubFormsExecute:
+    def __init__(self, payload):
+        self.payload = payload
+
+    def execute(self):
+        return self.payload
+
+
+class StubFormsEndpoint:
+    def create(self, body):
+        return StubFormsExecute(
+            {"formId": "form-123", "responderUri": "https://example.com/form-123"}
+        )
+
+    def batchUpdate(self, formId, body):
+        return StubFormsExecute({"updated": True, "formId": formId, "body": body})
+
+
+class StubFormsService:
+    def forms(self):
+        return StubFormsEndpoint()
+
+
+class ServerRouteTests(unittest.TestCase):
+    def setUp(self):
+        services = {
+            "mcq_generator": StubMCQGenerator(),
+            "shortq_generator": StubShortQGenerator(),
+            "boolq_generator": StubBoolQGenerator(),
+            "answer_predictor": StubAnswerPredictor(),
+            "question_generator": StubQuestionGenerator(),
+            "llm_generator": StubLLMGenerator(),
+            "qa_model": StubQAModel(),
+            "google_docs_service": StubDocsService(),
+            "mediawiki": StubMediaWiki(),
+            "file_processor": StubFileProcessor(),
+            "make_question_harder": lambda question: f"Hard: {question}",
+            "forms_service": StubFormsService(),
+        }
+        self.app = create_app(service_overrides=services)
+        self.client = self.app.test_client()
+
+    def test_boolean_answers_use_predictor_output(self):
+        response = self.client.post(
+            "/get_boolean_answer",
+            json={
+                "input_text": INPUT_TEXT,
+                "input_question": ["Question one?", "Question two?"],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["output"], ["True", "False"])
+
+    def test_hard_short_questions_respect_max_questions(self):
+        response = self.client.post(
+            "/get_shortq_hard",
+            json={"input_text": INPUT_TEXT, "max_questions": 2},
+        )
+
+        payload = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(payload["output"]), 2)
+        self.assertEqual(payload["output"][0]["question"], "Hard: Original short one?")
+        self.assertEqual(payload["output"][1]["question"], "Hard: Original short two?")
+
+    def test_hard_boolean_questions_respect_max_questions(self):
+        response = self.client.post(
+            "/get_boolq_hard",
+            json={"input_text": INPUT_TEXT, "max_questions": 2},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get_json()["output"],
+            ["Hard: Boolean question 1?", "Hard: Boolean question 2?"],
+        )
+
+    def test_generate_gform_returns_structured_links(self):
+        response = self.client.post(
+            "/generate_gform",
+            json={
+                "question_type": "get_mcq",
+                "qa_pairs": [
+                    {
+                        "question": "What is AI?",
+                        "answer": "Artificial intelligence",
+                        "options": ["Applied internet", "Analog interface"],
+                    }
+                ],
+            },
+        )
+
+        payload = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["form_id"], "form-123")
+        self.assertEqual(payload["form_link"], "https://example.com/form-123")
+        self.assertTrue(payload["edit_link"].endswith("/form-123/edit"))
+
+    def test_get_content_returns_503_when_docs_service_is_missing(self):
+        app = create_app(service_overrides={"google_docs_service": None})
+        client = app.test_client()
+
+        response = client.post(
+            "/get_content",
+            json={"document_url": "https://docs.google.com/document/d/example/edit"},
+        )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("Google Docs integration is not configured", response.get_json()["error"])
+
+    def test_get_problems_llm_normalizes_mcq_answer_key(self):
+        response = self.client.post(
+            "/get_problems_llm",
+            json={
+                "input_text": INPUT_TEXT,
+                "max_questions_mcq": 1,
+                "max_questions_boolq": 1,
+                "max_questions_shortq": 1,
+            },
+        )
+
+        payload = response.get_json()["output"]
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload[0]["type"], "mcq")
+        self.assertEqual(payload[0]["correct_answer"], "A")
+
+    def test_health_reports_missing_integrations_without_loading_models(self):
+        app = create_app(service_overrides={})
+        client = app.test_client()
+
+        response = client.get("/health")
+        payload = response.get_json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["status"], "ok")
+        self.assertIn("google_docs_configured", payload)
+        self.assertIn("google_forms_configured", payload)
+
+
+if __name__ == "__main__":
+    unittest.main()

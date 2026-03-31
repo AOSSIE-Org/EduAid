@@ -1,11 +1,12 @@
 import { PDFDocument, rgb } from 'pdf-lib';
 
 function shuffleArray(array) {
-  for (let i = array.length - 1; i > 0; i--) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  return array;
+  return shuffled;
 }
 
 const wrapText = (text, maxWidth) => {
@@ -100,39 +101,52 @@ self.onmessage = async (e) => {
     createNewPageIfNeeded(requiredHeight);
 
     if (mode !== 'answers') {
-      questionLines.forEach((line, i) => {
-        const prefix = i === 0 ? `Q${questionIndex}) ` : '    ';
-        page.drawText(`${prefix}${line}`, { x: margin, y: y - i * 20, size: 12 });
-      });
+      for (let lineIndex = 0; lineIndex < questionLines.length; lineIndex += 1) {
+        const line = questionLines[lineIndex];
+        const prefix = lineIndex === 0 ? `Q${questionIndex}) ` : '    ';
+        page.drawText(`${prefix}${line}`, {
+          x: margin,
+          y: y - lineIndex * 20,
+          size: 12,
+        });
+      }
       y -= questionLines.length * 20 + 20;
 
       if (mode === 'questions') {
         if (qaPair.question_type === "Boolean") {
           const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
-          ['True', 'False'].forEach(option => {
+          const booleanOptions = ['True', 'False'];
+
+          for (const option of booleanOptions) {
             radioGroup.addOptionToPage(option, page, {
               x: margin + 20, y, width: 15, height: 15
             });
             page.drawText(option, { x: margin + 40, y: y + 2, size: 12 });
             y -= 20;
-          });
+          }
         } else if (qaPair.question_type === "MCQ" || qaPair.question_type === "MCQ_Hard") {
           const allOptions = [...(qaPair.options || [])];
           if (qaPair.answer && !allOptions.includes(qaPair.answer)) allOptions.push(qaPair.answer);
-          const shuffled = shuffleArray([...allOptions]);
+          const shuffled = shuffleArray(allOptions);
 
           const radioGroup = form.createRadioGroup(`question${questionIndex}_answer`);
-          shuffled.forEach((option, idx) => {
-            radioGroup.addOptionToPage(`option${idx}`, page, {
+
+          for (let optionIndex = 0; optionIndex < shuffled.length; optionIndex += 1) {
+            const option = shuffled[optionIndex];
+            radioGroup.addOptionToPage(`option${optionIndex}`, page, {
               x: margin + 20, y, width: 15, height: 15
             });
 
             const optionLines = wrapText(option, maxContentWidth - 60);
-            optionLines.forEach((line, i) => {
-              page.drawText(line, { x: margin + 40, y: y + 2 - i * 15, size: 12 });
-            });
+            for (let lineIndex = 0; lineIndex < optionLines.length; lineIndex += 1) {
+              page.drawText(optionLines[lineIndex], {
+                x: margin + 40,
+                y: y + 2 - lineIndex * 15,
+                size: 12,
+              });
+            }
             y -= Math.max(25, optionLines.length * 20);
-          });
+          }
         } else if (qaPair.question_type === "Short") {
           const field = form.createTextField(`question${questionIndex}_answer`);
           field.setText('');
@@ -146,11 +160,14 @@ self.onmessage = async (e) => {
 
     if (mode === 'answers' || mode === 'questions_answers') {
       const answerLines = wrapText(`Answer ${questionIndex}: ${qaPair.answer}`, maxContentWidth);
-      answerLines.forEach((line, i) => {
-        page.drawText(line, {
-          x: margin, y: y - i * 15, size: 12, color: rgb(0, 0.5, 0)
+      for (let lineIndex = 0; lineIndex < answerLines.length; lineIndex += 1) {
+        page.drawText(answerLines[lineIndex], {
+          x: margin,
+          y: y - lineIndex * 15,
+          size: 12,
+          color: rgb(0, 0.5, 0)
         });
-      });
+      }
       y -= answerLines.length * 20;
     }
 

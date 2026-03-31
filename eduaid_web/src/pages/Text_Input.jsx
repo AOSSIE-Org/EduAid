@@ -15,7 +15,6 @@ const Text_Input = () => {
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
-  const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
   const [isToggleOn, setIsToggleOn] = useState(0);
 
@@ -73,6 +72,8 @@ const Text_Input = () => {
         difficulty,
         localStorage.getItem("selectedQuestionType")
       );
+    } else {
+      setLoading(false);
     }
   };
 
@@ -85,7 +86,7 @@ const Text_Input = () => {
   };
 
   const decrementQuestions = () => {
-    setNumQuestions((prev) => (prev > 0 ? prev - 1 : 0));
+    setNumQuestions((prev) => (prev > 1 ? prev - 1 : 1));
   };
 
   const getEndpoint = (difficulty, questionType) => {
@@ -94,6 +95,8 @@ const Text_Input = () => {
         return "get_shortq_hard";
       } else if (questionType === "get_mcq") {
         return "get_mcq_hard";
+      } else if (questionType === "get_boolq") {
+        return "get_boolq_hard";
       }
     }
     return questionType;
@@ -185,7 +188,7 @@ const Text_Input = () => {
         {/* File Upload Section */}
         <div className="w-full max-w-2xl mx-auto border-[3px] rounded-2xl text-center px-6 py-6 border-dotted border-[#3E5063] mt-6">
           <img className="mx-auto mb-2" height={32} width={32} src={cloud} alt="cloud" />
-          <p className="text-white text-lg">Choose a file (PDF, MP3 supported)</p>
+          <p className="text-white text-lg">Choose a file (PDF, DOCX, TXT supported)</p>
 
           <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} />
           <button

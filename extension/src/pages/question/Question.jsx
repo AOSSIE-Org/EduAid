@@ -25,12 +25,33 @@ function Question() {
 }, []);
 
   function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
-    return array;
+    return shuffled;
   }
+
+  const normalizeMcqPair = (qaPair) => {
+    const answerList = Array.isArray(qaPair.answer) ? qaPair.answer : null;
+    const correctAnswer = answerList
+      ? answerList.find((item) => item.correct)?.answer
+      : qaPair.answer;
+    const options = answerList
+      ? answerList
+          .filter((item) => !item.correct)
+          .map((item) => item.answer)
+      : qaPair.options || [];
+
+    return {
+      question: qaPair.question || qaPair.question_statement,
+      question_type: answerList ? "MCQ_Hard" : "MCQ",
+      options,
+      answer: correctAnswer,
+      context: qaPair.context,
+    };
+  };
 
   useEffect(() => {
     const qaPairsFromStorage =
@@ -52,25 +73,24 @@ function Question() {
 
       if (qaPairsFromStorage["output_mcq"]) {
         qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
+          combinedQaPairs.push(normalizeMcqPair(qaPair));
+        });
+      }
+
+      if (qaPairsFromStorage["output_shortq"]) {
+        qaPairsFromStorage["output_shortq"]["questions"].forEach((qaPair) => {
           combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
+            question: qaPair.Question,
+            question_type: "Short",
+            answer: qaPair.Answer,
             context: qaPair.context,
           });
         });
       }
 
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
+      if (questionType === "get_mcq" && qaPairsFromStorage["output"]) {
         qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
-          });
+          combinedQaPairs.push(normalizeMcqPair(qaPair));
         });
       }
 
@@ -112,7 +132,7 @@ function Question() {
 
     if (response.ok) {
       const result = await response.json();
-      const formUrl = result.form_link;
+      const formUrl = result.edit_link || result.form_link;
       window.open(formUrl, "_blank");
     } else {
       console.error("Failed to generate Google Form");
