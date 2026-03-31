@@ -13,7 +13,6 @@ function Second() {
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
-  const [fileContent, setFileContent] = useState('');
   const [docUrl, setDocUrl] = useState('');
   const [isToggleOn, setIsToggleOn] = useState(0);
 
@@ -102,6 +101,8 @@ function Second() {
         difficulty,
         localStorage.getItem("selectedQuestionType")
       );
+    } else {
+      setLoading(false);
     }
   };
 
@@ -114,7 +115,7 @@ function Second() {
   };
 
   const decrementQuestions = () => {
-    setNumQuestions((prev) => (prev > 0 ? prev - 1 : 0));
+    setNumQuestions((prev) => (prev > 1 ? prev - 1 : 1));
   };
 
   const getEndpoint = (difficulty, questionType) => {
@@ -123,6 +124,8 @@ function Second() {
         return "get_shortq_hard";
       } else if (questionType === "get_mcq") {
         return "get_mcq_hard";
+      } else if (questionType === "get_boolq") {
+        return "get_boolq_hard";
       }
     }
     return questionType;
@@ -234,7 +237,7 @@ function Second() {
           <img className="mx-auto" height={24} width={24} src={cloud} alt="cloud" />
           <div className="text-center text-white text-sm">Choose a file</div>
           <div className="text-center text-white text-sm">
-            PDF, MP3 supported
+            PDF, DOCX, TXT supported
           </div>
           <div>
             <input
@@ -331,4 +334,3 @@ function Second() {
 }
 
 ReactDOM.render(<Second />, document.getElementById("root"));
-

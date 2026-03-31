@@ -11,7 +11,8 @@
     "default_path":"/src/pages/question/sidePanel.html"
   },
   "host_permissions": [
-    "http://127.0.0.1:8000/*"
+    "http://localhost:5000/*",
+    "http://127.0.0.1:5000/*"
   ],
   "icons": {
     "16": "aossie_logo16.png"

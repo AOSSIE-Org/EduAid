@@ -39,7 +39,7 @@ const config = {
     // Window configuration
     window: {
       titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
-      icon: path.join(__dirname, 'assets/icons/win/aossie.ico'),
+      icon: path.join(__dirname, 'assets', 'aossie.ico'),
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,

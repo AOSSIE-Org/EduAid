@@ -8,12 +8,12 @@
     "dev": "concurrently \"npm run start:web\" \"wait-on http://localhost:3000 && electron .\"",
     "start:web": "cd ../eduaid_web && npm start",
     "build:web": "cd ../eduaid_web && npm run build",
-    "copy:web": "xcopy /E /I /Y \"..\\eduaid_web\\build\" \"build\"",
-    "build": "cd ../eduaid_web && npm run build",
+    "copy:web": "node -e \"const fs=require('fs');fs.rmSync('build',{recursive:true,force:true});fs.cpSync('../eduaid_web/build','build',{recursive:true});\"",
+    "build": "npm run build:web && npm run copy:web",
     "build:electron": "npm run build && electron-builder",
     "build:all": "npm run build && electron-builder --mac --win --linux",
     "pack": "electron-builder --dir",
-    "dist": "npm run build:web && npm run copy:web && electron-builder"
+    "dist": "npm run build && electron-builder"
   },
   "keywords": [
     "eduaid",

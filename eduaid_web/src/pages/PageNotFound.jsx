@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "../index.css";
+
 const NotFound = () => {
-    const router = useNavigate()
+    const navigate = useNavigate();
     const [countdown, setCountdown] = useState(5);
 
     useEffect(() => {
@@ -11,14 +12,14 @@ const NotFound = () => {
         }, 1000);
 
         const redirect = setTimeout(() => {
-            router('/')
+            navigate('/');
         }, 5000);
 
         return () => {
             clearInterval(timer);
             clearTimeout(redirect);
         };
-    }, []);
+    }, [navigate]);
 
     return (
         <div className="min-h-screen flex items-center justify-center  popup bg-[#02000F] bg-custom-gradient">

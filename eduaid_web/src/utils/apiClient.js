@@ -85,5 +85,6 @@ class ApiClient {
   }
 }
 
-// Export a singleton instance
-export default new ApiClient();
+const apiClient = new ApiClient();
+
+export default apiClient;

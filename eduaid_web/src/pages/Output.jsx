@@ -7,10 +7,7 @@ import { FiShuffle, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
 const Output = () => {
   const [qaPairs, setQaPairs] = useState([]);
-  const [questionType, setQuestionType] = useState(
-    localStorage.getItem("selectedQuestionType")
-  );
-  const [pdfMode, setPdfMode] = useState("questions");
+  const questionType = localStorage.getItem("selectedQuestionType");
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedQuestion, setEditedQuestion] = useState("");
   const [editedAnswer, setEditedAnswer] = useState("");
@@ -90,6 +87,26 @@ const Output = () => {
     setEditedOptions(updatedOptions);
   };
 
+  const normalizeMcqPair = (qaPair) => {
+    const answerList = Array.isArray(qaPair.answer) ? qaPair.answer : null;
+    const correctAnswer = answerList
+      ? answerList.find((item) => item.correct)?.answer
+      : qaPair.answer;
+    const options = answerList
+      ? answerList
+          .filter((item) => !item.correct)
+          .map((item) => item.answer)
+      : qaPair.options || [];
+
+    return {
+      question: qaPair.question || qaPair.question_statement,
+      question_type: answerList ? "MCQ_Hard" : "MCQ",
+      options,
+      answer: correctAnswer,
+      context: qaPair.context,
+    };
+  };
+
   useEffect(() => {
     const qaPairsFromStorage =
       JSON.parse(localStorage.getItem("qaPairs")) || {};
@@ -110,29 +127,28 @@ const Output = () => {
 
       if (qaPairsFromStorage["output_mcq"]) {
         qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
+          combinedQaPairs.push(normalizeMcqPair(qaPair));
+        });
+      }
+
+      if (qaPairsFromStorage["output_shortq"]) {
+        qaPairsFromStorage["output_shortq"]["questions"].forEach((qaPair) => {
           combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
+            question: qaPair.Question,
+            question_type: "Short",
+            answer: qaPair.Answer,
             context: qaPair.context,
           });
         });
       }
 
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
+      if (questionType === "get_mcq" && qaPairsFromStorage["output"]) {
         qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
-          });
+          combinedQaPairs.push(normalizeMcqPair(qaPair));
         });
       }
 
-      if (questionType == "get_boolq") {
+      if (questionType === "get_boolq") {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           combinedQaPairs.push({
             question: qaPair,
@@ -154,7 +170,7 @@ const Output = () => {
 
       setQaPairs(combinedQaPairs);
     }
-  }, []);
+  }, [questionType]);
 
   const generateGoogleForm = async () => {
     try {
@@ -162,7 +178,7 @@ const Output = () => {
         qa_pairs: qaPairs,
         question_type: questionType,
       });
-      const formUrl = result.form_link;
+      const formUrl = result.edit_link || result.form_link;
       window.open(formUrl, "_blank");
     } catch (error) {
       console.error("Failed to generate Google Form:", error);
@@ -180,7 +196,7 @@ const Output = () => {
     }
   };
 
-    const generatePDF = async (mode) => {
+  const generatePDF = async (mode) => {
     const logoBytes = await loadLogoAsBytes();
     const worker = new Worker(new URL("../workers/pdfWorker.js", import.meta.url), { type: "module" });
 
