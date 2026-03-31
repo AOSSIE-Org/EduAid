@@ -1,4 +1,5 @@
 const { app, BrowserWindow, Menu, shell, dialog, ipcMain } = require('electron');
+app.disableHardwareAcceleration();
 const path = require('path');
 const fs = require('fs');
 const config = require('./config');

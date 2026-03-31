@@ -23,3 +23,20 @@ code {
   border-image-slice: 1;
   border-radius: 2rem;
 }
+
+.gradient-text-base {
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  transform: translateZ(0);
+}
+
+.gradient-text {
+  --gradient: linear-gradient(to right, #FF005C, #7600F2);
+}
+
+.gradient-text-2 {
+  --gradient: linear-gradient(to right, #7600F2, #00CBE7);
+}
