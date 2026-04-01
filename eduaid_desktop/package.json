@@ -1,0 +1,63 @@
+{
+  "name": "eduaid-desktop",
+  "version": "1.0.0",
+  "description": "EduAid Desktop Application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "concurrently \"npm run start:web\" \"wait-on http://localhost:3000 && electron .\"",
+    "start:web": "cd ../eduaid_web && npm start",
+    "build:web": "cd ../eduaid_web && npm run build",
+    "copy:web": "xcopy /E /I /Y \"..\\eduaid_web\\build\" \"build\"",
+    "build": "cd ../eduaid_web && npm run build",
+    "build:electron": "npm run build && electron-builder",
+    "build:all": "npm run build && electron-builder --mac --win --linux",
+    "pack": "electron-builder --dir",
+    "dist": "npm run build:web && npm run copy:web && electron-builder"
+  },
+  "keywords": [
+    "eduaid",
+    "education",
+    "ai",
+    "questions",
+    "generator"
+  ],
+  "author": "AOSSIE",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.aossie.eduaid",
+    "productName": "EduAid",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "config.js",
+      "preload.js",
+      "assets/**",
+      "build/**/*"
+    ],
+    "mac": {
+      "icon": "../eduaid_web/public/aossie_transparent.png",
+      "category": "public.app-category.education"
+    },
+    "win": {
+      "icon": "../eduaid_web/public/aossie_transparent.png",
+      "target": "nsis"
+    },
+    "linux": {
+      "icon": "../eduaid_web/public/aossie_transparent.png",
+      "target": "AppImage"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
