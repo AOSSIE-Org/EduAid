@@ -2,7 +2,7 @@ import json
 import re
 import threading
 from llama_cpp import Llama
-
+from .output_validator import validate_mcq, validate_shortq, validate_boolq
 
 class LLMQuestionGenerator:
     """Generates various types of questions using Qwen3-0.6B via llama.cpp.
@@ -73,7 +73,8 @@ class LLMQuestionGenerator:
                 return []
 
             raw = choices[0].get("message", {}).get("content", "")
-            return self._parse_response(raw, max_questions)
+            parsed_questions = self._parse_response(raw, max_questions)
+            return validate_shortq(parsed_questions)
 
         except (AttributeError, TypeError, ValueError):
             return []
@@ -113,7 +114,8 @@ class LLMQuestionGenerator:
                 return []
 
             raw = choices[0].get("message", {}).get("content", "")
-            return self._parse_mcq_response(raw, max_questions)
+            parsed_questions = self._parse_mcq_response(raw, max_questions)
+            return validate_mcq(parsed_questions)
 
         except (AttributeError, TypeError, ValueError):
             return []
@@ -152,7 +154,8 @@ class LLMQuestionGenerator:
                 return []
 
             raw = choices[0].get("message", {}).get("content", "")
-            return self._parse_bool_response(raw, max_questions)
+            parsed_questions = self._parse_bool_response(raw, max_questions)
+            return validate_boolq(parsed_questions)
 
         except (AttributeError, TypeError, ValueError):
             return []
