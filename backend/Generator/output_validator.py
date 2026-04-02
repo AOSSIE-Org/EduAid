@@ -16,7 +16,7 @@ def validate_mcq(questions):
         
     Validation Rules:
         - question field must exist and be non-empty string
-        - options field must exist and be non-empty list
+        - options field must exist and be a list with at least 2 elements
         - correct_answer field must exist and be non-empty string
     """
     if not questions:
@@ -37,7 +37,11 @@ def validate_mcq(questions):
         options = q.get("options")
         if not options or not isinstance(options, list) or len(options) < 2:
             continue
-            
+        
+        # Verify all options are non-empty strings
+        if not all(isinstance(opt, str) and opt.strip() for opt in options):
+            continue
+
         # Check correct_answer field
         correct_answer = q.get("correct_answer")
         if not correct_answer or not isinstance(correct_answer, str) or not correct_answer.strip():
