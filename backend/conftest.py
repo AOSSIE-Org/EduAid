@@ -55,6 +55,7 @@ _DEFAULTS = {
     ],
     "file_processor": "Extracted text content from file",
     "qa_pipeline": {"answer": "simulation of human intelligence", "score": 0.95},
+    "mediawiki_summary": "Artificial intelligence is intelligence demonstrated by machines.",
     "llm_short": [
         {"question": "What is AI?", "answer": "simulation of human intelligence", "context": ""}
     ],
@@ -174,9 +175,7 @@ sys.modules["oauth2client.tools"] = MagicMock()
 
 _mock_mediawiki_module = MagicMock()
 _mock_mediawiki_instance = MagicMock()
-_mock_mediawiki_instance.summary.return_value = (
-    "Artificial intelligence is intelligence demonstrated by machines."
-)
+_mock_mediawiki_instance.summary.return_value = _DEFAULTS["mediawiki_summary"]
 _mock_mediawiki_module.MediaWikiAPI.return_value = _mock_mediawiki_instance
 sys.modules["mediawikiapi"] = _mock_mediawiki_module
 
@@ -250,7 +249,7 @@ def _reset_mocks():
     _mock_file_processor.process_file.return_value = _DEFAULTS["file_processor"]
     _mock_qa_pipeline.return_value = copy.deepcopy(_DEFAULTS["qa_pipeline"])
     _mock_google_docs.get_document_content.return_value = None
-    _mock_mediawiki_instance.summary.return_value = None
+    _mock_mediawiki_instance.summary.return_value = _DEFAULTS["mediawiki_summary"]
     _mock_llm_generator.generate_short_questions.return_value = copy.deepcopy(
         _DEFAULTS["llm_short"]
     )
