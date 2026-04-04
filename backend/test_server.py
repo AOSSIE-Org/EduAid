@@ -613,7 +613,9 @@ class TestHardQuestionEndpoints:
         mock_mediawiki.summary.assert_called()
 
     @pytest.mark.parametrize("endpoint", HARD_ENDPOINTS)
-    def test_with_input_questions(self, client, endpoint, mock_question_generator):
+    def test_with_input_questions(
+        self, client, endpoint, mock_question_generator, mock_boolq_gen
+    ):
         """Verify num_questions matches the length of input_question list."""
         resp = client.post(
             endpoint,
@@ -623,9 +625,14 @@ class TestHardQuestionEndpoints:
             },
         )
         assert resp.status_code == 200
-        # num_questions should match len(input_question) = 2
-        call_kwargs = mock_question_generator.generate.call_args
-        assert call_kwargs[1]["num_questions"] == 2
+        if endpoint == "/get_boolq_hard":
+            # /get_boolq_hard uses BoolQGen, not QuestionGenerator
+            call_kwargs = mock_boolq_gen.generate_boolq.call_args
+            assert call_kwargs[0][0]["max_questions"] == 2
+        else:
+            # num_questions should match len(input_question) = 2
+            call_kwargs = mock_question_generator.generate.call_args
+            assert call_kwargs[1]["num_questions"] == 2
 
     @pytest.mark.parametrize("endpoint", HARD_ENDPOINTS)
     def test_generator_exception_returns_500(

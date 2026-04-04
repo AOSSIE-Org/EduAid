@@ -193,12 +193,29 @@ with patch("nltk.download"):
 
 @pytest.fixture(autouse=True)
 def _reset_mocks():
-    """Automatically reset every mock's side_effect and return_value after
-    each test so that one test cannot break another.
+    """Automatically reset every mock's call history, side_effect and
+    return_value after each test so that one test cannot break another.
 
     Uses ``copy.deepcopy`` so that in-place mutation of a return value inside
     a test cannot corrupt the shared baseline.
     """
+    _tracked_mocks = [
+        _mock_mcq_gen.generate_mcq,
+        _mock_boolq_gen.generate_boolq,
+        _mock_shortq_gen.generate_shortq,
+        _mock_answer_predictor.predict_boolean_answer,
+        _mock_question_generator.generate,
+        _mock_file_processor.process_file,
+        _mock_google_docs.get_document_content,
+        _mock_qa_pipeline,
+        _mock_mediawiki_instance.summary,
+        _mock_llm_generator.generate_short_questions,
+        _mock_llm_generator.generate_mcq_questions,
+        _mock_llm_generator.generate_boolean_questions,
+        _mock_llm_generator.generate_all_questions,
+    ]
+    for mock in _tracked_mocks:
+        mock.reset_mock()
     yield
     # Clear side effects
     _mock_mcq_gen.generate_mcq.side_effect = None
@@ -238,6 +255,9 @@ def _reset_mocks():
     _mock_llm_generator.generate_all_questions.return_value = copy.deepcopy(
         _DEFAULTS["llm_all"]
     )
+    # Clear call history after restoring defaults
+    for mock in _tracked_mocks:
+        mock.reset_mock()
 
 
 @pytest.fixture
