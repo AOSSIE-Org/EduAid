@@ -128,7 +128,7 @@ class TestGetMCQ:
             "/get_mcq", json={"input_text": SAMPLE_TEXT, "max_questions": 100}
         )
         assert resp.status_code == 200
-        assert mock_mcq_gen.generate_mcq.call_args[0][0]["max_questions"] <= 20
+        assert mock_mcq_gen.generate_mcq.call_args[0][0]["max_questions"] == 20
 
     def test_max_questions_clamped_low(self, client, mock_mcq_gen):
         """Verify negative max_questions is clamped to the minimum."""
@@ -136,7 +136,7 @@ class TestGetMCQ:
             "/get_mcq", json={"input_text": SAMPLE_TEXT, "max_questions": -5}
         )
         assert resp.status_code == 200
-        assert mock_mcq_gen.generate_mcq.call_args[0][0]["max_questions"] >= 1
+        assert mock_mcq_gen.generate_mcq.call_args[0][0]["max_questions"] == 1
 
     def test_max_questions_zero(self, client, mock_mcq_gen):
         """Verify max_questions of zero is clamped to the minimum."""
@@ -144,14 +144,15 @@ class TestGetMCQ:
             "/get_mcq", json={"input_text": SAMPLE_TEXT, "max_questions": 0}
         )
         assert resp.status_code == 200
-        assert mock_mcq_gen.generate_mcq.call_args[0][0]["max_questions"] >= 1
+        assert mock_mcq_gen.generate_mcq.call_args[0][0]["max_questions"] == 1
 
-    def test_max_questions_non_integer_string(self, client):
+    def test_max_questions_non_integer_string(self, client, mock_mcq_gen):
         """Verify non-integer string max_questions falls back to default."""
         resp = client.post(
             "/get_mcq", json={"input_text": SAMPLE_TEXT, "max_questions": "abc"}
         )
         assert resp.status_code == 200  # falls back to default
+        assert mock_mcq_gen.generate_mcq.call_args[0][0]["max_questions"] == 4
 
     def test_input_text_not_string(self, client):
         """Verify non-string input_text is rejected with 400."""
@@ -706,7 +707,7 @@ class TestGetShortQLLM:
         )
         assert resp.status_code == 200
         call_args = mock_llm_generator.generate_short_questions.call_args
-        assert call_args[0][1] <= 20
+        assert call_args[0][1] == 20
 
     def test_max_questions_clamped_low(self, client, mock_llm_generator):
         """Verify negative max_questions is clamped to the minimum."""
@@ -715,7 +716,7 @@ class TestGetShortQLLM:
         )
         assert resp.status_code == 200
         call_args = mock_llm_generator.generate_short_questions.call_args
-        assert call_args[0][1] >= 1
+        assert call_args[0][1] == 1
 
     def test_with_mediawiki_flag(self, client, mock_mediawiki):
         """Verify mediawiki expansion is triggered when use_mediawiki is set."""
@@ -783,7 +784,7 @@ class TestGetMCQLLM:
         )
         assert resp.status_code == 200
         call_args = mock_llm_generator.generate_mcq_questions.call_args
-        assert call_args[0][1] <= 20
+        assert call_args[0][1] == 20
 
     def test_with_mediawiki_flag(self, client, mock_mediawiki):
         """Verify mediawiki expansion is triggered when use_mediawiki is set."""
@@ -851,7 +852,7 @@ class TestGetBoolQLLM:
         )
         assert resp.status_code == 200
         call_args = mock_llm_generator.generate_boolean_questions.call_args
-        assert call_args[0][1] <= 20
+        assert call_args[0][1] == 20
 
     def test_with_mediawiki_flag(self, client, mock_mediawiki):
         """Verify mediawiki expansion is triggered when use_mediawiki is set."""
@@ -1153,15 +1154,14 @@ class TestGetContent:
     def test_happy_path_returns_content(self, client):
         """Verify a valid document_url returns the fetched content."""
         with patch("server.docs_service") as mock_docs:
-            mock_docs.get_document_content.return_value = {
-                "content": "Document text here"
-            }
+            mock_docs.get_document_content.return_value = "Document text here"
             resp = client.post(
                 "/get_content",
                 json={"document_url": "https://docs.google.com/document/d/abc123"},
             )
             assert resp.status_code == 200
             mock_docs.get_document_content.assert_called_once()
+            assert resp.get_json() == "Document text here"
 
     def test_service_unavailable_returns_503(self, client):
         """Verify a 503 is returned when docs_service is None."""

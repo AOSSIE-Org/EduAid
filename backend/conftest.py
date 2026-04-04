@@ -22,6 +22,7 @@ import pytest
 
 _DEFAULTS = {
     "mcq_gen": {
+        "statement": "Artificial intelligence is the simulation of human intelligence.",
         "questions": [
             {
                 "question_statement": "What is AI?",
@@ -33,9 +34,12 @@ _DEFAULTS = {
                     "a program",
                 ],
             }
-        ]
+        ],
+        "time_taken": 0.01,
     },
     "boolq_gen": {
+        "Text": "Artificial intelligence is the simulation of human intelligence.",
+        "Count": 1,
         "Boolean_Questions": [
             {"question": "Is AI a simulation of human intelligence?"}
         ]
@@ -225,6 +229,8 @@ def _reset_mocks():
     _mock_question_generator.generate.side_effect = None
     _mock_file_processor.process_file.side_effect = None
     _mock_qa_pipeline.side_effect = None
+    _mock_google_docs.get_document_content.side_effect = None
+    _mock_mediawiki_instance.summary.side_effect = None
     _mock_llm_generator.generate_short_questions.side_effect = None
     _mock_llm_generator.generate_mcq_questions.side_effect = None
     _mock_llm_generator.generate_boolean_questions.side_effect = None
@@ -243,6 +249,8 @@ def _reset_mocks():
     )
     _mock_file_processor.process_file.return_value = _DEFAULTS["file_processor"]
     _mock_qa_pipeline.return_value = copy.deepcopy(_DEFAULTS["qa_pipeline"])
+    _mock_google_docs.get_document_content.return_value = None
+    _mock_mediawiki_instance.summary.return_value = None
     _mock_llm_generator.generate_short_questions.return_value = copy.deepcopy(
         _DEFAULTS["llm_short"]
     )
