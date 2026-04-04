@@ -17,7 +17,7 @@ from googleapiclient.discovery import build
 import en_core_web_sm
 import json
 import re
-from typing import Any, List, Mapping, Tuple
+from typing import Any, List, Mapping, Optional, Tuple
 import re
 import os
 import fitz 
@@ -413,7 +413,7 @@ class QuestionGenerator:
         self,
         article: str,
         use_evaluator: bool = False,
-        num_questions: bool = None,
+        num_questions: Optional[int] = None,
         answer_style: str = "all",
     ) -> List:
         """Takes an article and generates a set of question and answer pairs. If use_evaluator
