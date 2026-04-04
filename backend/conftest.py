@@ -36,7 +36,9 @@ _DEFAULTS = {
         ]
     },
     "boolq_gen": {
-        "Boolean_Questions": ["Is AI a simulation of human intelligence?"]
+        "Boolean_Questions": [
+            {"question": "Is AI a simulation of human intelligence?"}
+        ]
     },
     "shortq_gen": {
         "questions": [
@@ -49,6 +51,22 @@ _DEFAULTS = {
     ],
     "file_processor": "Extracted text content from file",
     "qa_pipeline": {"answer": "simulation of human intelligence", "score": 0.95},
+    "llm_short": [
+        {"question": "What is AI?", "answer": "simulation of human intelligence", "context": ""}
+    ],
+    "llm_mcq": [
+        {
+            "question": "What is AI?",
+            "options": ["A) simulation", "B) a robot", "C) a car", "D) a planet"],
+            "correct_answer": "A",
+        }
+    ],
+    "llm_bool": [{"question": "AI simulates human intelligence.", "answer": True}],
+    "llm_all": [
+        {"type": "mcq", "question": "What is AI?", "options": ["A", "B", "C", "D"], "answer": "A"},
+        {"type": "boolean", "question": "AI is intelligent.", "answer": True},
+        {"type": "short_answer", "question": "What is ML?", "answer": "machine learning"},
+    ],
 }
 
 # ---------------------------------------------------------------------------
@@ -92,6 +110,13 @@ _mock_file_processor.process_file.return_value = _DEFAULTS["file_processor"]
 # GoogleDocsService
 _mock_google_docs = MagicMock()
 
+# LLMQuestionGenerator
+_mock_llm_generator = MagicMock()
+_mock_llm_generator.generate_short_questions.return_value = copy.deepcopy(_DEFAULTS["llm_short"])
+_mock_llm_generator.generate_mcq_questions.return_value = copy.deepcopy(_DEFAULTS["llm_mcq"])
+_mock_llm_generator.generate_boolean_questions.return_value = copy.deepcopy(_DEFAULTS["llm_bool"])
+_mock_llm_generator.generate_all_questions.return_value = copy.deepcopy(_DEFAULTS["llm_all"])
+
 # Wire constructors
 _mock_generator_main.MCQGenerator.return_value = _mock_mcq_gen
 _mock_generator_main.BoolQGenerator.return_value = _mock_boolq_gen
@@ -101,14 +126,20 @@ _mock_generator_main.QuestionGenerator.return_value = _mock_question_generator
 _mock_generator_main.FileProcessor.return_value = _mock_file_processor
 _mock_generator_main.GoogleDocsService.return_value = _mock_google_docs
 
+# LLMQuestionGenerator mock module
+_mock_llm_generator_module = MagicMock()
+_mock_llm_generator_module.LLMQuestionGenerator.return_value = _mock_llm_generator
+
 # Make `from Generator import main` resolve correctly
 _mock_generator_pkg.main = _mock_generator_main
 _mock_generator_pkg.question_filters = _mock_question_filters
+_mock_generator_pkg.llm_generator = _mock_llm_generator_module
 _mock_question_filters.make_question_harder = lambda q: f"[HARDER] {q}"
 
 sys.modules["Generator"] = _mock_generator_pkg
 sys.modules["Generator.main"] = _mock_generator_main
 sys.modules["Generator.question_filters"] = _mock_question_filters
+sys.modules["Generator.llm_generator"] = _mock_llm_generator_module
 
 # -- transformers (Hugging Face) — pipeline downloads large models ----------
 
@@ -177,6 +208,10 @@ def _reset_mocks():
     _mock_question_generator.generate.side_effect = None
     _mock_file_processor.process_file.side_effect = None
     _mock_qa_pipeline.side_effect = None
+    _mock_llm_generator.generate_short_questions.side_effect = None
+    _mock_llm_generator.generate_mcq_questions.side_effect = None
+    _mock_llm_generator.generate_boolean_questions.side_effect = None
+    _mock_llm_generator.generate_all_questions.side_effect = None
     # Restore defaults (deepcopy to protect mutable structures)
     _mock_mcq_gen.generate_mcq.return_value = copy.deepcopy(_DEFAULTS["mcq_gen"])
     _mock_boolq_gen.generate_boolq.return_value = copy.deepcopy(_DEFAULTS["boolq_gen"])
@@ -191,6 +226,18 @@ def _reset_mocks():
     )
     _mock_file_processor.process_file.return_value = _DEFAULTS["file_processor"]
     _mock_qa_pipeline.return_value = copy.deepcopy(_DEFAULTS["qa_pipeline"])
+    _mock_llm_generator.generate_short_questions.return_value = copy.deepcopy(
+        _DEFAULTS["llm_short"]
+    )
+    _mock_llm_generator.generate_mcq_questions.return_value = copy.deepcopy(
+        _DEFAULTS["llm_mcq"]
+    )
+    _mock_llm_generator.generate_boolean_questions.return_value = copy.deepcopy(
+        _DEFAULTS["llm_bool"]
+    )
+    _mock_llm_generator.generate_all_questions.return_value = copy.deepcopy(
+        _DEFAULTS["llm_all"]
+    )
 
 
 @pytest.fixture
@@ -256,3 +303,9 @@ def mock_qa_pipeline():
 def mock_mediawiki():
     """Return the MediaWikiAPI instance mock for call assertions."""
     return _mock_mediawiki_instance
+
+
+@pytest.fixture
+def mock_llm_generator():
+    """Return the LLMQuestionGenerator mock for call assertions."""
+    return _mock_llm_generator

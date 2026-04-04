@@ -629,13 +629,317 @@ class TestHardQuestionEndpoints:
 
     @pytest.mark.parametrize("endpoint", HARD_ENDPOINTS)
     def test_generator_exception_returns_500(
-        self, client, endpoint, mock_question_generator
+        self, client, endpoint, mock_question_generator, mock_boolq_gen
     ):
         """Verify a generator exception returns a 500 error for hard endpoints."""
         mock_question_generator.generate.side_effect = RuntimeError("Crash")
+        # /get_boolq_hard uses BoolQGen, not QuestionGenerator
+        mock_boolq_gen.generate_boolq.side_effect = RuntimeError("Crash")
         resp = client.post(endpoint, json={"input_text": SAMPLE_TEXT})
         assert resp.status_code == 500
         assert "error" in resp.get_json()
+
+
+# ===========================================================================
+# LLM Short Question Endpoint
+# ===========================================================================
+
+
+class TestGetShortQLLM:
+    """POST /get_shortq_llm"""
+
+    def test_valid_request(self, client, mock_llm_generator):
+        """Verify LLM short-question generation with valid input."""
+        resp = client.post(
+            "/get_shortq_llm", json={"input_text": SAMPLE_TEXT, "max_questions": 3}
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert "output" in data
+        mock_llm_generator.generate_short_questions.assert_called()
+
+    def test_default_max_questions(self, client, mock_llm_generator):
+        """Omitting max_questions should default to 4."""
+        resp = client.post("/get_shortq_llm", json={"input_text": SAMPLE_TEXT})
+        assert resp.status_code == 200
+        call_args = mock_llm_generator.generate_short_questions.call_args
+        assert call_args[0][1] == 4  # second positional arg is max_questions
+
+    def test_empty_input_text(self, client):
+        """Verify empty input_text is rejected with 400."""
+        resp = client.post("/get_shortq_llm", json={"input_text": ""})
+        assert resp.status_code == 400
+        assert "error" in resp.get_json()
+
+    def test_missing_input_text(self, client):
+        """Verify missing input_text field is rejected with 400."""
+        resp = client.post("/get_shortq_llm", json={})
+        assert resp.status_code == 400
+
+    def test_whitespace_only_input(self, client):
+        """Verify whitespace-only input_text is rejected with 400."""
+        resp = client.post("/get_shortq_llm", json={"input_text": "   \n\t  "})
+        assert resp.status_code == 400
+
+    def test_input_text_too_long(self, client):
+        """Verify input_text exceeding the maximum length is rejected."""
+        resp = client.post("/get_shortq_llm", json={"input_text": "A" * 50_001})
+        assert resp.status_code == 400
+        assert "exceeds maximum length" in resp.get_json()["error"]
+
+    def test_input_text_at_max_length(self, client):
+        """Verify input_text at exactly the maximum length is accepted."""
+        resp = client.post("/get_shortq_llm", json={"input_text": "A" * 50_000})
+        assert resp.status_code == 200
+
+    def test_max_questions_clamped_high(self, client, mock_llm_generator):
+        """Verify max_questions above the limit is clamped to the maximum."""
+        resp = client.post(
+            "/get_shortq_llm", json={"input_text": SAMPLE_TEXT, "max_questions": 100}
+        )
+        assert resp.status_code == 200
+        call_args = mock_llm_generator.generate_short_questions.call_args
+        assert call_args[0][1] <= 20
+
+    def test_max_questions_clamped_low(self, client, mock_llm_generator):
+        """Verify negative max_questions is clamped to the minimum."""
+        resp = client.post(
+            "/get_shortq_llm", json={"input_text": SAMPLE_TEXT, "max_questions": -5}
+        )
+        assert resp.status_code == 200
+        call_args = mock_llm_generator.generate_short_questions.call_args
+        assert call_args[0][1] >= 1
+
+    def test_with_mediawiki_flag(self, client, mock_mediawiki):
+        """Verify mediawiki expansion is triggered when use_mediawiki is set."""
+        resp = client.post(
+            "/get_shortq_llm", json={"input_text": SAMPLE_TEXT, "use_mediawiki": 1}
+        )
+        assert resp.status_code == 200
+        mock_mediawiki.summary.assert_called()
+
+    def test_generator_exception_returns_500(self, client, mock_llm_generator):
+        """Verify a generator exception returns a 500 error response."""
+        mock_llm_generator.generate_short_questions.side_effect = RuntimeError("Crash")
+        resp = client.post("/get_shortq_llm", json={"input_text": SAMPLE_TEXT})
+        assert resp.status_code == 500
+        assert "error" in resp.get_json()
+
+    def test_no_json_body(self, client):
+        """Verify sending a non-JSON body returns 400."""
+        resp = client.post("/get_shortq_llm", data="raw text", content_type="text/plain")
+        assert resp.status_code == 400
+
+    def test_get_method_not_allowed(self, client):
+        """Verify GET is rejected on the POST-only LLM short-question endpoint."""
+        resp = client.get("/get_shortq_llm")
+        assert resp.status_code == 405
+
+
+# ===========================================================================
+# LLM MCQ Endpoint
+# ===========================================================================
+
+
+class TestGetMCQLLM:
+    """POST /get_mcq_llm"""
+
+    def test_valid_request(self, client, mock_llm_generator):
+        """Verify LLM MCQ generation with valid input."""
+        resp = client.post(
+            "/get_mcq_llm", json={"input_text": SAMPLE_TEXT, "max_questions": 3}
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert "output" in data
+        mock_llm_generator.generate_mcq_questions.assert_called()
+
+    def test_empty_input_text(self, client):
+        """Verify empty input_text is rejected with 400."""
+        resp = client.post("/get_mcq_llm", json={"input_text": ""})
+        assert resp.status_code == 400
+
+    def test_missing_input_text(self, client):
+        """Verify missing input_text field is rejected with 400."""
+        resp = client.post("/get_mcq_llm", json={})
+        assert resp.status_code == 400
+
+    def test_input_text_too_long(self, client):
+        """Verify input_text exceeding the maximum length is rejected."""
+        resp = client.post("/get_mcq_llm", json={"input_text": "A" * 50_001})
+        assert resp.status_code == 400
+
+    def test_max_questions_clamped_high(self, client, mock_llm_generator):
+        """Verify max_questions above the limit is clamped to the maximum."""
+        resp = client.post(
+            "/get_mcq_llm", json={"input_text": SAMPLE_TEXT, "max_questions": 100}
+        )
+        assert resp.status_code == 200
+        call_args = mock_llm_generator.generate_mcq_questions.call_args
+        assert call_args[0][1] <= 20
+
+    def test_with_mediawiki_flag(self, client, mock_mediawiki):
+        """Verify mediawiki expansion is triggered when use_mediawiki is set."""
+        resp = client.post(
+            "/get_mcq_llm", json={"input_text": SAMPLE_TEXT, "use_mediawiki": 1}
+        )
+        assert resp.status_code == 200
+        mock_mediawiki.summary.assert_called()
+
+    def test_generator_exception_returns_500(self, client, mock_llm_generator):
+        """Verify a generator exception returns a 500 error response."""
+        mock_llm_generator.generate_mcq_questions.side_effect = RuntimeError("Crash")
+        resp = client.post("/get_mcq_llm", json={"input_text": SAMPLE_TEXT})
+        assert resp.status_code == 500
+        assert "error" in resp.get_json()
+
+    def test_unicode_input(self, client):
+        """Verify unicode input text is accepted."""
+        resp = client.post("/get_mcq_llm", json={"input_text": UNICODE_TEXT})
+        assert resp.status_code == 200
+
+    def test_get_method_not_allowed(self, client):
+        """Verify GET is rejected on the POST-only LLM MCQ endpoint."""
+        resp = client.get("/get_mcq_llm")
+        assert resp.status_code == 405
+
+
+# ===========================================================================
+# LLM Boolean Question Endpoint
+# ===========================================================================
+
+
+class TestGetBoolQLLM:
+    """POST /get_boolq_llm"""
+
+    def test_valid_request(self, client, mock_llm_generator):
+        """Verify LLM boolean question generation with valid input."""
+        resp = client.post(
+            "/get_boolq_llm", json={"input_text": SAMPLE_TEXT, "max_questions": 3}
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert "output" in data
+        mock_llm_generator.generate_boolean_questions.assert_called()
+
+    def test_empty_input_text(self, client):
+        """Verify empty input_text is rejected with 400."""
+        resp = client.post("/get_boolq_llm", json={"input_text": ""})
+        assert resp.status_code == 400
+
+    def test_missing_input_text(self, client):
+        """Verify missing input_text field is rejected with 400."""
+        resp = client.post("/get_boolq_llm", json={})
+        assert resp.status_code == 400
+
+    def test_input_text_too_long(self, client):
+        """Verify input_text exceeding the maximum length is rejected."""
+        resp = client.post("/get_boolq_llm", json={"input_text": "A" * 50_001})
+        assert resp.status_code == 400
+
+    def test_max_questions_clamped_high(self, client, mock_llm_generator):
+        """Verify max_questions above the limit is clamped to the maximum."""
+        resp = client.post(
+            "/get_boolq_llm", json={"input_text": SAMPLE_TEXT, "max_questions": 100}
+        )
+        assert resp.status_code == 200
+        call_args = mock_llm_generator.generate_boolean_questions.call_args
+        assert call_args[0][1] <= 20
+
+    def test_with_mediawiki_flag(self, client, mock_mediawiki):
+        """Verify mediawiki expansion is triggered when use_mediawiki is set."""
+        resp = client.post(
+            "/get_boolq_llm", json={"input_text": SAMPLE_TEXT, "use_mediawiki": 1}
+        )
+        assert resp.status_code == 200
+        mock_mediawiki.summary.assert_called()
+
+    def test_generator_exception_returns_500(self, client, mock_llm_generator):
+        """Verify a generator exception returns a 500 error response."""
+        mock_llm_generator.generate_boolean_questions.side_effect = RuntimeError("Crash")
+        resp = client.post("/get_boolq_llm", json={"input_text": SAMPLE_TEXT})
+        assert resp.status_code == 500
+        assert "error" in resp.get_json()
+
+    def test_special_characters(self, client):
+        """Verify input with special characters is accepted."""
+        resp = client.post("/get_boolq_llm", json={"input_text": SPECIAL_CHARS_TEXT})
+        assert resp.status_code == 200
+
+    def test_get_method_not_allowed(self, client):
+        """Verify GET is rejected on the POST-only LLM boolean endpoint."""
+        resp = client.get("/get_boolq_llm")
+        assert resp.status_code == 405
+
+
+# ===========================================================================
+# LLM Combined Problems Endpoint
+# ===========================================================================
+
+
+class TestGetProblemsLLM:
+    """POST /get_problems_llm"""
+
+    def test_valid_request(self, client, mock_llm_generator):
+        """Verify combined LLM problem generation with all count parameters."""
+        resp = client.post(
+            "/get_problems_llm",
+            json={
+                "input_text": SAMPLE_TEXT,
+                "max_questions_mcq": 2,
+                "max_questions_boolq": 2,
+                "max_questions_shortq": 2,
+            },
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert "output" in data
+        mock_llm_generator.generate_all_questions.assert_called()
+
+    def test_defaults_for_missing_counts(self, client, mock_llm_generator):
+        """Verify defaults are applied when count fields are omitted."""
+        resp = client.post("/get_problems_llm", json={"input_text": SAMPLE_TEXT})
+        assert resp.status_code == 200
+        call_args = mock_llm_generator.generate_all_questions.call_args
+        # Default counts should be 2 each
+        assert call_args[0][1] == 2  # mcq_count
+        assert call_args[0][2] == 2  # bool_count
+        assert call_args[0][3] == 2  # short_count
+
+    def test_empty_input_text(self, client):
+        """Verify empty input_text is rejected with 400."""
+        resp = client.post("/get_problems_llm", json={"input_text": ""})
+        assert resp.status_code == 400
+
+    def test_missing_input_text(self, client):
+        """Verify missing input_text field is rejected with 400."""
+        resp = client.post("/get_problems_llm", json={})
+        assert resp.status_code == 400
+
+    def test_input_text_too_long(self, client):
+        """Verify input_text exceeding the maximum length is rejected."""
+        resp = client.post("/get_problems_llm", json={"input_text": "A" * 50_001})
+        assert resp.status_code == 400
+
+    def test_with_mediawiki_flag(self, client, mock_mediawiki):
+        """Verify mediawiki expansion is triggered when use_mediawiki is set."""
+        resp = client.post(
+            "/get_problems_llm", json={"input_text": SAMPLE_TEXT, "use_mediawiki": 1}
+        )
+        assert resp.status_code == 200
+        mock_mediawiki.summary.assert_called()
+
+    def test_generator_exception_returns_500(self, client, mock_llm_generator):
+        """Verify a generator exception returns a 500 error response."""
+        mock_llm_generator.generate_all_questions.side_effect = RuntimeError("Crash")
+        resp = client.post("/get_problems_llm", json={"input_text": SAMPLE_TEXT})
+        assert resp.status_code == 500
+        assert "error" in resp.get_json()
+
+    def test_get_method_not_allowed(self, client):
+        """Verify GET is rejected on the POST-only LLM problems endpoint."""
+        resp = client.get("/get_problems_llm")
+        assert resp.status_code == 405
 
 
 # ===========================================================================
@@ -929,7 +1233,10 @@ class TestGenerateGForm:
 class TestInputValidation:
     """Cross-cutting validation tests for question-generation endpoints."""
 
-    QUESTION_ENDPOINTS: ClassVar[list[str]] = ["/get_mcq", "/get_boolq", "/get_shortq", "/get_problems"]
+    QUESTION_ENDPOINTS: ClassVar[list[str]] = [
+        "/get_mcq", "/get_boolq", "/get_shortq", "/get_problems",
+        "/get_shortq_llm", "/get_mcq_llm", "/get_boolq_llm", "/get_problems_llm",
+    ]
 
     @pytest.mark.parametrize("endpoint", QUESTION_ENDPOINTS)
     def test_empty_text_rejected(self, client, endpoint):
@@ -1105,6 +1412,10 @@ class TestHTTPMethods:
         "/get_mcq_hard",
         "/get_boolq_hard",
         "/upload",
+        "/get_shortq_llm",
+        "/get_mcq_llm",
+        "/get_boolq_llm",
+        "/get_problems_llm",
     ]
 
     @pytest.mark.parametrize("endpoint", POST_ONLY_ENDPOINTS)
