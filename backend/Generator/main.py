@@ -22,6 +22,7 @@ import re
 import os
 import fitz 
 import mammoth
+from werkzeug.utils import secure_filename
 
 class MCQGenerator:
     
@@ -368,19 +369,37 @@ class FileProcessor:
             return result.value
 
     def process_file(self, file):
-        file_path = os.path.join(self.upload_folder, file.filename)
+        filename = secure_filename(file.filename)
+        if not filename:
+            raise ValueError("Invalid filename")
+
+        base_dir = os.path.abspath(self.upload_folder)
+        file_path = os.path.abspath(os.path.join(base_dir, filename))
+        
+        if os.path.commonpath([base_dir, file_path]) != base_dir:
+            raise ValueError("Directory traversal attempt detected.")
+
         file.save(file_path)
         content = ""
 
-        if file.filename.endswith('.txt'):
-            with open(file_path, 'r') as f:
-                content = f.read()
-        elif file.filename.endswith('.pdf'):
-            content = self.extract_text_from_pdf(file_path)
-        elif file.filename.endswith('.docx'):
-            content = self.extract_text_from_docx(file_path)
-
-        os.remove(file_path)
+        try:
+            # Isolate the file extension cleanly
+            ext = filename.lower().rsplit('.', 1)[-1]
+            
+            if ext == 'txt':
+                with open(file_path, 'r') as f:
+                    content = f.read()
+            elif ext == 'pdf':
+                content = self.extract_text_from_pdf(file_path)
+            elif ext == 'docx':
+                content = self.extract_text_from_docx(file_path)
+            else:
+                # Explicitly bail on unsupported types rather than failing silently
+                raise ValueError("Unsupported file type")
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                
         return content
 
 class QuestionGenerator:
