@@ -63,7 +63,18 @@ code {
     radial-gradient(circle at 90% -15%, rgba(255, 19, 132, 0.16) 0%, transparent 40%) !important;
 }
 
-.light-theme .text-white {
+.light-theme .bg-\[\#02000F\].text-white,
+.light-theme .bg-\[\#02000F\] .text-white,
+.light-theme .bg-cust.text-white,
+.light-theme .bg-cust .text-white,
+.light-theme .bg-\[\#83b6cc40\].text-white,
+.light-theme .bg-\[\#83b6cc40\] .text-white,
+.light-theme .bg-\[\#202838\].text-white,
+.light-theme .bg-\[\#202838\] .text-white,
+.light-theme .bg-\[\#3e5063\].text-white,
+.light-theme .bg-\[\#3e5063\] .text-white,
+.light-theme .bg-\[\#3e506380\].text-white,
+.light-theme .bg-\[\#3e506380\] .text-white {
   color: #111827 !important;
 }
 
