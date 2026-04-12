@@ -23,3 +23,78 @@ code {
   border-image-slice: 1;
   border-radius: 2rem;
 }
+
+:root {
+  color-scheme: dark;
+}
+
+.theme-toggle {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  color: #f8fafc;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-1px);
+}
+
+.light-theme {
+  color-scheme: light;
+}
+
+.light-theme .theme-toggle {
+  background: rgba(248, 250, 252, 0.96);
+  border-color: rgba(148, 163, 184, 0.85);
+  color: #0f172a;
+}
+
+.light-theme .bg-\[\#02000F\] {
+  background-color: #f5f7ff !important;
+}
+
+.light-theme .bg-cust {
+  background-color: rgba(255, 255, 255, 0.76) !important;
+}
+
+.light-theme .bg-custom-gradient {
+  background-image:
+    radial-gradient(circle at -10% 40%, rgba(66, 19, 255, 0.18) 0%, transparent 45%),
+    radial-gradient(circle at 90% -15%, rgba(255, 19, 132, 0.16) 0%, transparent 40%) !important;
+}
+
+.light-theme .text-white {
+  color: #111827 !important;
+}
+
+.light-theme .bg-\[\#83b6cc40\] {
+  background-color: rgba(148, 163, 184, 0.24) !important;
+}
+
+.light-theme .bg-\[\#202838\] {
+  background-color: rgba(226, 232, 240, 0.92) !important;
+  border-color: #94a3b8 !important;
+}
+
+.light-theme .bg-\[\#3e5063\],
+.light-theme .bg-\[\#3e506380\] {
+  background-color: #dbe4f0 !important;
+}
+
+.light-theme .border-\[\#cbd0dc80\],
+.light-theme .border-\[\#3E5063\] {
+  border-color: #94a3b8 !important;
+}
+
+.light-theme .bg-black {
+  background-color: #0f172a !important;
+}
+
+.light-theme .bg-black.text-white {
+  color: #f8fafc !important;
+}
+
+.light-theme textarea {
+  color: #111827 !important;
+  caret-color: #111827 !important;
+}
