@@ -17,9 +17,26 @@ code {
 }
 
 .border-gradient {
-  border-width: 2px; 
+  border-width: 2px;
   border-style: solid;
   border-image: linear-gradient(to right, #ff005c, #7600f2, #00cbe7);
   border-image-slice: 1;
   border-radius: 2rem;
+}
+
+.gradient-text-base {
+  background: var(--gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.gradient-text {
+  --gradient: linear-gradient(to right, #FF005C, #7600F2);
+}
+
+.gradient-text-2 {
+  --gradient: linear-gradient(to right, #7600F2, #00CBE7);
 }

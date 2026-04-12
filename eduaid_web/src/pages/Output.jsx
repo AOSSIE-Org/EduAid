@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import "../index.css";
 import logoPNG from "../assets/aossie_logo_transparent.png";
 import { Link } from "react-router-dom";
@@ -15,14 +15,14 @@ const Output = () => {
   const [editedQuestion, setEditedQuestion] = useState("");
   const [editedAnswer, setEditedAnswer] = useState("");
   const [editedOptions, setEditedOptions] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-        const dropdown = document.getElementById('pdfDropdown');
-        if (dropdown && !dropdown.contains(event.target) && 
-            !event.target.closest('button')) {
-            dropdown.classList.add('hidden');
-        }
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -195,7 +195,7 @@ const Output = () => {
       link.click();
       document.body.removeChild(link);
 
-      document.getElementById('pdfDropdown').classList.add('hidden');
+      setShowDropdown(false);
       worker.terminate();
     };
 
@@ -383,17 +383,17 @@ const Output = () => {
               Generate Google form
             </button>
             
-            <div className="relative w-full sm:w-auto">
+            <div ref={dropdownRef} className="relative w-full sm:w-auto">
               <button
                 className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] active:scale-95 active:bg-[#2f5555] transition-all justify-center"
-                onClick={() => document.getElementById('pdfDropdown').classList.toggle('hidden')}
+                onClick={() => setShowDropdown(prev => !prev)}
               >
                 Generate PDF
               </button>
               
               <div
                 id="pdfDropdown"
-                className="hidden absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48"
+                className={`${showDropdown ? 'block' : 'hidden'} absolute bottom-full mb-1 left-0 sm:left-auto right-0 sm:right-auto bg-[#02000F] shadow-md text-white rounded-lg shadow-lg z-50 w-full sm:w-48`}
               >
                 <button
                   className="block w-full text-left px-4 py-2 hover:bg-gray-500 active:bg-gray-600 active:scale-95 text-sm sm:text-base"
