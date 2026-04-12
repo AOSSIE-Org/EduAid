@@ -11,6 +11,7 @@ import apiClient from "../utils/apiClient";
 const Text_Input = () => {
   const navigate = useNavigate();
   const [text, setText] = useState("");
+  const [inputError, setInputError] = useState("");
   const [difficulty, setDifficulty] = useState("Easy Difficulty");
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
@@ -31,10 +32,15 @@ const Text_Input = () => {
 
       try {
         const data = await apiClient.postFormData("/upload", formData);
-        setText(data.content || data.error);
+        if (data.content) {
+          setText(data.content);
+          setInputError("");
+        } else {
+          setInputError(data.error || "Error uploading file");
+        }
       } catch (error) {
         console.error("Error uploading file:", error);
-        setText("Error uploading file");
+        setInputError("Error uploading file");
       }
     }
   };
@@ -48,32 +54,55 @@ const Text_Input = () => {
   };
 
   const handleSaveToLocalStorage = async () => {
+    const trimmedText = text.trim();
+    const trimmedDocUrl = docUrl.trim();
+
     setLoading(true);
+    setInputError("");
+
+    if (!trimmedDocUrl && !trimmedText) {
+      setInputError("Please enter text content or provide a valid Google Doc URL.");
+      setLoading(false);
+      return;
+    }
+
+    let submissionText = trimmedText;
 
     // Check if a Google Doc URL is provided
-    if (docUrl) {
+    if (trimmedDocUrl) {
       try {
-        const data = await apiClient.post("/get_content", { document_url: docUrl });
-        setDocUrl("");
-        setText(data || "Error in retrieving");
+        const data = await apiClient.post("/get_content", { document_url: trimmedDocUrl });
+        const docContent = typeof data === "string" ? data.trim() : "";
+
+        if (docContent) {
+          submissionText = docContent;
+          setDocUrl("");
+          setText(docContent);
+        } else if (!submissionText) {
+          setInputError("Unable to retrieve Google Doc content. Please verify the URL and try again.");
+          setLoading(false);
+          return;
+        }
       } catch (error) {
         console.error("Error:", error);
-        setText("Error retrieving Google Doc content");
-      } finally {
-        setLoading(false);
+        if (!submissionText) {
+          setInputError("Error retrieving Google Doc content. Please verify the URL and try again.");
+          setLoading(false);
+          return;
+        }
       }
-    } else if (text) {
-      // Proceed with existing functionality for local storage
-      localStorage.setItem("textContent", text);
-      localStorage.setItem("difficulty", difficulty);
-      localStorage.setItem("numQuestions", numQuestions);
-
-      await sendToBackend(
-        text,
-        difficulty,
-        localStorage.getItem("selectedQuestionType")
-      );
     }
+
+    // Proceed with existing functionality for local storage
+    localStorage.setItem("textContent", submissionText);
+    localStorage.setItem("difficulty", difficulty);
+    localStorage.setItem("numQuestions", numQuestions);
+
+    await sendToBackend(
+      submissionText,
+      difficulty,
+      localStorage.getItem("selectedQuestionType")
+    );
   };
 
   const handleDifficultyChange = (e) => {
@@ -174,7 +203,10 @@ const Text_Input = () => {
             className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              setInputError("");
+            }}
           />
           <style>{`textarea::-webkit-scrollbar { display: none; }`}</style>
         </div>
@@ -200,8 +232,15 @@ const Text_Input = () => {
             placeholder="Enter Google Doc URL"
             className="bg-transparent mt-4 border border-[#cbd0dc80] text-white text-lg sm:text-xl rounded-2xl px-4 py-2 w-full sm:w-2/3 outline-none"
             value={docUrl}
-            onChange={(e) => setDocUrl(e.target.value)}
+            onChange={(e) => {
+              setDocUrl(e.target.value);
+              setInputError("");
+            }}
           />
+
+          {inputError && (
+            <p className="mt-3 text-sm text-red-300">{inputError}</p>
+          )}
         </div>
 
         {/* Controls Section */}
