@@ -17,7 +17,7 @@ code {
 }
 
 .border-gradient {
-  border-width: 2px; 
+  border-width: 2px;
   border-style: solid;
   border-image: linear-gradient(to right, #ff005c, #7600f2, #00cbe7);
   border-image-slice: 1;
@@ -26,11 +26,11 @@ code {
 
 .gradient-text-base {
   background: var(--gradient);
-  -webkit-background-clip: text;
   background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
   -webkit-text-fill-color: transparent;
   display: inline-block;
-  transform: translateZ(0);
 }
 
 .gradient-text {
