@@ -6,10 +6,12 @@ import Text_Input from "./pages/Text_Input";
 import Output from "./pages/Output";
 import Previous from "./pages/Previous";
 import NotFound from "./pages/PageNotFound";
+import ThemeToggle from "./components/ThemeToggle";
 
 function App() {
   return (
     <HashRouter>
+      <ThemeToggle />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/question-type" element={<Question_Type />} />
