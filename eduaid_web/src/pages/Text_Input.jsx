@@ -5,13 +5,13 @@ import stars from "../assets/stars.png";
 import cloud from "../assets/cloud.png";
 import { FaClipboard } from "react-icons/fa";
 import Switch from "react-switch";
-import { Link,useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 
 const Text_Input = () => {
   const navigate = useNavigate();
   const [text, setText] = useState("");
-  const [difficulty, setDifficulty] = useState("Easy Difficulty");
+  const [difficulty, setDifficulty] = useState("easy");
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
@@ -89,7 +89,7 @@ const Text_Input = () => {
   };
 
   const getEndpoint = (difficulty, questionType) => {
-    if (difficulty !== "Easy Difficulty") {
+    if (difficulty !== "easy") {
       if (questionType === "get_shortq") {
         return "get_shortq_hard";
       } else if (questionType === "get_mcq") {
@@ -214,15 +214,23 @@ const Text_Input = () => {
             <button onClick={incrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3">+</button>
           </div>
 
-          {/* Difficulty Dropdown */}
-          <div className="text-center">
+          {/* Difficulty Selector */}
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="difficulty"
+              className="text-white text-lg sm:text-xl font-bold"
+            >
+              Difficulty:
+            </label>
+
             <select
+              id="difficulty"
               value={difficulty}
               onChange={handleDifficultyChange}
               className="bg-[#3e5063] text-white text-lg rounded-xl p-2 outline-none"
             >
-              <option value="Easy Difficulty">Easy Difficulty</option>
-              <option value="Hard Difficulty">Hard Difficulty</option>
+              <option value="easy">Easy</option>
+              <option value="hard">Hard</option>
             </select>
           </div>
 
