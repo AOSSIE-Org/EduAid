@@ -216,7 +216,12 @@ const Text_Input = () => {
 
           {/* Difficulty Selector */}
           <div className="flex items-center gap-2">
-            <span className="text-white text-lg sm:text-xl font-bold">Difficulty:</span>
+            <label
+              htmlFor="difficulty"
+              className="text-white text-lg sm:text-xl font-bold"
+            >
+              Difficulty:
+            </label>
 
             <select
               id="difficulty"
