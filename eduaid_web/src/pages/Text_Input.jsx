@@ -66,40 +66,43 @@ const Text_Input = () => {
       return;
     }
 
+    let submissionText = trimmedText;
+
     // Check if a Google Doc URL is provided
     if (trimmedDocUrl) {
       try {
         const data = await apiClient.post("/get_content", { document_url: trimmedDocUrl });
         const docContent = typeof data === "string" ? data.trim() : "";
 
-        if (!docContent) {
+        if (docContent) {
+          submissionText = docContent;
+          setDocUrl("");
+          setText(docContent);
+        } else if (!submissionText) {
           setInputError("Unable to retrieve Google Doc content. Please verify the URL and try again.");
+          setLoading(false);
           return;
         }
-
-        setDocUrl("");
-        setText(docContent);
       } catch (error) {
         console.error("Error:", error);
-        setInputError("Error retrieving Google Doc content. Please verify the URL and try again.");
-      } finally {
-        setLoading(false);
+        if (!submissionText) {
+          setInputError("Error retrieving Google Doc content. Please verify the URL and try again.");
+          setLoading(false);
+          return;
+        }
       }
-      return;
     }
 
-    if (trimmedText) {
-      // Proceed with existing functionality for local storage
-      localStorage.setItem("textContent", trimmedText);
-      localStorage.setItem("difficulty", difficulty);
-      localStorage.setItem("numQuestions", numQuestions);
+    // Proceed with existing functionality for local storage
+    localStorage.setItem("textContent", submissionText);
+    localStorage.setItem("difficulty", difficulty);
+    localStorage.setItem("numQuestions", numQuestions);
 
-      await sendToBackend(
-        trimmedText,
-        difficulty,
-        localStorage.getItem("selectedQuestionType")
-      );
-    }
+    await sendToBackend(
+      submissionText,
+      difficulty,
+      localStorage.getItem("selectedQuestionType")
+    );
   };
 
   const handleDifficultyChange = (e) => {
