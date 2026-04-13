@@ -539,22 +539,35 @@ def get_transcript():
     if not video_id:
         return jsonify({"error": "No video ID provided"}), 400
 
-    subprocess.run(["yt-dlp", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
-                "--sub-format", "vtt", "-o", f"subtitles/{video_id}.vtt", f"https://www.youtube.com/watch?v={video_id}"],
-               check=True, capture_output=True, text=True)
+    transcript_text = None
+    latest_subtitle = None
 
-    # Find the latest .vtt file in the "subtitles" folder
-    subtitle_files = glob.glob("subtitles/*.vtt")
-    if not subtitle_files:
-        return jsonify({"error": "No subtitles found"}), 404
+    try:
+        subprocess.run(["yt-dlp", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
+                    "--sub-format", "vtt", "-o", f"subtitles/{video_id}.vtt", f"https://www.youtube.com/watch?v={video_id}"],
+                   check=True, capture_output=True, text=True)
 
-    latest_subtitle = max(subtitle_files, key=os.path.getctime)
-    transcript_text = clean_transcript(latest_subtitle)
+        # Find the latest .vtt file in the "subtitles" folder
+        subtitle_files = glob.glob("subtitles/*.vtt")
+        if not subtitle_files:
+            return jsonify({"error": "No subtitles found"}), 404
 
-    # Optional: Clean up the file after reading
-    os.remove(latest_subtitle)
+        latest_subtitle = max(subtitle_files, key=os.path.getctime)
+        transcript_text = clean_transcript(latest_subtitle)
 
-    return jsonify({"transcript": transcript_text})
+        return jsonify({"transcript": transcript_text})
+
+    finally:
+        # Guarantee cleanup runs even if subprocess or extraction fails
+        if latest_subtitle and os.path.exists(latest_subtitle):
+            app.logger.info(f"Deleting temporary subtitle file: {latest_subtitle}")
+            os.remove(latest_subtitle)
+        elif not latest_subtitle:
+            # Fallback cleanup: If yt-dlp crashed halfway but still emitted partial files
+            for stray in glob.glob(f"subtitles/{video_id}*.vtt"):
+                if os.path.exists(stray):
+                    app.logger.info(f"Deleting stray temporary subtitle file: {stray}")
+                    os.remove(stray)
 
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
