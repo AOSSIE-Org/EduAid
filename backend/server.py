@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from werkzeug.exceptions import RequestEntityTooLarge
 from pprint import pprint
 import nltk
 import subprocess
@@ -30,6 +31,23 @@ from mediawikiapi import MediaWikiAPI
 app = Flask(__name__)
 CORS(app)
 print("Starting Flask App...")
+
+# 1. Add MAX_CONTENT_LENGTH config (5 MB limit)
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
+
+# 2. Add ALLOWED_EXTENSIONS validation
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx'}
+
+def allowed_file(filename):
+    if '.' not in filename:
+        return False
+    
+    extension = filename.rsplit('.', 1)[1].lower()
+    return extension in ALLOWED_EXTENSIONS
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_file_too_large(error):
+    return jsonify({"error": "File size exceeds the 5MB limit"}), 413
 
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
@@ -494,6 +512,10 @@ def upload_file():
 
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
+
+    # 3. Reject invalid files EARLY
+    if not allowed_file(file.filename):
+        return jsonify({"error": "File type not allowed. Supported types: txt, pdf, docx"}), 400
 
     content = file_processor.process_file(file)
     
