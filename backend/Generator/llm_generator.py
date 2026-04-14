@@ -1,6 +1,7 @@
 import json
 import re
 import threading
+import hashlib
 from llama_cpp import Llama
 
 
@@ -39,9 +40,17 @@ class LLMQuestionGenerator:
             input_text = " ".join(words[:max_words])
         return input_text
 
-    def generate_short_questions(self, input_text, max_questions=4):
+    def generate_short_questions(self, input_text, max_questions=4, deterministic=False):
         """Generate short-answer questions from the given text."""
+        # Input validation
+        if not input_text or not isinstance(input_text, str):
+            return []
+        
         self._load_model()
+        
+        # Compute seed BEFORE text truncation to ensure different inputs produce different seeds
+        seed_value = int(hashlib.sha256(input_text.encode()).hexdigest()[:8], 16) if deterministic else None
+        
         input_text = self._prepare_text(input_text)
 
         prompt = (
@@ -51,6 +60,16 @@ class LLMQuestionGenerator:
             f'Format: [{{"question": "...", "answer": "..."}}]\n'
             f"/no_think"
         )
+
+        params = {
+            "max_tokens": 512,
+            "temperature": 0.7,
+        }
+
+        if deterministic:
+            params["temperature"] = 0.0
+            params["top_p"] = 1.0
+            params["seed"] = seed_value
 
         response = self.llm.create_chat_completion(
             messages=[
@@ -63,8 +82,7 @@ class LLMQuestionGenerator:
                     "content": prompt,
                 },
             ],
-            max_tokens=512,
-            temperature=0.7,
+            **params
         )
 
         try:
@@ -78,9 +96,17 @@ class LLMQuestionGenerator:
         except (AttributeError, TypeError, ValueError):
             return []
 
-    def generate_mcq_questions(self, input_text, max_questions=4):
+    def generate_mcq_questions(self, input_text, max_questions=4, deterministic=False):
         """Generate multiple-choice questions from the given text."""
+        # Input validation
+        if not input_text or not isinstance(input_text, str):
+            return []
+        
         self._load_model()
+        
+        # Compute seed BEFORE text truncation to ensure different inputs produce different seeds
+        seed_value = int(hashlib.sha256(input_text.encode()).hexdigest()[:8], 16) if deterministic else None
+        
         input_text = self._prepare_text(input_text)
 
         prompt = (
@@ -91,6 +117,16 @@ class LLMQuestionGenerator:
             f'Format: [{{"question": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "A"}}]\n'
             f"/no_think"
         )
+
+        params = {
+            "max_tokens": 1024,
+            "temperature": 0.7,
+        }
+
+        if deterministic:
+            params["temperature"] = 0.0
+            params["top_p"] = 1.0
+            params["seed"] = seed_value
 
         response = self.llm.create_chat_completion(
             messages=[
@@ -103,8 +139,7 @@ class LLMQuestionGenerator:
                     "content": prompt,
                 },
             ],
-            max_tokens=1024,
-            temperature=0.7,
+            **params
         )
 
         try:
@@ -118,9 +153,17 @@ class LLMQuestionGenerator:
         except (AttributeError, TypeError, ValueError):
             return []
 
-    def generate_boolean_questions(self, input_text, max_questions=4):
+    def generate_boolean_questions(self, input_text, max_questions=4, deterministic=False):
         """Generate true/false questions from the given text."""
+        # Input validation
+        if not input_text or not isinstance(input_text, str):
+            return []
+        
         self._load_model()
+        
+        # Compute seed BEFORE text truncation to ensure different inputs produce different seeds
+        seed_value = int(hashlib.sha256(input_text.encode()).hexdigest()[:8], 16) if deterministic else None
+        
         input_text = self._prepare_text(input_text)
 
         prompt = (
@@ -130,6 +173,16 @@ class LLMQuestionGenerator:
             f'Format: [{{"question": "...", "answer": true/false}}]\n'
             f"/no_think"
         )
+
+        params = {
+            "max_tokens": 512,
+            "temperature": 0.7,
+        }
+
+        if deterministic:
+            params["temperature"] = 0.0
+            params["top_p"] = 1.0
+            params["seed"] = seed_value
 
         response = self.llm.create_chat_completion(
             messages=[
@@ -142,8 +195,7 @@ class LLMQuestionGenerator:
                     "content": prompt,
                 },
             ],
-            max_tokens=512,
-            temperature=0.7,
+            **params
         )
 
         try:
@@ -157,12 +209,12 @@ class LLMQuestionGenerator:
         except (AttributeError, TypeError, ValueError):
             return []
 
-    def generate_all_questions(self, input_text, mcq_count=2, bool_count=2, short_count=2):
+    def generate_all_questions(self, input_text, mcq_count=2, bool_count=2, short_count=2, deterministic=False):
         """Generate a mix of all question types."""
         questions = []
 
         # Generate MCQs
-        mcqs = self.generate_mcq_questions(input_text, mcq_count)
+        mcqs = self.generate_mcq_questions(input_text, mcq_count, deterministic)
         for mcq in mcqs:
             questions.append({
                 "type": "mcq",
@@ -172,7 +224,7 @@ class LLMQuestionGenerator:
             })
 
         # Generate Boolean questions
-        bool_qs = self.generate_boolean_questions(input_text, bool_count)
+        bool_qs = self.generate_boolean_questions(input_text, bool_count, deterministic)
         for bool_q in bool_qs:
             questions.append({
                 "type": "boolean",
@@ -181,7 +233,7 @@ class LLMQuestionGenerator:
             })
 
         # Generate Short questions
-        short_qs = self.generate_short_questions(input_text, short_count)
+        short_qs = self.generate_short_questions(input_text, short_count, deterministic)
         for short_q in short_qs:
             questions.append({
                 "type": "short_answer",

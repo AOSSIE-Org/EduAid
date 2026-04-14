@@ -101,8 +101,13 @@ def get_shortq_llm():
         input_text = data.get("input_text", "")
         use_mediawiki = data.get("use_mediawiki", 0)
         max_questions = data.get("max_questions", 4)
+        deterministic = data.get("deterministic", False)
+        
+        if not isinstance(deterministic, bool):
+            return jsonify({"error": "deterministic must be a boolean"}), 400
+        
         input_text = process_input_text(input_text, use_mediawiki)
-        questions = llm_generator.generate_short_questions(input_text, max_questions)
+        questions = llm_generator.generate_short_questions(input_text, max_questions, deterministic)
         return jsonify({"output": questions})
     except Exception as e:
         app.logger.exception("Error in /get_shortq_llm: %s", e)
@@ -116,8 +121,13 @@ def get_mcq_llm():
         input_text = data.get("input_text", "")
         use_mediawiki = data.get("use_mediawiki", 0)
         max_questions = data.get("max_questions", 4)
+        deterministic = data.get("deterministic", False)
+        
+        if not isinstance(deterministic, bool):
+            return jsonify({"error": "deterministic must be a boolean"}), 400
+        
         input_text = process_input_text(input_text, use_mediawiki)
-        questions = llm_generator.generate_mcq_questions(input_text, max_questions)
+        questions = llm_generator.generate_mcq_questions(input_text, max_questions, deterministic)
         return jsonify({"output": questions})
     except Exception as e:
         app.logger.exception("Error in /get_mcq_llm: %s", e)
@@ -131,8 +141,13 @@ def get_boolq_llm():
         input_text = data.get("input_text", "")
         use_mediawiki = data.get("use_mediawiki", 0)
         max_questions = data.get("max_questions", 4)
+        deterministic = data.get("deterministic", False)
+        
+        if not isinstance(deterministic, bool):
+            return jsonify({"error": "deterministic must be a boolean"}), 400
+        
         input_text = process_input_text(input_text, use_mediawiki)
-        questions = llm_generator.generate_boolean_questions(input_text, max_questions)
+        questions = llm_generator.generate_boolean_questions(input_text, max_questions, deterministic)
         return jsonify({"output": questions})
     except Exception as e:
         app.logger.exception("Error in /get_boolq_llm: %s", e)
@@ -148,8 +163,13 @@ def get_problems_llm():
         mcq_count = data.get("max_questions_mcq", 2)
         bool_count = data.get("max_questions_boolq", 2)
         short_count = data.get("max_questions_shortq", 2)
+        deterministic = data.get("deterministic", False)
+        
+        if not isinstance(deterministic, bool):
+            return jsonify({"error": "deterministic must be a boolean"}), 400
+        
         input_text = process_input_text(input_text, use_mediawiki)
-        questions = llm_generator.generate_all_questions(input_text, mcq_count, bool_count, short_count)
+        questions = llm_generator.generate_all_questions(input_text, mcq_count, bool_count, short_count, deterministic)
         return jsonify({"output": questions})
     except Exception as e:
         app.logger.exception("Error in /get_problems_llm: %s", e)
