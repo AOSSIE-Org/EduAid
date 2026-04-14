@@ -1,6 +1,7 @@
 import json
 import re
 import threading
+import hashlib
 from llama_cpp import Llama
 
 
@@ -48,7 +49,7 @@ class LLMQuestionGenerator:
         self._load_model()
         
         # Compute seed BEFORE text truncation to ensure different inputs produce different seeds
-        seed_value = hash(input_text) % (2**32) if deterministic else None
+        seed_value = int(hashlib.sha256(input_text.encode()).hexdigest()[:8], 16) if deterministic else None
         
         input_text = self._prepare_text(input_text)
 
@@ -104,7 +105,7 @@ class LLMQuestionGenerator:
         self._load_model()
         
         # Compute seed BEFORE text truncation to ensure different inputs produce different seeds
-        seed_value = hash(input_text) % (2**32) if deterministic else None
+        seed_value = int(hashlib.sha256(input_text.encode()).hexdigest()[:8], 16) if deterministic else None
         
         input_text = self._prepare_text(input_text)
 
@@ -161,7 +162,7 @@ class LLMQuestionGenerator:
         self._load_model()
         
         # Compute seed BEFORE text truncation to ensure different inputs produce different seeds
-        seed_value = hash(input_text) % (2**32) if deterministic else None
+        seed_value = int(hashlib.sha256(input_text.encode()).hexdigest()[:8], 16) if deterministic else None
         
         input_text = self._prepare_text(input_text)
 

@@ -102,6 +102,10 @@ def get_shortq_llm():
         use_mediawiki = data.get("use_mediawiki", 0)
         max_questions = data.get("max_questions", 4)
         deterministic = data.get("deterministic", False)
+        
+        if not isinstance(deterministic, bool):
+            return jsonify({"error": "deterministic must be a boolean"}), 400
+        
         input_text = process_input_text(input_text, use_mediawiki)
         questions = llm_generator.generate_short_questions(input_text, max_questions, deterministic)
         return jsonify({"output": questions})
@@ -118,6 +122,10 @@ def get_mcq_llm():
         use_mediawiki = data.get("use_mediawiki", 0)
         max_questions = data.get("max_questions", 4)
         deterministic = data.get("deterministic", False)
+        
+        if not isinstance(deterministic, bool):
+            return jsonify({"error": "deterministic must be a boolean"}), 400
+        
         input_text = process_input_text(input_text, use_mediawiki)
         questions = llm_generator.generate_mcq_questions(input_text, max_questions, deterministic)
         return jsonify({"output": questions})
@@ -134,6 +142,10 @@ def get_boolq_llm():
         use_mediawiki = data.get("use_mediawiki", 0)
         max_questions = data.get("max_questions", 4)
         deterministic = data.get("deterministic", False)
+        
+        if not isinstance(deterministic, bool):
+            return jsonify({"error": "deterministic must be a boolean"}), 400
+        
         input_text = process_input_text(input_text, use_mediawiki)
         questions = llm_generator.generate_boolean_questions(input_text, max_questions, deterministic)
         return jsonify({"output": questions})
@@ -152,6 +164,10 @@ def get_problems_llm():
         bool_count = data.get("max_questions_boolq", 2)
         short_count = data.get("max_questions_shortq", 2)
         deterministic = data.get("deterministic", False)
+        
+        if not isinstance(deterministic, bool):
+            return jsonify({"error": "deterministic must be a boolean"}), 400
+        
         input_text = process_input_text(input_text, use_mediawiki)
         questions = llm_generator.generate_all_questions(input_text, mcq_count, bool_count, short_count, deterministic)
         return jsonify({"output": questions})
