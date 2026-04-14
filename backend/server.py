@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from werkzeug.exceptions import RequestEntityTooLarge
 from pprint import pprint
 import nltk
 import subprocess
@@ -30,6 +31,23 @@ from mediawikiapi import MediaWikiAPI
 app = Flask(__name__)
 CORS(app)
 print("Starting Flask App...")
+
+# 1. Add MAX_CONTENT_LENGTH config (5 MB limit)
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
+
+# 2. Add ALLOWED_EXTENSIONS validation
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx'}
+
+def allowed_file(filename):
+    if '.' not in filename:
+        return False
+    
+    extension = filename.rsplit('.', 1)[1].lower()
+    return extension in ALLOWED_EXTENSIONS
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_file_too_large(error):
+    return jsonify({"error": "File size exceeds the 5MB limit"}), 413
 
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
@@ -495,6 +513,10 @@ def upload_file():
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
+    # 3. Reject invalid files EARLY
+    if not allowed_file(file.filename):
+        return jsonify({"error": "File type not allowed. Supported types: txt, pdf, docx"}), 400
+
     content = file_processor.process_file(file)
     
     if content:
@@ -539,22 +561,35 @@ def get_transcript():
     if not video_id:
         return jsonify({"error": "No video ID provided"}), 400
 
-    subprocess.run(["yt-dlp", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
-                "--sub-format", "vtt", "-o", f"subtitles/{video_id}.vtt", f"https://www.youtube.com/watch?v={video_id}"],
-               check=True, capture_output=True, text=True)
+    transcript_text = None
+    latest_subtitle = None
 
-    # Find the latest .vtt file in the "subtitles" folder
-    subtitle_files = glob.glob("subtitles/*.vtt")
-    if not subtitle_files:
-        return jsonify({"error": "No subtitles found"}), 404
+    try:
+        subprocess.run(["yt-dlp", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
+                    "--sub-format", "vtt", "-o", f"subtitles/{video_id}.vtt", f"https://www.youtube.com/watch?v={video_id}"],
+                   check=True, capture_output=True, text=True)
 
-    latest_subtitle = max(subtitle_files, key=os.path.getctime)
-    transcript_text = clean_transcript(latest_subtitle)
+        # Find the latest .vtt file in the "subtitles" folder
+        subtitle_files = glob.glob("subtitles/*.vtt")
+        if not subtitle_files:
+            return jsonify({"error": "No subtitles found"}), 404
 
-    # Optional: Clean up the file after reading
-    os.remove(latest_subtitle)
+        latest_subtitle = max(subtitle_files, key=os.path.getctime)
+        transcript_text = clean_transcript(latest_subtitle)
 
-    return jsonify({"transcript": transcript_text})
+        return jsonify({"transcript": transcript_text})
+
+    finally:
+        # Guarantee cleanup runs even if subprocess or extraction fails
+        if latest_subtitle and os.path.exists(latest_subtitle):
+            app.logger.info(f"Deleting temporary subtitle file: {latest_subtitle}")
+            os.remove(latest_subtitle)
+        elif not latest_subtitle:
+            # Fallback cleanup: If yt-dlp crashed halfway but still emitted partial files
+            for stray in glob.glob(f"subtitles/{video_id}*.vtt"):
+                if os.path.exists(stray):
+                    app.logger.info(f"Deleting stray temporary subtitle file: {stray}")
+                    os.remove(stray)
 
 if __name__ == "__main__":
     os.makedirs("subtitles", exist_ok=True)
