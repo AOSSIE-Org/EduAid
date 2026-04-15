@@ -22,6 +22,7 @@ import re
 import os
 import fitz 
 import mammoth
+from werkzeug.utils import secure_filename
 
 class MCQGenerator:
     
@@ -368,19 +369,54 @@ class FileProcessor:
             return result.value
 
     def process_file(self, file):
-        file_path = os.path.join(self.upload_folder, file.filename)
+        if not file.filename:
+            raise ValueError("Empty filename")
+            
+        filename = secure_filename(file.filename)
+        if not filename:
+            raise ValueError("Invalid filename")
+
+        target_dir = os.path.abspath(self.upload_folder)
+        file_path = os.path.abspath(os.path.join(target_dir, filename))
+        
+        if os.path.commonpath([target_dir, file_path]) != target_dir:
+            raise ValueError("Path traversal detected")
+            
         file.save(file_path)
         content = ""
 
-        if file.filename.endswith('.txt'):
-            with open(file_path, 'r') as f:
-                content = f.read()
-        elif file.filename.endswith('.pdf'):
-            content = self.extract_text_from_pdf(file_path)
-        elif file.filename.endswith('.docx'):
-            content = self.extract_text_from_docx(file_path)
+        try:
+            if '.' not in filename:
+                raise ValueError("Unsupported file extension")
+            ext = filename.rsplit('.', 1)[1].lower()
 
-        os.remove(file_path)
+            with open(file_path, 'rb') as f:
+                header = f.read(512)
+                
+            if ext == 'pdf':
+                if not header.startswith(b"%PDF"):
+                    raise ValueError("Invalid file content: PDF signature not found")
+                content = self.extract_text_from_pdf(file_path)
+                
+            elif ext == 'docx':
+                if not header.startswith(b"PK\x03\x04"):
+                    raise ValueError("Invalid file content: DOCX signature not found")
+                content = self.extract_text_from_docx(file_path)
+                
+            elif ext == 'txt':
+                try:
+                    header.decode('utf-8')
+                except UnicodeDecodeError:
+                    raise ValueError("Invalid file content: TXT must be valid UTF-8 text")
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+            else:
+                raise ValueError("Unsupported file extension")
+                
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
         return content
 
 class QuestionGenerator:
