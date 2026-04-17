@@ -22,6 +22,7 @@ import re
 import os
 import fitz 
 import mammoth
+import zipfile
 from werkzeug.utils import secure_filename
 
 class MCQGenerator:
@@ -401,6 +402,15 @@ class FileProcessor:
             elif ext == 'docx':
                 if not header.startswith(b"PK\x03\x04"):
                     raise ValueError("Invalid file content: DOCX signature not found")
+                
+                try:
+                    with zipfile.ZipFile(file_path, 'r') as zf:
+                        namelist = zf.namelist()
+                        if '[Content_Types].xml' not in namelist or 'word/document.xml' not in namelist:
+                            raise ValueError("Invalid file content: Missing DOCX internal structures")
+                except zipfile.BadZipFile:
+                    raise ValueError("Invalid file content: Not a valid ZIP archive")
+                
                 content = self.extract_text_from_docx(file_path)
                 
             elif ext == 'txt':
