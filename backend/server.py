@@ -495,12 +495,19 @@ def upload_file():
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
-    content = file_processor.process_file(file)
-    
-    if content:
-        return jsonify({"content": content})
-    else:
-        return jsonify({"error": "Unsupported file type or error processing file"}), 400
+    try:
+        content = file_processor.process_file(file)
+        
+        if content:
+            return jsonify({"content": content})
+        else:
+            return jsonify({"error": "Unsupported file type or error processing file"}), 400
+    except ValueError as e:
+        app.logger.warning("Upload validation failed: %s", e)
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        app.logger.exception("Error processing upload: %s", e)
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route("/", methods=["GET"])
 def hello():
