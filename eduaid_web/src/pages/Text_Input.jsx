@@ -28,7 +28,6 @@ const Text_Input = () => {
     if (file) {
       const formData = new FormData();
       formData.append("file", file);
-
       try {
         const data = await apiClient.postFormData("/upload", formData);
         setText(data.content || data.error);
@@ -42,14 +41,21 @@ const Text_Input = () => {
   const handleClick = (event) => {
     event.preventDefault(); // Prevent default behavior
     event.stopPropagation(); // Stop event propagation
-
     // Open file input dialog
     fileInputRef.current.click();
   };
 
+  const handleClear = () => {
+    setText("");
+    setDifficulty("Easy Difficulty");
+    setNumQuestions(10);
+    setIsToggleOn(0);
+    setDocUrl("");
+    localStorage.removeItem("selectedQuestionType");
+  };
+
   const handleSaveToLocalStorage = async () => {
     setLoading(true);
-
     // Check if a Google Doc URL is provided
     if (docUrl) {
       try {
@@ -67,7 +73,6 @@ const Text_Input = () => {
       localStorage.setItem("textContent", text);
       localStorage.setItem("difficulty", difficulty);
       localStorage.setItem("numQuestions", numQuestions);
-
       await sendToBackend(
         text,
         difficulty,
@@ -107,10 +112,8 @@ const Text_Input = () => {
         max_questions: numQuestions,
         use_mediawiki: isToggleOn,
       };
-
       const responseData = await apiClient.post(`/${endpoint}`, requestData);
       localStorage.setItem("qaPairs", JSON.stringify(responseData));
-
       // Save quiz details to local storage
       const quizDetails = {
         difficulty,
@@ -118,7 +121,6 @@ const Text_Input = () => {
         date: new Date().toLocaleDateString(),
         qaPair: responseData,
       };
-
       let last5Quizzes =
         JSON.parse(localStorage.getItem("last5Quizzes")) || [];
       last5Quizzes.push(quizDetails);
@@ -126,7 +128,6 @@ const Text_Input = () => {
         last5Quizzes.shift(); // Keep only the last 5 quizzes
       }
       localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
-
       navigate("/output");
     } catch (error) {
       console.error("Error:", error);
@@ -142,7 +143,6 @@ const Text_Input = () => {
           <div className="loader border-4 border-t-4 border-white rounded-full w-16 h-16 animate-spin"></div>
         </div>
       )}
-
       <div className={`w-full h-full bg-cust bg-opacity-50 ${loading ? "pointer-events-none" : ""}`}>
         {/* Header */}
         <Link to="/" className="block">
@@ -154,7 +154,6 @@ const Text_Input = () => {
             </div>
           </div>
         </Link>
-
         {/* Headline */}
         <div className="text-white text-center sm:text-right mx-4 sm:mx-8">
           <div className="text-xl sm:text-2xl font-bold">Enter the Content</div>
@@ -164,7 +163,6 @@ const Text_Input = () => {
             <img className="h-6 w-6" src={stars} alt="stars" />
           </div>
         </div>
-
         {/* Textarea */}
         <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
           <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
@@ -178,15 +176,12 @@ const Text_Input = () => {
           />
           <style>{`textarea::-webkit-scrollbar { display: none; }`}</style>
         </div>
-
         {/* Separator */}
         <div className="text-white text-center my-4 text-lg">or</div>
-
         {/* File Upload Section */}
         <div className="w-full max-w-2xl mx-auto border-[3px] rounded-2xl text-center px-6 py-6 border-dotted border-[#3E5063] mt-6">
           <img className="mx-auto mb-2" height={32} width={32} src={cloud} alt="cloud" />
           <p className="text-white text-lg">Choose a file (PDF, MP3 supported)</p>
-
           <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: "none" }} />
           <button
             className="bg-[#3e506380] my-4 text-lg rounded-2xl text-white border border-[#cbd0dc80] px-6 py-2"
@@ -194,7 +189,6 @@ const Text_Input = () => {
           >
             Browse File
           </button>
-
           <input
             type="text"
             placeholder="Enter Google Doc URL"
@@ -203,7 +197,6 @@ const Text_Input = () => {
             onChange={(e) => setDocUrl(e.target.value)}
           />
         </div>
-
         {/* Controls Section */}
         <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-6 items-center mt-6 px-4 sm:px-8">
           {/* Question Count */}
@@ -213,7 +206,6 @@ const Text_Input = () => {
             <span className="text-white text-2xl">{numQuestions}</span>
             <button onClick={incrementQuestions} className="rounded-lg border-2 border-[#6e8a9f] text-white text-xl px-3">+</button>
           </div>
-
           {/* Difficulty Dropdown */}
           <div className="text-center">
             <select
@@ -225,7 +217,6 @@ const Text_Input = () => {
               <option value="Hard Difficulty">Hard Difficulty</option>
             </select>
           </div>
-
           {/* Wikipedia Toggle */}
           <div className="flex items-center gap-2">
             <span className="text-white text-lg sm:text-xl font-bold">Use Wikipedia:</span>
@@ -239,7 +230,15 @@ const Text_Input = () => {
             />
           </div>
         </div>
-
+        {/* Clear Input Button */}
+        <div className="flex justify-center mt-4 px-4 sm:px-8">
+          <button
+            onClick={handleClear}
+            className="bg-[#7600F2] text-white text-lg sm:text-xl px-6 py-2 rounded-xl border border-[#00CBE7] hover:bg-[#7600F2]/80 transition-all"
+          >
+            Clear Input
+          </button>
+        </div>
         {/* Navigation Buttons */}
         <div className="flex flex-col sm:flex-row justify-center gap-6 mt-6 pb-10 px-4 sm:px-8">
           <Link to="/question-type">
@@ -254,7 +253,6 @@ const Text_Input = () => {
         </div>
       </div>
     </div>
-
   );
 };
 
