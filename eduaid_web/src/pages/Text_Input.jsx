@@ -29,7 +29,7 @@ const Text_Input = () => {
     setNumQuestions(10);
     setDocUrl("");
     setIsToggleOn(0);
-    localStorage.removeItem("selectedQuestionType");
+    localStorage.setItem("selectedQuestionType", "get_shortq");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }

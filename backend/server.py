@@ -12,6 +12,7 @@ import random
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 import tempfile
+from uuid import uuid4
 
 nltk.download("stopwords")
 nltk.download('punkt_tab')
@@ -366,10 +367,12 @@ def get_mcq_answer():
         return err
 
     input_questions, err_q = _validate_string_list(data.get("input_question"), "input_question")
-    if err_q: return err_q
+    if err_q:
+        return err_q
     
     input_options, err_o = _validate_options_list(data.get("input_options"))
-    if err_o: return err_o
+    if err_o:
+        return err_o
 
     if (
         not input_questions
@@ -418,7 +421,8 @@ def get_answer():
         return err
 
     input_questions, err_q = _validate_string_list(data.get("input_question"), "input_question")
-    if err_q: return err_q
+    if err_q:
+        return err_q
 
     if not input_questions:
         return jsonify({"output": []})
@@ -447,7 +451,8 @@ def get_boolean_answer():
         return err
 
     input_questions, err_q = _validate_string_list(data.get("input_question"), "input_question")
-    if err_q: return err_q
+    if err_q:
+        return err_q
 
     if not input_questions:
         return jsonify({"output": []})
@@ -501,6 +506,23 @@ def generate_gform():
 
     if not question_type or not isinstance(question_type, str):
         return jsonify({"error": "question_type is required"}), 400
+
+    for index, qapair in enumerate(qa_pairs):
+        if not isinstance(qapair, dict) or not isinstance(qapair.get("question"), str):
+            return (
+                jsonify({"error": f"qa_pairs[{index}] must include a question string"}),
+                400,
+            )
+        if question_type == "get_mcq" and not isinstance(qapair.get("answer"), str):
+            return (
+                jsonify({"error": f"qa_pairs[{index}] must include an answer string"}),
+                400,
+            )
+        if "options" in qapair and not isinstance(qapair["options"], list):
+            return (
+                jsonify({"error": f"qa_pairs[{index}].options must be a list"}),
+                400,
+            )
     SCOPES = "https://www.googleapis.com/auth/forms.body"
     DISCOVERY_DOC = "https://forms.googleapis.com/$discovery/rest?version=v1"
 
@@ -781,7 +803,8 @@ def upload_file():
     if uploaded_file.filename == "":
         return jsonify({"error": "No file selected"}), 400
 
-    if not _allowed_file(uploaded_file.filename):
+    safe_filename = secure_filename(uploaded_file.filename)
+    if not safe_filename or not _allowed_file(safe_filename):
         return (
             jsonify({
                 "error": f"Unsupported file type. Allowed types: {', '.join(ALLOWED_UPLOAD_EXTENSIONS)}"
@@ -789,8 +812,8 @@ def upload_file():
             400,
         )
 
-    # Sanitize filename to prevent path-traversal attacks
-    uploaded_file.filename = secure_filename(uploaded_file.filename)
+    # Sanitize filename to prevent path-traversal attacks and collisions
+    uploaded_file.filename = f"{uuid4().hex}_{safe_filename}"
 
     try:
         content = file_processor.process_file(uploaded_file)
