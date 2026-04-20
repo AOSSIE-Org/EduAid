@@ -23,6 +23,18 @@ const Text_Input = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
   };
 
+  const handleClear = () => {
+    setText("");
+    setDifficulty("Easy Difficulty");
+    setNumQuestions(10);
+    setDocUrl("");
+    setIsToggleOn(0);
+    localStorage.setItem("selectedQuestionType", "get_shortq");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -169,6 +181,12 @@ const Text_Input = () => {
         <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
           <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
             <FaClipboard className="h-[24px] w-[24px]" />
+          </button>
+          <button
+            onClick={handleClear}
+            className="absolute top-0 right-0 p-2 m-2 bg-red-600 hover:bg-red-700 text-white rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#83b6cc] text-sm z-10 font-bold shadow-md transition-colors"
+          >
+            Clear Input
           </button>
           <textarea
             className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
