@@ -11,6 +11,7 @@ import json
 import random
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
+import tempfile
 
 nltk.download("stopwords")
 nltk.download('punkt_tab')
@@ -104,6 +105,34 @@ def _validate_input_text(input_text):
             400,
         )
     return input_text, None
+
+
+def _validate_options_list(value):
+    if value is None:
+        return [], None
+    if not isinstance(value, list) or any(
+        not isinstance(options, list)
+        or any(not isinstance(option, str) for option in options)
+        for options in value
+    ):
+        return None, (
+            jsonify({"error": "input_options must be a list of string lists"}),
+            400,
+        )
+    return value, None
+
+
+def _validate_string_list(value, field_name):
+    if value is None:
+        return [], None
+    if not isinstance(value, list) or any(
+        not isinstance(item, str) or not item.strip() for item in value
+    ):
+        return None, (
+            jsonify({"error": f"{field_name} must be a list of non-empty strings"}),
+            400,
+        )
+    return [item.strip() for item in value], None
 
 
 def _validate_max_questions(value, default=4):
@@ -336,6 +365,12 @@ def get_mcq_answer():
     if err:
         return err
 
+    input_questions, err_q = _validate_string_list(data.get("input_question"), "input_question")
+    if err_q: return err_q
+    
+    input_options, err_o = _validate_options_list(data.get("input_options"))
+    if err_o: return err_o
+
     if (
         not input_questions
         or not input_options
@@ -382,6 +417,9 @@ def get_answer():
     if err:
         return err
 
+    input_questions, err_q = _validate_string_list(data.get("input_question"), "input_question")
+    if err_q: return err_q
+
     if not input_questions:
         return jsonify({"output": []})
 
@@ -407,6 +445,9 @@ def get_boolean_answer():
     input_text, err = _validate_input_text(input_text)
     if err:
         return err
+
+    input_questions, err_q = _validate_string_list(data.get("input_question"), "input_question")
+    if err_q: return err_q
 
     if not input_questions:
         return jsonify({"output": []})
@@ -634,6 +675,12 @@ def get_shortq_hard():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
+    if input_questions and not isinstance(input_questions, list):
+        return jsonify({"error": "input_question must be a list"}), 400
+    num_questions = _validate_max_questions(
+        len(input_questions) if input_questions else 5,
+        default=5,
+    )
 
     input_text, err = _validate_input_text(input_text)
     if err:
@@ -643,7 +690,7 @@ def get_shortq_hard():
         input_text = process_input_text(input_text, use_mediawiki)
         output = qg.generate(
             article=input_text,
-            num_questions=len(input_questions) if input_questions else 5,
+            num_questions=num_questions,
             answer_style="sentences",
             use_evaluator=True,
         )
@@ -663,6 +710,12 @@ def get_mcq_hard():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
+    if input_questions and not isinstance(input_questions, list):
+        return jsonify({"error": "input_question must be a list"}), 400
+    num_questions = _validate_max_questions(
+        len(input_questions) if input_questions else 5,
+        default=5,
+    )
 
     input_text, err = _validate_input_text(input_text)
     if err:
@@ -672,7 +725,7 @@ def get_mcq_hard():
         input_text = process_input_text(input_text, use_mediawiki)
         output = qg.generate(
             article=input_text,
-            num_questions=len(input_questions) if input_questions else 5,
+            num_questions=num_questions,
             answer_style="multiple_choice",
             use_evaluator=True,
         )
@@ -692,6 +745,12 @@ def get_boolq_hard():
     input_text = data.get("input_text", "")
     use_mediawiki = data.get("use_mediawiki", 0)
     input_questions = data.get("input_question", [])
+    if input_questions and not isinstance(input_questions, list):
+        return jsonify({"error": "input_question must be a list"}), 400
+    num_questions = _validate_max_questions(
+        len(input_questions) if input_questions else 5,
+        default=5,
+    )
 
     input_text, err = _validate_input_text(input_text)
     if err:
@@ -700,7 +759,7 @@ def get_boolq_hard():
     try:
         input_text = process_input_text(input_text, use_mediawiki)
         output = BoolQGen.generate_boolq(
-            {"input_text": input_text, "max_questions": len(input_questions) if input_questions else 5}
+            {"input_text": input_text, "max_questions": num_questions}
         )
         boolean_questions = output.get("Boolean_Questions", [])
         for item in boolean_questions:
@@ -792,49 +851,43 @@ def get_transcript():
     # concurrent requests for different videos.
     # Safety: subtitle_path is safe because VIDEO_ID_PATTERN (above) restricts
     # video_id to [a-zA-Z0-9_-]{11}, preventing path traversal and injection.
-    subtitle_path = os.path.join("subtitles", f"{video_id}")
-
-    try:
-        subprocess.run(
-            [
-                "yt-dlp",
-                "--write-auto-sub",
-                "--sub-lang", "en",
-                "--skip-download",
-                "--sub-format", "vtt",
-                "-o", f"{subtitle_path}.%(ext)s",
-                f"https://www.youtube.com/watch?v={video_id}",
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-    except subprocess.TimeoutExpired:
-        logger.exception("yt-dlp timed out for video %s", video_id)
-        return jsonify({"error": "Transcript download timed out"}), 504
-    except subprocess.CalledProcessError as e:
-        logger.exception("yt-dlp failed for video %s: %s", video_id, e.stderr)
-        return jsonify({"error": "Failed to download subtitles"}), 500
-
-    # Look for the VTT file specific to this video_id
-    matching_files = glob.glob(f"subtitles/{video_id}.*.vtt")
-    if not matching_files:
-        return jsonify({"error": "No subtitles found for this video"}), 404
-
-    subtitle_file = matching_files[0]
-    try:
-        transcript_text = clean_transcript(subtitle_file)
-    except Exception:
-        logger.exception("Error cleaning transcript for video %s", video_id)
-        return jsonify({"error": "Failed to process transcript"}), 500
-    finally:
-        # Always clean up the subtitle files
-        for f in matching_files:
-            try:
-                os.remove(f)
-            except OSError:
-                pass
+    with tempfile.TemporaryDirectory(dir="subtitles") as tmpdir:
+        subtitle_path = os.path.join(tmpdir, video_id)
+    
+        try:
+            subprocess.run(
+                [
+                    "yt-dlp",
+                    "--write-auto-sub",
+                    "--sub-lang", "en",
+                    "--skip-download",
+                    "--sub-format", "vtt",
+                    "-o", f"{subtitle_path}.%(ext)s",
+                    f"https://www.youtube.com/watch?v={video_id}",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+        except subprocess.TimeoutExpired:
+            logger.exception("yt-dlp timed out for video %s", video_id)
+            return jsonify({"error": "Transcript download timed out"}), 504
+        except subprocess.CalledProcessError as e:
+            logger.exception("yt-dlp failed for video %s: %s", video_id, e.stderr)
+            return jsonify({"error": "Failed to download subtitles"}), 500
+    
+        # Look for the VTT file specific to this video_id
+        matching_files = glob.glob(os.path.join(tmpdir, f"{video_id}.*.vtt"))
+        if not matching_files:
+            return jsonify({"error": "No subtitles found for this video"}), 404
+    
+        subtitle_file = matching_files[0]
+        try:
+            transcript_text = clean_transcript(subtitle_file)
+        except Exception:
+            logger.exception("Error cleaning transcript for video %s", video_id)
+            return jsonify({"error": "Failed to process transcript"}), 500
 
     logger.info("Fetched transcript for video %s", video_id)
     return jsonify({"transcript": transcript_text})

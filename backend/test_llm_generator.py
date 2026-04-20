@@ -18,11 +18,14 @@ import sys
 
 import pytest
 
-# Load the real LLMQuestionGenerator, bypassing conftest's sys.modules mock.
-# We also need to provide a stub for llama_cpp which is not installed in CI.
-if "llama_cpp" not in sys.modules:
-    sys.modules["llama_cpp"] = type(sys)("llama_cpp")
-    sys.modules["llama_cpp"].Llama = type("Llama", (), {"from_pretrained": staticmethod(lambda **kw: None)})
+# Always stub llama_cpp so these parser tests never load native/model resources.
+llama_cpp_stub = type(sys)("llama_cpp")
+llama_cpp_stub.Llama = type(
+    "Llama",
+    (),
+    {"from_pretrained": staticmethod(lambda **kw: None)},
+)
+sys.modules["llama_cpp"] = llama_cpp_stub
 
 _llm_gen_path = os.path.join(os.path.dirname(__file__), "Generator", "llm_generator.py")
 _spec = importlib.util.spec_from_file_location("_real_llm_generator", _llm_gen_path)

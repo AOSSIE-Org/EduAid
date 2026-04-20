@@ -29,6 +29,10 @@ const Text_Input = () => {
     setNumQuestions(10);
     setDocUrl("");
     setIsToggleOn(0);
+    localStorage.removeItem("selectedQuestionType");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleFileUpload = async (event) => {
@@ -180,7 +184,7 @@ const Text_Input = () => {
           </button>
           <button
             onClick={handleClear}
-            className="absolute top-0 right-0 p-2 m-2 bg-red-600 hover:bg-red-700 text-white rounded-lg focus:outline-none text-sm z-10 font-bold shadow-md transition-colors"
+            className="absolute top-0 right-0 p-2 m-2 bg-red-600 hover:bg-red-700 text-white rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#83b6cc] text-sm z-10 font-bold shadow-md transition-colors"
           >
             Clear Input
           </button>
