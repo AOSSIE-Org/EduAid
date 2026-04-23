@@ -1,10 +1,11 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 from pprint import pprint
 import nltk
 import subprocess
 import os
 import glob
+import uuid
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -30,6 +31,18 @@ from mediawikiapi import MediaWikiAPI
 app = Flask(__name__)
 CORS(app)
 print("Starting Flask App...")
+
+@app.before_request
+def assign_request_id():
+    g.request_id = str(uuid.uuid4())[:8]
+    if request.path in ['/upload', '/getTranscript']:
+        app.logger.info(f"[{g.request_id}] Started {request.method} {request.path}")
+
+@app.after_request
+def log_request_end(response):
+    if hasattr(g, 'request_id') and request.path in ['/upload', '/getTranscript']:
+        app.logger.info(f"[{g.request_id}] Completed {request.method} {request.path} with status {response.status_code}")
+    return response
 
 SERVICE_ACCOUNT_FILE = './service_account_key.json'
 SCOPES = ['https://www.googleapis.com/auth/documents.readonly']
