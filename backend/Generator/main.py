@@ -22,6 +22,9 @@ import re
 import os
 import fitz 
 import mammoth
+import speech_recognition as sr
+from pydub import AudioSegment
+import uuid
 
 class MCQGenerator:
     
@@ -367,20 +370,80 @@ class FileProcessor:
             result = mammoth.extract_raw_text(docx_file)
             return result.value
 
+    def extract_text_from_audio(self, file_path):
+        wav_path = file_path
+        request_id = uuid.uuid4().hex
+        chunk_files = []
+        try:
+            if file_path.endswith('.mp3'):
+                audio = AudioSegment.from_file(file_path, format='mp3')
+                wav_path = os.path.join(self.upload_folder, f"{request_id}.wav")
+                audio.export(wav_path, format='wav')
+            
+            r = sr.Recognizer()
+            r.operation_timeout = 20  # Fail fast if speech recognition hangs
+            audio = AudioSegment.from_wav(wav_path)
+            
+            # Enforce max duration of 10 minutes (600,000 milliseconds)
+            max_duration_ms = 10 * 60 * 1000
+            if len(audio) > max_duration_ms:
+                raise ValueError("Audio file is too long. Maximum supported duration is 10 minutes.")
+            
+            chunk_length_ms = 60 * 1000
+            audio_len = len(audio)
+            
+            full_text = []
+            for i, start_ms in enumerate(range(0, audio_len, chunk_length_ms)):
+                chunk = audio[start_ms : start_ms + chunk_length_ms]
+                chunk_filename = os.path.join(self.upload_folder, f"{request_id}_chunk_{i}.wav")
+                chunk_files.append(chunk_filename)
+                chunk.export(chunk_filename, format='wav')
+                
+                with sr.AudioFile(chunk_filename) as source:
+                    audio_data = r.record(source)
+                    try:
+                        text = r.recognize_google(audio_data)
+                        full_text.append(text)
+                    except sr.UnknownValueError:
+                        full_text.append("[Unintelligible]")
+                    except sr.RequestError as e:
+                        raise RuntimeError("Could not request results") from e
+        finally:
+            for chunk_file in chunk_files:
+                if os.path.exists(chunk_file):
+                    os.remove(chunk_file)
+            if wav_path != file_path and os.path.exists(wav_path):
+                os.remove(wav_path)
+            
+        return "\n".join(full_text)
+
     def process_file(self, file):
-        file_path = os.path.join(self.upload_folder, file.filename)
-        file.save(file_path)
+        # Extract and validate extension
+        _, ext = os.path.splitext(file.filename)
+        ext = ext.lower()
+        if ext not in ['.txt', '.pdf', '.docx', '.wav', '.mp3']:
+            raise ValueError('Unsupported file format')
+
+        # Generate safe storage name to prevent path traversal & collisions
+        temp_filename = f"{uuid.uuid4().hex}{ext}"
+        file_path = os.path.join(self.upload_folder, temp_filename)
         content = ""
 
-        if file.filename.endswith('.txt'):
-            with open(file_path, 'r') as f:
-                content = f.read()
-        elif file.filename.endswith('.pdf'):
-            content = self.extract_text_from_pdf(file_path)
-        elif file.filename.endswith('.docx'):
-            content = self.extract_text_from_docx(file_path)
+        try:
+            file.save(file_path)
+            if ext == '.txt':
+                with open(file_path, 'r') as f:
+                    content = f.read()
+            elif ext == '.pdf':
+                content = self.extract_text_from_pdf(file_path)
+            elif ext == '.docx':
+                content = self.extract_text_from_docx(file_path)
+            elif ext in ['.wav', '.mp3']:
+                content = self.extract_text_from_audio(file_path)
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
-        os.remove(file_path)
         return content
 
 class QuestionGenerator:

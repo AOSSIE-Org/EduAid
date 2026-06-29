@@ -495,7 +495,12 @@ def upload_file():
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
-    content = file_processor.process_file(file)
+    try:
+        content = file_processor.process_file(file)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except RuntimeError as e:
+        return jsonify({"error": str(e)}), 503
     
     if content:
         return jsonify({"content": content})

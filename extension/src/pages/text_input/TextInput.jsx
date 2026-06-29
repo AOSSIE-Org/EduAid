@@ -234,11 +234,12 @@ function Second() {
           <img className="mx-auto" height={24} width={24} src={cloud} alt="cloud" />
           <div className="text-center text-white text-sm">Choose a file</div>
           <div className="text-center text-white text-sm">
-            PDF, MP3 supported
+            PDF, TXT, DOCX, Audio supported
           </div>
           <div>
             <input
               type="file"
+              accept=".txt,.pdf,.docx,.mp3,.wav"
               ref={fileInputRef}
               onChange={handleFileUpload}
               style={{ display: 'none' }}

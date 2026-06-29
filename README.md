@@ -22,6 +22,11 @@ Online learning has taken the front seat in the post-pandemic age. With the adve
 
 EduAid is one such project currently available in the form of a browser extension.
 
+## System Requirements
+
+- **ffmpeg** or **libav** installed and available on your system `PATH`. Required for transcoding audio formats such as `.mp3` to `.wav`. (Note: `.wav` files are supported directly by the backend and do not require conversion).
+- The Python dependencies **pydub** and **SpeechRecognition** must be installed (these are automatically installed via `pip install -r requirements.txt`).
+
 ## Installation and Setup
 
 ### 1. Clone the Repository
