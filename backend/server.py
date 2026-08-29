@@ -226,19 +226,18 @@ def get_answer():
 
 @app.route("/get_boolean_answer", methods=["POST"])
 def get_boolean_answer():
+    """POST /get_boolean_answer - returns "True"/"False" for each yes/no question via the NLI model."""
     data = request.get_json()
     input_text = data.get("input_text", "")
     input_questions = data.get("input_question", [])
-    output = []
 
-    for question in input_questions:
-        qa_response = answer.predict_boolean_answer(
-            {"input_text": input_text, "input_question": question}
-        )
-        if(qa_response):
-            output.append("True")
-        else:
-            output.append("False")
+    # predict_boolean_answer expects the full list of questions; passing one
+    # question at a time made it iterate over the string's characters, and
+    # checking the returned (always non-empty) list made every answer "True".
+    answers = answer.predict_boolean_answer(
+        {"input_text": input_text, "input_question": input_questions}
+    )
+    output = ["True" if answer else "False" for answer in answers]
 
     return jsonify({"output": output})
 
