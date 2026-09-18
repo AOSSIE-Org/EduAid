@@ -1,4 +1,5 @@
 import time
+import uuid
 import torch
 import random
 from transformers import T5ForConditionalGeneration, T5Tokenizer
@@ -351,11 +352,13 @@ class GoogleDocsService:
 
 class FileProcessor:
     def __init__(self, upload_folder='uploads/'):
+        """Creates the upload folder if it does not already exist."""
         self.upload_folder = upload_folder
         if not os.path.exists(self.upload_folder):
             os.makedirs(self.upload_folder)
 
     def extract_text_from_pdf(self, file_path):
+        """Returns the concatenated text content of a PDF file at ``file_path``."""
         doc = fitz.open(file_path)
         text = ""
         for page in doc:
@@ -363,21 +366,42 @@ class FileProcessor:
         return text
 
     def extract_text_from_docx(self, file_path):
+        """Return the raw text content of a .docx file at ``file_path``."""
         with open(file_path, "rb") as docx_file:
             result = mammoth.extract_raw_text(docx_file)
             return result.value
 
     def process_file(self, file):
-        file_path = os.path.join(self.upload_folder, file.filename)
+        """Save an uploaded file under a server-generated name and return its extracted text.
+
+        The client-supplied filename is untrusted: joining it directly with the upload folder
+        would allow path traversal (e.g. '../../app.py') and name collisions. The upload is
+        therefore stored as <uuid4><extension>, keeping only the extension, which also drives
+        the text-extraction dispatch below.
+
+        Args:
+            file: An upload object with a ``filename`` attribute and a werkzeug
+                ``FileStorage``-style ``save(path)`` method.
+
+        Returns:
+            The extracted text content, or an empty string when the extension is not one of
+            the supported .txt/.pdf/.docx types; nothing is written to disk in that case and
+            the /upload route responds 400.
+        """
+        extension = os.path.splitext(file.filename)[1]
+        if extension not in ('.txt', '.pdf', '.docx'):
+            return ""
+
+        file_path = os.path.join(self.upload_folder, f"{uuid.uuid4().hex}{extension}")
         file.save(file_path)
         content = ""
 
-        if file.filename.endswith('.txt'):
+        if extension == '.txt':
             with open(file_path, 'r') as f:
                 content = f.read()
-        elif file.filename.endswith('.pdf'):
+        elif extension == '.pdf':
             content = self.extract_text_from_pdf(file_path)
-        elif file.filename.endswith('.docx'):
+        elif extension == '.docx':
             content = self.extract_text_from_docx(file_path)
 
         os.remove(file_path)
