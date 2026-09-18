@@ -352,6 +352,7 @@ class GoogleDocsService:
 
 class FileProcessor:
     def __init__(self, upload_folder='uploads/'):
+        """Creates the upload folder if it does not already exist."""
         self.upload_folder = upload_folder
         if not os.path.exists(self.upload_folder):
             os.makedirs(self.upload_folder)
