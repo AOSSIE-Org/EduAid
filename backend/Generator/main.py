@@ -512,7 +512,7 @@ class QuestionGenerator:
     def _split_text(self, text: str) -> List[str]:
         """Splits the text into sentences, and attempts to split or truncate long sentences."""
         MAX_SENTENCE_LEN = 128
-        sentences = re.findall(".*?[.!\?]", text)
+        sentences = re.findall(r".*?[.!\?]", text)
         cut_sentences = []
 
         for sentence in sentences:
