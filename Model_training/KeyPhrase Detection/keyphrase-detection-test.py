@@ -2,7 +2,7 @@ from datasets import load_dataset
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
-from transformers import T5Tokenizer, T5ForConditionalGeneration, AdamW
+from transformers import T5Tokenizer, T5ForConditionalGeneration
 from tqdm import tqdm
 from time import time
 
@@ -39,7 +39,7 @@ class kp_data(HuggingFaceDataset):
         input_ids=self.tokenizer.encode(input_text, truncation=True, padding='max_length', max_length=512, return_tensors='pt')[0]
         target_ids=self.tokenizer.encode(target_text,truncation=True, padding='max_length', max_length=32, return_tensors='pt')[0]
 
-        return {'input_ids': input_ids, 'attention_mask': input_ids.ne(0), 'target_ids':target_ids, 'target_attention_mask': target_ids.ne(0)}
+        return {'input_ids': input_ids, 'target_attention_mask': target_ids.ne(0), 'target_ids':target_ids, 'target_attention_mask': target_ids.ne(0)}
     
 def parse_list(L:list[str])->list[list[str]]:
     L_new=[]
