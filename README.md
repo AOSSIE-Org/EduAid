@@ -144,7 +144,7 @@ EduAid now includes a cross-platform desktop application built with Electron, pr
 #### Prerequisites
 - Node.js (version 16 or higher)
 - Backend server running (follow steps 2-3 above)
-- Web app built (see the "EduAid Web App" subsection of step 4 above)
+- Web app built (see "Build Web App" under "Production Build" below)
 
 #### Development Mode
 
