@@ -127,10 +127,13 @@ const Output = () => {
           effectiveType = "get_boolq";
         } else if (Array.isArray(qaPairsFromStorage["output"]) && qaPairsFromStorage["output"].length > 0) {
           const first = qaPairsFromStorage["output"][0];
-          if (first && (first.options || first.question_statement || first.correct_answer)) {
+          if (first && typeof first === "object" && (first.options || first.question_statement || first.correct_answer)) {
             effectiveType = "get_mcq";
           } else if (first && (typeof first.answer === "boolean" || first.boolean_question)) {
             effectiveType = "get_boolq";
+          } else if (typeof first === "string") {
+            const isBoolQuestion = /^(is|are|was|were|do|does|did|can|could|will|would|should|has|have|had)\b/i.test(first.trim());
+            effectiveType = isBoolQuestion ? "get_boolq" : "get_shortq";
           }
         }
       }
@@ -146,7 +149,7 @@ const Output = () => {
               combinedQaPairs.push({
                 question: question.trim(),
                 question_type: "Boolean",
-                answer: "True",
+                answer: "",
                 options: ["True", "False"],
                 context: qaPairsFromStorage["output_boolq"]["Text"] || "",
               });
@@ -183,24 +186,35 @@ const Output = () => {
         qaPairsFromStorage["output"].forEach((qaPair) => {
           if (!qaPair) return;
 
+          // If item is a plain string, it cannot be an MCQ
+          const hasMcqProperties =
+            typeof qaPair !== "string" &&
+            (Boolean(qaPair.question_statement) ||
+              Boolean(qaPair.options && Array.isArray(qaPair.options) && qaPair.options.length > 0) ||
+              Boolean(qaPair.correct_answer && qaPair.options));
+
+          const hasBoolProperties =
+            typeof qaPair.answer === "boolean" ||
+            Boolean(qaPair.boolean_question) ||
+            (typeof qaPair === "string" &&
+              /^(is|are|was|were|do|does|did|can|could|will|would|should|has|have|had)\b/i.test(qaPair.trim()));
+
           const isMcq =
-            effectiveType === "get_mcq" ||
-            effectiveType === "get_mcq_llm" ||
-            Boolean(qaPair.question_statement) ||
-            Boolean(qaPair.options && Array.isArray(qaPair.options) && qaPair.options.length > 0);
+            typeof qaPair !== "string" &&
+            (hasMcqProperties ||
+              ((effectiveType === "get_mcq" || effectiveType === "get_mcq_llm") && !hasBoolProperties));
 
           const isBool =
             !isMcq &&
-            (effectiveType === "get_boolq" ||
-              effectiveType === "get_boolq_llm" ||
-              typeof qaPair.answer === "boolean");
+            (hasBoolProperties ||
+              ((effectiveType === "get_boolq" || effectiveType === "get_boolq_llm") && !hasMcqProperties));
 
           if (isBool) {
             const qText = typeof qaPair === "string" ? qaPair : qaPair.question;
             // Skip entries when question is not a string (e.g. malformed or object-valued questions)
             if (typeof qText === "string" && qText.trim().length > 0) {
               const boolAnswer =
-                qaPair.answer !== undefined && qaPair.answer !== null
+                qaPair && qaPair.answer !== undefined && qaPair.answer !== null
                   ? typeof qaPair.answer === "boolean"
                     ? (qaPair.answer ? "True" : "False")
                     : String(qaPair.answer)
@@ -227,10 +241,12 @@ const Output = () => {
             }
           } else {
             const qText =
-              qaPair.question ||
-              qaPair.question_statement ||
-              qaPair.Question ||
-              (typeof qaPair === "string" ? qaPair : "");
+              typeof qaPair === "string"
+                ? qaPair
+                : qaPair.question ||
+                  qaPair.question_statement ||
+                  qaPair.Question ||
+                  "";
             if (typeof qText === "string" && qText.trim().length > 0) {
               combinedQaPairs.push({
                 question: qText.trim(),
@@ -250,9 +266,27 @@ const Output = () => {
 
   const generateGoogleForm = async () => {
     try {
+      const typeMap = { Boolean: "get_boolq", MCQ: "get_mcq", Short: "get_shortq" };
+      let exportType = "";
+      if (questionType === "get_boolq" || questionType === "get_mcq" || questionType === "get_shortq") {
+        exportType = questionType;
+      } else if (questionType === "get_boolq_llm") {
+        exportType = "get_boolq";
+      } else if (questionType === "get_mcq_llm") {
+        exportType = "get_mcq";
+      } else if (questionType === "get_shortq_hard") {
+        exportType = "get_shortq";
+      } else if (questionType === "get_mcq_hard") {
+        exportType = "get_mcq";
+      } else if (qaPairs[0]?.question_type && typeMap[qaPairs[0].question_type]) {
+        exportType = typeMap[qaPairs[0].question_type];
+      } else {
+        exportType = "get_mcq";
+      }
+
       const result = await apiClient.post("/generate_gform", {
         qa_pairs: qaPairs,
-        question_type: questionType,
+        question_type: exportType,
       });
       const formUrl = result.form_link;
       window.open(formUrl, "_blank");

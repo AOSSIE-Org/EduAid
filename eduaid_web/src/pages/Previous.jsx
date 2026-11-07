@@ -18,8 +18,31 @@ const Previous = () => {
 
   const handleQuizClick = (quiz) => {
     localStorage.setItem("qaPairs", JSON.stringify(quiz.qaPair));
-    if (quiz.questionType) {
+    if (quiz.questionType && quiz.questionType !== "undefined") {
       localStorage.setItem("selectedQuestionType", quiz.questionType);
+    } else {
+      // For legacy quizzes without stored questionType, infer from qaPair if possible
+      let inferredType = null;
+      const data = quiz.qaPair;
+      if (data && typeof data === "object") {
+        if (data.output_mcq) {
+          inferredType = "get_mcq";
+        } else if (data.output_boolq) {
+          inferredType = "get_boolq";
+        } else if (Array.isArray(data.output) && data.output.length > 0) {
+          const first = data.output[0];
+          if (first && typeof first === "object" && (first.options || first.question_statement || first.correct_answer)) {
+            inferredType = "get_mcq";
+          } else if (first && (typeof first.answer === "boolean" || first.boolean_question)) {
+            inferredType = "get_boolq";
+          }
+        }
+      }
+      if (inferredType) {
+        localStorage.setItem("selectedQuestionType", inferredType);
+      } else {
+        localStorage.removeItem("selectedQuestionType");
+      }
     }
     navigate('/output'); 
   };
