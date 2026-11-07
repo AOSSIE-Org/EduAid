@@ -5,7 +5,7 @@ import logo from "../../assets/aossie_logo.webp";
 import stars from "../../assets/stars.png";
 import cloud from "../../assets/cloud.png";
 import arrow from "../../assets/arrow.png";
-import { FaClipboard , FaWikipediaW  } from "react-icons/fa";
+import { FaClipboard, FaWikipediaW, FaTrashAlt } from "react-icons/fa";
 
 function Second() {
   const [text, setText] = useState("");
@@ -13,6 +13,7 @@ function Second() {
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
   const [fileContent, setFileContent] = useState('');
   const [docUrl, setDocUrl] = useState('');
   const [isToggleOn, setIsToggleOn] = useState(0);
@@ -26,6 +27,29 @@ function Second() {
       }
     });
   }, [])
+
+  const handlePaste = async () => {
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      setText(clipboardText);
+      localStorage.setItem("textContent", clipboardText);
+    } catch (err) {
+      console.error("Failed to read clipboard:", err);
+    }
+  };
+
+  const handleClearText = () => {
+    setText("");
+    setFileContent("");
+    setDocUrl("");
+    localStorage.removeItem("textContent");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  };
 
 
   const toggleSwitch = () => {
@@ -212,11 +236,30 @@ function Second() {
         </div>
 
         <div className="relative bg-[#83b6cc40] mx-3 rounded-xl p-2 h-28">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
-            <FaClipboard className="h-[20px] w-[20px]" />
+          <button
+            type="button"
+            onClick={handlePaste}
+            aria-label="Paste from clipboard"
+            title="Paste from clipboard"
+            className="absolute top-1 left-1 z-10 p-1.5 text-white/70 hover:text-white transition-colors focus:outline-none"
+          >
+            <FaClipboard className="h-[18px] w-[18px]" />
           </button>
+          {text && (
+            <button
+              type="button"
+              onClick={handleClearText}
+              aria-label="Clear input text"
+              title="Clear text"
+              className="absolute top-1 right-1 z-10 p-1.5 text-white/70 hover:text-red-400 transition-colors focus:outline-none"
+            >
+              <FaTrashAlt className="h-[16px] w-[16px]" />
+            </button>
+          )}
           <textarea
-            className="absolute inset-0 p-8 pt-2 bg-[#83b6cc40] text-lg rounded-xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
+            ref={textareaRef}
+            placeholder="Enter content here..."
+            className="absolute inset-0 p-8 pt-2 pr-10 bg-[#83b6cc40] text-lg rounded-xl outline-none resize-none h-full overflow-y-auto text-white caret-white placeholder-white/40"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
             onChange={(e) => setText(e.target.value)}
