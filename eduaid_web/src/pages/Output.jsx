@@ -38,12 +38,28 @@ const Output = () => {
     return shuffledArray;
   }
 
+  const resolveMcqAnswer = (answer, options) => {
+    if (!answer || !Array.isArray(options) || options.length === 0) {
+      return typeof answer === "string" ? answer.trim() : (answer || "");
+    }
+    const strAns = String(answer).trim();
+    const letterMatch = strAns.match(/^[A-Da-d]$/);
+    if (letterMatch) {
+      const idx = letterMatch[0].toUpperCase().charCodeAt(0) - 65;
+      if (idx >= 0 && idx < options.length) {
+        return options[idx];
+      }
+    }
+    return strAns;
+  };
+
   const shuffledOptionsMap = useMemo(() => {
     return qaPairs.map((qaPair) => {
-      const combinedOptions = qaPair.options
-        ? [...qaPair.options, qaPair.answer]
-        : [qaPair.answer];
-      return shuffleArray(combinedOptions);
+      const opts = Array.isArray(qaPair.options) ? [...qaPair.options] : [];
+      if (qaPair.answer && !opts.includes(qaPair.answer)) {
+        opts.push(qaPair.answer);
+      }
+      return shuffleArray(opts);
     });
   }, [qaPairs]);
 
@@ -59,7 +75,7 @@ const Output = () => {
     setEditingIndex(index);
     setEditedQuestion(qaPairs[index].question);
     setEditedAnswer(qaPairs[index].answer || "");
-    setEditedOptions(qaPairs[index].options || []);
+    setEditedOptions(Array.isArray(qaPairs[index].options) ? qaPairs[index].options : []);
   };
 
   const handleSaveQuestion = (index) => {
@@ -67,8 +83,8 @@ const Output = () => {
     updatedQaPairs[index] = {
       ...updatedQaPairs[index],
       question: editedQuestion,
-      answer: editedAnswer,
-      options: editedOptions,
+      answer: editedAnswer || updatedQaPairs[index].answer,
+      options: Array.isArray(editedOptions) ? editedOptions : [],
     };
     setQaPairs(updatedQaPairs);
     setEditingIndex(null);
@@ -91,76 +107,186 @@ const Output = () => {
   };
 
   useEffect(() => {
-    const qaPairsFromStorage =
-      JSON.parse(localStorage.getItem("qaPairs")) || {};
-    if (qaPairsFromStorage) {
+    let qaPairsFromStorage = {};
+    try {
+      qaPairsFromStorage = JSON.parse(localStorage.getItem("qaPairs")) || {};
+    } catch (err) {
+      console.error("Error parsing qaPairs from localStorage:", err);
+      qaPairsFromStorage = {};
+    }
+
+    if (qaPairsFromStorage && typeof qaPairsFromStorage === "object") {
       const combinedQaPairs = [];
 
-      if (qaPairsFromStorage["output_boolq"]) {
+      // Determine effective question type from component state, storage, or infer from payload
+      let effectiveType = questionType || localStorage.getItem("selectedQuestionType");
+      if (!effectiveType || effectiveType === "undefined") {
+        if (qaPairsFromStorage["output_mcq"]) {
+          effectiveType = "get_mcq";
+        } else if (qaPairsFromStorage["output_boolq"]) {
+          effectiveType = "get_boolq";
+        } else if (Array.isArray(qaPairsFromStorage["output"]) && qaPairsFromStorage["output"].length > 0) {
+          const first = qaPairsFromStorage["output"][0];
+          if (first && typeof first === "object" && (first.options || first.question_statement || first.correct_answer)) {
+            effectiveType = "get_mcq";
+          } else if (first && (typeof first.answer === "boolean" || first.boolean_question)) {
+            effectiveType = "get_boolq";
+          } else if (typeof first === "string") {
+            const isBoolQuestion = /^(is|are|was|were|do|does|did|can|could|will|would|should|has|have|had)\b/i.test(first.trim());
+            effectiveType = isBoolQuestion ? "get_boolq" : "get_shortq";
+          }
+        }
+      }
+
+      // 1. Handle output_boolq
+      if (
+        qaPairsFromStorage["output_boolq"] &&
+        Array.isArray(qaPairsFromStorage["output_boolq"]["Boolean_Questions"])
+      ) {
         qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
-          (question, index) => {
-            combinedQaPairs.push({
-              question,
-              question_type: "Boolean",
-              context: qaPairsFromStorage["output_boolq"]["Text"],
-            });
+          (question) => {
+            if (typeof question === "string" && question.trim().length > 0) {
+              combinedQaPairs.push({
+                question: question.trim(),
+                question_type: "Boolean",
+                answer: "",
+                options: ["True", "False"],
+                context: qaPairsFromStorage["output_boolq"]["Text"] || "",
+              });
+            }
           }
         );
       }
 
-      if (qaPairsFromStorage["output_mcq"]) {
+      // 2. Handle output_mcq (nested questions array)
+      if (
+        qaPairsFromStorage["output_mcq"] &&
+        Array.isArray(qaPairsFromStorage["output_mcq"]["questions"])
+      ) {
         qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
-          });
+          if (qaPair) {
+            const qText = qaPair.question_statement || qaPair.question;
+            if (typeof qText === "string" && qText.trim().length > 0) {
+              const opts = Array.isArray(qaPair.options) ? qaPair.options : [];
+              const rawAns = qaPair.answer || qaPair.correct_answer || "";
+              combinedQaPairs.push({
+                question: qText.trim(),
+                question_type: "MCQ",
+                options: opts,
+                answer: resolveMcqAnswer(rawAns, opts),
+                context: qaPair.context || "",
+              });
+            }
+          }
         });
       }
 
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
+      // 3. Handle standard "output" key (returned by get_mcq, get_boolq, get_shortq, and LLM endpoints)
+      if (Array.isArray(qaPairsFromStorage["output"])) {
         qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
-          });
-        });
-      }
+          if (!qaPair) return;
 
-      if (questionType == "get_boolq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair,
-            question_type: "Boolean",
-          });
-        });
-      } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question:
-              qaPair.question || qaPair.question_statement || qaPair.Question,
-            options: qaPair.options,
-            answer: qaPair.answer || qaPair.Answer,
-            context: qaPair.context,
-            question_type: "Short",
-          });
+          // If item is a plain string, it cannot be an MCQ
+          const hasMcqProperties =
+            typeof qaPair !== "string" &&
+            (Boolean(qaPair.question_statement) ||
+              Boolean(qaPair.options && Array.isArray(qaPair.options) && qaPair.options.length > 0) ||
+              Boolean(qaPair.correct_answer && qaPair.options));
+
+          const hasBoolProperties =
+            typeof qaPair.answer === "boolean" ||
+            Boolean(qaPair.boolean_question) ||
+            (typeof qaPair === "string" &&
+              /^(is|are|was|were|do|does|did|can|could|will|would|should|has|have|had)\b/i.test(qaPair.trim()));
+
+          const isMcq =
+            typeof qaPair !== "string" &&
+            (hasMcqProperties ||
+              ((effectiveType === "get_mcq" || effectiveType === "get_mcq_llm") && !hasBoolProperties));
+
+          const isBool =
+            !isMcq &&
+            (hasBoolProperties ||
+              ((effectiveType === "get_boolq" || effectiveType === "get_boolq_llm") && !hasMcqProperties));
+
+          if (isBool) {
+            const qText = typeof qaPair === "string" ? qaPair : qaPair.question;
+            // Skip entries when question is not a string (e.g. malformed or object-valued questions)
+            if (typeof qText === "string" && qText.trim().length > 0) {
+              const boolAnswer =
+                qaPair && qaPair.answer !== undefined && qaPair.answer !== null
+                  ? typeof qaPair.answer === "boolean"
+                    ? (qaPair.answer ? "True" : "False")
+                    : String(qaPair.answer)
+                  : "";
+              combinedQaPairs.push({
+                question: qText.trim(),
+                question_type: "Boolean",
+                answer: boolAnswer,
+                options: ["True", "False"],
+              });
+            }
+          } else if (isMcq) {
+            const qText = qaPair.question_statement || qaPair.question;
+            if (typeof qText === "string" && qText.trim().length > 0) {
+              const opts = Array.isArray(qaPair.options) ? qaPair.options : [];
+              const rawAns = qaPair.answer || qaPair.correct_answer || "";
+              combinedQaPairs.push({
+                question: qText.trim(),
+                question_type: "MCQ",
+                options: opts,
+                answer: resolveMcqAnswer(rawAns, opts),
+                context: qaPair.context || "",
+              });
+            }
+          } else {
+            const qText =
+              typeof qaPair === "string"
+                ? qaPair
+                : qaPair.question ||
+                  qaPair.question_statement ||
+                  qaPair.Question ||
+                  "";
+            if (typeof qText === "string" && qText.trim().length > 0) {
+              combinedQaPairs.push({
+                question: qText.trim(),
+                options: Array.isArray(qaPair.options) ? qaPair.options : [],
+                answer: qaPair.answer || qaPair.Answer || "",
+                context: qaPair.context || "",
+                question_type: "Short",
+              });
+            }
+          }
         });
       }
 
       setQaPairs(combinedQaPairs);
     }
-  }, []);
+  }, [questionType]);
 
   const generateGoogleForm = async () => {
     try {
+      const typeMap = { Boolean: "get_boolq", MCQ: "get_mcq", Short: "get_shortq" };
+      let exportType = "";
+      if (questionType === "get_boolq" || questionType === "get_mcq" || questionType === "get_shortq") {
+        exportType = questionType;
+      } else if (questionType === "get_boolq_llm") {
+        exportType = "get_boolq";
+      } else if (questionType === "get_mcq_llm") {
+        exportType = "get_mcq";
+      } else if (questionType === "get_shortq_hard") {
+        exportType = "get_shortq";
+      } else if (questionType === "get_mcq_hard") {
+        exportType = "get_mcq";
+      } else if (qaPairs[0]?.question_type && typeMap[qaPairs[0].question_type]) {
+        exportType = typeMap[qaPairs[0].question_type];
+      } else {
+        exportType = "get_mcq";
+      }
+
       const result = await apiClient.post("/generate_gform", {
         qa_pairs: qaPairs,
-        question_type: questionType,
+        question_type: exportType,
       });
       const formUrl = result.form_link;
       window.open(formUrl, "_blank");
@@ -249,9 +375,9 @@ const Output = () => {
 
           {/* Questions Container - Responsive padding and margins */}
           <div className="flex-1 overflow-y-auto scrollbar-hide px-2 sm:px-4">
-            {qaPairs &&
+            {qaPairs && qaPairs.length > 0 ? (
               qaPairs.map((qaPair, index) => {
-                const shuffledOptions = shuffledOptionsMap[index];
+                const shuffledOptions = shuffledOptionsMap[index] || [];
                 const isEditing = editingIndex === index;
                 
                 return (
@@ -371,13 +497,28 @@ const Output = () => {
                     )}
                   </div>
                 );
-              })}
+              })
+            ) : (
+              <div className="flex flex-col items-center justify-center h-48 text-center text-gray-400">
+                <p className="text-base sm:text-lg mb-4">No questions found or generated yet.</p>
+                <Link to="/question-type">
+                  <button className="bg-[#7C3AED] hover:bg-[#5A2AD9] text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
+                    Generate a Quiz
+                  </button>
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons - Responsive layout */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mx-4 sm:mx-auto pb-4 sm:pb-6">
             <button
-              className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] active:scale-95 active:bg-[#2f5555] transition-all justify-center"
+              disabled={!qaPairs || qaPairs.length === 0}
+              className={`bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base justify-center transition-all ${
+                !qaPairs || qaPairs.length === 0
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:bg-[#3a6b6b] active:scale-95 active:bg-[#2f5555]"
+              }`}
               onClick={generateGoogleForm}
             >
               Generate Google form
@@ -385,8 +526,18 @@ const Output = () => {
             
             <div className="relative w-full sm:w-auto">
               <button
-                className="bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base hover:bg-[#3a6b6b] active:scale-95 active:bg-[#2f5555] transition-all justify-center"
-                onClick={() => document.getElementById('pdfDropdown').classList.toggle('hidden')}
+                disabled={!qaPairs || qaPairs.length === 0}
+                className={`bg-[#518E8E] items-center flex gap-1 w-full sm:w-auto font-semibold text-white px-4 sm:px-6 py-3 sm:py-2 rounded-xl text-sm sm:text-base justify-center transition-all ${
+                  !qaPairs || qaPairs.length === 0
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-[#3a6b6b] active:scale-95 active:bg-[#2f5555]"
+                }`}
+                onClick={() => {
+                  if (qaPairs && qaPairs.length > 0) {
+                    const dropdown = document.getElementById('pdfDropdown');
+                    if (dropdown) dropdown.classList.toggle('hidden');
+                  }
+                }}
               >
                 Generate PDF
               </button>
