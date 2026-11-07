@@ -18,6 +18,9 @@ const Previous = () => {
 
   const handleQuizClick = (quiz) => {
     localStorage.setItem("qaPairs", JSON.stringify(quiz.qaPair));
+    if (quiz.questionType) {
+      localStorage.setItem("selectedQuestionType", quiz.questionType);
+    }
     navigate('/output'); 
   };
 

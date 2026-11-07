@@ -117,6 +117,7 @@ const Text_Input = () => {
         numQuestions,
         date: new Date().toLocaleDateString(),
         qaPair: responseData,
+        questionType,
       };
 
       let last5Quizzes =
