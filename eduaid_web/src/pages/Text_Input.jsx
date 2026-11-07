@@ -14,6 +14,7 @@ const Text_Input = () => {
   const [difficulty, setDifficulty] = useState("Easy Difficulty");
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const fileInputRef = useRef(null);
   const [fileContent, setFileContent] = useState("");
   const [docUrl, setDocUrl] = useState("");
@@ -23,18 +24,40 @@ const Text_Input = () => {
     setIsToggleOn((isToggleOn + 1) % 2);
   };
 
+  const handlePasteFromClipboard = async () => {
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      if (clipboardText) {
+        setText(clipboardText);
+        setError("");
+      }
+    } catch (err) {
+      console.error("Failed to read clipboard:", err);
+    }
+  };
+
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (file) {
+      setError("");
+      setLoading(true);
       const formData = new FormData();
       formData.append("file", file);
 
       try {
         const data = await apiClient.postFormData("/upload", formData);
-        setText(data.content || data.error);
-      } catch (error) {
-        console.error("Error uploading file:", error);
-        setText("Error uploading file");
+        if (data && data.content) {
+          setText(data.content);
+        } else if (data && data.error) {
+          setError(data.error);
+        } else {
+          setText(typeof data === "string" ? data : "File uploaded successfully.");
+        }
+      } catch (err) {
+        console.error("Error uploading file:", err);
+        setError("Error uploading file. Please try again.");
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -48,31 +71,53 @@ const Text_Input = () => {
   };
 
   const handleSaveToLocalStorage = async () => {
+    setError("");
+    const trimmedText = text.trim();
+    const trimmedDocUrl = docUrl.trim();
+
+    if (!trimmedDocUrl && !trimmedText) {
+      setError("Please enter educational content, upload a file, or provide a Google Doc URL.");
+      return;
+    }
+
+    if (numQuestions < 1) {
+      setError("Number of questions must be at least 1.");
+      return;
+    }
+
     setLoading(true);
+    try {
+      // Check if a Google Doc URL is provided
+      if (trimmedDocUrl) {
+        try {
+          const data = await apiClient.post("/get_content", { document_url: trimmedDocUrl });
+          setDocUrl("");
+          if (data) {
+            setText(data);
+          } else {
+            setError("No content could be retrieved from the provided Google Doc.");
+          }
+        } catch (err) {
+          console.error("Error retrieving Google Doc content:", err);
+          setError("Error retrieving Google Doc content. Please verify the URL and permissions.");
+        }
+      } else if (trimmedText) {
+        // Proceed with existing functionality for local storage
+        localStorage.setItem("textContent", trimmedText);
+        localStorage.setItem("difficulty", difficulty);
+        localStorage.setItem("numQuestions", numQuestions);
 
-    // Check if a Google Doc URL is provided
-    if (docUrl) {
-      try {
-        const data = await apiClient.post("/get_content", { document_url: docUrl });
-        setDocUrl("");
-        setText(data || "Error in retrieving");
-      } catch (error) {
-        console.error("Error:", error);
-        setText("Error retrieving Google Doc content");
-      } finally {
-        setLoading(false);
+        await sendToBackend(
+          trimmedText,
+          difficulty,
+          localStorage.getItem("selectedQuestionType")
+        );
       }
-    } else if (text) {
-      // Proceed with existing functionality for local storage
-      localStorage.setItem("textContent", text);
-      localStorage.setItem("difficulty", difficulty);
-      localStorage.setItem("numQuestions", numQuestions);
-
-      await sendToBackend(
-        text,
-        difficulty,
-        localStorage.getItem("selectedQuestionType")
-      );
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -85,7 +130,7 @@ const Text_Input = () => {
   };
 
   const decrementQuestions = () => {
-    setNumQuestions((prev) => (prev > 0 ? prev - 1 : 0));
+    setNumQuestions((prev) => (prev > 1 ? prev - 1 : 1));
   };
 
   const getEndpoint = (difficulty, questionType) => {
@@ -128,8 +173,9 @@ const Text_Input = () => {
       localStorage.setItem("last5Quizzes", JSON.stringify(last5Quizzes));
 
       navigate("/output");
-    } catch (error) {
-      console.error("Error:", error);
+    } catch (err) {
+      console.error("Error generating questions:", err);
+      setError("Failed to generate questions. Please ensure the backend is running and try again.");
     } finally {
       setLoading(false);
     }
@@ -165,16 +211,40 @@ const Text_Input = () => {
           </div>
         </div>
 
+        {/* Error Notification */}
+        {error && (
+          <div className="mx-4 sm:mx-8 mt-4 p-3 bg-red-900/80 border border-red-500 text-white rounded-xl font-medium flex items-center justify-between">
+            <span className="text-sm sm:text-base">{error}</span>
+            <button
+              type="button"
+              onClick={() => setError("")}
+              className="text-white hover:text-red-200 text-xl font-bold ml-3 px-2 focus:outline-none"
+              aria-label="Dismiss error"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         {/* Textarea */}
         <div className="relative bg-[#83b6cc40] mx-4 sm:mx-8 rounded-2xl p-4 min-h-[160px] sm:min-h-[200px] mt-4">
-          <button className="absolute top-0 left-0 p-2 text-white focus:outline-none">
+          <button
+            type="button"
+            onClick={handlePasteFromClipboard}
+            title="Paste from clipboard"
+            className="absolute top-0 left-0 p-2 text-white hover:text-[#00CBE7] transition-colors focus:outline-none z-10"
+          >
             <FaClipboard className="h-[24px] w-[24px]" />
           </button>
           <textarea
-            className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white"
+            className="absolute inset-0 p-8 pt-6 bg-[#83b6cc40] text-lg sm:text-xl rounded-2xl outline-none resize-none h-full overflow-y-auto text-white caret-white placeholder-gray-400"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              if (error) setError("");
+            }}
+            placeholder="Type or paste educational text here..."
           />
           <style>{`textarea::-webkit-scrollbar { display: none; }`}</style>
         </div>
@@ -200,7 +270,10 @@ const Text_Input = () => {
             placeholder="Enter Google Doc URL"
             className="bg-transparent mt-4 border border-[#cbd0dc80] text-white text-lg sm:text-xl rounded-2xl px-4 py-2 w-full sm:w-2/3 outline-none"
             value={docUrl}
-            onChange={(e) => setDocUrl(e.target.value)}
+            onChange={(e) => {
+              setDocUrl(e.target.value);
+              if (error) setError("");
+            }}
           />
         </div>
 
