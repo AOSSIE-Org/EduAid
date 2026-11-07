@@ -91,70 +91,96 @@ const Output = () => {
   };
 
   useEffect(() => {
-    const qaPairsFromStorage =
-      JSON.parse(localStorage.getItem("qaPairs")) || {};
-    if (qaPairsFromStorage) {
+    let qaPairsFromStorage = {};
+    try {
+      qaPairsFromStorage = JSON.parse(localStorage.getItem("qaPairs")) || {};
+    } catch (err) {
+      console.error("Error parsing qaPairs from localStorage:", err);
+      qaPairsFromStorage = {};
+    }
+
+    if (qaPairsFromStorage && typeof qaPairsFromStorage === "object") {
       const combinedQaPairs = [];
 
-      if (qaPairsFromStorage["output_boolq"]) {
+      // 1. Handle output_boolq
+      if (
+        qaPairsFromStorage["output_boolq"] &&
+        Array.isArray(qaPairsFromStorage["output_boolq"]["Boolean_Questions"])
+      ) {
         qaPairsFromStorage["output_boolq"]["Boolean_Questions"].forEach(
-          (question, index) => {
+          (question) => {
             combinedQaPairs.push({
               question,
               question_type: "Boolean",
-              context: qaPairsFromStorage["output_boolq"]["Text"],
+              context: qaPairsFromStorage["output_boolq"]["Text"] || "",
             });
           }
         );
       }
 
-      if (qaPairsFromStorage["output_mcq"]) {
+      // 2. Handle output_mcq (nested questions array)
+      if (
+        qaPairsFromStorage["output_mcq"] &&
+        Array.isArray(qaPairsFromStorage["output_mcq"]["questions"])
+      ) {
         qaPairsFromStorage["output_mcq"]["questions"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
-          });
+          if (qaPair) {
+            combinedQaPairs.push({
+              question: qaPair.question_statement || qaPair.question || "",
+              question_type: "MCQ",
+              options: qaPair.options || [],
+              answer: qaPair.answer || "",
+              context: qaPair.context || "",
+            });
+          }
         });
       }
 
-      if (qaPairsFromStorage["output_mcq"] || questionType === "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair.question_statement,
-            question_type: "MCQ",
-            options: qaPair.options,
-            answer: qaPair.answer,
-            context: qaPair.context,
+      // 3. Handle standard "output" key (returned by get_mcq, get_boolq, get_shortq, and LLM endpoints)
+      if (Array.isArray(qaPairsFromStorage["output"])) {
+        if (questionType === "get_boolq" || questionType === "get_boolq_llm") {
+          qaPairsFromStorage["output"].forEach((qaPair) => {
+            if (qaPair) {
+              combinedQaPairs.push({
+                question: typeof qaPair === "string" ? qaPair : qaPair.question || "",
+                question_type: "Boolean",
+              });
+            }
           });
-        });
-      }
-
-      if (questionType == "get_boolq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question: qaPair,
-            question_type: "Boolean",
+        } else if (questionType === "get_mcq" || questionType === "get_mcq_llm") {
+          qaPairsFromStorage["output"].forEach((qaPair) => {
+            if (qaPair) {
+              combinedQaPairs.push({
+                question: qaPair.question_statement || qaPair.question || "",
+                question_type: "MCQ",
+                options: qaPair.options || [],
+                answer: qaPair.answer || qaPair.correct_answer || "",
+                context: qaPair.context || "",
+              });
+            }
           });
-        });
-      } else if (qaPairsFromStorage["output"] && questionType !== "get_mcq") {
-        qaPairsFromStorage["output"].forEach((qaPair) => {
-          combinedQaPairs.push({
-            question:
-              qaPair.question || qaPair.question_statement || qaPair.Question,
-            options: qaPair.options,
-            answer: qaPair.answer || qaPair.Answer,
-            context: qaPair.context,
-            question_type: "Short",
+        } else {
+          qaPairsFromStorage["output"].forEach((qaPair) => {
+            if (qaPair) {
+              combinedQaPairs.push({
+                question:
+                  qaPair.question ||
+                  qaPair.question_statement ||
+                  qaPair.Question ||
+                  (typeof qaPair === "string" ? qaPair : ""),
+                options: qaPair.options || [],
+                answer: qaPair.answer || qaPair.Answer || "",
+                context: qaPair.context || "",
+                question_type: "Short",
+              });
+            }
           });
-        });
+        }
       }
 
       setQaPairs(combinedQaPairs);
     }
-  }, []);
+  }, [questionType]);
 
   const generateGoogleForm = async () => {
     try {
@@ -249,9 +275,9 @@ const Output = () => {
 
           {/* Questions Container - Responsive padding and margins */}
           <div className="flex-1 overflow-y-auto scrollbar-hide px-2 sm:px-4">
-            {qaPairs &&
+            {qaPairs && qaPairs.length > 0 ? (
               qaPairs.map((qaPair, index) => {
-                const shuffledOptions = shuffledOptionsMap[index];
+                const shuffledOptions = shuffledOptionsMap[index] || [];
                 const isEditing = editingIndex === index;
                 
                 return (
@@ -371,7 +397,17 @@ const Output = () => {
                     )}
                   </div>
                 );
-              })}
+              })
+            ) : (
+              <div className="flex flex-col items-center justify-center h-48 text-center text-gray-400">
+                <p className="text-base sm:text-lg mb-4">No questions found or generated yet.</p>
+                <Link to="/question-type">
+                  <button className="bg-[#7C3AED] hover:bg-[#5A2AD9] text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
+                    Generate a Quiz
+                  </button>
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons - Responsive layout */}
