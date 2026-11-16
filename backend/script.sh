@@ -54,7 +54,7 @@ python -m pip install --upgrade pip
 python -m pip install -r "$PROJECT_ROOT/requirements.txt"
 
 # Download and validate the Sense2Vec archive if necessary
-if [[ ! -d "$S2V_DIR/cfg" ]]; then
+if [[ ! -f "$S2V_DIR/cfg" ]]; then
 
     if [[ ! -s "$S2V_ARCHIVE" ]] ||
        ! tar -tzf "$S2V_ARCHIVE" >/dev/null 2>&1; then
@@ -84,7 +84,7 @@ if [[ ! -d "$S2V_DIR/cfg" ]]; then
     tar -xzf "$S2V_ARCHIVE" -C "$TMP_EXTRACT"
 
     # Verify the expected model structure before publishing it
-    [[ -d "$TMP_EXTRACT/s2v_old/cfg" ]] ||
+    [[ -f "$TMP_EXTRACT/s2v_old/cfg" ]] ||
         die "Sense2Vec archive does not contain s2v_old/cfg."
 
     # Remove an existing empty model directory before moving the extracted model
