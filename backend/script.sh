@@ -54,8 +54,7 @@ python -m pip install --upgrade pip
 python -m pip install -r "$PROJECT_ROOT/requirements.txt"
 
 # Download and validate the Sense2Vec archive if necessary
-if [[ ! -d "$S2V_DIR" ]] ||
-   [[ -z "$(find "$S2V_DIR" -mindepth 1 -print -quit 2>/dev/null)" ]]; then
+if [[ ! -d "$S2V_DIR/cfg" ]]; then
 
     if [[ ! -s "$S2V_ARCHIVE" ]] ||
        ! tar -tzf "$S2V_ARCHIVE" >/dev/null 2>&1; then
@@ -82,15 +81,26 @@ if [[ ! -d "$S2V_DIR" ]] ||
     # Extract into a temporary directory before publishing the model
     TMP_EXTRACT="$(mktemp -d "$SCRIPT_DIR/.s2v_extract.XXXXXX")"
 
-    tar -xzf "$S2V_ARCHIVE" \
-        -C "$TMP_EXTRACT" \
-        --strip-components=1
+    tar -xzf "$S2V_ARCHIVE" -C "$TMP_EXTRACT"
 
-    [[ -n "$(find "$TMP_EXTRACT" -mindepth 1 -print -quit)" ]] ||
-        die "Sense2Vec extraction produced an empty directory."
+    # Verify the expected model structure before publishing it
+    [[ -d "$TMP_EXTRACT/s2v_old/cfg" ]] ||
+        die "Sense2Vec archive does not contain s2v_old/cfg."
 
-    mv "$TMP_EXTRACT" "$S2V_DIR"
+    # Remove an existing empty model directory before moving the extracted model
+    if [[ -d "$S2V_DIR" ]]; then
+        rmdir "$S2V_DIR" ||
+            die "Existing Sense2Vec directory is not empty."
+    elif [[ -e "$S2V_DIR" ]]; then
+        die "Sense2Vec model path exists but is not a directory."
+    fi
+
+    mv "$TMP_EXTRACT/s2v_old" "$S2V_DIR"
+
+    # Remove the remaining temporary extraction directory
+    rm -rf "$TMP_EXTRACT"
     TMP_EXTRACT=""
+
 fi
 
 echo "Sense2Vec model is ready."
